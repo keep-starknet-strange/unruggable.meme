@@ -1,6 +1,14 @@
 # Unruggable Memecoin
 
-A framework for building safer memecoins.
+> A framework for building safer memecoins.
+
+Tired of getting rugpulled? Introducing Unruggable Memecoin, a project designed with security and transparency at its core. Our innovative contracts and safeguards ensure a fair and secure experience for all users.
+
+> ⚠️⚠️⚠️
+>
+> While we have made every effort to ensure the security and integrity of the Unruggable Memecoin contracts, it's important to note that they have not yet undergone security audits. As with any smart contract, there remains a possibility of undiscovered vulnerabilities. Our approach is more secure than tokens launched without locked Liquidity Pool (LP) tokens or without safeguards on token supply allocation, but this does not imply that the contracts are bug-free or that investments in tokens launched using Unruggable Memecoin framework are risk-free. Investors and users should exercise due diligence and caution. This is not financial advice. Do your own research. And remember, don't invest more than you can afford to lose. Stay safe!
+>
+> ⚠️⚠️⚠️
 
 ## Project structure
 
