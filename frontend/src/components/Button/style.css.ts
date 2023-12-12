@@ -17,7 +17,7 @@ export const primaryButton = style([
     paddingX: '16',
     border: 'none',
     background: {
-      default: 'accent',
+      default: 'vibrantGradient',
       hover: 'accentDark',
       focus: 'accentDarker',
       active: 'accentDarker',
