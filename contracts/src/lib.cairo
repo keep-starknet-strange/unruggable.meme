@@ -1,0 +1,1 @@
+mod unruggable_memecoin;
