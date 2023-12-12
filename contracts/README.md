@@ -1,5 +1,17 @@
 # Unruggable Memecoin contracts
 
+## TODO
+
+- [ ] `launch_memecoin` function
+  - [ ] Create pair on selected AMM
+  - [ ] Add liquidity to pair
+  - [ ] Enable trading
+- [ ] Initial holders distribution safeguards
+  - [ ] Limit initial holders to X addresses (with X small)
+  - [ ] Limit the percentage of the total supply that can be distributed to initial holders
+- [ ] Inital buys safeguards
+  - [ ] Limit the percentage of the total supply that can be bought in the first X blocks
+
 ## 🛠️ Build
 
 To build the project, run:

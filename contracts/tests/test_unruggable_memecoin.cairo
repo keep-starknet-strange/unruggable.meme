@@ -9,11 +9,20 @@ use unruggablememecoin::unruggable_memecoin::{
 };
 
 fn deploy_contract(
-    recipient: ContractAddress, name: felt252, symbol: felt252, initial_supply: u256,
+    owner: ContractAddress,
+    recipient: ContractAddress,
+    name: felt252,
+    symbol: felt252,
+    initial_supply: u256,
 ) -> ContractAddress {
     let contract = declare('UnruggableMemecoin');
     let mut constructor_calldata = array![
-        recipient.into(), name, symbol, initial_supply.low.into(), initial_supply.high.into()
+        owner.into(),
+        recipient.into(),
+        name,
+        symbol,
+        initial_supply.low.into(),
+        initial_supply.high.into()
     ];
     contract.deploy(@constructor_calldata).unwrap()
 }
@@ -22,7 +31,9 @@ fn deploy_contract(
 fn test_mint() {
     let owner = contract_address_const::<42>();
     let initial_supply = 1000.into();
-    let contract_address = deploy_contract(owner, 'UnruggableMemecoin', 'MT', initial_supply);
+    let contract_address = deploy_contract(
+        owner, owner, 'UnruggableMemecoin', 'MT', initial_supply
+    );
 
     let safe_dispatcher = IUnruggableMemecoinDispatcher { contract_address };
 

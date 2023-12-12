@@ -3,6 +3,9 @@ use starknet::ContractAddress;
 
 #[starknet::interface]
 trait IUnruggableMemecoin<TState> {
+    // ************************************
+    // * Standard ERC20 functions
+    // ************************************
     fn name(self: @TState) -> felt252;
     fn symbol(self: @TState) -> felt252;
     fn decimals(self: @TState) -> u8;
@@ -14,18 +17,41 @@ trait IUnruggableMemecoin<TState> {
         ref self: TState, sender: ContractAddress, recipient: ContractAddress, amount: u256
     ) -> bool;
     fn approve(ref self: TState, spender: ContractAddress, amount: u256) -> bool;
+    // ************************************
+    // * Additional functions
+    // ************************************
+    fn launch_memecoin(ref self: TState);
 }
 
 #[starknet::contract]
 mod UnruggableMemecoin {
+    // Core dependencies.
+    use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait;
     use integer::BoundedInt;
-    use starknet::ContractAddress;
-    use starknet::get_caller_address;
+    use starknet::{ContractAddress, get_caller_address};
     use zeroable::Zeroable;
 
+    // External dependencies.
+    use openzeppelin::access::ownable::OwnableComponent;
+
+    // Internal dependencies.
     use super::IUnruggableMemecoin;
 
+    // Components.
+    component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
+    impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
+
+    // Constants.
     const DECIMALS: u8 = 18;
+    /// The maximum number of holders allowed before launch.
+    /// This is to prevent the contract from being launched with a large number of holders.
+    /// Once reached, transfers are disabled until the memecoin is launched.
+    const MAX_HOLDERS_BEFORE_LAUNCH: u8 = 10;
+    /// The maximum percentage of the total supply that can be allocated to the team.
+    /// This is to prevent the team from having too much control over the supply.
+    const MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION: u8 = 10;
+    /// The maximum percentage of the supply that can be bought at once.
+    const MAX_PERCENTAGE_BUY_LAUNCH: u8 = 2;
 
     #[storage]
     struct Storage {
@@ -35,6 +61,9 @@ mod UnruggableMemecoin {
         total_supply: u256,
         balances: LegacyMap<ContractAddress, u256>,
         allowances: LegacyMap<(ContractAddress, ContractAddress), u256>,
+        // Components.
+        #[substorage(v0)]
+        ownable: OwnableComponent::Storage
     }
 
     #[event]
@@ -42,6 +71,8 @@ mod UnruggableMemecoin {
     enum Event {
         Transfer: Transfer,
         Approval: Approval,
+        #[flat]
+        OwnableEvent: OwnableComponent::Event
     }
 
     #[derive(Drop, starknet::Event)]
@@ -58,16 +89,30 @@ mod UnruggableMemecoin {
         value: u256
     }
 
+    /// Constructor called once when the contract is deployed.
+    /// # Arguments
+    /// * `owner` - The owner of the contract.
+    /// * `initial_recipient` - The initial recipient of the initial supply.
+    /// * `name` - The name of the token.
+    /// * `symbol` - The symbol of the token.
+    /// * `initial_supply` - The initial supply of the token.
     #[constructor]
     fn constructor(
         ref self: ContractState,
-        recipient: ContractAddress,
+        owner: ContractAddress,
+        initial_recipient: ContractAddress,
         name: felt252,
         symbol: felt252,
         initial_supply: u256
     ) {
+        // Initialize the ERC20 token.
         self.initializer(name, symbol);
-        self._mint(recipient, initial_supply);
+
+        // Initialize the owner.
+        self.ownable.initializer(owner);
+
+        // Mint initial supply to the initial recipient.
+        self._mint(initial_recipient, initial_supply);
     }
 
     //
@@ -75,6 +120,20 @@ mod UnruggableMemecoin {
     //
     #[abi(embed_v0)]
     impl UnruggableMemecoinImpl of IUnruggableMemecoin<ContractState> {
+        // ************************************
+        // * UnruggableMemecoin functions
+        // ************************************
+        fn launch_memecoin(ref self: ContractState) {
+            // Checks: Only the owner can launch the memecoin.
+            self.ownable.assert_only_owner();
+        // Effects.
+
+        // Interactions.
+        }
+
+        // ************************************
+        // * Standard ERC20 functions
+        // ************************************
         fn name(self: @ContractState) -> felt252 {
             self.name.read()
         }
@@ -159,7 +218,7 @@ mod UnruggableMemecoin {
     //
 
     #[generate_trait]
-    impl InternalImpl of InternalTrait {
+    impl UnruggableMemecoinInternalImpl of UnruggableMemecoinInternalTrait {
         fn initializer(ref self: ContractState, name_: felt252, symbol_: felt252) {
             self.name.write(name_);
             self.symbol.write(symbol_);
