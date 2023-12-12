@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <a href="https://unruggable.meme"><a>https://unruggable.meme</a>
+  <a href="https://unruggable.meme">https://unruggable.meme</a>
 </p>
 
 Tired of getting rugpulled? Introducing Unruggable Memecoin, a project designed with security and transparency at its core. Our innovative contracts and safeguards ensure a fair and secure experience for all users.
