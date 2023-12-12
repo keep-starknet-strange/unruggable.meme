@@ -1,6 +1,18 @@
-# Unruggable Memecoin
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<p align="center">
+  <img src="assets/logo/logo.png" height="256">
+</p>
 
-> A framework for building safer memecoins.
+<h1 align="center">⚡ Unruggable Memecoin ⚡</h1>
+
+<p align="center">
+  <strong>☣️ A framework for building safer memecoins 💸</strong>
+  <a>https://unruggable.meme</a>
+</p>
+
+
+# Unruggable Memecoin
 
 Tired of getting rugpulled? Introducing Unruggable Memecoin, a project designed with security and transparency at its core. Our innovative contracts and safeguards ensure a fair and secure experience for all users.
 
