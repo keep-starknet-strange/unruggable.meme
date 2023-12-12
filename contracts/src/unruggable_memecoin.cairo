@@ -56,11 +56,17 @@ mod UnruggableMemecoin {
     #[storage]
     struct Storage {
         marker_v_0: (),
+        // ERC20 
         name: felt252,
         symbol: felt252,
         total_supply: u256,
         balances: LegacyMap<ContractAddress, u256>,
         allowances: LegacyMap<(ContractAddress, ContractAddress), u256>,
+
+        // UnruggableMemecoin
+        launched: bool,
+        pre_launch_holders_count: u8,
+
         // Components.
         #[substorage(v0)]
         ownable: OwnableComponent::Storage
@@ -128,6 +134,8 @@ mod UnruggableMemecoin {
             self.ownable.assert_only_owner();
         // Effects.
 
+            self.launched.write(true);
+
         // Interactions.
         }
 
@@ -161,7 +169,21 @@ mod UnruggableMemecoin {
         }
 
         fn transfer(ref self: ContractState, recipient: ContractAddress, amount: u256) -> bool {
+
             let sender = get_caller_address();
+
+            if self.launched.read() == false {
+                // enforce max number of holders before launch
+                let holders_count = self.pre_launch_holders_count.read();
+                assert(
+                    holders_count < MAX_HOLDERS_BEFORE_LAUNCH, 
+                    'Unruggable: max holders reached'
+                );
+
+                // update holder count
+                self.pre_launch_holders_count.write(holders_count + 1);
+            }
+
             self._transfer(sender, recipient, amount);
             true
         }
@@ -173,6 +195,19 @@ mod UnruggableMemecoin {
             amount: u256
         ) -> bool {
             let caller = get_caller_address();
+
+            if self.launched.read() == false {
+                // enforce max number of holders before launch
+                let holders_count = self.pre_launch_holders_count.read();
+                assert(
+                    holders_count < MAX_HOLDERS_BEFORE_LAUNCH, 
+                    'Unruggable: max holders reached'
+                );
+
+                // update holder count
+                self.pre_launch_holders_count.write(holders_count + 1);
+            }
+
             self._spend_allowance(sender, caller, amount);
             self._transfer(sender, recipient, amount);
             true
