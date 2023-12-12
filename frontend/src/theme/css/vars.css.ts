@@ -13,7 +13,10 @@ const colors = {
   gray800: '#363838',
   gray500: '#828585',
 
-  deepBlue: '#2061AE',
+  vibrantRed: '#ff003e',
+  vibrantPurple: '#6E44FF',
+
+  vibrantGradient: 'linear-gradient(120deg, #ff003e, #6E44FF)',
 }
 
 const fontSizes = {
@@ -61,6 +64,8 @@ const themeContractValues = {
     border1: null,
 
     accent: null,
+    accent2: null,
+
     accentDark: null,
     accentDarker: null,
   },
@@ -201,9 +206,11 @@ createGlobalTheme(':root', vars, {
 
     border1: colors.gray800,
 
-    accent: colors.deepBlue,
-    accentDark: darken(0.05, colors.deepBlue),
-    accentDarker: darken(0.1, colors.deepBlue),
+    accent: colors.vibrantRed,
+    accent2: colors.vibrantPurple,
+
+    accentDark: darken(0.05, colors.vibrantRed),
+    accentDarker: darken(0.1, colors.vibrantRed),
   },
   border: {
     light: '1px solid rgba(0, 0, 0, 0.3)',

@@ -22,25 +22,13 @@ export const logoContainer = sprinkles({
   cursor: 'pointer',
 })
 
-export const baseSideContainer = sprinkles({
-  display: 'flex',
-  flex: '1',
-  flexShrink: '2',
-  width: 'full',
+export const navLink = sprinkles({
+  fontWeight: 'medium',
+  paddingX: '12',
+  paddingY: '8',
+  borderRadius: '10',
+  background: {
+    default: 'transparent',
+    hover: 'bg2',
+  },
 })
-
-export const leftSideContainer = style([
-  baseSideContainer,
-  sprinkles({
-    flex: '1',
-    justifyContent: 'flex-start',
-  }),
-])
-
-export const rightSideContainer = style([
-  baseSideContainer,
-  sprinkles({
-    flex: '1',
-    justifyContent: 'flex-end',
-  }),
-])

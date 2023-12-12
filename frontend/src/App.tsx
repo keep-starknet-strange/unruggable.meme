@@ -2,6 +2,8 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 
 import NavBar from './components/NavBar'
 import HomePage from './pages/Home'
+import LaunchPage from './pages/Launch'
+import ManagePage from './pages/Manage'
 
 interface LayoutWrapperProps {
   children: React.ReactNode
@@ -22,6 +24,22 @@ const router = createBrowserRouter([
     element: (
       <LayoutWrapper>
         <HomePage />
+      </LayoutWrapper>
+    ),
+  },
+  {
+    path: '/launch',
+    element: (
+      <LayoutWrapper>
+        <LaunchPage />
+      </LayoutWrapper>
+    ),
+  },
+  {
+    path: '/manage',
+    element: (
+      <LayoutWrapper>
+        <ManagePage />
       </LayoutWrapper>
     ),
   },
