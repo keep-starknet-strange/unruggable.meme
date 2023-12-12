@@ -114,6 +114,7 @@ mod UnruggableMemecoin {
 
         // Mint initial supply to the initial recipient.
         self._mint(initial_recipient, initial_supply);
+        // Check if the team allocation cap is reached
         self.check_team_allocation();
     }
 
@@ -165,7 +166,9 @@ mod UnruggableMemecoin {
         fn transfer(ref self: ContractState, recipient: ContractAddress, amount: u256) -> bool {
             let sender = get_caller_address();
             self._transfer(sender, recipient, amount);
-            self.check_team_allocation();
+            if (recipient == self.ownable.owner()) {
+                self.check_team_allocation();
+            }
             true
         }
 
@@ -178,7 +181,9 @@ mod UnruggableMemecoin {
             let caller = get_caller_address();
             self._spend_allowance(sender, caller, amount);
             self._transfer(sender, recipient, amount);
-            self.check_team_allocation();
+            if (recipient == self.ownable.owner()) {
+                self.check_team_allocation();
+            }
             true
         }
 
@@ -298,6 +303,9 @@ mod UnruggableMemecoin {
                 'Team allocation cap reached'
             );
         }
+        // Compute the maximum team allocation
+        // total supply * MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION / 100
+        // returns an amount of tokens
         fn _get_max_team_allocation(self: @ContractState) -> u256 {
             self.total_supply.read() * MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION.into() / 100
         }
