@@ -13,9 +13,7 @@ const shouldLintOrTypeCheck = !isProduction
 
 module.exports = {
   babel: {
-    plugins: [
-      '@vanilla-extract/babel-plugin',
-    ],
+    plugins: ['@vanilla-extract/babel-plugin'],
   },
   eslint: {
     enable: shouldLintOrTypeCheck,
@@ -84,7 +82,7 @@ module.exports = {
           {
             loader: require.resolve('css-loader'),
             options: {
-              url: false // Required as image imports should be handled via JS/TS import statements
+              url: false, // Required as image imports should be handled via JS/TS import statements
             },
           },
         ],

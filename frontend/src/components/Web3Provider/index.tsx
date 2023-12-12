@@ -1,6 +1,5 @@
-import { InjectedConnector, StarknetConfig } from '@starknet-react/core'
-import { useMemo } from 'react'
-import { getL2Connections } from 'src/connections'
+import { sepolia } from '@starknet-react/chains'
+import { argent, braavos, publicProvider, StarknetConfig, useInjectedConnectors } from '@starknet-react/core'
 
 // STARKNET
 
@@ -9,13 +8,14 @@ interface StarknetProviderProps {
 }
 
 export function StarknetProvider({ children }: StarknetProviderProps) {
-  const connections = getL2Connections()
-  const connectors: InjectedConnector[] = connections.map(({ connector }) => connector)
-
-  const key = useMemo(() => connections.map((connection) => connection.getName()).join('-'), [connections])
+  const { connectors } = useInjectedConnectors({
+    recommended: [argent(), braavos()],
+    includeRecommended: 'onlyIfNoConnectors',
+    order: 'random',
+  })
 
   return (
-    <StarknetConfig connectors={connectors} key={key} autoConnect>
+    <StarknetConfig connectors={connectors} chains={[sepolia]} provider={publicProvider()} autoConnect>
       {children}
     </StarknetConfig>
   )

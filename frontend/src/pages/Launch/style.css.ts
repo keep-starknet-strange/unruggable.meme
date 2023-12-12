@@ -4,7 +4,7 @@ import { vars } from 'src/theme/css/vars.css'
 
 export const wrapper = style([
   {
-    padding: '68px 8px 0',
+    padding: '68px 0px',
   },
   sprinkles({
     width: 'full',
@@ -27,6 +27,9 @@ export const container = style([
 export const deployButton = style([
   {
     background: vars.color.vibrantGradient,
+    ':disabled': {
+      opacity: '0.5',
+    },
   },
   sprinkles({
     fontSize: '24',
@@ -37,4 +40,10 @@ export const deployButton = style([
 export const inputLabel = sprinkles({
   marginLeft: '8',
   fontWeight: 'medium',
+})
+
+export const errorContainer = sprinkles({
+  paddingX: '8',
+  paddingTop: '4',
+  color: 'vibrantRed',
 })

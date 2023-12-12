@@ -9,6 +9,10 @@ export const Base = sprinkles({
   fontSize: '16',
   color: 'text1',
   paddingY: '12',
+  pointerEvents: {
+    default: 'all',
+    disabled: 'none',
+  },
 })
 
 export const primaryButton = style([
@@ -65,3 +69,24 @@ export const secondaryButton = recipe({
     withIcon: false,
   },
 })
+
+export const iconButton = style([
+  sprinkles({
+    paddingX: '2',
+    paddingY: '2',
+    fontSize: '14',
+    borderRadius: '10',
+    fontWeight: 'medium',
+    cursor: 'pointer',
+    pointerEvents: {
+      default: 'all',
+      disabled: 'none',
+    },
+    color: {
+      default: 'text2',
+      hover: 'text1',
+    },
+    background: 'transparent',
+    border: 'none',
+  }),
+])

@@ -1,4 +1,4 @@
-import { useConnectors } from '@starknet-react/core'
+import { useConnect } from '@starknet-react/core'
 import { Connection, L2Connection } from 'src/connections'
 import { Row } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
@@ -25,8 +25,8 @@ interface L2OptionProps {
 
 export function L2Option({ connection }: L2OptionProps) {
   // wallet activation
-  const { connect } = useConnectors()
-  const activate = () => connect(connection.connector)
+  const { connect } = useConnect()
+  const activate = () => connect({ connector: connection.connector })
 
   return <Option connection={connection} activate={activate} />
 }
