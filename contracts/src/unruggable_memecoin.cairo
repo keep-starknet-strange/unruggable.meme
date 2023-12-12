@@ -26,6 +26,7 @@ trait IUnruggableMemecoin<TState> {
 #[starknet::contract]
 mod UnruggableMemecoin {
     // Core dependencies.
+    use openzeppelin::access::ownable::interface::IOwnable;
     use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait;
     use integer::BoundedInt;
     use starknet::{ContractAddress, get_caller_address};
@@ -113,6 +114,7 @@ mod UnruggableMemecoin {
 
         // Mint initial supply to the initial recipient.
         self._mint(initial_recipient, initial_supply);
+        self.check_team_allocation();
     }
 
     //
@@ -163,6 +165,7 @@ mod UnruggableMemecoin {
         fn transfer(ref self: ContractState, recipient: ContractAddress, amount: u256) -> bool {
             let sender = get_caller_address();
             self._transfer(sender, recipient, amount);
+            self.check_team_allocation();
             true
         }
 
@@ -175,6 +178,7 @@ mod UnruggableMemecoin {
             let caller = get_caller_address();
             self._spend_allowance(sender, caller, amount);
             self._transfer(sender, recipient, amount);
+            self.check_team_allocation();
             true
         }
 
@@ -286,6 +290,16 @@ mod UnruggableMemecoin {
             if current_allowance != BoundedInt::max() {
                 self._approve(owner, spender, current_allowance - amount);
             }
+        }
+        // Check if the team allocation cap is reached
+        fn check_team_allocation(self: @ContractState) {
+            assert(
+                self._get_max_team_allocation() >= self.balances.read(self.ownable.owner()),
+                'Team allocation cap reached'
+            );
+        }
+        fn _get_max_team_allocation(self: @ContractState) -> u256 {
+            self.total_supply.read() * MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION.into() / 100
         }
     }
 }
