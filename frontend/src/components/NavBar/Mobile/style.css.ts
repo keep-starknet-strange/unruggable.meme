@@ -1,11 +1,12 @@
 import { style } from '@vanilla-extract/css'
 import { recipe } from '@vanilla-extract/recipes'
-import { sprinkles } from 'src/theme/css/sprinkles.css'
+import { sprinkles, vars } from 'src/theme/css/sprinkles.css'
 
 export const navBarContainer = style([
   {
     borderTopLeftRadius: '16px',
     borderTopRightRadius: '16px',
+    boxShadow: `0 0 0 1px ${vars.color.border1}`,
   },
   sprinkles({
     background: 'bg2',
@@ -16,9 +17,6 @@ export const navBarContainer = style([
     paddingX: '8',
     paddingBottom: '18',
     paddingTop: '16',
-    borderColor: 'border1',
-    borderTopWidth: '1px',
-    borderStyle: 'solid',
     display: {
       md: 'none',
     },
