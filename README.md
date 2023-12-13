@@ -14,7 +14,13 @@
   <a href="https://unruggable.meme">https://unruggable.meme</a>
 </p>
 
-Tired of getting rugpulled? Introducing Unruggable Memecoin, a project designed with security and transparency at its core. Our innovative contracts and safeguards ensure a fair and secure experience for all users.
+Tired of getting *rugpulled*? Introducing Unruggable Meme, a project designed with security and transparency at its core. Our innovative contracts and safeguards ensure a fair and secure experience for all users.
+
+Become a meme lord and launch your own safe memecoin with [Unruggable Meme](https://unruggable.meme)!
+
+And as a memecoin tradoor, you can use [Unruggable Meme](https://unruggable.meme) to check if a memecoin is safu before investing.
+
+**Become unruggable!**
 
 > ⚠️⚠️⚠️
 >
@@ -30,9 +36,11 @@ The contracts are located in the `contracts/` directory. It's a `scarb` project,
 
 It uses `Starknet Foundry` for tests.
 
+See the [contracts README](contracts/README.md) for more information.
+
 ### Frontend
 
-> TODO
+See the [frontend README](frontend/README.md) for more information.
 
 ## 📖 License
 
