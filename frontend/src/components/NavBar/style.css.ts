@@ -1,14 +1,37 @@
 import { style } from '@vanilla-extract/css'
+import { recipe } from '@vanilla-extract/recipes'
 import { sprinkles } from 'src/theme/css/sprinkles.css'
 
-export const nav = style([
-  sprinkles({
-    position: 'sticky',
-    top: '0',
-    padding: '24',
-    zIndex: 'sticky',
-  }),
-])
+export const nav = recipe({
+  base: [
+    sprinkles({
+      position: 'sticky',
+      top: '0',
+      padding: '24',
+      zIndex: 'sticky',
+      transition: '125',
+    }),
+  ],
+
+  variants: {
+    onTop: {
+      true: {},
+      false: [
+        sprinkles({
+          background: 'bg2',
+          borderWidth: '0px',
+          borderBottomWidth: '1px',
+          borderColor: 'border1',
+          borderStyle: 'solid',
+        }),
+      ],
+    },
+  },
+
+  defaultVariants: {
+    onTop: true,
+  },
+})
 
 export const logoContainer = style([
   {

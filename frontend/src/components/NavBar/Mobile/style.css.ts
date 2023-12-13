@@ -20,6 +20,7 @@ export const navBarContainer = style([
     display: {
       md: 'none',
     },
+    zIndex: 'sticky',
   }),
 ])
 

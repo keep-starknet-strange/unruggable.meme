@@ -3,14 +3,18 @@ import { transparentize } from 'polished'
 import { sprinkles, vars } from 'src/theme/css/sprinkles.css'
 
 export const container = style([
-  {
+  sprinkles({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
     textAlign: 'center',
     overflow: 'auto',
-  },
+    paddingBottom: {
+      sm: '88',
+      md: '32',
+    },
+  }),
 ])
 
 export const backgroundContainer = style([

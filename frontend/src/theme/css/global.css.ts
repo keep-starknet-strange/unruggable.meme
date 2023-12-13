@@ -4,13 +4,12 @@ import { vars } from './sprinkles.css'
 
 globalStyle('*', {
   fontFamily: "'Inter', sans-serif",
+  boxSizing: 'border-box',
 })
 
 globalStyle('html, body', {
   margin: 0,
   padding: 0,
-  height: '100vh',
-  overflow: 'hidden',
 })
 
 globalStyle('html', {
