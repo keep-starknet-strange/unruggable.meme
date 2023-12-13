@@ -1,1 +1,3 @@
-mod unruggable_memecoin;
+mod tokens {
+    mod memecoin;
+}

@@ -2,7 +2,7 @@ use core::traits::Into;
 use starknet::{ContractAddress, contract_address_const};
 use openzeppelin::token::erc20::interface::IERC20;
 use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
-use unruggablememecoin::unruggable_memecoin::{
+use unruggable::tokens::memecoin::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait,
     UnruggableMemecoin::MAX_HOLDERS_BEFORE_LAUNCH,
     UnruggableMemecoin::MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION,

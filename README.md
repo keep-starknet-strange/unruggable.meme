@@ -1,8 +1,26 @@
-# Unruggable Memecoin
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<p align="center">
+  <img src="assets/logo/logo.png" height="256">
+</p>
 
-> A framework for building safer memecoins.
+<h1 align="center">⚡ Unruggable Meme ⚡</h1>
 
-Tired of getting rugpulled? Introducing Unruggable Memecoin, a project designed with security and transparency at its core. Our innovative contracts and safeguards ensure a fair and secure experience for all users.
+<p align="center">
+  <strong>☣️ A framework for building safer memecoins 💸</strong>
+</p>
+
+<p align="center">
+  <a href="https://unruggable.meme">https://unruggable.meme</a>
+</p>
+
+Tired of getting *rugpulled*? Introducing Unruggable Meme, a project designed with security and transparency at its core. Our innovative contracts and safeguards ensure a fair and secure experience for all users.
+
+Become a meme lord and launch your own safe memecoin with [Unruggable Meme](https://unruggable.meme)!
+
+And as a memecoin tradoor, you can use [Unruggable Meme](https://unruggable.meme) to check if a memecoin is safu before investing.
+
+**Become unruggable!**
 
 > ⚠️⚠️⚠️
 >
@@ -18,9 +36,11 @@ The contracts are located in the `contracts/` directory. It's a `scarb` project,
 
 It uses `Starknet Foundry` for tests.
 
+See the [contracts README](contracts/README.md) for more information.
+
 ### Frontend
 
-> TODO
+See the [frontend README](frontend/README.md) for more information.
 
 ## 📖 License
 
@@ -38,6 +58,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/abdelhamidbakhta"><img src="https://avatars.githubusercontent.com/u/45264458?v=4?s=100" width="100px;" alt="Abdel @ StarkWare "/><br /><sub><b>Abdel @ StarkWare </b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=abdelhamidbakhta" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://rules.art/"><img src="https://avatars.githubusercontent.com/u/19663399?v=4?s=100" width="100px;" alt="Charles Lanier"/><br /><sub><b>Charles Lanier</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=0xChqrles" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://ceccon.me/"><img src="https://avatars.githubusercontent.com/u/282580?v=4?s=100" width="100px;" alt="Francesco Ceccon"/><br /><sub><b>Francesco Ceccon</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=fracek" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>

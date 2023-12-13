@@ -1,46 +1,34 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 
-import NavBar from './components/NavBar'
+import AppLayout from './components/Layout/App'
+import HomeLayout from './components/Layout/Home'
 import HomePage from './pages/Home'
 import LaunchPage from './pages/Launch'
 import ManagePage from './pages/Manage'
-
-interface LayoutWrapperProps {
-  children: React.ReactNode
-}
-
-function LayoutWrapper({ children }: LayoutWrapperProps) {
-  return (
-    <>
-      <NavBar />
-      {children}
-    </>
-  )
-}
 
 const router = createBrowserRouter([
   {
     path: '/',
     element: (
-      <LayoutWrapper>
+      <HomeLayout>
         <HomePage />
-      </LayoutWrapper>
+      </HomeLayout>
     ),
   },
   {
     path: '/launch',
     element: (
-      <LayoutWrapper>
+      <AppLayout>
         <LaunchPage />
-      </LayoutWrapper>
+      </AppLayout>
     ),
   },
   {
     path: '/manage',
     element: (
-      <LayoutWrapper>
+      <AppLayout>
         <ManagePage />
-      </LayoutWrapper>
+      </AppLayout>
     ),
   },
 ])

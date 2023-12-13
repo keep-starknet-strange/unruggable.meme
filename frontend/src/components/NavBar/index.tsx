@@ -11,7 +11,7 @@ export default function NavBar() {
   const navigate = useNavigate()
 
   return (
-    <Box as="nav" className={styles.Nav}>
+    <Box as="nav" className={styles.nav}>
       <Row justifyContent="space-between">
         <Row gap="24">
           <Box className={styles.logoContainer}>
