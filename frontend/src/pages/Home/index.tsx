@@ -35,12 +35,12 @@ export default function HomePage() {
       <Column as="article" className={styles.secondArticle}>
         <Box>
           <Text.Custom color="text2" marginLeft="8" fontWeight="normal" fontSize="18">
-            Meet Unruggable Memecoins
+            Meet Unruggable Meme
           </Text.Custom>
 
           <Text.Body>
             Tired of getting rugpulled? Introducing Unruggable Memecoin, a project designed with security and
-            transparency at its core. Your go-to platform for deploying secure memecoins on starknet.
+            transparency at its core. Your go-to platform for deploying safer memecoins on starknet.
             <br />
             <br />
             Our innovative contracts and safeguards ensure a fair and secure experience for all users.

@@ -68,7 +68,7 @@ export default function LaunchPage() {
           <Column gap="20">
             <Column gap="4">
               <Text.Body className={styles.inputLabel}>Name</Text.Body>
-              <Input placeholder="Starknet" {...register('name')} />
+              <Input placeholder="Unruggable" {...register('name')} />
               <Box className={styles.errorContainer}>
                 {errors.name?.message ? <Text.Error>{errors.name.message}</Text.Error> : null}
               </Box>
@@ -76,7 +76,7 @@ export default function LaunchPage() {
 
             <Column gap="4">
               <Text.Body className={styles.inputLabel}>Symbol</Text.Body>
-              <Input placeholder="STRK" {...register('symbol')} />
+              <Input placeholder="MEME" {...register('symbol')} />
               <Box className={styles.errorContainer}>
                 {errors.symbol?.message ? <Text.Error>{errors.symbol.message}</Text.Error> : null}
               </Box>
