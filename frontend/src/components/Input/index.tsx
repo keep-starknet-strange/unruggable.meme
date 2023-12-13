@@ -8,7 +8,7 @@ type InputProps = {
   addon?: React.ReactNode
 } & BoxProps
 
-const Input = forwardRef(function ({ addon, className, ...props }: InputProps, ref) {
+const Input = forwardRef<HTMLElement, InputProps>(function ({ addon, className, ...props }, ref) {
   return (
     <Box className={clsx(className, styles.inputContainer)}>
       <Box as="input" className={styles.input} {...props} ref={ref} />
