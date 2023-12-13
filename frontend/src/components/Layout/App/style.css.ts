@@ -14,3 +14,11 @@ export const radial = style([
     background: 'appGradient',
   }),
 ])
+
+export const chainWarning = sprinkles({
+  width: 'full',
+  paddingY: '8',
+  textAlign: 'center',
+  backgroundColor: 'accent',
+  color: 'text1',
+})
