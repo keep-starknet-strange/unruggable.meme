@@ -25,6 +25,14 @@ export const logoContainer = style([
   }),
 ])
 
+export const navLinksContainer = sprinkles({
+  gap: '12',
+  display: {
+    sm: 'none',
+    md: 'flex',
+  },
+})
+
 export const navLink = sprinkles({
   fontWeight: 'medium',
   fontSize: '18',
