@@ -18,3 +18,6 @@ allowed-libfuncs-list.name = "experimental"
 
 [cairo]
 sierra-replace-ids = true
+
+[tool.fmt]
+sort-module-level-items = true

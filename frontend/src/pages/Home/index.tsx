@@ -3,7 +3,6 @@ import onlyonstarknet from 'src/assets/onlyonstarknet.png'
 import { PrimaryButton, SecondaryButton } from 'src/components/Button'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
-
 import * as styles from './style.css'
 
 export default function HomePage() {
