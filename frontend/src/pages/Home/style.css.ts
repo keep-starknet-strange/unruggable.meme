@@ -2,6 +2,17 @@ import { style } from '@vanilla-extract/css'
 import { transparentize } from 'polished'
 import { sprinkles, vars } from 'src/theme/css/sprinkles.css'
 
+export const container = style([
+  {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+    overflow: 'auto',
+  },
+])
+
 export const backgroundContainer = style([
   {
     zIndex: '-99',
@@ -39,30 +50,39 @@ export const background = style([
 export const titleContainer = sprinkles({
   textAlign: 'center',
   gap: '16',
+  paddingX: '32',
 })
 
 export const title = style([
   {
-    fontSize: '96px',
     textShadow: '4px 4px 0 #000000',
+    color: 'white',
   },
   sprinkles({
     marginTop: '42',
+    marginBottom: '0',
+    fontSize: { md: '48', lg: '96' },
   }),
 ])
 
 export const subtitle = style([
   sprinkles({
-    maxHeight: '64',
+    maxHeight: { sm: '18', md: '32', lg: '32' },
     marginX: 'auto',
   }),
 ])
 
 export const firstArticle = style([
   sprinkles({
-    marginTop: '128',
+    marginTop: '42',
     gap: '24',
+    display: 'flex',
     alignItems: 'center',
+    justifyContent: 'center',
+    fontWeight: 'normal',
+    paddingX: { sm: '32', md: '64' },
+    fontSize: { sm: '18', md: '24', lg: '24' },
+    color: 'white',
   }),
 ])
 
@@ -72,17 +92,12 @@ export const firstArticleButton = style([
   }),
 ])
 
-export const secondArticle = style([
-  sprinkles({
-    position: 'absolute',
-    left: '64',
-    bottom: '64',
-    right: '64',
-    borderColor: 'border1',
-    borderStyle: 'solid',
-    borderWidth: '0px',
-    borderTopWidth: '1px',
-    paddingTop: '24',
-    paddingX: '32',
-  }),
+export const buttonContainer = style([
+  {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    textAlign: 'center',
+    flexWrap: 'wrap',
+  },
 ])

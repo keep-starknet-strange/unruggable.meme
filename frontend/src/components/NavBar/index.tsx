@@ -7,6 +7,17 @@ import * as Text from 'src/theme/components/Text'
 import Web3Status from '../Web3Status'
 import * as styles from './style.css'
 
+export const links = [
+  {
+    name: 'Launch',
+    path: '/launch',
+  },
+  {
+    name: 'Manage',
+    path: '/manage',
+  },
+]
+
 export default function NavBar() {
   const navigate = useNavigate()
 
@@ -22,15 +33,13 @@ export default function NavBar() {
             />
           </Box>
 
-          <Row gap="12">
-            <Link to="/launch">
-              <Text.Body className={styles.navLink}>Launch</Text.Body>
-            </Link>
-
-            <Link to="/manage">
-              <Text.Body className={styles.navLink}>Manage</Text.Body>
-            </Link>
-          </Row>
+          <Box className={styles.navLinksContainer}>
+            {links.map(({ name, path }) => (
+              <Link key={path} to={path}>
+                <Text.Body className={styles.navLink}>{name}</Text.Body>
+              </Link>
+            ))}
+          </Box>
         </Row>
 
         <Box>
