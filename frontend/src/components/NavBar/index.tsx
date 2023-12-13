@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Box from 'src/theme/components/Box'
 import { Row } from 'src/theme/components/Flex'
@@ -23,10 +24,23 @@ export const links = [
 ]
 
 export default function NavBar() {
+  // state
+  const [scrolledOnTop, setScrolledOnTop] = useState(true)
+
   const navigate = useNavigate()
 
+  useEffect(() => {
+    const scrollListener = () => {
+      setScrolledOnTop(!window.scrollY)
+    }
+
+    window.addEventListener('scroll', scrollListener)
+
+    return () => window.removeEventListener('scroll', scrollListener)
+  }, [])
+
   return (
-    <Box as="nav" className={styles.nav}>
+    <Box as="nav" className={styles.nav({ onTop: scrolledOnTop })}>
       <Row justifyContent="space-between">
         <Row gap="24">
           <Box className={styles.logoContainer}>

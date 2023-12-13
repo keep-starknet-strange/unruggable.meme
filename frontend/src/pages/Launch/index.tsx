@@ -147,7 +147,7 @@ export default function LaunchPage() {
             <div />
 
             <PrimaryButton disabled={!account} className={styles.deployButton}>
-              {account ? 'DEPLOY' : 'CONNECT WALLET'}
+              {account ? 'Deploy' : 'Connect wallet'}
             </PrimaryButton>
           </Column>
         </Box>
