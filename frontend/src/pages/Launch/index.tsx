@@ -1,13 +1,15 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useAccount } from '@starknet-react/core'
+import { useAccount, useContractWrite, useExplorer } from '@starknet-react/core'
 import { Wallet, X } from 'lucide-react'
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { IconButton, PrimaryButton, SecondaryButton } from 'src/components/Button'
 import Input from 'src/components/Input'
+import { TOKEN_CLASS_HASH, UDC } from 'src/constants/contracts'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
+import { CallData, hash, stark, uint256 } from 'starknet'
 import { z } from 'zod'
 
 import * as styles from './style.css'
@@ -16,7 +18,9 @@ const MAX_HOLDERS = 10
 
 const address = z.string().refine(
   (addr) => {
-    return addr.startsWith('0x') && addr.length === 66
+    // Wallets like to omit leading zeroes, so we cannot check for a fixed length.
+    // On the other hand, we don't want users to mistakenly enter an Ethereum address.
+    return /^0x[0-9a-fA-F]{50,64}$/.test(addr)
   },
   { message: 'Invalid Starknet address' }
 )
@@ -31,11 +35,21 @@ const schema = z.object({
   symbol: z.string().min(1),
   initialRecipientAddress: address,
   ownerAddress: address,
+  initialSupply: z.number().min(0),
   holders: z.array(holder),
 })
 
 export default function LaunchPage() {
+  const [deployedToken, setDeployedToken] = useState<{ address: string; tx: string } | undefined>(undefined)
+
+  const explorer = useExplorer()
   const { account, address } = useAccount()
+  const { writeAsync, isPending, reset: resetWrite } = useContractWrite({})
+
+  // If you need the transaction status, you can use this hook.
+  // Notice that RPC providers will take some time to receive the transaction,
+  // so you will get a "transaction not found" for a few sounds after deployment.
+  // const {} = useWaitForTransaction({ hash: deployedToken?.address })
 
   const {
     control,
@@ -43,7 +57,11 @@ export default function LaunchPage() {
     handleSubmit,
     setValue,
     formState: { errors },
-  } = useForm<z.infer<typeof schema>>({ resolver: zodResolver(schema) })
+    reset: resetForm,
+  } = useForm<z.infer<typeof schema>>({
+    resolver: zodResolver(schema),
+    defaultValues: { initialSupply: 10_000_000_000 },
+  })
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -51,15 +69,53 @@ export default function LaunchPage() {
   })
 
   const deployToken = useCallback(
-    (data: z.infer<typeof schema>) => {
-      console.log('deploy token form account', account?.address, data)
-      // data contains data to be used for deploying.
-      // use `account.execute` to deploy the token.
-      // TODO: wait for Starknet React to support overriding call arguments so it
-      // plays nicely with react-hook-form.
+    async (data: z.infer<typeof schema>) => {
+      if (!account?.address) return
+
+      const salt = stark.randomAddress()
+      const unique = 0
+
+      const ctorCalldata = CallData.compile([
+        data.ownerAddress,
+        data.initialRecipientAddress,
+        data.name,
+        data.symbol,
+        uint256.bnToUint256(BigInt(data.initialSupply)),
+      ])
+
+      // Token address. Used to transfer tokens to initial holders.
+      const tokenAddress = hash.calculateContractAddressFromHash(salt, TOKEN_CLASS_HASH, ctorCalldata, unique)
+
+      const deploy = {
+        contractAddress: UDC.ADDRESS,
+        entrypoint: UDC.ENTRYPOINT,
+        calldata: [TOKEN_CLASS_HASH, salt, unique, ctorCalldata.length, ...ctorCalldata],
+      }
+
+      const transfers = data.holders.map(({ address, amount }) => ({
+        contractAddress: tokenAddress,
+        entrypoint: 'transfer',
+        calldata: CallData.compile([address, uint256.bnToUint256(BigInt(amount))]),
+      }))
+
+      try {
+        const response = await writeAsync({
+          calls: [deploy, ...transfers],
+        })
+
+        setDeployedToken({ address: tokenAddress, tx: response.transaction_hash })
+      } catch (err) {
+        console.error(err)
+      }
     },
-    [account]
+    [account, writeAsync]
   )
+
+  const restart = useCallback(() => {
+    resetWrite()
+    resetForm()
+    setDeployedToken(undefined)
+  }, [resetForm, resetWrite, setDeployedToken])
 
   return (
     <Row className={styles.wrapper}>
@@ -108,7 +164,11 @@ export default function LaunchPage() {
               <Input
                 placeholder="0x000000000000000000"
                 addon={
-                  <IconButton disabled={!address} onClick={() => (address ? setValue('ownerAddress', address) : null)}>
+                  <IconButton
+                    type="button"
+                    disabled={!address}
+                    onClick={() => (address ? setValue('ownerAddress', address) : null)}
+                  >
                     <Wallet />
                   </IconButton>
                 }
@@ -119,13 +179,21 @@ export default function LaunchPage() {
               </Box>
             </Column>
 
+            <Column gap="4">
+              <Text.Body className={styles.inputLabel}>Initial Supply</Text.Body>
+              <Input {...register('initialSupply', { valueAsNumber: true })} />
+              <Box className={styles.errorContainer}>
+                {errors.initialSupply?.message ? <Text.Error>{errors.initialSupply.message}</Text.Error> : null}
+              </Box>
+            </Column>
+
             {fields.map((field, index) => (
               <Column gap="4" key={field.id}>
                 <Text.Body className={styles.inputLabel}>Holder {index + 1}</Text.Body>
                 <Column gap="2" flexDirection="row">
                   <Input placeholder="Holder address" {...register(`holders.${index}.address`)} />
                   <Input placeholder="Tokens" {...register(`holders.${index}.amount`, { valueAsNumber: true })} />
-                  <IconButton onClick={() => remove(index)}>
+                  <IconButton type="button" onClick={() => remove(index)}>
                     <X />
                   </IconButton>
                 </Column>
@@ -146,9 +214,30 @@ export default function LaunchPage() {
 
             <div />
 
-            <PrimaryButton disabled={!account} className={styles.deployButton}>
-              {account ? 'Deploy' : 'Connect wallet'}
-            </PrimaryButton>
+            {deployedToken ? (
+              <Column gap="4">
+                <Text.HeadlineMedium textAlign="center">Token deployed!</Text.HeadlineMedium>
+                <Column gap="2">
+                  <Text.Body className={styles.inputLabel}>Token address</Text.Body>
+                  <Text.Body className={styles.deployedAddress}>
+                    <a href={explorer.contract(deployedToken.address)}>{deployedToken.address}</a>.
+                  </Text.Body>
+                </Column>
+                <Column gap="2">
+                  <Text.Body className={styles.inputLabel}>Transaction</Text.Body>
+                  <Text.Body className={styles.deployedAddress}>
+                    <a href={explorer.transaction(deployedToken.tx)}>{deployedToken.tx}</a>.
+                  </Text.Body>
+                </Column>
+                <PrimaryButton onClick={restart} type="button" className={styles.deployButton}>
+                  Start over
+                </PrimaryButton>
+              </Column>
+            ) : (
+              <PrimaryButton disabled={!account || isPending} className={styles.deployButton}>
+                {account ? (isPending ? 'WAITING FOR SIGNATURE' : 'DEPLOY') : 'CONNECT WALLET'}
+              </PrimaryButton>
+            )}
           </Column>
         </Box>
       </Box>

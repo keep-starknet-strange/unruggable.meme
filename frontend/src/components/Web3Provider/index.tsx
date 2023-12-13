@@ -1,5 +1,5 @@
 import { sepolia } from '@starknet-react/chains'
-import { argent, braavos, publicProvider, StarknetConfig, useInjectedConnectors } from '@starknet-react/core'
+import { argent, braavos, publicProvider, StarknetConfig, starkscan, useInjectedConnectors } from '@starknet-react/core'
 
 // STARKNET
 
@@ -15,7 +15,13 @@ export function StarknetProvider({ children }: StarknetProviderProps) {
   })
 
   return (
-    <StarknetConfig connectors={connectors} chains={[sepolia]} provider={publicProvider()} autoConnect>
+    <StarknetConfig
+      connectors={connectors}
+      chains={[sepolia]}
+      provider={publicProvider()}
+      explorer={starkscan}
+      autoConnect
+    >
       {children}
     </StarknetConfig>
   )
