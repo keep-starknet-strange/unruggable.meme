@@ -20,7 +20,7 @@ export default function HomePage() {
       </Column>
 
       <Column as="article" className={styles.firstArticle}>
-        <Text.HeadlineMedium>The framework to build safer memecoins</Text.HeadlineMedium>
+        <Text.HeadlineMedium>The pioneer framework to build safer memecoins</Text.HeadlineMedium>
         <Row gap="16">
           <Link to="/launch">
             <PrimaryButton className={styles.firstArticleButton}>Launch</PrimaryButton>
@@ -35,12 +35,12 @@ export default function HomePage() {
       <Column as="article" className={styles.secondArticle}>
         <Box>
           <Text.Custom color="text2" marginLeft="8" fontWeight="normal" fontSize="18">
-            Meet Unrrugable Memecoin
+            Meet Unruggable Memecoins
           </Text.Custom>
 
           <Text.Body>
             Tired of getting rugpulled? Introducing Unruggable Memecoin, a project designed with security and
-            transparency at its core.
+            transparency at its core. Your go-to platform for deploying secure memecoins on starknet.
             <br />
             <br />
             Our innovative contracts and safeguards ensure a fair and secure experience for all users.
