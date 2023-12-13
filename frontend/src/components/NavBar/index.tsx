@@ -17,6 +17,10 @@ export const links = [
     name: 'Manage',
     path: '/manage',
   },
+  {
+    name: 'Screen',
+    path: '/screen',
+  },
 ]
 
 export default function NavBar() {
