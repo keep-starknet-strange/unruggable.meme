@@ -21,6 +21,7 @@ trait IUnruggableMemecoin<TState> {
     // * Additional functions
     // ************************************
     fn launch_memecoin(ref self: TState);
+    fn get_max_team_allocation(self: @TState) -> u256;
 }
 
 #[starknet::contract]
@@ -114,8 +115,6 @@ mod UnruggableMemecoin {
 
         // Mint initial supply to the initial recipient.
         self._mint(initial_recipient, initial_supply);
-        // Check if the team allocation cap is reached
-        self.check_team_allocation();
     }
 
     //
@@ -129,9 +128,19 @@ mod UnruggableMemecoin {
         fn launch_memecoin(ref self: ContractState) {
             // Checks: Only the owner can launch the memecoin.
             self.ownable.assert_only_owner();
+            // Checks team allocation, should be less than 10% of the total supply.
+            self.check_team_allocation(0);
         // Effects.
 
         // Interactions.
+
+        }
+        /// Compute the maximum team allocation
+        /// total supply * MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION / 100
+        /// # RETURNS
+        /// - amount of tokens
+        fn get_max_team_allocation(self: @ContractState) -> u256 {
+            self.total_supply.read() * MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION.into() / 100
         }
 
         // ************************************
@@ -164,11 +173,11 @@ mod UnruggableMemecoin {
         }
 
         fn transfer(ref self: ContractState, recipient: ContractAddress, amount: u256) -> bool {
+            if (recipient == self.ownable.owner()) {
+                self.check_team_allocation(amount);
+            }
             let sender = get_caller_address();
             self._transfer(sender, recipient, amount);
-            if (recipient == self.ownable.owner()) {
-                self.check_team_allocation();
-            }
             true
         }
 
@@ -178,12 +187,13 @@ mod UnruggableMemecoin {
             recipient: ContractAddress,
             amount: u256
         ) -> bool {
+            if (recipient == self.ownable.owner()) {
+                self.check_team_allocation(amount);
+            }
             let caller = get_caller_address();
             self._spend_allowance(sender, caller, amount);
             self._transfer(sender, recipient, amount);
-            if (recipient == self.ownable.owner()) {
-                self.check_team_allocation();
-            }
+
             true
         }
 
@@ -221,6 +231,7 @@ mod UnruggableMemecoin {
     ) -> bool {
         decrease_allowance(ref self, spender, subtractedValue)
     }
+
 
     //
     // Internal
@@ -296,18 +307,14 @@ mod UnruggableMemecoin {
                 self._approve(owner, spender, current_allowance - amount);
             }
         }
-        // Check if the team allocation cap is reached
-        fn check_team_allocation(self: @ContractState) {
+        /// Check if the team allocation cap is reached
+        fn check_team_allocation(self: @ContractState, amount: u256) {
             assert(
-                self._get_max_team_allocation() >= self.balances.read(self.ownable.owner()),
+                self
+                    .get_max_team_allocation() >= (self.balances.read(self.ownable.owner())
+                        + amount),
                 'Team allocation cap reached'
             );
-        }
-        // Compute the maximum team allocation
-        // total supply * MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION / 100
-        // returns an amount of tokens
-        fn _get_max_team_allocation(self: @ContractState) -> u256 {
-            self.total_supply.read() * MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION.into() / 100
         }
     }
 }
