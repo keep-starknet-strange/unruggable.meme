@@ -1,7 +1,6 @@
 import { sprinkles } from 'src/theme/css/sprinkles.css'
 
 export const inputContainer = sprinkles({
-  background: 'bg2',
   display: 'flex',
   alignItems: 'center',
   borderRadius: '10',
@@ -15,8 +14,8 @@ export const inputContainer = sprinkles({
     hover: 'accent',
   },
   gap: '8',
-  transitionDuration: 'fast',
-  backgroundColor: 'bg1Transparent',
+  transitionDuration: '125',
+  backgroundColor: 'bg1',
 })
 
 export const input = sprinkles({

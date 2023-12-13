@@ -7,5 +7,5 @@ export const option = sprinkles({
   borderRadius: '10',
   padding: '8',
   cursor: 'pointer',
-  transitionDuration: 'fast',
+  transitionDuration: '125',
 })

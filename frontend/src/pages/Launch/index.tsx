@@ -34,7 +34,7 @@ const schema = z.object({
   holders: z.array(holder),
 })
 
-export default function HomePage() {
+export default function LaunchPage() {
   const { account, address } = useAccount()
 
   const {

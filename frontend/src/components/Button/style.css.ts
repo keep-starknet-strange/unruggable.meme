@@ -20,19 +20,11 @@ export const primaryButton = style([
   sprinkles({
     paddingX: '16',
     border: 'none',
-    background: {
-      default: 'accent',
-      hover: 'accentDark',
-      focus: 'accentDarker',
-      active: 'accentDarker',
-    },
-    outlineStyle: 'solid',
-    outlineWidth: '1px',
-    outlineColor: {
-      default: 'transparent',
-      hover: 'accentDark',
-      focus: 'accentDarker',
-      active: 'accentDarker',
+    background: 'accentGradient',
+    opacity: {
+      hover: 'hover',
+      focus: 'focus',
+      active: 'focus',
     },
     color: 'text1',
   }),
@@ -54,7 +46,7 @@ export const secondaryButton = recipe({
         default: 'text2',
         hover: 'text1',
       },
-      transitionDuration: 'fast',
+      transitionDuration: '125',
     }),
   ],
 
