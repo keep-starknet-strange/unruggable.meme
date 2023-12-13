@@ -1,6 +1,5 @@
 import { style } from '@vanilla-extract/css'
 import { sprinkles } from 'src/theme/css/sprinkles.css'
-import { vars } from 'src/theme/css/vars.css'
 
 export const wrapper = style([
   {
@@ -26,7 +25,6 @@ export const container = style([
 
 export const deployButton = style([
   {
-    background: vars.color.vibrantGradient,
     ':disabled': {
       opacity: '0.5',
     },
@@ -45,5 +43,5 @@ export const inputLabel = sprinkles({
 export const errorContainer = sprinkles({
   paddingX: '8',
   paddingTop: '4',
-  color: 'vibrantRed',
+  color: 'error',
 })

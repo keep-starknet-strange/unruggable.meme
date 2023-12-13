@@ -122,7 +122,7 @@ export const Error = ({ className, ...props }: TextProps) => (
       className,
       sprinkles({
         fontWeight: 'normal',
-        color: 'vibrantRed',
+        color: 'error',
         fontSize: '14',
       })
     )}

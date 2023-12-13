@@ -12,9 +12,6 @@ const isProduction = process.env.NODE_ENV === 'production'
 const shouldLintOrTypeCheck = !isProduction
 
 module.exports = {
-  babel: {
-    plugins: ['@vanilla-extract/babel-plugin'],
-  },
   eslint: {
     enable: shouldLintOrTypeCheck,
     pluginOptions(eslintConfig) {
