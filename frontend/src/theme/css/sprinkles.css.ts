@@ -162,6 +162,11 @@ export const vars = createGlobalTheme(':root', {
     '24': '24px',
     '28': '28px',
     '32': '32px',
+    '36': '36px',
+    '42': '42px',
+    '48': '48px',
+    '64': '64px',
+    '96': '96px',
   },
   lineHeight: {
     auto: 'auto',
