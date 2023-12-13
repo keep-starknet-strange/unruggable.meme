@@ -10,10 +10,7 @@ import * as styles from './style.css'
 export default function HomePage() {
   return (
     <Box>
-      <Box as="span" className={styles.backgroundContainer}>
-        <Box as="span" className={styles.background} />
-      </Box>
-
+      <Box as="span" className={`${styles.backgroundContainer} ${styles.background}`} />
       <Column className={styles.titleContainer}>
         <Text.HeadlineLarge className={styles.title}>Unruggable Memecoin</Text.HeadlineLarge>
         <Box as="img" src={onlyonstarknet} className={styles.subtitle} />

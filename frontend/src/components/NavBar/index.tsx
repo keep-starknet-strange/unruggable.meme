@@ -13,7 +13,7 @@ export const links = [
     path: '/launch',
   },
   {
-    name: 'Manager',
+    name: 'Manage',
     path: '/manage',
   },
 ]

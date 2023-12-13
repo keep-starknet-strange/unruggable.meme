@@ -63,6 +63,7 @@ export default function LaunchPage() {
 
   return (
     <Row className={styles.wrapper}>
+      <Box as="span" className={`${styles.backgroundContainer} ${styles.background}`} />
       <Box className={styles.container}>
         <Box as="form" onSubmit={handleSubmit(deployToken)}>
           <Column gap="20">
