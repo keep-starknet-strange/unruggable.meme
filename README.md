@@ -4,7 +4,7 @@
   <img src="assets/logo/logo.png" height="256">
 </p>
 
-<h1 align="center">⚡ Unruggable Memecoin ⚡</h1>
+<h1 align="center">⚡ Unruggable Meme ⚡</h1>
 
 <p align="center">
   <strong>☣️ A framework for building safer memecoins 💸</strong>

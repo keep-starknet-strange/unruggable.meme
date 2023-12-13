@@ -12,7 +12,7 @@ version = "0.1.0"
 source = "git+https://github.com/foundry-rs/starknet-foundry?tag=v0.12.0#0c3d2fe4ab31aa4484fa216417408ae65a149efe"
 
 [[package]]
-name = "unruggablememecoin"
+name = "unruggable"
 version = "0.1.0"
 dependencies = [
  "openzeppelin",

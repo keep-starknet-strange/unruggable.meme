@@ -4,7 +4,7 @@ use starknet::{ContractAddress, contract_address_const};
 use openzeppelin::token::erc20::interface::IERC20;
 use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank};
 
-use unruggablememecoin::unruggable_memecoin::{
+use unruggable::tokens::memecoin::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
 };
 
