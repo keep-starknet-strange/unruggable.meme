@@ -51,3 +51,10 @@ export const errorContainer = sprinkles({
   paddingTop: '4',
   color: 'error',
 })
+
+export const deployedAddress = sprinkles({
+  marginLeft: '8',
+  fontWeight: 'medium',
+  textOverflow: 'ellipsis',
+  overflow: 'hidden',
+})

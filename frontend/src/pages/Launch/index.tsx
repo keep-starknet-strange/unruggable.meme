@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useAccount, useContractWrite } from '@starknet-react/core'
+import { useAccount, useContractWrite, useExplorer } from '@starknet-react/core'
 import { Wallet, X } from 'lucide-react'
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { IconButton, PrimaryButton, SecondaryButton } from 'src/components/Button'
 import Input from 'src/components/Input'
@@ -40,8 +40,16 @@ const schema = z.object({
 })
 
 export default function LaunchPage() {
+  const [deployedToken, setDeployedToken] = useState<{ address: string; tx: string } | undefined>(undefined)
+
+  const explorer = useExplorer()
   const { account, address } = useAccount()
-  const { writeAsync, isPending } = useContractWrite({})
+  const { writeAsync, isPending, reset: resetWrite } = useContractWrite({})
+
+  // If you need the transaction status, you can use this hook.
+  // Notice that RPC providers will take some time to receive the transaction,
+  // so you will get a "transaction not found" for a few sounds after deployment.
+  // const {} = useWaitForTransaction({ hash: deployedToken?.address })
 
   const {
     control,
@@ -49,6 +57,7 @@ export default function LaunchPage() {
     handleSubmit,
     setValue,
     formState: { errors },
+    reset: resetForm,
   } = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: { initialSupply: 10_000_000_000 },
@@ -83,18 +92,30 @@ export default function LaunchPage() {
         calldata: [TOKEN_CLASS_HASH, salt, unique, ctorCalldata.length, ...ctorCalldata],
       }
 
+      const transfers = data.holders.map(({ address, amount }) => ({
+        contractAddress: tokenAddress,
+        entrypoint: 'transfer',
+        calldata: CallData.compile([address, uint256.bnToUint256(BigInt(amount))]),
+      }))
+
       try {
         const response = await writeAsync({
-          calls: [deploy],
+          calls: [deploy, ...transfers],
         })
 
-        console.log('deploy tx', response, tokenAddress)
+        setDeployedToken({ address: tokenAddress, tx: response.transaction_hash })
       } catch (err) {
         console.error(err)
       }
     },
     [account, writeAsync]
   )
+
+  const restart = useCallback(() => {
+    resetWrite()
+    resetForm()
+    setDeployedToken(undefined)
+  }, [resetForm, resetWrite, setDeployedToken])
 
   return (
     <Row className={styles.wrapper}>
@@ -193,9 +214,30 @@ export default function LaunchPage() {
 
             <div />
 
-            <PrimaryButton disabled={!account || isPending} className={styles.deployButton}>
-              {account ? (isPending ? 'WAITING FOR SIGNATURE' : 'DEPLOY') : 'CONNECT WALLET'}
-            </PrimaryButton>
+            {deployedToken ? (
+              <Column gap="4">
+                <Text.HeadlineMedium textAlign="center">Token deployed!</Text.HeadlineMedium>
+                <Column gap="2">
+                  <Text.Body className={styles.inputLabel}>Token address</Text.Body>
+                  <Text.Body className={styles.deployedAddress}>
+                    <a href={explorer.contract(deployedToken.address)}>{deployedToken.address}</a>.
+                  </Text.Body>
+                </Column>
+                <Column gap="2">
+                  <Text.Body className={styles.inputLabel}>Transaction</Text.Body>
+                  <Text.Body className={styles.deployedAddress}>
+                    <a href={explorer.transaction(deployedToken.tx)}>{deployedToken.tx}</a>.
+                  </Text.Body>
+                </Column>
+                <PrimaryButton onClick={restart} type="button" className={styles.deployButton}>
+                  Start over
+                </PrimaryButton>
+              </Column>
+            ) : (
+              <PrimaryButton disabled={!account || isPending} className={styles.deployButton}>
+                {account ? (isPending ? 'WAITING FOR SIGNATURE' : 'DEPLOY') : 'CONNECT WALLET'}
+              </PrimaryButton>
+            )}
           </Column>
         </Box>
       </Box>
