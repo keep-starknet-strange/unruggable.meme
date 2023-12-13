@@ -15,7 +15,7 @@ jobs:
           scarb-version: ${{ env.SCARB_VERSION }}
       - uses: foundry-rs/setup-snfoundry@v2
         with:
-          starknet-foundry-version: 0.10.1
+          starknet-foundry-version: 0.12.0
       - name: Run cairo tests
         run: snforge test
         working-directory: contracts
