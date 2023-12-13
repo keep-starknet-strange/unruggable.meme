@@ -61,6 +61,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="https://ceccon.me/"><img src="https://avatars.githubusercontent.com/u/282580?v=4?s=100" width="100px;" alt="Francesco Ceccon"/><br /><sub><b>Francesco Ceccon</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=fracek" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/enitrat"><img src="https://avatars.githubusercontent.com/u/60658558?v=4?s=100" width="100px;" alt="Mathieu"/><br /><sub><b>Mathieu</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=enitrat" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Megumiiiiii"><img src="https://avatars.githubusercontent.com/u/98658943?v=4?s=100" width="100px;" alt="megumii"/><br /><sub><b>megumii</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=Megumiiiiii" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Pjewels"><img src="https://avatars.githubusercontent.com/u/149668320?v=4?s=100" width="100px;" alt="Pjewels"/><br /><sub><b>Pjewels</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=Pjewels" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
