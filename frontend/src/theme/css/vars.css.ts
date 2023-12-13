@@ -17,6 +17,7 @@ const colors = {
   vibrantPurple: '#6E44FF',
 
   vibrantGradient: 'linear-gradient(120deg, #ff003e, #6E44FF)',
+  disabledGradient: 'linear-gradient(120deg, #86797c, #9d9aa7)',
 }
 
 const fontSizes = {

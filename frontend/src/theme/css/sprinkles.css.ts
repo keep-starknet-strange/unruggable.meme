@@ -142,10 +142,12 @@ const unresponsiveProperties = defineProperties({
     hover: { selector: '&:hover' },
     active: { selector: '&:active' },
     before: { selector: '&:before' },
+    disabled: { selector: '&:disabled' },
   },
   defaultCondition: 'default',
   properties: {
     cursor: ['default', 'pointer', 'auto'],
+    pointerEvents: ['none', 'all'],
 
     borderStyle,
     borderLeftStyle: borderStyle,
