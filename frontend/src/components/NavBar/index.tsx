@@ -30,6 +30,10 @@ export default function NavBar() {
             <Link to="/manage">
               <Text.Body className={styles.navLink}>Manage</Text.Body>
             </Link>
+
+            <Link to="/screen">
+              <Text.Body className={styles.navLink}>Screen</Text.Body>
+            </Link>
           </Row>
         </Row>
 
