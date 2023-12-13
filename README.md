@@ -14,6 +14,11 @@
   <a href="https://unruggable.meme">https://unruggable.meme</a>
 </p>
 
+<a href="https://github.com/keep-starknet-strange/unruggable.meme/actions/workflows/contracts_test.yml"><img alt="GitHub Workflow Status (with event)" src="https://img.shields.io/github/actions/workflow/status/keep-starknet-strange/unruggable.meme/contracts_test.yml?style=for-the-badge" height=30></a>
+<a href="https://securityscorecards.dev/viewer/?uri=github.com/keep-starknet-strange/unruggable.meme"><img alt="OpenSSF Scorecard Report" src="https://img.shields.io/ossf-scorecard/github.com/keep-starknet-strange/unruggable.meme?label=openssf%20scorecard&style=for-the-badge" height=30></a>
+<a href="https://github.com/keep-starknet-strange/unruggable.meme/blob/main/LICENSE"><img src="https://img.shields.io/github/license/keep-starknet-strange/unruggable.meme.svg?style=for-the-badge" alt="Project license" height="30"></a>
+<a href="https://twitter.com/UnrugMemec0in"><img src="https://img.shields.io/twitter/follow/UnrugMemec0in?style=for-the-badge&logo=twitter" alt="Follow Unruggable Meme on Twitter" height="30"></a>
+
 Tired of getting *rugpulled*? Introducing Unruggable Meme, a project designed with security and transparency at its core. Our innovative contracts and safeguards ensure a fair and secure experience for all users.
 
 Become a meme lord and launch your own safe memecoin with [Unruggable Meme](https://unruggable.meme)!
@@ -61,7 +66,6 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="https://ceccon.me/"><img src="https://avatars.githubusercontent.com/u/282580?v=4?s=100" width="100px;" alt="Francesco Ceccon"/><br /><sub><b>Francesco Ceccon</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=fracek" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/enitrat"><img src="https://avatars.githubusercontent.com/u/60658558?v=4?s=100" width="100px;" alt="Mathieu"/><br /><sub><b>Mathieu</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=enitrat" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Megumiiiiii"><img src="https://avatars.githubusercontent.com/u/98658943?v=4?s=100" width="100px;" alt="megumii"/><br /><sub><b>megumii</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=Megumiiiiii" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Pjewels"><img src="https://avatars.githubusercontent.com/u/149668320?v=4?s=100" width="100px;" alt="Pjewels"/><br /><sub><b>Pjewels</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=Pjewels" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
