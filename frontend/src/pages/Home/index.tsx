@@ -4,16 +4,14 @@ import { PrimaryButton, SecondaryButton } from 'src/components/Button'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
+import clsx from 'clsx'
 
 import * as styles from './style.css'
 
 export default function HomePage() {
   return (
     <Box>
-      <Box as="span" className={styles.backgroundContainer}>
-        <Box as="span" className={styles.background} />
-      </Box>
-
+      <Box as="span" className={clsx(styles.backgroundContainer, styles.background)} />
       <Column className={styles.titleContainer}>
         <Text.HeadlineLarge className={styles.title}>Unruggable Memecoin</Text.HeadlineLarge>
         <Box as="img" src={onlyonstarknet} className={styles.subtitle} />
