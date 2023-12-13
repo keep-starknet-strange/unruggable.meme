@@ -68,7 +68,7 @@ export default function LaunchPage() {
           <Column gap="20">
             <Column gap="4">
               <Text.Body className={styles.inputLabel}>Name</Text.Body>
-              <Input placeholder="Dogecoin" {...register('name')} />
+              <Input placeholder="Unruggable" {...register('name')} />
               <Box className={styles.errorContainer}>
                 {errors.name?.message ? <Text.Error>{errors.name.message}</Text.Error> : null}
               </Box>
@@ -76,7 +76,7 @@ export default function LaunchPage() {
 
             <Column gap="4">
               <Text.Body className={styles.inputLabel}>Symbol</Text.Body>
-              <Input placeholder="DOGE" {...register('symbol')} />
+              <Input placeholder="MEME" {...register('symbol')} />
               <Box className={styles.errorContainer}>
                 {errors.symbol?.message ? <Text.Error>{errors.symbol.message}</Text.Error> : null}
               </Box>
@@ -85,6 +85,7 @@ export default function LaunchPage() {
             <Column gap="4">
               <Text.Body className={styles.inputLabel}>Initial Recipient Address</Text.Body>
               <Input
+                placeholder="0x000000000000000000"
                 addon={
                   <IconButton
                     disabled={!address}
@@ -105,6 +106,7 @@ export default function LaunchPage() {
             <Column gap="4">
               <Text.Body className={styles.inputLabel}>Owner Address</Text.Body>
               <Input
+                placeholder="0x000000000000000000"
                 addon={
                   <IconButton disabled={!address} onClick={() => (address ? setValue('ownerAddress', address) : null)}>
                     <Wallet />
