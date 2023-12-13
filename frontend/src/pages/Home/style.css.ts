@@ -65,28 +65,36 @@ export const title = style([
   sprinkles({
     marginTop: '42',
     marginBottom: '0',
-    fontSize: { md: '48', lg: '96' },
+    fontSize: { sm: '36', md: '64', lg: '72', xl: '96' },
   }),
 ])
 
 export const subtitle = style([
   sprinkles({
-    maxHeight: { sm: '18', md: '32', lg: '32' },
+    maxHeight: { sm: '20', md: '32', lg: '42' },
     marginX: 'auto',
   }),
 ])
 
 export const firstArticle = style([
   sprinkles({
-    marginTop: '42',
+    marginTop: '128',
     gap: '24',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontWeight: 'normal',
     paddingX: { sm: '32', md: '64' },
-    fontSize: { sm: '18', md: '24', lg: '24' },
     color: 'white',
+  }),
+])
+
+export const firstArticleText = style([
+  {
+    maxWidth: '1200px',
+  },
+  sprinkles({
+    fontSize: { sm: '18', md: '24', lg: '24' },
+    fontWeight: 'normal',
   }),
 ])
 
