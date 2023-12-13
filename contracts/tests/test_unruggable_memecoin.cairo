@@ -27,6 +27,65 @@ fn deploy_contract(
     contract.deploy(@constructor_calldata).unwrap()
 }
 
+mod erc20_metadata {
+    use core::debug::PrintTrait;
+    use openzeppelin::token::erc20::interface::IERC20;
+    use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
+    use starknet::{ContractAddress, contract_address_const};
+    use super::deploy_contract;
+    use unruggable::tokens::interface::{
+        IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
+    };
+
+    #[test]
+    fn test_name() {
+        let owner = contract_address_const::<42>();
+        let recipient = contract_address_const::<43>();
+        let name = 'UnruggableMemecoin';
+        let symbol = 'UM';
+        let initial_supply = 1000.into();
+        let contract_address = deploy_contract(owner, recipient, name, symbol, initial_supply);
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        // Check name. Should be equal to 'UnruggableMemecoin'.
+        let name = memecoin.name();
+        assert(name == name, 'Invalid name');
+    }
+
+    #[test]
+    fn test_decimals() {
+        let owner = contract_address_const::<42>();
+        let recipient = contract_address_const::<43>();
+        let name = 'UnruggableMemecoin';
+        let symbol = 'UM';
+        let initial_supply = 1000.into();
+        let contract_address = deploy_contract(owner, recipient, name, symbol, initial_supply);
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        // Check decimals. Should be equal to 18.
+        let decimals = memecoin.decimals();
+        assert(decimals == 18, 'Invalid decimals');
+    }
+
+    #[test]
+    fn test_symbol() {
+        let owner = contract_address_const::<42>();
+        let recipient = contract_address_const::<43>();
+        let name = 'UnruggableMemecoin';
+        let symbol = 'UM';
+        let initial_supply = 1000.into();
+        let contract_address = deploy_contract(owner, recipient, name, symbol, initial_supply);
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        // Check symbol. Should be equal to 'UM'.
+        let symbol = memecoin.symbol();
+        assert(symbol == symbol, 'Invalid symbol');
+    }
+}
+
 mod erc20_entrypoints {
     use core::debug::PrintTrait;
     use core::traits::Into;
@@ -45,7 +104,7 @@ mod erc20_entrypoints {
         let owner = contract_address_const::<42>();
         let initial_supply = 1000.into();
         let contract_address = deploy_contract(
-            owner, owner, 'UnruggableMemecoin', 'MT', initial_supply
+            owner, owner, 'UnruggableMemecoin', 'UM', initial_supply
         );
 
         let memecoin = IUnruggableMemecoinDispatcher { contract_address };
@@ -65,7 +124,7 @@ mod erc20_entrypoints {
         let owner = contract_address_const::<42>();
         let initial_supply = 1000.into();
         let contract_address = deploy_contract(
-            owner, owner, 'UnruggableMemecoin', 'MT', initial_supply
+            owner, owner, 'UnruggableMemecoin', 'UM', initial_supply
         );
 
         let memecoin = IUnruggableMemecoinDispatcher { contract_address };
@@ -81,7 +140,7 @@ mod erc20_entrypoints {
         let spender = contract_address_const::<43>();
         let initial_supply = 1000.into();
         let contract_address = deploy_contract(
-            owner, owner, 'UnruggableMemecoin', 'MT', initial_supply
+            owner, owner, 'UnruggableMemecoin', 'UM', initial_supply
         );
 
         let memecoin = IUnruggableMemecoinDispatcher { contract_address };
@@ -105,7 +164,7 @@ mod erc20_entrypoints {
         let recipient = contract_address_const::<43>();
         let initial_supply = 1000.into();
         let contract_address = deploy_contract(
-            owner, owner, 'UnruggableMemecoin', 'MT', initial_supply
+            owner, owner, 'UnruggableMemecoin', 'UM', initial_supply
         );
 
         let memecoin = IUnruggableMemecoinDispatcher { contract_address };
@@ -130,7 +189,7 @@ mod erc20_entrypoints {
         let recipient = contract_address_const::<44>();
         let initial_supply = 1000.into();
         let contract_address = deploy_contract(
-            owner, owner, 'UnruggableMemecoin', 'MT', initial_supply
+            owner, owner, 'UnruggableMemecoin', 'UM', initial_supply
         );
 
         let memecoin = IUnruggableMemecoinDispatcher { contract_address };
@@ -167,7 +226,7 @@ mod erc20_entrypoints {
         let owner = contract_address_const::<42>();
         let initial_supply = 1000.into();
         let contract_address = deploy_contract(
-            owner, owner, 'UnruggableMemecoin', 'MT', initial_supply
+            owner, owner, 'UnruggableMemecoin', 'UM', initial_supply
         );
 
         let memecoin = IUnruggableMemecoinDispatcher { contract_address };
@@ -182,7 +241,7 @@ mod erc20_entrypoints {
         let owner = contract_address_const::<42>();
         let initial_supply = 1000.into();
         let contract_address = deploy_contract(
-            owner, owner, 'UnruggableMemecoin', 'MT', initial_supply
+            owner, owner, 'UnruggableMemecoin', 'UM', initial_supply
         );
 
         let memecoin = IUnruggableMemecoinDispatcher { contract_address };
@@ -199,7 +258,7 @@ mod erc20_entrypoints {
         let recipient = contract_address_const::<44>();
         let initial_supply = 1000.into();
         let contract_address = deploy_contract(
-            owner, owner, 'UnruggableMemecoin', 'MT', initial_supply
+            owner, owner, 'UnruggableMemecoin', 'UM', initial_supply
         );
 
         let memecoin = IUnruggableMemecoinDispatcher { contract_address };
@@ -246,7 +305,7 @@ mod memecoin_entrypoints {
         let recipient = contract_address_const::<43>();
         let initial_supply = 1000.into();
         let contract_address = deploy_contract(
-            owner, recipient, 'UnruggableMemecoin', 'MT', initial_supply
+            owner, recipient, 'UnruggableMemecoin', 'UM', initial_supply
         );
 
         let memecoin = IUnruggableMemecoinDispatcher { contract_address };
@@ -263,7 +322,7 @@ mod memecoin_entrypoints {
         let recipient = contract_address_const::<43>();
         let initial_supply = 1000.into();
         let contract_address = deploy_contract(
-            owner, recipient, 'UnruggableMemecoin', 'MT', initial_supply
+            owner, recipient, 'UnruggableMemecoin', 'UM', initial_supply
         );
 
         let memecoin = IUnruggableMemecoinDispatcher { contract_address };
