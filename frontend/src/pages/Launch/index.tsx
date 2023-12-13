@@ -84,7 +84,8 @@ export default function LaunchPage() {
 
             <Column gap="4">
               <Text.Body className={styles.inputLabel}>Initial Recipient Address</Text.Body>
-              <Input placeholder="0x000000000000000000"
+              <Input
+                placeholder="0x000000000000000000"
                 addon={
                   <IconButton
                     disabled={!address}
@@ -104,7 +105,8 @@ export default function LaunchPage() {
 
             <Column gap="4">
               <Text.Body className={styles.inputLabel}>Owner Address</Text.Body>
-              <Input placeholder="0x000000000000000000"
+              <Input
+                placeholder="0x000000000000000000"
                 addon={
                   <IconButton disabled={!address} onClick={() => (address ? setValue('ownerAddress', address) : null)}>
                     <Wallet />

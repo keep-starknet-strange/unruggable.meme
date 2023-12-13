@@ -101,18 +101,3 @@ export const buttonContainer = style([
     flexWrap: 'wrap',
   },
 ])
-
-export const secondArticle = style([
-  sprinkles({
-    position: 'absolute',
-    left: '64',
-    bottom: '64',
-    right: '64',
-    borderColor: 'border1',
-    borderStyle: 'solid',
-    borderWidth: '0px',
-    borderTopWidth: '1px',
-    paddingTop: '24',
-    paddingX: '32',
-  }),
-])
