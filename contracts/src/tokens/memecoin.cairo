@@ -120,6 +120,7 @@ mod UnruggableMemecoin {
         }
 
         fn transfer(ref self: ContractState, recipient: ContractAddress, amount: u256) -> bool {
+            self._check_max_buy_percentage(amount);
             let sender = get_caller_address();
             self._transfer(sender, recipient, amount);
             true
@@ -132,6 +133,7 @@ mod UnruggableMemecoin {
             amount: u256
         ) -> bool {
             let caller = get_caller_address();
+            self._check_max_buy_percentage(amount);
             self.erc20._spend_allowance(sender, caller, amount);
             self.erc20._transfer(sender, recipient, amount);
             true
@@ -178,6 +180,15 @@ mod UnruggableMemecoin {
             amount: u256
         ) {
             self.erc20._transfer(sender, recipient, amount);
+        }
+
+        fn _check_max_buy_percentage(self: @ContractState, amount: u256) {
+            assert(
+                self.erc20.ERC20_total_supply.read()
+                    * MAX_PERCENTAGE_BUY_LAUNCH.into()
+                    / 100 >= amount,
+                'Max buy cap reached'
+            )
         }
     }
 }

@@ -329,4 +329,49 @@ mod memecoin_entrypoints {
 
         memecoin.launch_memecoin();
     }
+
+    #[test]
+    #[should_panic(expected: ('Max buy cap reached',))]
+    fn test_transfer_max_percentage() {
+        let owner = contract_address_const::<42>();
+        let alice = contract_address_const::<53>();
+        let initial_supply = 1000.into();
+        let contract_address = deploy_contract(
+            owner, owner, 'UnruggableMemecoin', 'MT', initial_supply
+        );
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        // Check initial balance. Should be equal to initial supply.
+        let balance = memecoin.balance_of(owner);
+        assert(balance == initial_supply, 'Invalid balance');
+
+        // Transfer 1 token from owner to alice.
+        start_prank(CheatTarget::One(memecoin.contract_address), owner);
+        let send_amount = memecoin.transfer(alice, 500);
+        assert(memecoin.balance_of(alice) == 500.into(), 'Invalid balance');
+    }
+
+
+    #[test]
+    #[should_panic(expected: ('Max buy cap reached',))]
+    fn test_transfer_from_max_percentage() {
+        let owner = contract_address_const::<42>();
+        let alice = contract_address_const::<53>();
+        let initial_supply = 1000.into();
+        let contract_address = deploy_contract(
+            owner, owner, 'UnruggableMemecoin', 'MT', initial_supply
+        );
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        // Check initial balance. Should be equal to initial supply.
+        let balance = memecoin.balance_of(owner);
+        assert(balance == initial_supply, 'Invalid balance');
+
+        // Transfer 1 token from owner to alice.
+        start_prank(CheatTarget::One(memecoin.contract_address), owner);
+        let send_amount = memecoin.transfer_from(owner,alice, 500);
+        assert(memecoin.balance_of(alice) == 500.into(), 'Invalid balance');
+    }
 }
