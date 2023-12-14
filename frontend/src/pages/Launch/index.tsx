@@ -183,7 +183,7 @@ export default function LaunchPage() {
               <Text.Body className={styles.inputLabel}>Initial Supply</Text.Body>
               <NumberInput placeholder="10,000,000,000.00" {...register('initialSupply', { valueAsNumber: true })} />
               <Box className={styles.errorContainer}>
-                {errors.initialSupply?.message && <Text.Error>{errors.initialSupply.message}</Text.Error>}
+                {errors.initialSupply?.message ? <Text.Error>{errors.initialSupply.message}</Text.Error> : null}
               </Box>
             </Column>
 
