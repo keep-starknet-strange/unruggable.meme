@@ -1,5 +1,8 @@
 import { sepolia } from '@starknet-react/chains'
-import { argent, braavos, publicProvider, StarknetConfig, starkscan, useInjectedConnectors } from '@starknet-react/core'
+import { publicProvider, StarknetConfig, starkscan } from '@starknet-react/core'
+import { ArgentMobileConnector } from 'starknetkit/argentMobile'
+import { InjectedConnector } from 'starknetkit/injected'
+import { WebWalletConnector } from 'starknetkit/webwallet'
 
 // STARKNET
 
@@ -8,11 +11,12 @@ interface StarknetProviderProps {
 }
 
 export function StarknetProvider({ children }: StarknetProviderProps) {
-  const { connectors } = useInjectedConnectors({
-    recommended: [argent(), braavos()],
-    includeRecommended: 'onlyIfNoConnectors',
-    order: 'random',
-  })
+  const connectors = [
+    new InjectedConnector({ options: { id: 'argentX', name: 'Argent' } }),
+    new InjectedConnector({ options: { id: 'braavos', name: 'Braavos' } }),
+    new WebWalletConnector({ url: 'https://web.argent.xyz' }),
+    new ArgentMobileConnector(),
+  ]
 
   return (
     <StarknetConfig

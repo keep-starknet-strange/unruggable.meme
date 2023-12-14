@@ -21,10 +21,11 @@ export default function HomePage() {
       </Column>
 
       <Column as="article" className={styles.firstArticle}>
-        <p>
+        <Text.Custom className={styles.firstArticleText}>
           Tired of getting rugpulled? Introducing Unruggable Meme, a memecoin standard and deployment tool designed to
           ensure a maximum safety for memecoin traders.
-        </p>
+        </Text.Custom>
+
         <Row gap="16" className={styles.buttonContainer}>
           <Link to="/launch">
             <PrimaryButton className={styles.firstArticleButton}>Launch</PrimaryButton>
