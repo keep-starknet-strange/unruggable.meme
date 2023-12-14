@@ -16,9 +16,11 @@ trait IERC20<T> {
     fn balance_of(self: @T, account: ContractAddress) -> u256;
     fn balanceOf(self: @T, account: ContractAddress) -> u256; // TODO Remove after regenesis
     fn transfer(ref self: T, recipient: ContractAddress, amount: u256) -> bool;
-    fn transfer_from(ref self: T, sender: ContractAddress, recipient: ContractAddress, amount: u256
+    fn transfer_from(
+        ref self: T, sender: ContractAddress, recipient: ContractAddress, amount: u256
     ) -> bool;
-    fn transferFrom(ref self: T, sender: ContractAddress, recipient: ContractAddress, amount: u256
+    fn transferFrom(
+        ref self: T, sender: ContractAddress, recipient: ContractAddress, amount: u256
     ) -> bool; // TODO Remove after regenesis
 }
 
@@ -29,7 +31,12 @@ trait IFactory<T> {
 
 #[starknet::interface]
 trait IJediSwapCallee<T> {
-    fn jediswap_call(ref self: T, sender: ContractAddress, amount0Out: u256, amount1Out: u256, data: Array::<felt252>
+    fn jediswap_call(
+        ref self: T,
+        sender: ContractAddress,
+        amount0Out: u256,
+        amount1Out: u256,
+        data: Array::<felt252>
     );
 }
 
@@ -42,10 +49,12 @@ trait IPairC1<TContractState> {
     fn name(self: @TContractState) -> felt252;
     fn symbol(self: @TContractState) -> felt252;
     fn total_supply(self: @TContractState) -> u256;
-    fn totalSupply(self: @TContractState) -> u256;  //TODO Remove after regenesis?
+    fn totalSupply(self: @TContractState) -> u256; //TODO Remove after regenesis?
     fn decimals(self: @TContractState) -> u8;
     fn balance_of(self: @TContractState, account: ContractAddress) -> u256;
-    fn balanceOf(self: @TContractState, account: ContractAddress) -> u256;  //TODO Remove after regenesis?
+    fn balanceOf(
+        self: @TContractState, account: ContractAddress
+    ) -> u256; //TODO Remove after regenesis?
     fn allowance(self: @TContractState, owner: ContractAddress, spender: ContractAddress) -> u256;
     fn token0(self: @TContractState) -> ContractAddress;
     fn token1(self: @TContractState) -> ContractAddress;
@@ -55,16 +64,34 @@ trait IPairC1<TContractState> {
     fn klast(self: @TContractState) -> u256;
     // external functions
     fn transfer(ref self: TContractState, recipient: ContractAddress, amount: u256) -> bool;
-    fn transfer_from(ref self: TContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256) -> bool;
-    fn transferFrom(ref self: TContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256) -> bool;   //TODO Remove after regenesis?
+    fn transfer_from(
+        ref self: TContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256
+    ) -> bool;
+    fn transferFrom(
+        ref self: TContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256
+    ) -> bool; //TODO Remove after regenesis?
     fn approve(ref self: TContractState, spender: ContractAddress, amount: u256) -> bool;
-    fn increase_allowance(ref self: TContractState, spender: ContractAddress, added_value: u256) -> bool;
-    fn increaseAllowance(ref self: TContractState, spender: ContractAddress, added_value: u256) -> bool;    //TODO Remove after regenesis?
-    fn decrease_allowance(ref self: TContractState, spender: ContractAddress, subtracted_value: u256) -> bool;
-    fn decreaseAllowance(ref self: TContractState, spender: ContractAddress, subtracted_value: u256) -> bool;   //TODO Remove after regenesis?
+    fn increase_allowance(
+        ref self: TContractState, spender: ContractAddress, added_value: u256
+    ) -> bool;
+    fn increaseAllowance(
+        ref self: TContractState, spender: ContractAddress, added_value: u256
+    ) -> bool; //TODO Remove after regenesis?
+    fn decrease_allowance(
+        ref self: TContractState, spender: ContractAddress, subtracted_value: u256
+    ) -> bool;
+    fn decreaseAllowance(
+        ref self: TContractState, spender: ContractAddress, subtracted_value: u256
+    ) -> bool; //TODO Remove after regenesis?
     fn mint(ref self: TContractState, to: ContractAddress) -> u256;
     fn burn(ref self: TContractState, to: ContractAddress) -> (u256, u256);
-    fn swap(ref self: TContractState, amount0Out: u256, amount1Out: u256, to: ContractAddress, data: Array::<felt252>);
+    fn swap(
+        ref self: TContractState,
+        amount0Out: u256,
+        amount1Out: u256,
+        to: ContractAddress,
+        data: Array::<felt252>
+    );
     fn skim(ref self: TContractState, to: ContractAddress);
     fn sync(ref self: TContractState);
     fn replace_implementation_class(ref self: TContractState, new_implementation_class: ClassHash);
@@ -72,18 +99,20 @@ trait IPairC1<TContractState> {
 
 #[starknet::contract]
 mod PairC1 {
-    use unruggablememecoin::test_utils::erc_20::ERC20;
-    use traits::Into; // TODO remove intos when u256 inferred type is available
-    use option::OptionTrait;
+    use unruggablememecoin::tests_utils::erc_20::ERC20;
     use array::{ArrayTrait, SpanTrait};
     use result::ResultTrait;
     use zeroable::Zeroable;
-    use starknet::{ContractAddress, ClassHash, SyscallResult, SyscallResultTrait, get_caller_address, get_contract_address, get_block_timestamp, contract_address_const};
+    use starknet::{
+        ContractAddress, ClassHash, SyscallResult, SyscallResultTrait, get_caller_address,
+        get_contract_address, get_block_timestamp, contract_address_const
+    };
     use integer::{u128_try_from_felt252, u256_sqrt, u256_from_felt252};
     use starknet::syscalls::{replace_class_syscall, call_contract_syscall};
 
     use super::{
-        IERC20Dispatcher, IERC20DispatcherTrait, IFactoryDispatcher, IFactoryDispatcherTrait, IJediSwapCalleeDispatcher, IJediSwapCalleeDispatcherTrait
+        IERC20Dispatcher, IERC20DispatcherTrait, IFactoryDispatcher, IFactoryDispatcherTrait,
+        IJediSwapCalleeDispatcher, IJediSwapCalleeDispatcherTrait
     };
 
     //
@@ -116,16 +145,16 @@ mod PairC1 {
     // @notice An event emitted whenever mint() is called.
     #[derive(Drop, starknet::Event)]
     struct Mint {
-        sender: ContractAddress, 
-        amount0: u256, 
+        sender: ContractAddress,
+        amount0: u256,
         amount1: u256
     }
 
     // @notice An event emitted whenever burn() is called.
     #[derive(Drop, starknet::Event)]
     struct Burn {
-        sender: ContractAddress, 
-        amount0: u256, 
+        sender: ContractAddress,
+        amount0: u256,
         amount1: u256,
         to: ContractAddress
     }
@@ -133,10 +162,10 @@ mod PairC1 {
     // @notice An event emitted whenever swap() is called.
     #[derive(Drop, starknet::Event)]
     struct Swap {
-        sender: ContractAddress, 
-        amount0In: u256, 
+        sender: ContractAddress,
+        amount0In: u256,
         amount1In: u256,
-        amount0Out: u256, 
+        amount0Out: u256,
         amount1Out: u256,
         to: ContractAddress
     }
@@ -144,7 +173,7 @@ mod PairC1 {
     // @notice An event emitted whenever _update() is called.
     #[derive(Drop, starknet::Event)]
     struct Sync {
-        reserve0: u256, 
+        reserve0: u256,
         reserve1: u256
     }
 
@@ -171,7 +200,6 @@ mod PairC1 {
 
     #[external(v0)]
     impl PairC1 of super::IPairC1<ContractState> {
-
         //
         // Getters ERC20
         //
@@ -231,7 +259,9 @@ mod PairC1 {
         // @param owner Account address whose tokens are spent
         // @param spender Account address which can spend the tokens
         // @return remaining
-        fn allowance(self: @ContractState, owner: ContractAddress, spender: ContractAddress) -> u256 {
+        fn allowance(
+            self: @ContractState, owner: ContractAddress, spender: ContractAddress
+        ) -> u256 {
             let erc20_state = ERC20::unsafe_new_contract_state();
             ERC20::ERC20::allowance(@erc20_state, owner, spender)
         }
@@ -298,7 +328,12 @@ mod PairC1 {
         // @param recipient Account address to which tokens are transferred
         // @param amount Amount of tokens to transfer
         // @return success 0 or 1
-        fn transfer_from(ref self: ContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256) -> bool {
+        fn transfer_from(
+            ref self: ContractState,
+            sender: ContractAddress,
+            recipient: ContractAddress,
+            amount: u256
+        ) -> bool {
             let mut erc20_state = ERC20::unsafe_new_contract_state();
             ERC20::ERC20::transfer_from(ref erc20_state, sender, recipient, amount);
             true
@@ -310,7 +345,12 @@ mod PairC1 {
         // @param recipient Account address to which tokens are transferred
         // @param amount Amount of tokens to transfer
         // @return success 0 or 1
-        fn transferFrom(ref self: ContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256) -> bool {
+        fn transferFrom(
+            ref self: ContractState,
+            sender: ContractAddress,
+            recipient: ContractAddress,
+            amount: u256
+        ) -> bool {
             let mut erc20_state = ERC20::unsafe_new_contract_state();
             ERC20::ERC20::transfer_from(ref erc20_state, sender, recipient, amount);
             true
@@ -330,7 +370,9 @@ mod PairC1 {
         // @param spender The address which will spend the funds
         // @param added_value The increased amount of tokens to be spent
         // @return success 0 or 1
-        fn increase_allowance(ref self: ContractState, spender: ContractAddress, added_value: u256) -> bool {
+        fn increase_allowance(
+            ref self: ContractState, spender: ContractAddress, added_value: u256
+        ) -> bool {
             let mut erc20_state = ERC20::unsafe_new_contract_state();
             ERC20::ERC20::increase_allowance(ref erc20_state, spender, added_value);
             true
@@ -340,7 +382,9 @@ mod PairC1 {
         // @param spender The address which will spend the funds
         // @param added_value The increased amount of tokens to be spent
         // @return success 0 or 1
-        fn increaseAllowance(ref self: ContractState, spender: ContractAddress, added_value: u256) -> bool {
+        fn increaseAllowance(
+            ref self: ContractState, spender: ContractAddress, added_value: u256
+        ) -> bool {
             let mut erc20_state = ERC20::unsafe_new_contract_state();
             ERC20::ERC20::increase_allowance(ref erc20_state, spender, added_value);
             true
@@ -350,7 +394,9 @@ mod PairC1 {
         // @param spender The address which will spend the funds
         // @param subtracted_value The decreased amount of tokens to be spent
         // @return success 0 or 1
-        fn decrease_allowance(ref self: ContractState, spender: ContractAddress, subtracted_value: u256) -> bool {
+        fn decrease_allowance(
+            ref self: ContractState, spender: ContractAddress, subtracted_value: u256
+        ) -> bool {
             let mut erc20_state = ERC20::unsafe_new_contract_state();
             ERC20::ERC20::decrease_allowance(ref erc20_state, spender, subtracted_value);
             true
@@ -360,7 +406,9 @@ mod PairC1 {
         // @param spender The address which will spend the funds
         // @param subtracted_value The decreased amount of tokens to be spent
         // @return success 0 or 1
-        fn decreaseAllowance(ref self: ContractState, spender: ContractAddress, subtracted_value: u256) -> bool {
+        fn decreaseAllowance(
+            ref self: ContractState, spender: ContractAddress, subtracted_value: u256
+        ) -> bool {
             let mut erc20_state = ERC20::unsafe_new_contract_state();
             ERC20::ERC20::decrease_allowance(ref erc20_state, spender, subtracted_value);
             true
@@ -388,14 +436,15 @@ mod PairC1 {
             let _total_supply = PairC1::total_supply(@self);
             let mut liquidity = 0.into();
             if (_total_supply == 0.into()) {
-                liquidity = u256 { low: u256_sqrt(amount0 * amount1) - 1000.try_into().unwrap(), high: 0 };
+                liquidity =
+                    u256 { low: u256_sqrt(amount0 * amount1) - 1000.try_into().unwrap(), high: 0 };
             } else {
                 let liquidity0 = (amount0 * _total_supply) / reserve0;
                 let liquidity1 = (amount1 * _total_supply) / reserve1;
                 if liquidity0 < liquidity1 {
                     liquidity = liquidity0;
                 } else {
-                    liquidity = liquidity1;                    
+                    liquidity = liquidity1;
                 }
             }
 
@@ -403,7 +452,9 @@ mod PairC1 {
 
             let mut erc20_state = ERC20::unsafe_new_contract_state();
             if (_total_supply == 0.into()) {
-                ERC20::InternalImpl::_mint(ref erc20_state, contract_address_const::<1>(), 1000.into());
+                ERC20::InternalImpl::_mint(
+                    ref erc20_state, contract_address_const::<1>(), 1000.into()
+                );
             }
             ERC20::InternalImpl::_mint(ref erc20_state, to, liquidity);
 
@@ -414,7 +465,10 @@ mod PairC1 {
                 self._klast.write(klast);
             }
 
-            self.emit(Mint {sender: get_caller_address(), amount0: amount0, amount1: amount1}); // TODO?? sender address instead of caller address
+            self
+                .emit(
+                    Mint { sender: get_caller_address(), amount0: amount0, amount1: amount1 }
+                ); // TODO?? sender address instead of caller address
 
             InternalImpl::_unlock(ref self);
             liquidity
@@ -460,7 +514,12 @@ mod PairC1 {
                 self._klast.write(klast);
             }
 
-            self.emit(Burn {sender: get_caller_address(), amount0: amount0, amount1: amount1, to: to});
+            self
+                .emit(
+                    Burn {
+                        sender: get_caller_address(), amount0: amount0, amount1: amount1, to: to
+                    }
+                );
 
             InternalImpl::_unlock(ref self);
             (amount0, amount1)
@@ -471,7 +530,13 @@ mod PairC1 {
         // @param amount0Out Amount of token0 received
         // @param amount1Out Amount of token1 received
         // @param to The account that will receive the tokens
-        fn swap(ref self: ContractState, amount0Out: u256, amount1Out: u256, to: ContractAddress, data: Array::<felt252>) {
+        fn swap(
+            ref self: ContractState,
+            amount0Out: u256,
+            amount1Out: u256,
+            to: ContractAddress,
+            data: Array::<felt252>
+        ) {
             InternalImpl::_check_and_lock(ref self);
             assert(amount0Out > 0.into() || amount1Out > 0.into(), 'insufficient output amount');
 
@@ -527,7 +592,17 @@ mod PairC1 {
 
             InternalImpl::_update(ref self, balance0, balance1, reserve0, reserve1);
 
-            self.emit(Swap {sender: get_caller_address(), amount0In: amount0In, amount1In: amount1In, amount0Out: amount0Out, amount1Out: amount1Out, to: to});
+            self
+                .emit(
+                    Swap {
+                        sender: get_caller_address(),
+                        amount0In: amount0In,
+                        amount1In: amount1In,
+                        amount0Out: amount0Out,
+                        amount1Out: amount1Out,
+                        to: to
+                    }
+                );
 
             InternalImpl::_unlock(ref self);
         }
@@ -572,7 +647,9 @@ mod PairC1 {
         // @notice This is used upgrade (Will push a upgrade without this to finalize)
         // @dev Only Proxy_admin can call
         // @param new_implementation_class New implementation hash
-        fn replace_implementation_class(ref self: ContractState, new_implementation_class: ClassHash) {
+        fn replace_implementation_class(
+            ref self: ContractState, new_implementation_class: ClassHash
+        ) {
             let sender = get_caller_address();
             let proxy_admin = self.Proxy_admin.read();
             assert(sender == proxy_admin, 'must be admin');
@@ -583,7 +660,6 @@ mod PairC1 {
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
-
         //
         // Internals Pair
         //
@@ -638,7 +714,9 @@ mod PairC1 {
         }
 
         // @dev Update reserves and, on the first call per block, price accumulators
-        fn _update(ref self: ContractState, balance0: u256, balance1: u256, reserve0: u256, reserve1: u256) {
+        fn _update(
+            ref self: ContractState, balance0: u256, balance1: u256, reserve0: u256, reserve1: u256
+        ) {
             assert(balance0.high == 0 && balance1.high == 0, 'overflow');
             let block_timestamp = get_block_timestamp();
             let block_timestamp_last = self._block_timestamp_last.read();
@@ -647,12 +725,14 @@ mod PairC1 {
             if (time_elapsed > 0 && reserve0 != 0.into() && reserve1 != 0.into()) {
                 let mut price_0_cumulative_last = self._price_0_cumulative_last.read();
                 let mut price_1_cumulative_last = self._price_1_cumulative_last.read();
-                price_0_cumulative_last += (reserve1 / reserve0) * u256 {
-                    low: u128_try_from_felt252(time_elapsed.into()).unwrap(), high: 0
-                }; // TODO official support for casting to u256
-                price_1_cumulative_last += (reserve0 / reserve1) * u256 {
-                    low: u128_try_from_felt252(time_elapsed.into()).unwrap(), high: 0
-                }; // TODO official support for casting to u256
+                price_0_cumulative_last += (reserve1 / reserve0)
+                    * u256 {
+                        low: u128_try_from_felt252(time_elapsed.into()).unwrap(), high: 0
+                    }; // TODO official support for casting to u256
+                price_1_cumulative_last += (reserve0 / reserve1)
+                    * u256 {
+                        low: u128_try_from_felt252(time_elapsed.into()).unwrap(), high: 0
+                    }; // TODO official support for casting to u256
                 self._price_0_cumulative_last.write(price_0_cumulative_last);
                 self._price_1_cumulative_last.write(price_1_cumulative_last);
             }
@@ -661,7 +741,7 @@ mod PairC1 {
             self._reserve1.write(balance1);
             self._block_timestamp_last.write(block_timestamp);
 
-            self.emit(Sync {reserve0: balance0, reserve1: balance1});
+            self.emit(Sync { reserve0: balance0, reserve1: balance1 });
         }
     }
 
@@ -669,22 +749,22 @@ mod PairC1 {
     // Internals LIBRARY
     //
 
-    fn _balance_of_token(
-            token: ContractAddress, account: ContractAddress
-        ) -> u256 {
-            // let tokenDispatcher = IERC20Dispatcher { contract_address: token };
-            // tokenDispatcher.balance_of(account)
+    fn _balance_of_token(token: ContractAddress, account: ContractAddress) -> u256 {
+        // let tokenDispatcher = IERC20Dispatcher { contract_address: token };
+        // tokenDispatcher.balance_of(account)
 
-            let mut calldata = Default::default();
-            Serde::serialize(@account, ref calldata);
+        let mut calldata = Default::default();
+        Serde::serialize(@account, ref calldata);
 
-            let selector_for_balance_of = 1516754014369808875012295842270199525215452866521012470027807093200784961331;
-            let selector_for_balanceOf = 1307730684388977109649524593492043083703013045633289330664425380824804018030;
+        let selector_for_balance_of =
+            1516754014369808875012295842270199525215452866521012470027807093200784961331;
+        let selector_for_balanceOf =
+            1307730684388977109649524593492043083703013045633289330664425380824804018030;
 
-            let mut result = call_contract_syscall(token, selector_for_balance_of, calldata.span());
-            if (result.is_err()) {
-                result = call_contract_syscall(token, selector_for_balanceOf, calldata.span());
-            }
-            u256_from_felt252(*result.unwrap_syscall().at(0))
+        let mut result = call_contract_syscall(token, selector_for_balance_of, calldata.span());
+        if (result.is_err()) {
+            result = call_contract_syscall(token, selector_for_balanceOf, calldata.span());
         }
+        u256_from_felt252(*result.unwrap_syscall().at(0))
+    }
 }

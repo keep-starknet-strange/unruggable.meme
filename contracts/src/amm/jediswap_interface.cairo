@@ -5,8 +5,12 @@ use starknet::{ClassHash, ContractAddress};
 
 #[starknet::interface]
 trait IFactoryC1<TContractState> {
-    fn get_pair(self: @TContractState, token0: ContractAddress, token1: ContractAddress) -> ContractAddress;
-    fn create_pair(ref self: TContractState, tokenA: ContractAddress, tokenB: ContractAddress) -> ContractAddress;
+    fn get_pair(
+        self: @TContractState, token0: ContractAddress, token1: ContractAddress
+    ) -> ContractAddress;
+    fn create_pair(
+        ref self: TContractState, tokenA: ContractAddress, tokenB: ContractAddress
+    ) -> ContractAddress;
 }
 
 #[starknet::interface]

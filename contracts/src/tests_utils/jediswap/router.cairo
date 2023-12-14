@@ -12,8 +12,12 @@ use starknet::ClassHash;
 //
 #[starknet::interface]
 trait IERC20<T> {
-    fn transfer_from(ref self: T, sender: ContractAddress, recipient: ContractAddress, amount: u256) -> bool;
-    fn transferFrom(ref self: T, sender: ContractAddress, recipient: ContractAddress, amount: u256) -> bool; // TODO Remove after regenesis
+    fn transfer_from(
+        ref self: T, sender: ContractAddress, recipient: ContractAddress, amount: u256
+    ) -> bool;
+    fn transferFrom(
+        ref self: T, sender: ContractAddress, recipient: ContractAddress, amount: u256
+    ) -> bool; // TODO Remove after regenesis
 }
 
 #[starknet::interface]
@@ -21,13 +25,17 @@ trait IPair<T> {
     fn get_reserves(self: @T) -> (u256, u256, u64);
     fn mint(ref self: T, to: ContractAddress) -> u256;
     fn burn(ref self: T, to: ContractAddress) -> (u256, u256);
-    fn swap(ref self: T, amount0Out: u256, amount1Out: u256, to: ContractAddress, data: Array::<felt252>);
+    fn swap(
+        ref self: T, amount0Out: u256, amount1Out: u256, to: ContractAddress, data: Array::<felt252>
+    );
 }
 
 #[starknet::interface]
 trait IFactory<T> {
     fn get_pair(self: @T, token0: ContractAddress, token1: ContractAddress) -> ContractAddress;
-    fn create_pair(ref self: T, token0: ContractAddress, token1: ContractAddress) -> ContractAddress;
+    fn create_pair(
+        ref self: T, token0: ContractAddress, token1: ContractAddress
+    ) -> ContractAddress;
 }
 
 //
@@ -36,8 +44,20 @@ trait IFactory<T> {
 #[starknet::interface]
 trait IRouterC1<TContractState> {
     fn factory(self: @TContractState) -> ContractAddress;
-    fn sort_tokens(self: @TContractState, tokenA: ContractAddress, tokenB: ContractAddress) -> (ContractAddress, ContractAddress);
-    fn add_liquidity(ref self: TContractState, tokenA: ContractAddress, tokenB: ContractAddress, amountADesired: u256, amountBDesired: u256, amountAMin: u256, amountBMin: u256, to: ContractAddress, deadline: u64) -> (u256, u256, u256);
+    fn sort_tokens(
+        self: @TContractState, tokenA: ContractAddress, tokenB: ContractAddress
+    ) -> (ContractAddress, ContractAddress);
+    fn add_liquidity(
+        ref self: TContractState,
+        tokenA: ContractAddress,
+        tokenB: ContractAddress,
+        amountADesired: u256,
+        amountBDesired: u256,
+        amountAMin: u256,
+        amountBMin: u256,
+        to: ContractAddress,
+        deadline: u64
+    ) -> (u256, u256, u256);
 }
 
 #[starknet::contract]
@@ -46,12 +66,16 @@ mod RouterC1 {
     use array::{ArrayTrait, SpanTrait};
     use result::ResultTrait;
     use zeroable::Zeroable;
-    use starknet::{ContractAddress, ClassHash, SyscallResult, SyscallResultTrait, get_caller_address, get_block_timestamp, contract_address_const, contract_address_to_felt252};
+    use starknet::{
+        ContractAddress, ClassHash, SyscallResult, SyscallResultTrait, get_caller_address,
+        get_block_timestamp, contract_address_const, contract_address_to_felt252
+    };
     use integer::u256_from_felt252;
     use starknet::syscalls::{replace_class_syscall, call_contract_syscall};
 
     use super::{
-        IERC20Dispatcher, IERC20DispatcherTrait, IPairDispatcher, IPairDispatcherTrait, IFactoryDispatcher, IFactoryDispatcherTrait
+        IERC20Dispatcher, IERC20DispatcherTrait, IPairDispatcher, IPairDispatcherTrait,
+        IFactoryDispatcher, IFactoryDispatcherTrait
     };
 
     //
@@ -88,7 +112,9 @@ mod RouterC1 {
         // @param tokenB Address of tokenB
         // @return token0 First token
         // @return token1 Second token
-        fn sort_tokens(self: @ContractState, tokenA: ContractAddress, tokenB: ContractAddress) -> (ContractAddress, ContractAddress) {
+        fn sort_tokens(
+            self: @ContractState, tokenA: ContractAddress, tokenB: ContractAddress
+        ) -> (ContractAddress, ContractAddress) {
             _sort_tokens(tokenA, tokenB)
         }
 
@@ -105,7 +131,8 @@ mod RouterC1 {
         // @return amountA The amount of tokenA sent to the pool
         // @return amountB The amount of tokenB sent to the pool
         // @return liquidity The amount of liquidity tokens minted
-        fn add_liquidity(ref self: ContractState,
+        fn add_liquidity(
+            ref self: ContractState,
             tokenA: ContractAddress,
             tokenB: ContractAddress,
             amountADesired: u256,
@@ -116,7 +143,9 @@ mod RouterC1 {
             deadline: u64
         ) -> (u256, u256, u256) {
             _ensure_deadline(deadline);
-            let (amountA, amountB) = InternalImpl::_add_liquidity(ref self, tokenA, tokenB, amountADesired, amountBDesired, amountAMin, amountBMin);
+            let (amountA, amountB) = InternalImpl::_add_liquidity(
+                ref self, tokenA, tokenB, amountADesired, amountBDesired, amountAMin, amountBMin
+            );
             let factory = self._factory.read();
             let pair = _pair_for(factory, tokenA, tokenB);
             let sender = get_caller_address();
@@ -134,7 +163,8 @@ mod RouterC1 {
         // Internals
         //
         // used
-        fn _add_liquidity(ref self: ContractState,
+        fn _add_liquidity(
+            ref self: ContractState,
             tokenA: ContractAddress,
             tokenB: ContractAddress,
             amountADesired: u256,
@@ -168,7 +198,8 @@ mod RouterC1 {
             }
         }
 
-        fn _swap(ref self: ContractState,
+        fn _swap(
+            ref self: ContractState,
             current_index: u32,
             amounts_len: u32,
             ref amounts: Array::<u256>,
@@ -195,7 +226,9 @@ mod RouterC1 {
             let data = ArrayTrait::<felt252>::new();
             let pairDispatcher = IPairDispatcher { contract_address: pair };
             pairDispatcher.swap(amount0Out, amount1Out, to, data);
-            return InternalImpl::_swap(ref self, current_index + 1, amounts_len, ref amounts, path, _to);
+            return InternalImpl::_swap(
+                ref self, current_index + 1, amounts_len, ref amounts, path, _to
+            );
         }
     }
 
@@ -204,61 +237,67 @@ mod RouterC1 {
     //
 
     fn _ensure_deadline(deadline: u64) {
-            let block_timestamp = get_block_timestamp();
-            assert(deadline >= block_timestamp, 'expired');
-        }
+        let block_timestamp = get_block_timestamp();
+        assert(deadline >= block_timestamp, 'expired');
+    }
 
     fn _transfer_token(
-            token: ContractAddress, sender: ContractAddress, recipient: ContractAddress, amount: u256
-        ) {
-            // let tokenDispatcher = IERC20Dispatcher { contract_address: token };
-            // tokenDispatcher.transfer_from(sender, recipient, amount) // TODO dispatcher with error handling
+        token: ContractAddress, sender: ContractAddress, recipient: ContractAddress, amount: u256
+    ) {
+        // let tokenDispatcher = IERC20Dispatcher { contract_address: token };
+        // tokenDispatcher.transfer_from(sender, recipient, amount) // TODO dispatcher with error handling
 
-            let mut calldata = Default::default();
-            Serde::serialize(@sender, ref calldata);
-            Serde::serialize(@recipient, ref calldata);
-            Serde::serialize(@amount, ref calldata);
+        let mut calldata = Default::default();
+        Serde::serialize(@sender, ref calldata);
+        Serde::serialize(@recipient, ref calldata);
+        Serde::serialize(@amount, ref calldata);
 
-            let selector_for_transfer_from = 1555377517929037318987687899825758707538299441176447799544473656894800517992;
-            let selector_for_transferFrom = 116061167288211781254449158074459916871457383008289084697957612485591092000;
+        let selector_for_transfer_from =
+            1555377517929037318987687899825758707538299441176447799544473656894800517992;
+        let selector_for_transferFrom =
+            116061167288211781254449158074459916871457383008289084697957612485591092000;
 
-            let mut result = call_contract_syscall(token, selector_for_transfer_from, calldata.span());
-            if (result.is_err()) {
-                result = call_contract_syscall(token, selector_for_transferFrom, calldata.span());
-            }
-            result.unwrap_syscall();    // Additional error handling
+        let mut result = call_contract_syscall(token, selector_for_transfer_from, calldata.span());
+        if (result.is_err()) {
+            result = call_contract_syscall(token, selector_for_transferFrom, calldata.span());
+        }
+        result.unwrap_syscall(); // Additional error handling
+    }
+
+    fn _sort_tokens(
+        tokenA: ContractAddress, tokenB: ContractAddress
+    ) -> (ContractAddress, ContractAddress) {
+        assert(tokenA != tokenB, 'must not be identical');
+        let mut token0: ContractAddress = contract_address_const::<0>();
+        let mut token1: ContractAddress = contract_address_const::<0>();
+        if u256_from_felt252(
+            contract_address_to_felt252(tokenA)
+        ) < u256_from_felt252(
+            contract_address_to_felt252(tokenB)
+        ) { // TODO token comparison directly
+            token0 = tokenA;
+            token1 = tokenB;
+        } else {
+            token0 = tokenB;
+            token1 = tokenA;
         }
 
-     fn _sort_tokens(
-            tokenA: ContractAddress, tokenB: ContractAddress
-        ) -> (ContractAddress, ContractAddress) {
-            assert(tokenA != tokenB, 'must not be identical');
-            let mut token0: ContractAddress = contract_address_const::<0>();
-            let mut token1: ContractAddress = contract_address_const::<0>();
-            if u256_from_felt252(
-                contract_address_to_felt252(tokenA)
-            ) < u256_from_felt252(
-                contract_address_to_felt252(tokenB)
-            ) { // TODO token comparison directly
-                token0 = tokenA;
-                token1 = tokenB;
-            } else {
-                token0 = tokenB;
-                token1 = tokenA;
-            }
+        assert(!token0.is_zero(), 'must be non zero');
+        (token0, token1)
+    }
 
-            assert(!token0.is_zero(), 'must be non zero');
-            (token0, token1)
-        }
-
-    fn _pair_for(factory: ContractAddress, tokenA: ContractAddress, tokenB: ContractAddress) -> ContractAddress {
+    fn _pair_for(
+        factory: ContractAddress, tokenA: ContractAddress, tokenB: ContractAddress
+    ) -> ContractAddress {
         let (token0, token1) = _sort_tokens(tokenA, tokenB);
         let factoryDispatcher = IFactoryDispatcher { contract_address: factory };
         let pair = factoryDispatcher.get_pair(token0, token1);
         pair
     }
 
-    fn _get_reserves(factory: ContractAddress, tokenA: ContractAddress, tokenB: ContractAddress) -> (u256, u256) {
+    fn _get_reserves(
+        factory: ContractAddress, tokenA: ContractAddress, tokenB: ContractAddress
+    ) -> (u256, u256) {
         let (token0, _) = _sort_tokens(tokenA, tokenB);
         let pair = _pair_for(factory, tokenA, tokenB);
         let pairDispatcher = IPairDispatcher { contract_address: pair };

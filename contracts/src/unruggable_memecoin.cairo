@@ -1,5 +1,6 @@
 //! `UnruggableMemecoin` is an ERC20 token has additional features to prevent rug pulls.
 use starknet::ContractAddress;
+use unruggablememecoin::amm::amm::AMM;
 
 #[starknet::interface]
 trait IUnruggableMemecoin<TState> {
@@ -22,6 +23,7 @@ trait IUnruggableMemecoin<TState> {
     // ************************************
     fn launch_memecoin(
         ref self: TState,
+        amm: AMM,
         counterparty_token_address: ContractAddress,
         liquidity_memecoin_amount: u256,
         liquidity_counterparty_token: u256
@@ -33,18 +35,21 @@ mod UnruggableMemecoin {
     // Core dependencies.
     use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait;
     use integer::BoundedInt;
-    use starknet::{ContractAddress, get_caller_address};
+    use starknet::{ContractAddress, get_caller_address, contract_address_const};
     use zeroable::Zeroable;
 
     // External dependencies.
     use openzeppelin::access::ownable::OwnableComponent;
 
     // Internal dependencies.
-    use unruggablememecoin::jediswap_interface::{
+    use unruggablememecoin::amm::amm::{AMMRouter, AMM};
+    use unruggablememecoin::amm::jediswap_interface::{
         IFactoryC1Dispatcher, IFactoryC1DispatcherTrait, IRouterC1Dispatcher,
         IRouterC1DispatcherTrait, IERC20Dispatcher, IERC20DispatcherTrait
     };
     use super::IUnruggableMemecoin;
+
+    use debug::PrintTrait;
 
     // Components.
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
@@ -73,7 +78,7 @@ mod UnruggableMemecoin {
         // Components.
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
-        router_address: ContractAddress
+        amm_configs: LegacyMap<felt252, ContractAddress>,
     }
 
     #[event]
@@ -114,13 +119,23 @@ mod UnruggableMemecoin {
         name: felt252,
         symbol: felt252,
         initial_supply: u256,
-        router_address: ContractAddress
+        amm_routers: Array<AMMRouter>
     ) {
+        // [Check Owner] Only the Memecoin factory can deploy
+        // assert get_caller_address() == memecoin_factory_address
+
         // Initialize the ERC20 token.
         self.initializer(name, symbol);
 
-        assert(router_address.is_non_zero(), 'Router address cannot be zero');
-        self.router_address.write(router_address);
+        let mut i = 0;
+        loop {
+            if amm_routers.len() == i {
+                break;
+            }
+            let amm_router = *amm_routers[i];
+            self.amm_configs.write(amm_router.name, amm_router.address);
+            i += 1;
+        };
 
         // Initialize the owner.
         self.ownable.initializer(owner);
@@ -137,7 +152,7 @@ mod UnruggableMemecoin {
         // ************************************
         // * UnruggableMemecoin functions
         // ************************************
-        
+
         /// Launches the Memecoin by creating a liquidity pool with the specified counterparty token.
         /// The owner needs to send both MT tokens and the tokens of the chosen counterparty (e.g., USDC).
         ///
@@ -157,6 +172,7 @@ mod UnruggableMemecoin {
         /// - The minimum amounts (`amount_a_min` and `amount_b_min`) are set to 1 for both Memecoin and counterparty tokens.
         fn launch_memecoin(
             ref self: ContractState,
+            amm: AMM,
             counterparty_token_address: ContractAddress,
             liquidity_memecoin_amount: u256,
             liquidity_counterparty_token: u256,
@@ -169,7 +185,7 @@ mod UnruggableMemecoin {
 
             // [Create Pool]
             let jediswap_router = IRouterC1Dispatcher {
-                contract_address: self.router_address.read(),
+                contract_address: self.amm_configs.read(amm.into()),
             };
 
             let jediswap_factory = IFactoryC1Dispatcher {
@@ -193,11 +209,6 @@ mod UnruggableMemecoin {
                 'insufficient token funds',
             );
 
-            // TODO: try to add approve from meme_coin to router here 
-            // self.approve(self.router_address.read(), liquidity_memecoin_amount);
-            // counterparty_token_dispatcher.approve(self.router_address.read(), liquidity_counterparty_token);
-
-            // TODO: Check the meaning of min amounts
             // [Add liquidity]
             jediswap_router
                 .add_liquidity(

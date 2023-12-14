@@ -1,9 +1,10 @@
 mod DeployerHelper {
-    use starknet::ContractAddress;
-    use snforge_std::{ ContractClass, ContractClassTrait, CheatTarget, declare, start_prank, stop_prank };
-    use unruggablememecoin::test_utils::constants::{
-        DEPLOYER, TOKEN0_NAME, SYMBOL
+    use starknet::{ContractAddress, ClassHash};
+    use snforge_std::{
+        ContractClass, ContractClassTrait, CheatTarget, declare, start_prank, stop_prank
     };
+    use unruggablememecoin::tests_utils::constants::{DEPLOYER, TOKEN0_NAME, SYMBOL};
+    use unruggablememecoin::amm::amm::AMMRouter;
 
     fn deploy_contracts() -> (ContractAddress, ContractAddress) {
         let pair_class = declare('PairC1');
@@ -30,7 +31,7 @@ mod DeployerHelper {
         name: felt252,
         symbol: felt252,
         initial_supply: u256,
-        router_address: ContractAddress
+        amms_routers: Array<AMMRouter>
     ) -> ContractAddress {
         let contract = declare('UnruggableMemecoin');
         let mut constructor_calldata = array![
@@ -40,8 +41,15 @@ mod DeployerHelper {
             symbol,
             initial_supply.low.into(),
             initial_supply.high.into(),
-            router_address.into()
         ];
+        contract.deploy(@constructor_calldata).unwrap()
+    }
+
+    fn deploy_memecoin_factory(
+        owner: ContractAddress, network: felt252,  memecoin_class_hash: ClassHash, 
+    ) -> ContractAddress {
+        let contract = declare('UnruggableMemecoinFactory');
+        let mut constructor_calldata = array![owner.into(), network, memecoin_class_hash.into(),];
         contract.deploy(@constructor_calldata).unwrap()
     }
 
@@ -53,7 +61,7 @@ mod DeployerHelper {
         Serde::serialize(@SYMBOL, ref token0_constructor_calldata);
         Serde::serialize(@initial_supply, ref token0_constructor_calldata);
         Serde::serialize(@recipient, ref token0_constructor_calldata);
-        
+
         erc20_class.deploy(@token0_constructor_calldata).unwrap()
     }
 }
