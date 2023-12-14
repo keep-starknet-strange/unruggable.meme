@@ -40,5 +40,5 @@ npm run start
 
 ## Contribution
 ### Code format
-We are using [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) and [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) to format our code. 
-We recommend that you also install them to maintain clean and readable code.
+We use [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) and [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) to format our code. 
+We recommend that you also install them to maintain clean and readable code. You can learn how to do that [here](https://www.aleksandrhovhannisyan.com/blog/format-code-on-save-vs-code-eslint/).
