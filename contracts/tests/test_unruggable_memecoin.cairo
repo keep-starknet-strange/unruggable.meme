@@ -291,6 +291,7 @@ mod erc20_entrypoints {
 
 mod memecoin_entrypoints {
     use core::debug::PrintTrait;
+    use core::traits::Into;
     use openzeppelin::token::erc20::interface::IERC20;
     use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
     use starknet::{ContractAddress, contract_address_const};
@@ -371,7 +372,7 @@ mod memecoin_entrypoints {
 
         // Transfer 1 token from owner to alice.
         start_prank(CheatTarget::One(memecoin.contract_address), owner);
-        let send_amount = memecoin.transfer_from(owner,alice, 500);
+        let send_amount = memecoin.transfer_from(owner, alice, 500);
         assert(memecoin.balance_of(alice) == 500.into(), 'Invalid balance');
     }
 
@@ -392,7 +393,7 @@ mod memecoin_entrypoints {
 
         // Transfer 1 token from owner to alice.
         start_prank(CheatTarget::One(memecoin.contract_address), owner);
-        let send_amount = memecoin.transfer(alice, 100);
-        assert(memecoin.balance_of(alice) == 100.into(), 'Invalid balance');
+        let send_amount = memecoin.transfer(alice, 10.into());
+        assert(memecoin.balance_of(alice) == 10.into(), 'Invalid balance');
     }
 }

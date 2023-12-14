@@ -98,12 +98,6 @@ mod UnruggableMemecoin {
 
         // Interactions.
         }
-         fn get_max_buy_percentage(self: @ContractState) -> u256 {
-             self.erc20.ERC20_total_supply.read()
-                    * MAX_PERCENTAGE_BUY_LAUNCH.into()
-                    / 100
-        }
-        
     }
 
     #[abi(embed_v0)]
@@ -190,7 +184,9 @@ mod UnruggableMemecoin {
 
         fn _check_max_buy_percentage(self: @ContractState, amount: u256) {
             assert(
-                self.get_max_buy_percentage() >= amount,
+                self.erc20.ERC20_total_supply.read()
+                    * MAX_PERCENTAGE_BUY_LAUNCH.into()
+                    / 100 >= amount,
                 'Max buy cap reached'
             )
         }
