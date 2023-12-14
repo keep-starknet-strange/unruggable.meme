@@ -5,6 +5,7 @@ import { useCallback, useState } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { IconButton, PrimaryButton, SecondaryButton } from 'src/components/Button'
 import Input from 'src/components/Input'
+import NumberInput from 'src/components/NumberInput'
 import { TOKEN_CLASS_HASH, UDC } from 'src/constants/contracts'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
@@ -35,7 +36,7 @@ const schema = z.object({
   symbol: z.string().min(1),
   initialRecipientAddress: address,
   ownerAddress: address,
-  initialSupply: z.number().min(0),
+  initialSupply: z.number().min(1),
   holders: z.array(holder),
 })
 
@@ -60,7 +61,6 @@ export default function LaunchPage() {
     reset: resetForm,
   } = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: { initialSupply: 10_000_000_000 },
   })
 
   const { fields, append, remove } = useFieldArray({
@@ -181,9 +181,9 @@ export default function LaunchPage() {
 
             <Column gap="4">
               <Text.Body className={styles.inputLabel}>Initial Supply</Text.Body>
-              <Input {...register('initialSupply', { valueAsNumber: true })} />
+              <NumberInput placeholder="10,000,000,000.00" {...register('initialSupply', { valueAsNumber: true })} />
               <Box className={styles.errorContainer}>
-                {errors.initialSupply?.message ? <Text.Error>{errors.initialSupply.message}</Text.Error> : null}
+                {errors.initialSupply?.message && <Text.Error>{errors.initialSupply.message}</Text.Error>}
               </Box>
             </Column>
 
