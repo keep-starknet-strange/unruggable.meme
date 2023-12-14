@@ -314,7 +314,6 @@ mod memecoin_entrypoints {
         memecoin.launch_memecoin();
 
         assert(memecoin.launched(), 'Coin not launched');
-
     //TODO
     }
 
@@ -336,14 +335,14 @@ mod memecoin_entrypoints {
 
 
 mod memecoin_internals {
-    use core::option::OptionTrait;
-    use snforge_std::{start_prank, CheatTarget};
-    use starknet::{ContractAddress, contract_address_const};
-    use unruggable::tokens::memecoin::UnruggableMemecoin;
     use UnruggableMemecoin::{
         UnruggableMemecoinInternalImpl, SnakeEntrypoints, UnruggableEntrypoints,
         MAX_HOLDERS_BEFORE_LAUNCH
     };
+    use core::option::OptionTrait;
+    use snforge_std::{start_prank, CheatTarget};
+    use starknet::{ContractAddress, contract_address_const};
+    use unruggable::tokens::memecoin::UnruggableMemecoin;
 
 
     #[test]
@@ -359,19 +358,15 @@ mod memecoin_internals {
         );
 
         // Transfer 100 tokens to the recipient
-        UnruggableMemecoinInternalImpl::_transfer(
-            ref contract_state, owner, recipient, 100
-        );
+        UnruggableMemecoinInternalImpl::_transfer(ref contract_state, owner, recipient, 100);
 
         // Check balance. Should be equal to initial supply - 100.
-        let owner_balance 
-            = SnakeEntrypoints::balance_of(@contract_state, owner);
+        let owner_balance = SnakeEntrypoints::balance_of(@contract_state, owner);
         assert(owner_balance == (initial_supply - 100), 'Invalid balance owner');
 
         // Check recipient balance. Should be equal to 100.
-        let recipient_balance 
-            = SnakeEntrypoints::balance_of(@contract_state, recipient);
-        assert(recipient_balance == 100.into(), 'Invalid balance recipient');    
+        let recipient_balance = SnakeEntrypoints::balance_of(@contract_state, recipient);
+        assert(recipient_balance == 100.into(), 'Invalid balance recipient');
     }
 
 
@@ -387,7 +382,7 @@ mod memecoin_internals {
         );
 
         // index starts from 1 because owner has initial supply
-        let mut index = 1; 
+        let mut index = 1;
         loop {
             if index == MAX_HOLDERS_BEFORE_LAUNCH {
                 break;
@@ -400,19 +395,16 @@ mod memecoin_internals {
             );
 
             // Check recipient balance. Should be equal to 1.
-            let recipient_balance 
-                = SnakeEntrypoints::balance_of(
-                    @contract_state, unique_recipient
-                    );
+            let recipient_balance = SnakeEntrypoints::balance_of(@contract_state, unique_recipient);
             assert(recipient_balance == 1.into(), 'Invalid balance recipient');
 
             index += 1;
-        }; 
+        };
     }
 
 
     #[test]
-    #[should_panic(expected: ('memecoin: max holders reached', ))]
+    #[should_panic(expected: ('memecoin: max holders reached',))]
     fn test__transfer_above_holder_cap() {
         let owner = contract_address_const::<42>();
         let initial_supply = 1000.into();
@@ -424,7 +416,7 @@ mod memecoin_internals {
         );
 
         // index starts from 1 because owner has initial supply
-        let mut index = 1; 
+        let mut index = 1;
         loop {
             if index == MAX_HOLDERS_BEFORE_LAUNCH + 1 {
                 break;
@@ -437,7 +429,7 @@ mod memecoin_internals {
             );
 
             index += 1;
-        }; 
+        };
     }
 
 
@@ -459,7 +451,7 @@ mod memecoin_internals {
         UnruggableEntrypoints::launch_memecoin(ref contract_state);
 
         // index starts from 1 because owner has initial supply
-        let mut index = 1; 
+        let mut index = 1;
         loop {
             if index == MAX_HOLDERS_BEFORE_LAUNCH + 1 {
                 break;
@@ -472,9 +464,7 @@ mod memecoin_internals {
             );
 
             index += 1;
-        }; 
+        };
     }
 }
-
-
 
