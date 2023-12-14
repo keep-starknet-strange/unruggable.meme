@@ -6,9 +6,9 @@
 ## Build
 
 
-> Warning: You should do these operations all in the `/frontend` folder, not in the root folder of this project.
+> Warning: You should do these operations all in the `/frontend` folder, not in the root folder of Unruggable-meme project.
 
-To build the project, you need to install [Node.js](https://nodejs.org/en) and [NPM](https://www.npmjs.com/). We suggest you using `20.10.0 LTS`.
+To build the Unruggable interface, you need to install [Node.js](https://nodejs.org/en) and [NPM](https://www.npmjs.com/). We suggest you using `20.10.0 LTS`.
 
 You can do it manually, but we suggest you install Node and NPM using [NVM](https://github.com/nvm-sh/nvm).
 
@@ -17,23 +17,23 @@ After you installed nvm, run:
 nvm install --lts
 ```
 
-Then you need to install [TypeScript](https://www.typescriptlang.org/), run:
+Next, you need to install [TypeScript](https://www.typescriptlang.org/). Run the following command:
 ```
 npm i typescript@~4 
 ```
 
-Finally, run:
+Afterward, execute:
 ```
 npm install
 ```
-to install all depencies.
+This will install all dependencies.
 
-For build, run:
+To build the front-end, use the following command:
 ```
 npm run build
 ```
 
-For run a local dev, run:
+For running a local development server, execute:
 ```
 npm run start
 ```
@@ -41,4 +41,4 @@ npm run start
 ## Contribution
 ### Code format
 We are using [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint) and [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) to format our code. 
-We suggest you should also install them in order to keep code clean&readable.
+We recommend that you also install them to maintain clean and readable code.
