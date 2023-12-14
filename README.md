@@ -84,6 +84,9 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Pjewels"><img src="https://avatars.githubusercontent.com/u/149668320?v=4?s=100" width="100px;" alt="Pjewels"/><br /><sub><b>Pjewels</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=Pjewels" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/rmzlb"><img src="https://avatars.githubusercontent.com/u/25151724?v=4?s=100" width="100px;" alt="rmzlb"/><br /><sub><b>rmzlb</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=rmzlb" title="Code">💻</a></td>
     </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/welttowelt"><img src="https://avatars.githubusercontent.com/u/58338510?v=4?s=100" width="100px;" alt="odin free"/><br /><sub><b>odin free</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=welttowelt" title="Code">💻</a></td>
+    </tr>
   </tbody>
 </table>
 
