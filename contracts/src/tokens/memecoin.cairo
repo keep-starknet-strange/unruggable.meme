@@ -184,11 +184,19 @@ mod UnruggableMemecoin {
     //
     #[generate_trait]
     impl UnruggableMemecoinInternalImpl of UnruggableMemecoinInternalTrait {
+        /// Internal function to enforce pre launch holder limit
+        ///
+        /// Note that when transfers are done, between addresses that already
+        /// hold tokens, we do not increment the number of holders. it only
+        /// gets incremented when the recipient that hold no tokens
+        ///
+        /// # Arguments
+        /// * `recipient` - The recipient of the tokens being transferred.
         #[inline(always)]
-        fn _check_holders_limit(ref self: ContractState) {
+        fn _enforce_holders_limit(ref self: ContractState, recipient: ContractAddress) {
             // enforce max number of holders before launch
 
-            if !self.launched.read() {
+            if !self.launched.read() && self.balance_of(recipient) == 0 {
                 let current_holders_count = self.pre_launch_holders_count.read();
                 assert(
                     current_holders_count < MAX_HOLDERS_BEFORE_LAUNCH, Errors::MAX_HOLDERS_REACHED
@@ -198,18 +206,38 @@ mod UnruggableMemecoin {
             }
         }
 
+
+        /// Internal function to mint tokens
+        ///
+        /// Before minting, a check is done to ensure that 
+        /// only `MAX_HOLDERS_BEFORE_LAUNCH` addresses can hold 
+        /// tokens if token hasn't launched 
+        ///
+        /// # Arguments
+        /// * `recipient` - The recipient of the tokens.
+        /// * `amount` - The amount of tokens to be minted.
         fn _mint(ref self: ContractState, recipient: ContractAddress, amount: u256) {
-            self._check_holders_limit();
+            self._enforce_holders_limit(recipient);
             self.erc20._mint(recipient, amount);
         }
 
+        /// Internal function to transfer tokens
+        ///
+        /// Before transferring, a check is done to ensure that 
+        /// only `MAX_HOLDERS_BEFORE_LAUNCH` addresses can hold 
+        /// tokens if token hasn't launched 
+        ///
+        /// # Arguments
+        /// * `sender` - The sender or owner of the tokens.
+        /// * `recipient` - The recipient of the tokens.
+        /// * `amount` - The amount of tokens to be transferred.
         fn _transfer(
             ref self: ContractState,
             sender: ContractAddress,
             recipient: ContractAddress,
             amount: u256
         ) {
-            self._check_holders_limit();
+            self._enforce_holders_limit(recipient);
             self.erc20._transfer(sender, recipient, amount);
         }
     }

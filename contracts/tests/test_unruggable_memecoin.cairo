@@ -404,6 +404,41 @@ mod memecoin_internals {
 
 
     #[test]
+    fn test__transfer_existing_holders() {
+        /// pre launch holder number should not change when
+        /// transfer is done to recipient(s) who already have tokens
+
+        /// to test this, we are going to continously self transfer tokens
+        /// and ensure that we can transfer more than `MAX_HOLDERS_BEFORE_LAUNCH` times
+
+        let owner = contract_address_const::<42>();
+        let initial_supply = 1000.into();
+
+        // call contract constructor
+        let mut contract_state = UnruggableMemecoin::contract_state_for_testing();
+        UnruggableMemecoin::constructor(
+            ref contract_state, owner, owner, 'UnruggableMemecoin', 'UM', initial_supply
+        );
+
+        // index starts from 1 because owner has initial supply
+        let mut index = 1;
+        loop {
+            if index == MAX_HOLDERS_BEFORE_LAUNCH + 1 {
+                break;
+            }
+
+            // Self transfer tokens
+
+            UnruggableMemecoinInternalImpl::_transfer(
+                ref contract_state, owner, owner, initial_supply
+            );
+
+            index += 1;
+        };
+    }
+
+
+    #[test]
     #[should_panic(expected: ('memecoin: max holders reached',))]
     fn test__transfer_above_holder_cap() {
         let owner = contract_address_const::<42>();
