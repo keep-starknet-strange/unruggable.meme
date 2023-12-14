@@ -1,12 +1,21 @@
 import clsx from 'clsx'
+import { forwardRef } from 'react'
 import Box, { BoxProps } from 'src/theme/components/Box'
 
 import * as styles from './style.css'
 
-export default function Input({ className, ...props }: BoxProps) {
+type InputProps = {
+  addon?: React.ReactNode
+} & BoxProps
+
+const Input = forwardRef<HTMLElement, InputProps>(function ({ addon, className, ...props }, ref) {
   return (
     <Box className={clsx(className, styles.inputContainer)}>
-      <Box as="input" className={styles.input} {...props} />
+      <Box as="input" className={styles.input} {...props} ref={ref} />
+      {addon}
     </Box>
   )
-}
+})
+
+Input.displayName = 'Input'
+export default Input

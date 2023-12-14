@@ -2,18 +2,12 @@ import { style } from '@vanilla-extract/css'
 import { sprinkles } from 'src/theme/css/sprinkles.css'
 
 export const wrapper = style([
+  {
+    padding: '68px 0px',
+  },
   sprinkles({
     width: 'full',
     justifyContent: 'center',
-    paddingX: '12',
-    paddingTop: {
-      sm: '20',
-      md: '64',
-    },
-    paddingBottom: {
-      sm: '88',
-      md: '32',
-    },
   }),
 ])
 
@@ -37,7 +31,7 @@ export const deployButton = style([
   },
   sprinkles({
     fontSize: '24',
-    fontWeight: 'semibold',
+    fontWeight: 'bold',
   }),
 ])
 
@@ -52,9 +46,35 @@ export const errorContainer = sprinkles({
   color: 'error',
 })
 
-export const deployedAddress = sprinkles({
-  marginLeft: '8',
-  fontWeight: 'medium',
-  textOverflow: 'ellipsis',
+export const inputContainer = sprinkles({
+  display: 'flex',
+  alignItems: 'center',
+  borderRadius: '10',
+  borderWidth: '1px',
+  borderStyle: 'solid',
   overflow: 'hidden',
+  padding: '12',
+  fontSize: '16',
+  color: 'white',
+  borderColor: {
+    default: 'border1',
+    hover: 'accent',
+  },
+  gap: '8',
+  transitionDuration: '125',
+  backgroundColor: 'bg1',
+})
+
+export const input = sprinkles({
+  fontSize: '16',
+  position: 'relative',
+  whiteSpace: 'nowrap',
+  outline: 'none',
+  color: {
+    default: 'text1',
+    placeholder: 'text2',
+  },
+  background: 'none',
+  border: 'none',
+  width: 'full',
 })

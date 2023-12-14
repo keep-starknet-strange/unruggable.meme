@@ -16,3 +16,7 @@ interface SecondaryButtonProps extends ButtonProps {
 export const SecondaryButton = ({ className, withIcon, ...props }: SecondaryButtonProps) => (
   <Box as="button" className={clsx(className, styles.secondaryButton({ withIcon }))} {...props} />
 )
+
+export const IconButton = ({ className, ...props }: ButtonProps) => (
+  <Box as="button" className={clsx(className, styles.iconButton)} {...props} />
+)

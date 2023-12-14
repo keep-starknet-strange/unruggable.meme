@@ -1,11 +1,11 @@
 use core::debug::PrintTrait;
 use core::traits::Into;
-use starknet::{ContractAddress, contract_address_const};
 use openzeppelin::token::erc20::interface::IERC20;
-use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
-use unruggablememecoin::unruggable_memecoin::{
-    IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait,
-    UnruggableMemecoin::MAX_HOLDERS_BEFORE_LAUNCH
+use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank};
+use starknet::{ContractAddress, contract_address_const};
+
+use unruggable::tokens::interface::{
+    IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
 };
 
 fn deploy_contract(
@@ -27,342 +27,306 @@ fn deploy_contract(
     contract.deploy(@constructor_calldata).unwrap()
 }
 
-#[test]
-fn test_mint() {
-    let owner = contract_address_const::<42>();
-    let initial_supply = 1000.into();
-    let contract_address = deploy_contract(
-        owner, owner, 'UnruggableMemecoin', 'MT', initial_supply
-    );
-
-    let safe_dispatcher = IUnruggableMemecoinDispatcher { contract_address };
-
-    // Check total supply. Should be equal to initial supply.
-    let total_supply = safe_dispatcher.total_supply();
-    assert(total_supply == initial_supply, 'Invalid total supply');
-
-    // Check initial balance. Should be equal to initial supply.
-    let balance = safe_dispatcher.balance_of(owner);
-    assert(balance == initial_supply, 'Invalid balance');
-}
-
-
-#[test]
-fn test_transfer() {
-    let owner = contract_address_const::<42>();
-    let recipient = contract_address_const::<43>();
-    let initial_supply = 1000.into();
-    let contract_address = deploy_contract(
-        owner, owner, 'UnruggableMemecoin', 'MT', initial_supply
-    );
-
-
-    // set owner as caller
-    start_prank(CheatTarget::One(contract_address), owner);
-
-    // make transfer 
-    let safe_dispatcher = IUnruggableMemecoinDispatcher { contract_address };
-    safe_dispatcher.transfer(recipient, initial_supply - 1);
-
-    // check owner's balance. Should be equal to initial supply.
-    let owner_balance = safe_dispatcher.balance_of(owner);
-    assert(owner_balance == 1, 'invalid owner balance');
-
-    // check initial balance. Should be equal to initial supply.
-    let recipient_balance = safe_dispatcher.balance_of(recipient);
-    assert(recipient_balance == initial_supply - 1 , 'invalid recipient balance');
-}
-
-
-#[test]
-fn test_transfer_2() {
-    /// Ensure that transfers can be made out to 
-    /// up to `MAX_HOLDERS_BEFORE_LAUNCH` addresses
-
-    let owner = contract_address_const::<42>();
-    let initial_supply = 1000.into();
-    let contract_address = deploy_contract(
-        owner, owner, 'UnruggableMemecoin', 'MT', initial_supply
-    );
-
-
-    // set owner as caller
-    start_prank(CheatTarget::One(contract_address), owner);
-
-    let safe_dispatcher = IUnruggableMemecoinDispatcher { contract_address };
-
-
-    // index starts from 1 because the owner
-    // is considered to be the first hodler
-    let mut index = 1; 
-    loop {
-        if index == MAX_HOLDERS_BEFORE_LAUNCH {
-            break;
-        }
-
-        // make transfer 
-        let recipient: ContractAddress = (index.into() + 9999999).try_into().unwrap();
-        safe_dispatcher.transfer(recipient, 1);
-
-        // check initial balance. Should be equal to initial supply.
-        let recipient_balance = safe_dispatcher.balance_of(recipient);
-        assert(recipient_balance == 1, 'invalid recipient balance');
-
-        index += 1;
+mod erc20_metadata {
+    use core::debug::PrintTrait;
+    use openzeppelin::token::erc20::interface::IERC20;
+    use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
+    use starknet::{ContractAddress, contract_address_const};
+    use super::deploy_contract;
+    use unruggable::tokens::interface::{
+        IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
+
+    #[test]
+    fn test_name() {
+        let owner = contract_address_const::<42>();
+        let recipient = contract_address_const::<43>();
+        let name = 'UnruggableMemecoin';
+        let symbol = 'UM';
+        let initial_supply = 1000.into();
+        let contract_address = deploy_contract(owner, recipient, name, symbol, initial_supply);
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        // Check name. Should be equal to 'UnruggableMemecoin'.
+        let name = memecoin.name();
+        assert(name == name, 'Invalid name');
+    }
+
+    #[test]
+    fn test_decimals() {
+        let owner = contract_address_const::<42>();
+        let recipient = contract_address_const::<43>();
+        let name = 'UnruggableMemecoin';
+        let symbol = 'UM';
+        let initial_supply = 1000.into();
+        let contract_address = deploy_contract(owner, recipient, name, symbol, initial_supply);
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        // Check decimals. Should be equal to 18.
+        let decimals = memecoin.decimals();
+        assert(decimals == 18, 'Invalid decimals');
+    }
+
+    #[test]
+    fn test_symbol() {
+        let owner = contract_address_const::<42>();
+        let recipient = contract_address_const::<43>();
+        let name = 'UnruggableMemecoin';
+        let symbol = 'UM';
+        let initial_supply = 1000.into();
+        let contract_address = deploy_contract(owner, recipient, name, symbol, initial_supply);
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        // Check symbol. Should be equal to 'UM'.
+        let symbol = memecoin.symbol();
+        assert(symbol == symbol, 'Invalid symbol');
+    }
 }
 
-
-#[test]
-#[should_panic(expected: ('Unruggable: max holders reached', ))]
-fn test_transfer_3() {
-    /// Ensure that transfers can only be made out to 
-    /// up to `MAX_HOLDERS_BEFORE_LAUNCH` addresses
-
-    let owner = contract_address_const::<42>();
-    let initial_supply = 1000.into();
-    let contract_address = deploy_contract(
-        owner, owner, 'UnruggableMemecoin', 'MT', initial_supply
-    );
-
-    // set owner as caller
-    start_prank(CheatTarget::One(contract_address), owner);
-
-    let safe_dispatcher = IUnruggableMemecoinDispatcher { contract_address };
-
-    let mut index = 0; 
-    loop {
-        if index == MAX_HOLDERS_BEFORE_LAUNCH + 1 {
-            break;
-        }
-
-        // make transfer 
-        let recipient: ContractAddress = (index.into() + 9999999).try_into().unwrap();
-        safe_dispatcher.transfer(recipient, 1);
-
-        // check initial balance. Should be equal to initial supply.
-        let recipient_balance = safe_dispatcher.balance_of(recipient);
-        assert(recipient_balance == 1, 'invalid recipient balance');
-
-        index += 1;
+mod erc20_entrypoints {
+    use core::debug::PrintTrait;
+    use core::traits::Into;
+    use openzeppelin::token::erc20::interface::IERC20;
+    use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
+    use starknet::{ContractAddress, contract_address_const};
+    use super::deploy_contract;
+    use unruggable::tokens::interface::{
+        IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
+
+    // Test ERC20 snake entrypoints
+
+    #[test]
+    fn test_total_supply() {
+        let owner = contract_address_const::<42>();
+        let initial_supply = 1000.into();
+        let contract_address = deploy_contract(
+            owner, owner, 'UnruggableMemecoin', 'UM', initial_supply
+        );
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        // Check total supply. Should be equal to initial supply.
+        let total_supply = memecoin.total_supply();
+        assert(total_supply == initial_supply, 'Invalid total supply');
+
+        // Check initial balance. Should be equal to initial supply.
+        let balance = memecoin.balance_of(owner);
+        assert(balance == initial_supply, 'Invalid balance');
+    }
+
+
+    #[test]
+    fn test_balance_of() {
+        let owner = contract_address_const::<42>();
+        let initial_supply = 1000.into();
+        let contract_address = deploy_contract(
+            owner, owner, 'UnruggableMemecoin', 'UM', initial_supply
+        );
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        // Check initial balance. Should be equal to initial supply.
+        let balance = memecoin.balance_of(owner);
+        assert(balance == initial_supply, 'Invalid balance');
+    }
+
+    #[test]
+    fn test_approve_allowance() {
+        let owner = contract_address_const::<42>();
+        let spender = contract_address_const::<43>();
+        let initial_supply = 1000.into();
+        let contract_address = deploy_contract(
+            owner, owner, 'UnruggableMemecoin', 'UM', initial_supply
+        );
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        // Check initial allowance. Should be equal to 0.
+        let allowance = memecoin.allowance(owner, spender);
+        assert(allowance == 0.into(), 'Invalid allowance before');
+
+        // Approve initial supply tokens.
+        start_prank(CheatTarget::One(memecoin.contract_address), owner);
+        memecoin.approve(spender, initial_supply);
+
+        // Check allowance. Should be equal to initial supply.
+        let allowance = memecoin.allowance(owner, spender);
+        assert(allowance == initial_supply, 'Invalid allowance after');
+    }
+
+    #[test]
+    fn test_transfer() {
+        let owner = contract_address_const::<42>();
+        let recipient = contract_address_const::<43>();
+        let initial_supply = 1000.into();
+        let contract_address = deploy_contract(
+            owner, owner, 'UnruggableMemecoin', 'UM', initial_supply
+        );
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        // Transfer 100 tokens to recipient.
+        start_prank(CheatTarget::One(memecoin.contract_address), owner);
+        memecoin.transfer(recipient, 100.into());
+
+        // Check balance. Should be equal to initial supply - 100.
+        let owner_balance = memecoin.balance_of(owner);
+        assert(owner_balance == (initial_supply - 100.into()), 'Invalid balance owner');
+
+        // Check recipient balance. Should be equal to 100.
+        let recipient_balance = memecoin.balance_of(recipient);
+        assert(recipient_balance == 100.into(), 'Invalid balance recipient');
+    }
+
+    #[test]
+    fn test_transfer_from() {
+        let owner = contract_address_const::<42>();
+        let spender = contract_address_const::<43>();
+        let recipient = contract_address_const::<44>();
+        let initial_supply = 1000.into();
+        let contract_address = deploy_contract(
+            owner, owner, 'UnruggableMemecoin', 'UM', initial_supply
+        );
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        // Check initial balance. Should be equal to initial supply.
+        let balance = memecoin.balance_of(owner);
+        assert(balance == initial_supply, 'Invalid balance');
+
+        // Approve initial supply tokens.
+        start_prank(CheatTarget::One(memecoin.contract_address), owner);
+        memecoin.approve(spender, initial_supply);
+
+        // Transfer 100 tokens to recipient.
+        start_prank(CheatTarget::One(memecoin.contract_address), spender);
+        memecoin.transfer_from(owner, recipient, 100.into());
+
+        // Check balance. Should be equal to initial supply - 100.
+        let owner_balance = memecoin.balance_of(owner);
+        assert(owner_balance == (initial_supply - 100.into()), 'Invalid balance owner');
+
+        // Check recipient balance. Should be equal to 100.
+        let recipient_balance = memecoin.balance_of(recipient);
+        assert(recipient_balance == 100.into(), 'Invalid balance recipient');
+
+        // Check allowance. Should be equal to initial supply - 100.
+        let allowance = memecoin.allowance(owner, spender);
+        assert(allowance == (initial_supply - 100.into()), 'Invalid allowance');
+    }
+
+    // Test ERC20 Camel entrypoints
+
+    #[test]
+    fn test_totalSupply() {
+        let owner = contract_address_const::<42>();
+        let initial_supply = 1000.into();
+        let contract_address = deploy_contract(
+            owner, owner, 'UnruggableMemecoin', 'UM', initial_supply
+        );
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        // Check total supply. Should be equal to initial supply.
+        let total_supply = memecoin.totalSupply();
+        assert(total_supply == initial_supply, 'Invalid total supply');
+    }
+
+    #[test]
+    fn test_balanceOf() {
+        let owner = contract_address_const::<42>();
+        let initial_supply = 1000.into();
+        let contract_address = deploy_contract(
+            owner, owner, 'UnruggableMemecoin', 'UM', initial_supply
+        );
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        // Check initial balance. Should be equal to initial supply.
+        let balance = memecoin.balanceOf(owner);
+        assert(balance == initial_supply, 'Invalid balance');
+    }
+
+    #[test]
+    fn test_transferFrom() {
+        let owner = contract_address_const::<42>();
+        let spender = contract_address_const::<43>();
+        let recipient = contract_address_const::<44>();
+        let initial_supply = 1000.into();
+        let contract_address = deploy_contract(
+            owner, owner, 'UnruggableMemecoin', 'UM', initial_supply
+        );
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        // Check initial balance. Should be equal to initial supply.
+        let balance = memecoin.balanceOf(owner);
+        assert(balance == initial_supply, 'Invalid balance');
+
+        // Approve initial supply tokens.
+        start_prank(CheatTarget::One(memecoin.contract_address), owner);
+        memecoin.approve(spender, initial_supply);
+
+        // Transfer 100 tokens to recipient.
+        start_prank(CheatTarget::One(memecoin.contract_address), spender);
+        memecoin.transferFrom(owner, recipient, 100.into());
+
+        // Check balance. Should be equal to initial supply - 100.
+        let balance = memecoin.balanceOf(owner);
+        assert(balance == (initial_supply - 100.into()), 'Invalid balance');
+
+        // Check recipient balance. Should be equal to 100.
+        let balance = memecoin.balanceOf(recipient);
+        assert(balance == 100.into(), 'Invalid balance');
+
+        // Check allowance. Should be equal to initial supply - 100.
+        let allowance = memecoin.allowance(owner, spender);
+        assert(allowance == (initial_supply - 100.into()), 'Invalid allowance');
+    }
 }
 
-
-
-#[test]
-fn test_transfer_4() {
-    /// Ensure that transfer to more than `MAX_HOLDERS_BEFORE_LAUNCH`
-    /// works after the token is launched
-
-    let owner = contract_address_const::<42>();
-    let initial_supply = 1000.into();
-    let contract_address = deploy_contract(
-        owner, owner, 'UnruggableMemecoin', 'MT', initial_supply
-    );
-
-
-    // set owner as caller
-    start_prank(CheatTarget::One(contract_address), owner);
-
-    let safe_dispatcher = IUnruggableMemecoinDispatcher { contract_address };
-    // launch memecoin
-    safe_dispatcher.launch_memecoin();
-
-    let mut index = 0; 
-    loop {
-        if index == MAX_HOLDERS_BEFORE_LAUNCH + 1 {
-            break;
-        }
-
-        // make transfer 
-        let recipient: ContractAddress = (index.into() + 9999999).try_into().unwrap();
-        safe_dispatcher.transfer(recipient, 1);
-
-        // check initial balance. Should be equal to initial supply.
-        let recipient_balance = safe_dispatcher.balance_of(recipient);
-        assert(recipient_balance == 1, 'invalid recipient balance');
-
-        index += 1;
+mod memecoin_entrypoints {
+    use core::debug::PrintTrait;
+    use openzeppelin::token::erc20::interface::IERC20;
+    use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
+    use starknet::{ContractAddress, contract_address_const};
+    use super::deploy_contract;
+    use unruggable::tokens::interface::{
+        IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
+
+    #[test]
+    fn test_launch_memecoin() {
+        let owner = contract_address_const::<42>();
+        let recipient = contract_address_const::<43>();
+        let initial_supply = 1000.into();
+        let contract_address = deploy_contract(
+            owner, recipient, 'UnruggableMemecoin', 'UM', initial_supply
+        );
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        start_prank(CheatTarget::One(memecoin.contract_address), owner);
+        memecoin.launch_memecoin();
+    //TODO
+    }
+
+    #[test]
+    #[should_panic(expected: ('Caller is not the owner',))]
+    fn test_launch_memecoin_not_owner() {
+        let owner = contract_address_const::<42>();
+        let recipient = contract_address_const::<43>();
+        let initial_supply = 1000.into();
+        let contract_address = deploy_contract(
+            owner, recipient, 'UnruggableMemecoin', 'UM', initial_supply
+        );
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        memecoin.launch_memecoin();
+    }
 }
-
-
-
-#[test]
-fn test_transfer_from() {
-    let owner = contract_address_const::<42>();
-    let recipient = contract_address_const::<43>();
-    let approved = contract_address_const::<44>();
-    let initial_supply = 1000.into();
-    let contract_address = deploy_contract(
-        owner, owner, 'UnruggableMemecoin', 'MT', initial_supply
-    );
-
-    let safe_dispatcher = IUnruggableMemecoinDispatcher { contract_address };
-
-    // set owner as caller
-    start_prank(CheatTarget::One(contract_address), owner);
-
-    // approve to spend initial_supply
-    safe_dispatcher.approve(approved, initial_supply);
-
-    // set approved as caller
-    start_prank(CheatTarget::One(contract_address), approved);
-
-    // make transfer 
-    safe_dispatcher.transfer_from(owner, recipient, initial_supply - 1);
-
-    // check owner's balance. Should be equal to initial supply.
-    let owner_balance = safe_dispatcher.balance_of(owner);
-    assert(owner_balance == 1, 'invalid owner balance');
-
-    // check that approval was spent
-    let approved_allowance = safe_dispatcher.allowance(owner, approved);
-    assert(approved_allowance == 1, 'invalid approved balance');
-
-    // check initial balance. Should be equal to initial supply.
-    let recipient_balance = safe_dispatcher.balance_of(recipient);
-    assert(recipient_balance == initial_supply - 1 , 'invalid recipient balance');
-}
-
-
-#[test]
-fn test_transfer_from_2() {
-    /// Ensure that transfers can be made out to 
-    /// up to `MAX_HOLDERS_BEFORE_LAUNCH` addresses
-
-    let owner = contract_address_const::<42>();
-    let approved = contract_address_const::<44>();
-    let initial_supply = 1000.into();
-    let contract_address = deploy_contract(
-        owner, owner, 'UnruggableMemecoin', 'MT', initial_supply
-    );
-
-    let safe_dispatcher = IUnruggableMemecoinDispatcher { contract_address };
-
-
-    // set owner as caller
-    start_prank(CheatTarget::One(contract_address), owner);
-
-    // approve to spend initial_supply
-    safe_dispatcher.approve(approved, initial_supply);
-
-    // set approved as caller
-    start_prank(CheatTarget::One(contract_address), approved);
-
-    let mut index = 0; 
-    loop {
-        if index == MAX_HOLDERS_BEFORE_LAUNCH {
-            break;
-        }
-
-        // make transfer 
-        let recipient: ContractAddress = (index.into() + 9999999).try_into().unwrap();
-        safe_dispatcher.transfer_from(owner, recipient, 1);
-
-        // check initial balance. Should be equal to initial supply.
-        let recipient_balance = safe_dispatcher.balance_of(recipient);
-        assert(recipient_balance == 1, 'invalid recipient balance');
-
-        index += 1;
-    };
-}
-
-
-#[test]
-#[should_panic(expected: ('Unruggable: max holders reached', ))]
-fn test_transfer_from_3() {
-    /// Ensure that transfers can only be made out to 
-    /// up to `MAX_HOLDERS_BEFORE_LAUNCH` addresses
-
-    let owner = contract_address_const::<42>();
-    let approved = contract_address_const::<44>();
-    let initial_supply = 1000.into();
-    let contract_address = deploy_contract(
-        owner, owner, 'UnruggableMemecoin', 'MT', initial_supply
-    );
-
-
-    let safe_dispatcher = IUnruggableMemecoinDispatcher { contract_address };
-
-    // set owner as caller
-    start_prank(CheatTarget::One(contract_address), owner);
-
-    // approve to spend initial_supply
-    safe_dispatcher.approve(approved, initial_supply);
-
-    // set approved as caller
-    start_prank(CheatTarget::One(contract_address), approved);
-
-    let mut index = 0; 
-    loop {
-        if index == MAX_HOLDERS_BEFORE_LAUNCH + 1 {
-            break;
-        }
-
-        // make transfer 
-        let recipient: ContractAddress = (index.into() + 9999999).try_into().unwrap();
-        safe_dispatcher.transfer_from(owner, recipient, 1);
-
-        // check initial balance. Should be equal to initial supply.
-        let recipient_balance = safe_dispatcher.balance_of(recipient);
-        assert(recipient_balance == 1, 'invalid recipient balance');
-
-        index += 1;
-    };
-}
-
-
-
-#[test]
-fn test_transfer_from_4() {
-    /// Ensure that transfer to more than `MAX_HOLDERS_BEFORE_LAUNCH`
-    /// works after the token is launched
-
-    let owner = contract_address_const::<42>();
-    let approved = contract_address_const::<44>();
-    let initial_supply = 1000.into();
-    let contract_address = deploy_contract(
-        owner, owner, 'UnruggableMemecoin', 'MT', initial_supply
-    );
-
-    let safe_dispatcher = IUnruggableMemecoinDispatcher { contract_address };
-
-
-    // set owner as caller
-    start_prank(CheatTarget::One(contract_address), owner);
-
-    // approve to spend initial_supply
-    safe_dispatcher.approve(approved, initial_supply);
-
-    // launch memecoin
-    safe_dispatcher.launch_memecoin();
-
-    // set approved as caller
-    start_prank(CheatTarget::One(contract_address), approved);
-
-
-    let mut index = 0; 
-    loop {
-        if index == MAX_HOLDERS_BEFORE_LAUNCH + 1 {
-            break;
-        }
-
-        // make transfer 
-        let recipient: ContractAddress = (index.into() + 9999999).try_into().unwrap();
-        safe_dispatcher.transfer_from(owner, recipient, 1);
-
-
-        // check initial balance. Should be equal to initial supply.
-        let recipient_balance = safe_dispatcher.balance_of(recipient);
-        assert(recipient_balance == 1, 'invalid recipient balance');
-
-        index += 1;
-    };
-}
-
-
-
-
-
