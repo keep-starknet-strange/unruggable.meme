@@ -130,8 +130,8 @@ mod UnruggableMemecoinFactory {
                             AMMRouter {
                                 name: AMM::JediSwap.into(),
                                 address: contract_address_const::<
-                                0x17f2e8d48625c8f615a19a57b62d0a68b7096b0c51907daa8c8690458e6fb55
-                                    // 0x7eef7d58a3bad23287f9aacb4749e2a5de5af88c4b9a968eb5ce81937da62de
+                                    0x17f2e8d48625c8f615a19a57b62d0a68b7096b0c51907daa8c8690458e6fb55
+                                // 0x7eef7d58a3bad23287f9aacb4749e2a5de5af88c4b9a968eb5ce81937da62de
                                 >()
                             }
                         );

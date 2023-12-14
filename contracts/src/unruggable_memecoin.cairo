@@ -180,15 +180,13 @@ mod UnruggableMemecoin {
             let caller_address = get_caller_address();
 
             // [Create Pool]
-            let jediswap_router = IRouterC1Dispatcher {
+            let amm_router = IRouterC1Dispatcher {
                 contract_address: self.amm_configs.read(amm.into()),
             };
 
-            let jediswap_factory = IFactoryC1Dispatcher {
-                contract_address: jediswap_router.factory(),
-            };
+            let amm_factory = IFactoryC1Dispatcher { contract_address: amm_router.factory(), };
 
-            let pair_address = jediswap_factory
+            let pair_address = amm_factory
                 .create_pair(counterparty_token_address, memecoin_address);
 
             // [Check Balance]
@@ -208,21 +206,24 @@ mod UnruggableMemecoin {
             // [Approve]
             // TODO: this approve should be memecoin_address to router_address but test its failing
             self._approve(memecoin_address, caller_address, liquidity_memecoin_amount);
-            counterparty_token_dispatcher.approve(jediswap_router.contract_address, liquidity_counterparty_token);
+            counterparty_token_dispatcher
+                .approve(amm_router.contract_address, liquidity_counterparty_token);
 
             'router launch()'.print();
-            jediswap_router.contract_address.print();
+            amm_router.contract_address.print();
             'memecoin launch()'.print();
             memecoin_address.print();
 
             'allowance token 1'.print();
-            self.allowance(memecoin_address, jediswap_router.contract_address).print();
-            
+            self.allowance(memecoin_address, amm_router.contract_address).print();
+
             'allowance token 2'.print();
-            counterparty_token_dispatcher.allowance(memecoin_address, jediswap_router.contract_address).print();
+            counterparty_token_dispatcher
+                .allowance(memecoin_address, amm_router.contract_address)
+                .print();
 
             // [Add liquidity]
-            jediswap_router
+            amm_router
                 .add_liquidity(
                     memecoin_address,
                     counterparty_token_address,
