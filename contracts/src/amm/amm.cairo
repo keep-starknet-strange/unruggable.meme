@@ -32,13 +32,13 @@ impl Felt252TryIntoNetwork of TryInto<felt252, Network> {
         // TODO: Validate names
         if self == 'MAINNET' {
             Option::Some(Network::Mainnet)
-        } else if self == 'SN_GOERLI'{
+        } else if self == 'SN_GOERLI' {
             Option::Some(Network::Goerli)
         } else if self == 'SEPOLIA' {
             Option::Some(Network::Sepolia)
         } else if self == 'LOCAL' {
             Option::Some(Network::Local)
-        }else {
+        } else {
             Option::None(())
         }
     }

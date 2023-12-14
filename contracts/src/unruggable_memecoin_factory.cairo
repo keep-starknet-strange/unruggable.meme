@@ -15,7 +15,7 @@ trait IUnruggableMemecoinFactory<TContractState> {
 #[starknet::contract]
 mod UnruggableMemecoinFactory {
     use core::box::BoxTrait;
-use super::IUnruggableMemecoinFactory;
+    use super::IUnruggableMemecoinFactory;
 
     // Core dependencies.
     use poseidon::poseidon_hash_span;
@@ -64,7 +64,10 @@ use super::IUnruggableMemecoinFactory;
 
     #[constructor]
     fn constructor(
-        ref self: ContractState, owner: ContractAddress, network: felt252, memecoin_class_hash: ClassHash
+        ref self: ContractState,
+        owner: ContractAddress,
+        network: felt252,
+        memecoin_class_hash: ClassHash
     ) {
         // Initialize the owner.
         self.ownable.initializer(owner);
@@ -122,11 +125,15 @@ use super::IUnruggableMemecoinFactory;
                 Network::Goerli => amms,
                 Network::Sepolia => amms,
                 Network::Local => {
-                    amms.append(
-                        AMMRouter {
-                            name: AMM::JediSwap.into(), address: contract_address_const::<0x7eef7d58a3bad23287f9aacb4749e2a5de5af88c4b9a968eb5ce81937da62de>()
-                        }
-                    );
+                    amms
+                        .append(
+                            AMMRouter {
+                                name: AMM::JediSwap.into(),
+                                address: contract_address_const::<
+                                    0x7eef7d58a3bad23287f9aacb4749e2a5de5af88c4b9a968eb5ce81937da62de
+                                >()
+                            }
+                        );
                     amms
                 },
             }
@@ -158,5 +165,4 @@ use super::IUnruggableMemecoinFactory;
         data.append(starknet::get_block_timestamp().into());
         poseidon_hash_span(data.span())
     }
-
 }

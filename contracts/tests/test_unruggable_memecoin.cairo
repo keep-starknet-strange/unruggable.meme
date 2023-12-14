@@ -22,6 +22,8 @@ use unruggablememecoin::unruggable_memecoin_factory::{
     IUnruggableMemecoinFactoryDispatcherTrait
 };
 
+const LOCAL_NETWORK: felt252 = 'LOCAL';
+
 #[test]
 fn test_mint() {
     let owner = contract_address_const::<42>();
@@ -59,7 +61,7 @@ fn test_launch_memecoin() {
     // Declare UnruggableMemecoin and use ClassHash for the Factory
     let contract = declare('UnruggableMemecoin');
     let memecoin_factory_address = deploy_memecoin_factory(
-        OWNER(), 'LOCAL', contract.class_hash,
+        OWNER(), LOCAL_NETWORK, contract.class_hash,
     );
 
     // Deploy UnruggableMemecoinFactory
@@ -71,10 +73,8 @@ fn test_launch_memecoin() {
     let memecoin_address = unruggable_meme_factory
         .create_memecoin(OWNER(), OWNER(), 'MemeCoin', 'MC', initial_supply);
 
-    let unruggable_memecoin = IUnruggableMemecoinDispatcher {
-        contract_address: memecoin_address
-    };
-    
+    let unruggable_memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
+
     let token_dispatcher = IERC20Dispatcher { contract_address: counterparty_token_address };
 
     // Transfer 10 counterparty_token to UnruggableMemecoin contract
@@ -101,5 +101,5 @@ fn test_launch_memecoin() {
         .launch_memecoin(
             AMM::JediSwap, counterparty_token_address, 10 * TOKEN_MULTIPLIER, 10 * TOKEN_MULTIPLIER
         );
-    // stop_prank(CheatTarget::One(memecoin_address));
+// stop_prank(CheatTarget::One(memecoin_address));
 }

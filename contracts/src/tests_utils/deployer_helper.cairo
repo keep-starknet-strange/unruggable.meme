@@ -46,7 +46,7 @@ mod DeployerHelper {
     }
 
     fn deploy_memecoin_factory(
-        owner: ContractAddress, network: felt252,  memecoin_class_hash: ClassHash, 
+        owner: ContractAddress, network: felt252, memecoin_class_hash: ClassHash,
     ) -> ContractAddress {
         let contract = declare('UnruggableMemecoinFactory');
         let mut constructor_calldata = array![owner.into(), network, memecoin_class_hash.into(),];
