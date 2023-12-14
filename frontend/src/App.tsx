@@ -2,6 +2,7 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 
 import AppLayout from './components/Layout/App'
 import HomeLayout from './components/Layout/Home'
+import LeaderboardPage from './pages/History'
 import HomePage from './pages/Home'
 import LaunchPage from './pages/Launch'
 import ManagePage from './pages/Manage'
@@ -37,6 +38,14 @@ const router = createBrowserRouter([
     element: (
       <AppLayout>
         <ScreenPage />
+      </AppLayout>
+    ),
+  },
+  {
+    path: '/history',
+    element: (
+      <AppLayout>
+        <LeaderboardPage />
       </AppLayout>
     ),
   },
