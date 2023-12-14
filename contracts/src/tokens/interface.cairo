@@ -35,6 +35,7 @@ trait IUnruggableMemecoin<TState> {
     // ************************************
     // * Additional functions
     // ************************************
+    fn launched(self: @TState) -> bool;
     fn launch_memecoin(ref self: TState);
 }
 
@@ -61,5 +62,6 @@ trait IUnruggableMemecoinSnake<TState> {
 
 #[starknet::interface]
 trait IUnruggableAdditional<TState> {
+    fn launched(self: @TState) -> bool;
     fn launch_memecoin(ref self: TState);
 }

@@ -40,6 +40,8 @@ mod UnruggableMemecoin {
     #[storage]
     struct Storage {
         marker_v_0: (),
+        launched: bool,
+        pre_launch_holders_count: u8,
         // Components.
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
@@ -55,6 +57,11 @@ mod UnruggableMemecoin {
         #[flat]
         ERC20Event: ERC20Component::Event
     }
+
+    mod Errors {
+        const MAX_HOLDERS_REACHED: felt252 = 'memecoin: max holders reached';
+    }
+
 
 
     /// Constructor called once when the contract is deployed.
@@ -80,7 +87,7 @@ mod UnruggableMemecoin {
         self.ownable.initializer(owner);
 
         // Mint initial supply to the initial recipient.
-        self.erc20._mint(initial_recipient, initial_supply);
+        self._mint(initial_recipient, initial_supply);
     }
 
     //
@@ -91,10 +98,18 @@ mod UnruggableMemecoin {
         // ************************************
         // * UnruggableMemecoin functions
         // ************************************
+
+        fn launched(self: @ContractState) -> bool {
+            self.launched.read()
+        }
+
         fn launch_memecoin(ref self: ContractState) {
             // Checks: Only the owner can launch the memecoin.
             self.ownable.assert_only_owner();
         // Effects.
+
+            // Launch the coin
+            self.launched.write(true);
 
         // Interactions.
         }
@@ -171,12 +186,39 @@ mod UnruggableMemecoin {
     //
     #[generate_trait]
     impl UnruggableMemecoinInternalImpl of UnruggableMemecoinInternalTrait {
+
+        #[inline(always)]
+        fn _check_holders_limit(ref self: ContractState) {
+            
+            // enforce max number of holders before launch
+
+            if !self.launched.read() {
+                let current_holders_count = self.pre_launch_holders_count.read();
+                assert(
+                    current_holders_count < MAX_HOLDERS_BEFORE_LAUNCH, 
+                        Errors::MAX_HOLDERS_REACHED
+                );
+
+                self.pre_launch_holders_count.write(current_holders_count + 1);
+            }
+        }
+
+        fn _mint(
+            ref self: ContractState, 
+            recipient: ContractAddress, 
+            amount: u256
+        ) {
+            self._check_holders_limit();
+            self.erc20._mint(recipient, amount);
+        }
+        
         fn _transfer(
             ref self: ContractState,
             sender: ContractAddress,
             recipient: ContractAddress,
             amount: u256
         ) {
+            self._check_holders_limit();
             self.erc20._transfer(sender, recipient, amount);
         }
     }
