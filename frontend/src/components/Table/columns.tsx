@@ -1,9 +1,9 @@
 'use client'
 
 import { ColumnDef } from '@tanstack/react-table'
+import { Task } from 'src/pages/History/data/schema'
 
 import { labels, priorities, statuses } from '../../pages/History/data/data'
-import { Task } from '../../pages/History/data/schema'
 import { Badge } from '../../pages/History/registry/badge'
 import { Checkbox } from '../../pages/History/registry/checkbox'
 import { DataTableColumnHeader } from './data-table-column-header'

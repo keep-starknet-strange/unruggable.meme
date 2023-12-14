@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import './theme/css/global.css'
-import './theme/css/tailwind.css'
 
 import React from 'react'
 import { createRoot } from 'react-dom/client'
