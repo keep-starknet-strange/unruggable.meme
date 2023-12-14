@@ -235,7 +235,7 @@ export default function LaunchPage() {
               </Column>
             ) : (
               <PrimaryButton disabled={!account || isPending} className={styles.deployButton}>
-                {account ? (isPending ? 'WAITING FOR SIGNATURE' : 'DEPLOY') : 'CONNECT WALLET'}
+                {account ? (isPending ? 'Waiting for signature' : 'Deploy') : 'Connect wallet'}
               </PrimaryButton>
             )}
           </Column>
