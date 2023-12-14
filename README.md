@@ -86,6 +86,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/welttowelt"><img src="https://avatars.githubusercontent.com/u/58338510?v=4?s=100" width="100px;" alt="odin free"/><br /><sub><b>odin free</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=welttowelt" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Darlington02"><img src="https://avatars.githubusercontent.com/u/75126961?v=4?s=100" width="100px;" alt="Darlington Nnam"/><br /><sub><b>Darlington Nnam</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=Darlington02" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
