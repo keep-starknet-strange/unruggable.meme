@@ -52,9 +52,6 @@ fn test_launch_memecoin() {
     let (_, router_address) = deploy_contracts();
     let router_dispatcher = IRouterC1Dispatcher { contract_address: router_address };
 
-    'router_address'.print();
-    router_address.print();
-
     let initial_supply: u256 = 10 * TOKEN_MULTIPLIER;
     let counterparty_token_address = deploy_erc20(initial_supply, OWNER());
 
@@ -77,6 +74,12 @@ fn test_launch_memecoin() {
 
     let token_dispatcher = IERC20Dispatcher { contract_address: counterparty_token_address };
 
+    'memecoin_address'.print();
+    memecoin_address.print();
+
+    'router_address'.print();
+    router_address.print();
+
     // Transfer 10 counterparty_token to UnruggableMemecoin contract
     start_prank(CheatTarget::One(counterparty_token_address), OWNER());
     token_dispatcher.transfer(memecoin_address, 10 * TOKEN_MULTIPLIER);
@@ -87,19 +90,13 @@ fn test_launch_memecoin() {
     unruggable_memecoin.transfer(memecoin_address, 10 * TOKEN_MULTIPLIER);
     stop_prank(CheatTarget::One(memecoin_address));
 
-    // unruggable_meme_coin approves to router
-    start_prank(CheatTarget::One(memecoin_address), memecoin_address);
-    unruggable_memecoin.approve(router_address, 10 * TOKEN_MULTIPLIER);
-    stop_prank(CheatTarget::One(memecoin_address));
-
-    start_prank(CheatTarget::One(counterparty_token_address), memecoin_address);
-    token_dispatcher.approve(router_address, 10 * TOKEN_MULTIPLIER);
-    stop_prank(CheatTarget::One(counterparty_token_address));
-
-    // start_prank(CheatTarget::One(memecoin_address), OWNER());
+    start_prank(CheatTarget::One(memecoin_address), router_address);
+    start_prank(CheatTarget::One(router_address), memecoin_address);
+    start_prank(CheatTarget::One(memecoin_address), OWNER());
     unruggable_memecoin
         .launch_memecoin(
-            AMM::JediSwap, counterparty_token_address, 10 * TOKEN_MULTIPLIER, 10 * TOKEN_MULTIPLIER
+            AMM::JediSwap, counterparty_token_address, 1 * TOKEN_MULTIPLIER, 1 * TOKEN_MULTIPLIER
         );
-// stop_prank(CheatTarget::One(memecoin_address));
+    stop_prank(CheatTarget::One(memecoin_address));
+    stop_prank(CheatTarget::One(router_address));
 }

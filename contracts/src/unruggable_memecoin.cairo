@@ -166,10 +166,6 @@ mod UnruggableMemecoin {
         /// - The caller is not the owner of the contract.
         /// - Insufficient Memecoin funds are available for liquidity.
         /// - Insufficient counterparty token funds are available for liquidity.
-        ///
-        /// # Notes
-        /// - The Memecoin and counterparty token must be approved for spending by the contract before calling this method.
-        /// - The minimum amounts (`amount_a_min` and `amount_b_min`) are set to 1 for both Memecoin and counterparty tokens.
         fn launch_memecoin(
             ref self: ContractState,
             amm: AMM,
@@ -178,7 +174,7 @@ mod UnruggableMemecoin {
             liquidity_counterparty_token: u256,
         ) {
             // [Check Owner] Only the owner can launch the Memecoin
-            // self.ownable.assert_only_owner();
+            self.ownable.assert_only_owner();
 
             let memecoin_address = starknet::get_contract_address();
             let caller_address = get_caller_address();
@@ -208,6 +204,22 @@ mod UnruggableMemecoin {
                 counterparty_token_balance >= liquidity_counterparty_token,
                 'insufficient token funds',
             );
+
+            // [Approve]
+            // TODO: this approve should be memecoin_address to router_address but test its failing
+            self._approve(memecoin_address, caller_address, liquidity_memecoin_amount);
+            counterparty_token_dispatcher.approve(jediswap_router.contract_address, liquidity_counterparty_token);
+
+            'router launch()'.print();
+            jediswap_router.contract_address.print();
+            'memecoin launch()'.print();
+            memecoin_address.print();
+
+            'allowance token 1'.print();
+            self.allowance(memecoin_address, jediswap_router.contract_address).print();
+            
+            'allowance token 2'.print();
+            counterparty_token_dispatcher.allowance(memecoin_address, jediswap_router.contract_address).print();
 
             // [Add liquidity]
             jediswap_router
@@ -264,6 +276,7 @@ mod UnruggableMemecoin {
             recipient: ContractAddress,
             amount: u256
         ) -> bool {
+            'transfer_from memecoin'.print();
             let caller = get_caller_address();
             self._spend_allowance(sender, caller, amount);
             self._transfer(sender, recipient, amount);
@@ -375,6 +388,12 @@ mod UnruggableMemecoin {
             ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256
         ) {
             let current_allowance = self.allowances.read((owner, spender));
+            'owner'.print();
+            owner.print();
+            'spender'.print();
+            spender.print();
+            'current_allowance'.print();
+            current_allowance.print();
             if current_allowance != BoundedInt::max() {
                 self._approve(owner, spender, current_allowance - amount);
             }
