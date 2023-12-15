@@ -115,3 +115,17 @@ export const HeadlineLarge = ({ className, ...props }: TextProps) => (
     {...props}
   />
 )
+
+export const Error = ({ className, ...props }: TextProps) => (
+  <TextWrapper
+    className={clsx(
+      className,
+      sprinkles({
+        fontWeight: 'normal',
+        color: 'error',
+        fontSize: '14',
+      })
+    )}
+    {...props}
+  />
+)

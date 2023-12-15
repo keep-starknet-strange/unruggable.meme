@@ -12,11 +12,6 @@ const isProduction = process.env.NODE_ENV === 'production'
 const shouldLintOrTypeCheck = !isProduction
 
 module.exports = {
-  babel: {
-    plugins: [
-      '@vanilla-extract/babel-plugin',
-    ],
-  },
   eslint: {
     enable: shouldLintOrTypeCheck,
     pluginOptions(eslintConfig) {
@@ -84,7 +79,7 @@ module.exports = {
           {
             loader: require.resolve('css-loader'),
             options: {
-              url: false // Required as image imports should be handled via JS/TS import statements
+              url: false, // Required as image imports should be handled via JS/TS import statements
             },
           },
         ],

@@ -1,6 +1,6 @@
 import { keyframes, style } from '@vanilla-extract/css'
 
-import { vars } from './vars.css'
+import { vars } from './sprinkles.css'
 
 const placeholderShimmer = keyframes({
   '0%': {

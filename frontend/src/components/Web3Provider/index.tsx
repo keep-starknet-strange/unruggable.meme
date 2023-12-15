@@ -1,6 +1,10 @@
-import { InjectedConnector, StarknetConfig } from '@starknet-react/core'
-import { useMemo } from 'react'
-import { getL2Connections } from 'src/connections'
+import { goerli, mainnet } from '@starknet-react/chains'
+import { publicProvider, StarknetConfig, starkscan } from '@starknet-react/core'
+import { ArgentMobileConnector } from 'starknetkit/argentMobile'
+import { InjectedConnector } from 'starknetkit/injected'
+import { WebWalletConnector } from 'starknetkit/webwallet'
+
+const network = process.env.REACT_APP_NETWORK ?? 'goerli'
 
 // STARKNET
 
@@ -9,13 +13,21 @@ interface StarknetProviderProps {
 }
 
 export function StarknetProvider({ children }: StarknetProviderProps) {
-  const connections = getL2Connections()
-  const connectors: InjectedConnector[] = connections.map(({ connector }) => connector)
-
-  const key = useMemo(() => connections.map((connection) => connection.getName()).join('-'), [connections])
+  const connectors = [
+    new InjectedConnector({ options: { id: 'argentX', name: 'Argent' } }),
+    new InjectedConnector({ options: { id: 'braavos', name: 'Braavos' } }),
+    new WebWalletConnector({ url: 'https://web.argent.xyz' }),
+    new ArgentMobileConnector(),
+  ]
 
   return (
-    <StarknetConfig connectors={connectors} key={key} autoConnect>
+    <StarknetConfig
+      connectors={connectors}
+      chains={[network === 'mainnet' ? mainnet : goerli]}
+      provider={publicProvider()}
+      explorer={starkscan}
+      autoConnect
+    >
       {children}
     </StarknetConfig>
   )

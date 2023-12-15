@@ -1,9 +1,10 @@
 import { globalStyle } from '@vanilla-extract/css'
 
-import { vars } from './vars.css'
+import { vars } from './sprinkles.css'
 
 globalStyle('*', {
   fontFamily: "'Inter', sans-serif",
+  boxSizing: 'border-box',
 })
 
 globalStyle('html, body', {
