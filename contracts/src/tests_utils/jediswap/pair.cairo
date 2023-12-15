@@ -99,7 +99,7 @@ trait IPairC1<TContractState> {
 
 #[starknet::contract]
 mod PairC1 {
-    use unruggablememecoin::tests_utils::erc_20::ERC20;
+    use unruggable::tests_utils::erc_20::ERC20;
     use array::{ArrayTrait, SpanTrait};
     use result::ResultTrait;
     use zeroable::Zeroable;

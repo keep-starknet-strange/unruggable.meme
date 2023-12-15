@@ -33,7 +33,7 @@ mod UnruggableMemecoinFactory {
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
 
-    use unruggablememecoin::amm::amm::AMM;
+    use unruggable::amm::amm::AMM;
 
     #[event]
     #[derive(Drop, starknet::Event)]

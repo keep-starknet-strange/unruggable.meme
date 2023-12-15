@@ -1,5 +1,3 @@
-mod unruggable_memecoin;
-mod unruggable_memecoin_factory;
 
 mod amm {
     mod jediswap_interface;
@@ -15,8 +13,10 @@ mod tests_utils {
         mod pair;
         mod router;
     }
-    
+}
+
 mod tokens {
+    mod factory;
     mod interface;
     mod memecoin;
 }
