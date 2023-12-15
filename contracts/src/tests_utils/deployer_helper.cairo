@@ -1,10 +1,10 @@
 mod DeployerHelper {
-    use starknet::{ContractAddress, ClassHash};
     use snforge_std::{
         ContractClass, ContractClassTrait, CheatTarget, declare, start_prank, stop_prank
     };
-    use unruggable::tests_utils::constants::{DEPLOYER, TOKEN0_NAME, SYMBOL};
+    use starknet::{ContractAddress, ClassHash};
     use unruggable::amm::amm::AMM;
+    use unruggable::tests_utils::constants::{DEPLOYER, TOKEN0_NAME, SYMBOL};
 
     fn deploy_contracts() -> (ContractAddress, ContractAddress) {
         let pair_class = declare('PairC1');

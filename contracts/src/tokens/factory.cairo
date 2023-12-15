@@ -15,7 +15,10 @@ trait IUnruggableMemecoinFactory<TContractState> {
 #[starknet::contract]
 mod UnruggableMemecoinFactory {
     use core::box::BoxTrait;
-    use super::IUnruggableMemecoinFactory;
+    use openzeppelin::access::ownable::OwnableComponent;
+
+    // External dependencies.
+    use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait;
 
     // Core dependencies.
     use poseidon::poseidon_hash_span;
@@ -24,16 +27,13 @@ mod UnruggableMemecoinFactory {
     use starknet::{
         ContractAddress, ClassHash, get_caller_address, get_contract_address, contract_address_const
     };
+    use super::IUnruggableMemecoinFactory;
 
-    // External dependencies.
-    use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait;
-    use openzeppelin::access::ownable::OwnableComponent;
+    use unruggable::amm::amm::AMM;
 
     // Components.
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
-
-    use unruggable::amm::amm::AMM;
 
     #[event]
     #[derive(Drop, starknet::Event)]

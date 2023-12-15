@@ -1,3 +1,4 @@
+use starknet::ClassHash;
 // @title JediSwap Pair Cairo 1.0
 // @author Mesh Finance
 // @license MIT
@@ -7,7 +8,6 @@
 //      Also an ERC20 token
 
 use starknet::ContractAddress;
-use starknet::ClassHash;
 //
 // External Interfaces
 //
@@ -99,21 +99,21 @@ trait IPairC1<TContractState> {
 
 #[starknet::contract]
 mod PairC1 {
-    use unruggable::tests_utils::erc_20::ERC20;
     use array::{ArrayTrait, SpanTrait};
+    use integer::{u128_try_from_felt252, u256_sqrt, u256_from_felt252};
     use result::ResultTrait;
-    use zeroable::Zeroable;
+    use starknet::syscalls::{replace_class_syscall, call_contract_syscall};
     use starknet::{
         ContractAddress, ClassHash, SyscallResult, SyscallResultTrait, get_caller_address,
         get_contract_address, get_block_timestamp, contract_address_const
     };
-    use integer::{u128_try_from_felt252, u256_sqrt, u256_from_felt252};
-    use starknet::syscalls::{replace_class_syscall, call_contract_syscall};
 
     use super::{
         IERC20Dispatcher, IERC20DispatcherTrait, IFactoryDispatcher, IFactoryDispatcherTrait,
         IJediSwapCalleeDispatcher, IJediSwapCalleeDispatcherTrait
     };
+    use unruggable::tests_utils::erc_20::ERC20;
+    use zeroable::Zeroable;
 
     //
     // Storage Pair

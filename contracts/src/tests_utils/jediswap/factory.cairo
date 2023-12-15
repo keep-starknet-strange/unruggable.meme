@@ -1,10 +1,10 @@
+use starknet::ClassHash;
 // @title JediSwap Factory Cairo 1.0
 // @author Mesh Finance
 // @license MIT
 // @notice Factory to create and register new pairs
 
 use starknet::ContractAddress;
-use starknet::ClassHash;
 
 #[starknet::interface]
 trait IFactoryC1<TContractState> {
@@ -30,15 +30,15 @@ trait IFactoryC1<TContractState> {
 #[starknet::contract]
 mod FactoryC1 {
     use array::ArrayTrait;
-    use zeroable::Zeroable;
+    use integer::u256_from_felt252;
+    use poseidon::poseidon_hash_span;
+    use starknet::class_hash::class_hash_to_felt252;
+    use starknet::syscalls::{deploy_syscall, replace_class_syscall};
     use starknet::{
         ContractAddress, ClassHash, SyscallResult, SyscallResultTrait, get_caller_address,
         contract_address_const, contract_address_to_felt252
     };
-    use starknet::class_hash::class_hash_to_felt252;
-    use integer::u256_from_felt252;
-    use starknet::syscalls::{deploy_syscall, replace_class_syscall};
-    use poseidon::poseidon_hash_span;
+    use zeroable::Zeroable;
 
 
     //

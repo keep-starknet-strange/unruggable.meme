@@ -1,7 +1,6 @@
-
 mod amm {
-    mod jediswap_interface;
     mod amm;
+    mod jediswap_interface;
 }
 
 mod tests_utils {

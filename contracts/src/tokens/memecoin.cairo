@@ -8,14 +8,14 @@ mod UnruggableMemecoin {
     use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait;
     use openzeppelin::token::erc20::ERC20Component;
     use starknet::{ContractAddress, get_caller_address};
-    use unruggable::tokens::interface::{
-        IUnruggableMemecoinSnake, IUnruggableMemecoinCamel, IUnruggableAdditional
-    };
+    use unruggable::amm::amm::{AMM, AMMV2};
     use unruggable::amm::jediswap_interface::{
         IFactoryC1Dispatcher, IFactoryC1DispatcherTrait, IRouterC1Dispatcher,
         IRouterC1DispatcherTrait, IERC20Dispatcher, IERC20DispatcherTrait
     };
-    use unruggable::amm::amm::{AMM, AMMV2};
+    use unruggable::tokens::interface::{
+        IUnruggableMemecoinSnake, IUnruggableMemecoinCamel, IUnruggableAdditional
+    };
     use zeroable::Zeroable;
 
     // Components.

@@ -1,3 +1,4 @@
+use starknet::ClassHash;
 // @title JediSwap router for stateless execution of swaps Cairo 1.0
 // @author Mesh Finance
 // @license MIT
@@ -5,7 +6,6 @@
 //       https://github.com/Uniswap/v2-periphery/blob/master/contracts/UniswapV2Router02.sol
 
 use starknet::ContractAddress;
-use starknet::ClassHash;
 
 //
 // External Interfaces
@@ -62,23 +62,23 @@ trait IRouterC1<TContractState> {
 
 #[starknet::contract]
 mod RouterC1 {
-    use traits::Into;
     use array::{ArrayTrait, SpanTrait};
+
+    use debug::PrintTrait;
+    use integer::u256_from_felt252;
     use result::ResultTrait;
-    use zeroable::Zeroable;
+    use starknet::syscalls::{replace_class_syscall, call_contract_syscall};
     use starknet::{
         ContractAddress, ClassHash, SyscallResult, SyscallResultTrait, get_caller_address,
         get_block_timestamp, contract_address_const, contract_address_to_felt252
     };
-    use integer::u256_from_felt252;
-    use starknet::syscalls::{replace_class_syscall, call_contract_syscall};
 
     use super::{
         IERC20Dispatcher, IERC20DispatcherTrait, IPairDispatcher, IPairDispatcherTrait,
         IFactoryDispatcher, IFactoryDispatcherTrait
     };
-
-    use debug::PrintTrait;
+    use traits::Into;
+    use zeroable::Zeroable;
 
     //
     // Storage
