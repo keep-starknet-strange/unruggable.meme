@@ -72,6 +72,24 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "welttowelt",
+      "name": "odin free",
+      "avatar_url": "https://avatars.githubusercontent.com/u/58338510?v=4",
+      "profile": "https://github.com/welttowelt",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "Darlington02",
+      "name": "Darlington Nnam",
+      "avatar_url": "https://avatars.githubusercontent.com/u/75126961?v=4",
+      "profile": "https://github.com/Darlington02",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,

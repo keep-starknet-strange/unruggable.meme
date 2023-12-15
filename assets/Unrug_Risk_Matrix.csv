@@ -1,0 +1,91 @@
+Category,Description from de.fi
+Open Source,Whether contract is open source or not
+Rugpull Risk,"A significant number of tokens belong to the owner of the pair, facilitating a potential rugpull"
+Reentrancy Risk,A function in this contract is vulnerable to reentrancy attacks
+Airdrop Risk,Beware of fake airdrops and check domains names
+Anti Whale,Whether the contract limits the maximum amount of transaction for a single address
+Anti Whale Modifiable,Whether the contract can modify the maximum amount of transactions
+Approval Objects Restriction,Whether the approve function has any restrictions for the spender
+Assert Violation,A bug exists in the contract that allows it to enter an invalid state
+Authorization through tx.origin,Using tx.origin for authorization risks
+Balance Modifiable,Whether contract owner can change the balance of any token holder
+Blacklisted,Whether the blacklist function is included in the contract
+Blocking loop,The loop can be blocked by adding a contract address to the list of user addresses
+Blocking transfer via changing router,"Transfer function includes an external call, creating possibilities for blocking transfers"
+Buy Tax,Taxes incurred when buying the token
+Can't be Bought,Whether the token can be bought
+Can't Sell All,Whether contract restricts token holders from selling all their tokens
+Code With No Effects,Solidity code that does not produce the intended effects
+Comparison to boolean constant,Boolean constants should be used directly without comparison
+Conformance to numeric notation best practices,Ensuring values with numerous digits are correctly understood
+Costly operations in a loop,Costly loop operations can waste gas and lead to errors
+Creator Address,Contract creator's address
+Creator Balance,Amount of tokens held by creator
+Creator Percentage,Percentage of tokens held by creator
+Creator Rugpull Risk,"A significan number of tokens belong to the owner of the pair, facilitating a potential rugpull"
+Delegatecall to Untrusted Callee,Risks associated with delegatecall to a dynamic code address
+Deletion on mapping containing a structure,Deletion in a structure containing a mapping does not delete the mapping
+Detect dangerous enum conversion,Risk of out-of-range enum conversion
+Division before multiplication,Loss of precision due to division before multiplication
+DoS with Failed Call,Risk of DoS condition due to failed external calls
+ETH draining,The contract enables ETH draining during token transfers or approvals
+External Call,Whether contract can call functions of other contracts
+Fake Token Approval,Risks of native tokens being drained during fake token revocation
+Floating Pragma,Risks associated with deploying contracts with different compiler versions
+Function initializing state variables,Risks with immediate initialization of state variables
+Hidden Owner,Whether the contract has hidden owners
+Honeypot,Risks of the token being unsellable due to contract functionality
+In main Dex,Whether the token can be traded on the main dex
+Incorrect ERC20 interfaces,Incorrect return values for ERC20 functions
+Incorrect Solidity version,Risks of using complex or outdated Solidity versions
+Known Scam Wallet,Whether the contract's owner was previously involved in a scam
+Locked Ether,Funds sent to this contract cannot be withdrawn
+Low level calls,Risks associated with the use of low-level calls
+Low-level array handling,Risks of direct access to array length causing undesired data loss
+Mintable,Whether the contract can mint tokens
+Missing Events Access Control,Missing events for critical access control parameters
+Missing Events Arithmetic,Absence of events for key operations
+Missing Liquidity,Token liquidity not found
+Missing Zero Address Validation,Risks of disruption due to lack of null address verification
+Misuse of Boolean constant,Risks of using boolean constants inappropriately
+Mixer Utilized,Use of mixers for funding contract deployer's wallet
+Modifiers that can return the default value,Risks of modifiers not executing or reverting properly
+Modifying storage array by value,Risks of data loss due to incorrect data location specification
+msg.value inside a loop,Risks of incorrect user balance recording
+No interaction with the Smart Contract in 30 Days,Lack of interaction with the contract for over 30 days
+Oversupply Minting,Adjustable max supply of tokens
+Owner Address,Contract owner's address
+Owner Balance,Amount of tokens held by the owner
+Owner Percentage,Percentage of tokens held by the owner
+Payable function using delegatecall inside a loop,Risks of incorrect user balance recording
+Personal Slippage Modifiable,Whether the owner can set different tax rates for each address
+Proxy Contract,Whether the contract uses a proxy contract
+Proxy Upgradeability,"Whether the contract can be upgraded, changing its functionality"
+Public function that should be,Optimization of functions not used by others in the contract
+Recently Deployed Contract,Risks associated with contracts deployed less than 14 days ago
+Reclaim Ownership,Whether the contract has a function to take back ownership
+Reused base constructor,Risks of calling the same base constructor from different locations
+Right-To-Left-Override control character (U+202E),Risks of RTL text rendering manipulation
+Router hardcoded,Risks associated with hardcoded Uniswap router
+Self-destruct,Whether the contract can self-destruct
+Sell Tax,Taxes incurred when selling the token
+Signed storage integer array compiler bug,Compiler bug affecting signed integer arrays
+State variables that should be declared constant,Optimization for constant state variables
+Tautology or contradiction,Presence of tautologies or contradictions in the contract
+Tax Modifiable,Whether the slippage fee can be modified
+Token Drain Through ERC20,Whether the owner can transfer approved tokens
+Token Holders,Number of addresses holding the token
+Trading Cooldown,Whether the contract has a trading cooldown mechanism
+Transfer Pausable,Whether trading can be paused by the contract
+Typographical Error,Risks of errors due to typographical mistakes
+Unchecked Call Return Value,Risks of unverified return values from calls
+Unchecked send,Risks of funds being locked in the contract due to failed sends
+Unchecked Transfer,Risks of buggy token transfers getting stuck
+Uninitialized local variables,Risks of uninitialized variables in fund handling functions
+Uninitialized state variables,Risks of uninitialized state variables in fund handling functions
+Uninitialized storage variables,Risks of uninitialized storage variables overriding critical variables
+Unprotected Ether Withdraw,Risks of unauthorized Ether withdrawals
+Unprotected upgradeable contract,Risks of unauthorized contract initialization and control
+Use of Deprecated Solidity Functions,Risks of using deprecated Solidity functions
+Vulnerable Ownership,Risks of unauthorized ownership change
+Whitelisted,Whether the whitelist function is included in the contract
