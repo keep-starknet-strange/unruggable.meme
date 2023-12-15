@@ -199,11 +199,6 @@ mod UnruggableMemecoin {
             let counterparty_token_balance = counterparty_token_dispatcher
                 .balance_of(memecoin_address);
 
-            'memecoin_balance'.print();
-            memecoin_balance.print();
-            'counterparty_token_balance'.print();
-            counterparty_token_balance.print();
-
             assert(memecoin_balance >= liquidity_memecoin_amount, 'insufficient memecoin funds');
             assert(
                 counterparty_token_balance >= liquidity_counterparty_token,
@@ -270,7 +265,6 @@ mod UnruggableMemecoin {
             recipient: ContractAddress,
             amount: u256
         ) -> bool {
-            'transfer_from memecoin'.print();
             let caller = get_caller_address();
             self._spend_allowance(sender, caller, amount);
             self._transfer(sender, recipient, amount);
@@ -382,12 +376,6 @@ mod UnruggableMemecoin {
             ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256
         ) {
             let current_allowance = self.allowances.read((owner, spender));
-            'owner'.print();
-            owner.print();
-            'spender'.print();
-            spender.print();
-            'current_allowance'.print();
-            current_allowance.print();
             if current_allowance != BoundedInt::max() {
                 self._approve(owner, spender, current_allowance - amount);
             }

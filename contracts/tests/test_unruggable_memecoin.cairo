@@ -100,23 +100,22 @@ fn test_launch_memecoin_happy_path() {
     start_prank(CheatTarget::One(memecoin_address), OWNER());
     unruggable_memecoin.transfer(memecoin_address, 10 * TOKEN_MULTIPLIER);
     stop_prank(CheatTarget::One(memecoin_address));
-    
-    // NOTE:
-    // 1. The initial call to `memecoin_address` should be made by the OWNER().
-    // 2. Subsequently, the router needs to call memecoin to transfer tokens to the pool.
-    // 3. The second call to `memecoin_address` should be made by the router. 
-    //    However, note that the prank still designates OWNER() as the caller.
-    // `set_contract_address()` from starknet cannot be used in this context.
-    // related issue: https://github.com/foundry-rs/starknet-foundry/issues/1402
+// NOTE:
+// 1. The initial call to `memecoin_address` should be made by the OWNER().
+// 2. Subsequently, the router needs to call memecoin to transfer tokens to the pool.
+// 3. The second call to `memecoin_address` should be made by the router. 
+//    However, note that the prank still designates OWNER() as the caller.
+// `set_contract_address()` from starknet cannot be used in this context.
+// related issue: https://github.com/foundry-rs/starknet-foundry/issues/1402
 
-    // start_prank(CheatTarget::One(memecoin_address), router_address); 
-    // start_prank(CheatTarget::One(router_address), memecoin_address);
-    // unruggable_memecoin
-    //     .launch_memecoin(
-    //         AMMV2::JediSwap, counterparty_token_address, 10 * TOKEN_MULTIPLIER, 10 * TOKEN_MULTIPLIER
-    //     );
-    // stop_prank(CheatTarget::One(memecoin_address));
-    // stop_prank(CheatTarget::One(router_address));
+// start_prank(CheatTarget::One(memecoin_address), router_address); 
+// start_prank(CheatTarget::One(router_address), memecoin_address);
+// unruggable_memecoin
+//     .launch_memecoin(
+//         AMMV2::JediSwap, counterparty_token_address, 10 * TOKEN_MULTIPLIER, 10 * TOKEN_MULTIPLIER
+//     );
+// stop_prank(CheatTarget::One(memecoin_address));
+// stop_prank(CheatTarget::One(router_address));
 }
 
 #[test]

@@ -151,17 +151,8 @@ mod RouterC1 {
             let factory = self._factory.read();
             let pair = _pair_for(factory, tokenA, tokenB);
             let sender = get_caller_address();
-            // TODO: Remove prints
-            'add_liquidity caller'.print();
-            sender.print();
-            'this should be authorized'.print();
-            starknet::get_contract_address().print();
-            'send to'.print();
-            pair.print();
             _transfer_token(tokenA, sender, pair, amountA);
-            '_transfer_token tokenA'.print();
             _transfer_token(tokenB, sender, pair, amountB);
-            '_transfer_token tokenB'.print();
             let pairDispatcher = IPairDispatcher { contract_address: pair };
             let liquidity = pairDispatcher.mint(to);
             (amountA, amountB, liquidity)
