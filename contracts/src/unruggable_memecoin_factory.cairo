@@ -33,7 +33,7 @@ mod UnruggableMemecoinFactory {
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
 
-    use unruggablememecoin::amm::amm::{AMMRouter, AMM, Network};
+    use unruggablememecoin::amm::amm::AMM;
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -59,22 +59,33 @@ mod UnruggableMemecoinFactory {
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
         memecoin_class_hash: ClassHash,
-        network: felt252
+
+        amms: LegacyMap<u32, AMM>,
+        amms_len: u32
     }
 
     #[constructor]
     fn constructor(
         ref self: ContractState,
         owner: ContractAddress,
-        network: felt252,
-        memecoin_class_hash: ClassHash
+        memecoin_class_hash: ClassHash,
+        amms: Array<AMM>
     ) {
         // Initialize the owner.
         self.ownable.initializer(owner);
         self.memecoin_class_hash.write(memecoin_class_hash);
-
-        // TODO: validate that its a valid Network
-        self.network.write(network);
+        
+        let mut i = 0;
+        let amms_len = amms.len();
+        loop {
+            if amms_len == i {
+                break;
+            }
+            let amm = *amms[i];
+            self.amms.write(i, amm);
+            i += 1;
+        };
+        self.amms_len.write(amms_len);
     }
 
     #[external(v0)]
@@ -94,8 +105,7 @@ mod UnruggableMemecoinFactory {
                 owner, initial_recipient, name, symbol, initial_supply
             );
 
-            let amms = self.get_whitelisted_amms();
-            Serde::serialize(@amms.into(), ref calldata);
+            Serde::serialize(@self.whitelisted_amms().into(), ref calldata);
 
             let (memecoin_address, _) = deploy_syscall(
                 self.memecoin_class_hash.read(), contract_address_salt, calldata.span(), false
@@ -114,30 +124,19 @@ mod UnruggableMemecoinFactory {
 
     #[generate_trait]
     impl InternalFunctions of InternalFunctionsTrait {
-        fn get_whitelisted_amms(self: @ContractState) -> Array<AMMRouter> {
+        fn whitelisted_amms(self: @ContractState) -> Array<AMM> {
             let mut amms = array![];
-            let tx_info = starknet::get_tx_info();
-            let network: Network = self.network.read().try_into().expect('cannot convert network');
+            let amms_len = self.amms_len.read();
+            let mut i = 0;
 
-            // TODO: Complete others networks amms
-            match network {
-                Network::Mainnet => amms,
-                Network::Goerli => amms,
-                Network::Sepolia => amms,
-                Network::Local => {
-                    amms
-                        .append(
-                            AMMRouter {
-                                name: AMM::JediSwap.into(),
-                                address: contract_address_const::<
-                                    0x17f2e8d48625c8f615a19a57b62d0a68b7096b0c51907daa8c8690458e6fb55
-                                // 0x7eef7d58a3bad23287f9aacb4749e2a5de5af88c4b9a968eb5ce81937da62de
-                                >()
-                            }
-                        );
-                    amms
-                },
-            }
+            loop {
+                if amms_len == i {
+                    break;
+                }
+                amms.append(self.amms.read(i));
+                i += 1;
+            };
+            amms
         }
     }
 

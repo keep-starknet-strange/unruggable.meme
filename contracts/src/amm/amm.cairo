@@ -1,45 +1,20 @@
 use starknet::ContractAddress;
 
-#[derive(Drop, Copy, Serde)]
-struct AMMRouter {
+#[derive(Drop, Copy, Serde, starknet::Store)]
+struct AMM {
     name: felt252,
-    address: ContractAddress
+    router_address: ContractAddress
 }
 
 #[derive(Drop, Copy, Serde)]
-enum AMM {
+enum AMMV2 {
     JediSwap,
 }
 
-impl AMMIntoFelt252 of Into<AMM, felt252> {
-    fn into(self: AMM) -> felt252 {
+impl AMMIntoFelt252 of Into<AMMV2, felt252> {
+    fn into(self: AMMV2) -> felt252 {
         match self {
-            AMM::JediSwap => 'JediSwap'
-        }
-    }
-}
-
-#[derive(Drop, Copy, Serde)]
-enum Network {
-    Mainnet,
-    Goerli,
-    Sepolia,
-    Local,
-}
-
-impl Felt252TryIntoNetwork of TryInto<felt252, Network> {
-    fn try_into(self: felt252) -> Option<Network> {
-        // TODO: Validate names
-        if self == 'MAINNET' {
-            Option::Some(Network::Mainnet)
-        } else if self == 'SN_GOERLI' {
-            Option::Some(Network::Goerli)
-        } else if self == 'SEPOLIA' {
-            Option::Some(Network::Sepolia)
-        } else if self == 'LOCAL' {
-            Option::Some(Network::Local)
-        } else {
-            Option::None(())
+            AMMV2::JediSwap => 'JediSwap'
         }
     }
 }

@@ -4,7 +4,7 @@ mod DeployerHelper {
         ContractClass, ContractClassTrait, CheatTarget, declare, start_prank, stop_prank
     };
     use unruggablememecoin::tests_utils::constants::{DEPLOYER, TOKEN0_NAME, SYMBOL};
-    use unruggablememecoin::amm::amm::AMMRouter;
+    use unruggablememecoin::amm::amm::AMM;
 
     fn deploy_contracts() -> (ContractAddress, ContractAddress) {
         let pair_class = declare('PairC1');
@@ -31,7 +31,7 @@ mod DeployerHelper {
         name: felt252,
         symbol: felt252,
         initial_supply: u256,
-        amms_routers: Array<AMMRouter>
+        amms: Array<AMM>
     ) -> ContractAddress {
         let contract = declare('UnruggableMemecoin');
         let mut constructor_calldata = array![
@@ -46,11 +46,15 @@ mod DeployerHelper {
     }
 
     fn deploy_memecoin_factory(
-        owner: ContractAddress, network: felt252, memecoin_class_hash: ClassHash,
+        owner: ContractAddress, memecoin_class_hash: ClassHash, amms: Array<AMM>
     ) -> ContractAddress {
         let contract = declare('UnruggableMemecoinFactory');
-        let mut constructor_calldata = array![owner.into(), network, memecoin_class_hash.into(),];
-        contract.deploy(@constructor_calldata).unwrap()
+        let mut calldata = array![];
+        calldata.append(owner.into());
+        calldata.append(memecoin_class_hash.into());
+        Serde::serialize(@amms.into(), ref calldata);
+
+        contract.deploy(@calldata).unwrap()
     }
 
     fn deploy_erc20(initial_supply: u256, recipient: ContractAddress) -> ContractAddress {

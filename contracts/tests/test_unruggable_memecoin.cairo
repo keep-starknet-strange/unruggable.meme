@@ -15,14 +15,12 @@ use unruggablememecoin::unruggable_memecoin::{
     UnruggableMemecoin, IUnruggableMemecoin, IUnruggableMemecoinDispatcher,
     IUnruggableMemecoinDispatcherTrait
 };
-use unruggablememecoin::amm::amm::AMM;
+use unruggablememecoin::amm::amm::{AMM, AMMV2};
 
 use unruggablememecoin::unruggable_memecoin_factory::{
     IUnruggableMemecoinFactory, IUnruggableMemecoinFactoryDispatcher,
     IUnruggableMemecoinFactoryDispatcherTrait
 };
-
-const LOCAL_NETWORK: felt252 = 'LOCAL';
 
 #[test]
 fn test_mint() {
@@ -55,10 +53,23 @@ fn test_launch_memecoin() {
     let initial_supply: u256 = 10 * TOKEN_MULTIPLIER;
     let counterparty_token_address = deploy_erc20(initial_supply, OWNER());
 
+    // Declare availables AMMs for this factory
+    let mut amms = array![];
+    amms
+        .append(
+            AMM {
+                name: AMMV2::JediSwap.into(),
+                router_address: contract_address_const::<
+                    0x17f2e8d48625c8f615a19a57b62d0a68b7096b0c51907daa8c8690458e6fb55
+                // 0x7eef7d58a3bad23287f9aacb4749e2a5de5af88c4b9a968eb5ce81937da62de
+                >()
+            }
+        );
+
     // Declare UnruggableMemecoin and use ClassHash for the Factory
-    let contract = declare('UnruggableMemecoin');
+    let declare_memecoin = declare('UnruggableMemecoin');
     let memecoin_factory_address = deploy_memecoin_factory(
-        OWNER(), LOCAL_NETWORK, contract.class_hash,
+        OWNER(), declare_memecoin.class_hash, amms
     );
 
     // Deploy UnruggableMemecoinFactory
@@ -69,7 +80,6 @@ fn test_launch_memecoin() {
     // Create a MemeCoin
     let memecoin_address = unruggable_meme_factory
         .create_memecoin(OWNER(), OWNER(), 'MemeCoin', 'MC', initial_supply);
-
     let unruggable_memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
 
     let token_dispatcher = IERC20Dispatcher { contract_address: counterparty_token_address };
@@ -95,7 +105,7 @@ fn test_launch_memecoin() {
     start_prank(CheatTarget::One(memecoin_address), OWNER());
     unruggable_memecoin
         .launch_memecoin(
-            AMM::JediSwap, counterparty_token_address, 1 * TOKEN_MULTIPLIER, 1 * TOKEN_MULTIPLIER
+            AMMV2::JediSwap, counterparty_token_address, 1 * TOKEN_MULTIPLIER, 1 * TOKEN_MULTIPLIER
         );
     stop_prank(CheatTarget::One(memecoin_address));
     stop_prank(CheatTarget::One(router_address));

@@ -1,6 +1,6 @@
 //! `UnruggableMemecoin` is an ERC20 token has additional features to prevent rug pulls.
 use starknet::ContractAddress;
-use unruggablememecoin::amm::amm::AMM;
+use unruggablememecoin::amm::amm::AMMV2;
 
 #[starknet::interface]
 trait IUnruggableMemecoin<TState> {
@@ -23,7 +23,7 @@ trait IUnruggableMemecoin<TState> {
     // ************************************
     fn launch_memecoin(
         ref self: TState,
-        amm: AMM,
+        amm_v2: AMMV2,
         counterparty_token_address: ContractAddress,
         liquidity_memecoin_amount: u256,
         liquidity_counterparty_token: u256
@@ -42,7 +42,7 @@ mod UnruggableMemecoin {
     use openzeppelin::access::ownable::OwnableComponent;
 
     // Internal dependencies.
-    use unruggablememecoin::amm::amm::{AMMRouter, AMM};
+    use unruggablememecoin::amm::amm::{AMM, AMMV2};
     use unruggablememecoin::amm::jediswap_interface::{
         IFactoryC1Dispatcher, IFactoryC1DispatcherTrait, IRouterC1Dispatcher,
         IRouterC1DispatcherTrait, IERC20Dispatcher, IERC20DispatcherTrait
@@ -119,7 +119,7 @@ mod UnruggableMemecoin {
         name: felt252,
         symbol: felt252,
         initial_supply: u256,
-        amm_routers: Array<AMMRouter>
+        amms: Array<AMM>
     ) {
         // [Check Owner] Only the Memecoin factory can deploy
         // assert get_caller_address() == memecoin_factory_address
@@ -129,11 +129,11 @@ mod UnruggableMemecoin {
 
         let mut i = 0;
         loop {
-            if amm_routers.len() == i {
+            if amms.len() == i {
                 break;
             }
-            let amm_router = *amm_routers[i];
-            self.amm_configs.write(amm_router.name, amm_router.address);
+            let amm = *amms[i];
+            self.amm_configs.write(amm.name, amm.router_address);
             i += 1;
         };
 
@@ -168,7 +168,7 @@ mod UnruggableMemecoin {
         /// - Insufficient counterparty token funds are available for liquidity.
         fn launch_memecoin(
             ref self: ContractState,
-            amm: AMM,
+            amm_v2: AMMV2,
             counterparty_token_address: ContractAddress,
             liquidity_memecoin_amount: u256,
             liquidity_counterparty_token: u256,
@@ -181,7 +181,7 @@ mod UnruggableMemecoin {
 
             // [Create Pool]
             let amm_router = IRouterC1Dispatcher {
-                contract_address: self.amm_configs.read(amm.into()),
+                contract_address: self.amm_configs.read(amm_v2.into()),
             };
 
             let amm_factory = IFactoryC1Dispatcher { contract_address: amm_router.factory(), };
