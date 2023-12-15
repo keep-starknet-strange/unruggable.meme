@@ -31,7 +31,7 @@ fn test_mint() {
     let router_dispatcher = IRouterC1Dispatcher { contract_address: router_address };
 
     let initial_supply: u256 = 10 * TOKEN_MULTIPLIER;
-    
+
     // Declare availables AMMs for this factory
     let mut amms = array![];
 
@@ -40,8 +40,8 @@ fn test_mint() {
     let memecoin_factory_address = deploy_memecoin_factory(
         OWNER(), declare_memecoin.class_hash, amms
     );
-    
-     // Deploy UnruggableMemecoinFactory
+
+    // Deploy UnruggableMemecoinFactory
     let unruggable_meme_factory = IUnruggableMemecoinFactoryDispatcher {
         contract_address: memecoin_factory_address
     };
@@ -71,13 +71,7 @@ fn test_launch_memecoin_happy_path() {
 
     // Declare availables AMMs for this factory
     let mut amms = array![];
-    amms
-        .append(
-            AMM {
-                name: AMMV2::JediSwap.into(),
-                router_address
-            }
-        );
+    amms.append(AMM { name: AMMV2::JediSwap.into(), router_address });
 
     // Declare UnruggableMemecoin and use ClassHash for the Factory
     let declare_memecoin = declare('UnruggableMemecoin');
@@ -106,7 +100,7 @@ fn test_launch_memecoin_happy_path() {
     start_prank(CheatTarget::One(memecoin_address), OWNER());
     unruggable_memecoin.transfer(memecoin_address, 10 * TOKEN_MULTIPLIER);
     stop_prank(CheatTarget::One(memecoin_address));
-
+    
     // NOTE:
     // 1. The initial call to `memecoin_address` should be made by the OWNER().
     // 2. Subsequently, the router needs to call memecoin to transfer tokens to the pool.
@@ -119,8 +113,104 @@ fn test_launch_memecoin_happy_path() {
     // start_prank(CheatTarget::One(router_address), memecoin_address);
     // unruggable_memecoin
     //     .launch_memecoin(
-    //         AMMV2::JediSwap, counterparty_token_address, 1 * TOKEN_MULTIPLIER, 1 * TOKEN_MULTIPLIER
+    //         AMMV2::JediSwap, counterparty_token_address, 10 * TOKEN_MULTIPLIER, 10 * TOKEN_MULTIPLIER
     //     );
     // stop_prank(CheatTarget::One(memecoin_address));
     // stop_prank(CheatTarget::One(router_address));
+}
+
+#[test]
+#[should_panic(expected: ('insufficient memecoin funds',))]
+fn test_launch_memecoin_no_balance_memecoin() {
+    // Setup
+    let (_, router_address) = deploy_contracts();
+    let router_dispatcher = IRouterC1Dispatcher { contract_address: router_address };
+
+    let initial_supply: u256 = 10 * TOKEN_MULTIPLIER;
+    let counterparty_token_address = deploy_erc20(initial_supply, OWNER());
+
+    // Declare availables AMMs for this factory
+    let mut amms = array![];
+    amms.append(AMM { name: AMMV2::JediSwap.into(), router_address });
+
+    // Declare UnruggableMemecoin and use ClassHash for the Factory
+    let declare_memecoin = declare('UnruggableMemecoin');
+    let memecoin_factory_address = deploy_memecoin_factory(
+        OWNER(), declare_memecoin.class_hash, amms
+    );
+
+    // Deploy UnruggableMemecoinFactory
+    let unruggable_meme_factory = IUnruggableMemecoinFactoryDispatcher {
+        contract_address: memecoin_factory_address
+    };
+
+    // Create a MemeCoin
+    let memecoin_address = unruggable_meme_factory
+        .create_memecoin(OWNER(), OWNER(), 'MemeCoin', 'MC', initial_supply);
+    let unruggable_memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
+
+    let token_dispatcher = IERC20Dispatcher { contract_address: counterparty_token_address };
+
+    // Transfer 10 counterparty_token to UnruggableMemecoin contract
+    start_prank(CheatTarget::One(counterparty_token_address), OWNER());
+    token_dispatcher.transfer(memecoin_address, 10 * TOKEN_MULTIPLIER);
+    stop_prank(CheatTarget::One(counterparty_token_address));
+
+    start_prank(CheatTarget::One(memecoin_address), OWNER());
+    unruggable_memecoin
+        .launch_memecoin(
+            AMMV2::JediSwap,
+            counterparty_token_address,
+            10 * TOKEN_MULTIPLIER,
+            10 * TOKEN_MULTIPLIER
+        );
+    stop_prank(CheatTarget::One(memecoin_address));
+}
+
+#[test]
+#[should_panic(expected: ('insufficient token funds',))]
+fn test_launch_memecoin_no_balance_counteryparty_token() {
+    // Setup
+    let (_, router_address) = deploy_contracts();
+    let router_dispatcher = IRouterC1Dispatcher { contract_address: router_address };
+
+    let initial_supply: u256 = 10 * TOKEN_MULTIPLIER;
+    let counterparty_token_address = deploy_erc20(initial_supply, OWNER());
+
+    // Declare availables AMMs for this factory
+    let mut amms = array![];
+    amms.append(AMM { name: AMMV2::JediSwap.into(), router_address });
+
+    // Declare UnruggableMemecoin and use ClassHash for the Factory
+    let declare_memecoin = declare('UnruggableMemecoin');
+    let memecoin_factory_address = deploy_memecoin_factory(
+        OWNER(), declare_memecoin.class_hash, amms
+    );
+
+    // Deploy UnruggableMemecoinFactory
+    let unruggable_meme_factory = IUnruggableMemecoinFactoryDispatcher {
+        contract_address: memecoin_factory_address
+    };
+
+    // Create a MemeCoin
+    let memecoin_address = unruggable_meme_factory
+        .create_memecoin(OWNER(), OWNER(), 'MemeCoin', 'MC', initial_supply);
+    let unruggable_memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
+
+    let token_dispatcher = IERC20Dispatcher { contract_address: counterparty_token_address };
+
+    // Transfer 10 counterparty_token to UnruggableMemecoin contract
+    start_prank(CheatTarget::One(memecoin_address), OWNER());
+    unruggable_memecoin.transfer(memecoin_address, 10 * TOKEN_MULTIPLIER);
+    stop_prank(CheatTarget::One(memecoin_address));
+
+    start_prank(CheatTarget::One(memecoin_address), OWNER());
+    unruggable_memecoin
+        .launch_memecoin(
+            AMMV2::JediSwap,
+            counterparty_token_address,
+            10 * TOKEN_MULTIPLIER,
+            10 * TOKEN_MULTIPLIER
+        );
+    stop_prank(CheatTarget::One(memecoin_address));
 }

@@ -59,7 +59,6 @@ mod UnruggableMemecoinFactory {
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
         memecoin_class_hash: ClassHash,
-
         amms: LegacyMap<u32, AMM>,
         amms_len: u32
     }
@@ -74,7 +73,7 @@ mod UnruggableMemecoinFactory {
         // Initialize the owner.
         self.ownable.initializer(owner);
         self.memecoin_class_hash.write(memecoin_class_hash);
-        
+
         let mut i = 0;
         let amms_len = amms.len();
         loop {

@@ -155,7 +155,7 @@ mod UnruggableMemecoin {
         // ************************************
 
         /// Launches Memecoin by creating a liquidity pool with the specified counterparty token using the AMMv2 protocol.
-        /// The owner must send both MT tokens (Memecoin) and tokens of the chosen counterparty (e.g., USDC) to initialize the pool.
+        /// The owner must send both MT tokens (Memecoin) and tokens of the chosen counterparty (e.g., USDC) to launch memecoin.
         ///
         /// # Arguments
         /// - `amm_v2`: AMMV2 to create pair and send liquidity
@@ -185,11 +185,9 @@ mod UnruggableMemecoin {
             let amm_router = IRouterC1Dispatcher {
                 contract_address: self.amm_configs.read(amm_v2.into()),
             };
-
             assert(amm_router.contract_address.is_non_zero(), 'AMM not supported');
 
             let amm_factory = IFactoryC1Dispatcher { contract_address: amm_router.factory(), };
-
             let pair_address = amm_factory
                 .create_pair(counterparty_token_address, memecoin_address);
 
@@ -200,6 +198,11 @@ mod UnruggableMemecoin {
             };
             let counterparty_token_balance = counterparty_token_dispatcher
                 .balance_of(memecoin_address);
+
+            'memecoin_balance'.print();
+            memecoin_balance.print();
+            'counterparty_token_balance'.print();
+            counterparty_token_balance.print();
 
             assert(memecoin_balance >= liquidity_memecoin_amount, 'insufficient memecoin funds');
             assert(
