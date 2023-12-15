@@ -171,15 +171,15 @@ mod erc20_entrypoints {
 
         // Transfer 100 tokens to recipient.
         start_prank(CheatTarget::One(memecoin.contract_address), owner);
-        memecoin.transfer(recipient, 100.into());
+        memecoin.transfer(recipient, 10.into());
 
         // Check balance. Should be equal to initial supply - 100.
         let owner_balance = memecoin.balance_of(owner);
-        assert(owner_balance == (initial_supply - 100.into()), 'Invalid balance owner');
+        assert(owner_balance == (initial_supply - 10.into()), 'Invalid balance owner');
 
         // Check recipient balance. Should be equal to 100.
         let recipient_balance = memecoin.balance_of(recipient);
-        assert(recipient_balance == 100.into(), 'Invalid balance recipient');
+        assert(recipient_balance == 10.into(), 'Invalid balance recipient');
     }
 
     #[test]
@@ -204,19 +204,19 @@ mod erc20_entrypoints {
 
         // Transfer 100 tokens to recipient.
         start_prank(CheatTarget::One(memecoin.contract_address), spender);
-        memecoin.transfer_from(owner, recipient, 100.into());
+        memecoin.transfer_from(owner, recipient, 10.into());
 
         // Check balance. Should be equal to initial supply - 100.
         let owner_balance = memecoin.balance_of(owner);
-        assert(owner_balance == (initial_supply - 100.into()), 'Invalid balance owner');
+        assert(owner_balance == (initial_supply - 10.into()), 'Invalid balance owner');
 
         // Check recipient balance. Should be equal to 100.
         let recipient_balance = memecoin.balance_of(recipient);
-        assert(recipient_balance == 100.into(), 'Invalid balance recipient');
+        assert(recipient_balance == 10.into(), 'Invalid balance recipient');
 
         // Check allowance. Should be equal to initial supply - 100.
         let allowance = memecoin.allowance(owner, spender);
-        assert(allowance == (initial_supply - 100.into()), 'Invalid allowance');
+        assert(allowance == (initial_supply - 10.into()), 'Invalid allowance');
     }
 
     // Test ERC20 Camel entrypoints
