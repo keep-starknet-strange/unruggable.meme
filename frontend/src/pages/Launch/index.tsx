@@ -43,6 +43,7 @@ const schema = z.object({
 
 export default function LaunchPage() {
   const [deployedToken, setDeployedToken] = useState<{ address: string; tx: string } | undefined>(undefined)
+  const { addDeployedContract } = useDeploymentStore()
 
   const explorer = useExplorer()
   const { account, address } = useAccount()
@@ -68,8 +69,6 @@ export default function LaunchPage() {
     control,
     name: 'holders',
   })
-
-  const { addDeployedContract } = useDeploymentStore()
 
   const deployToken = useCallback(
     async (data: z.infer<typeof schema>) => {
