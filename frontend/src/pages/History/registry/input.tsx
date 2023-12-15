@@ -1,10 +1,12 @@
-import * as React from 'react'
+/* eslint-disable react/prop-types */
 
 import '../tailwind.css'
 
-import { cn } from '../lib/utils'
+import * as React from 'react'
 
-export type InputProps = React.InputHTMLAttributes<HTMLInputElement>
+import { cn } from '../../../utils/utils'
+
+type InputProps = React.InputHTMLAttributes<HTMLInputElement>
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(({ className, type, ...props }, ref) => {
   return (

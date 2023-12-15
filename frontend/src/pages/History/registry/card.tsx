@@ -1,7 +1,9 @@
+/* eslint-disable react/prop-types */
+
 import '../tailwind.css'
 
 import * as React from 'react'
-import { cn } from 'src/pages/History/lib/utils'
+import { cn } from 'src/utils/utils'
 
 const Card = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(({ className, ...props }, ref) => (
   <div ref={ref} className={cn('dark rounded-xl border bg-card text-card-foreground shadow', className)} {...props} />
@@ -41,4 +43,4 @@ const CardFooter = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
 )
 CardFooter.displayName = 'CardFooter'
 
-export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
+export { Card, CardContent }

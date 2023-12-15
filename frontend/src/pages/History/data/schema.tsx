@@ -1,13 +1,11 @@
 import { z } from 'zod'
 
-// We're keeping a simple non-relational schema here.
-// IRL, you will have a schema for your data models.
-export const taskSchema = z.object({
-  id: z.string(),
-  title: z.string(),
+// https://starkscan.readme.io/reference/contract-object
+const contractSchema = z.object({
+  deployed_at_timestamp: z.number(),
+  contract: z.string(),
   status: z.string(),
-  label: z.string(),
-  priority: z.string(),
+  type: z.string(),
 })
 
-export type Task = z.infer<typeof taskSchema>
+export type Contract = z.infer<typeof contractSchema>

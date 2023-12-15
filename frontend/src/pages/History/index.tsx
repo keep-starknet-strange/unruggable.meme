@@ -6,16 +6,29 @@ import { columns } from 'src/components/Table/columns'
 import { DataTable } from 'src/components/Table/data-table'
 import { Card, CardContent } from 'src/pages/History/registry/card'
 
-import tasks from './data/history.json'
+import contracts from './data/history.json'
 import { Button } from './registry/button'
+// import { contractSchema } from './data/schema'
 
-// Simulate an onchain read for deployed contracts.
+// Simulate an onchain read for deployed contracts. Can use: https://starkscan.readme.io/reference/contract-object
+
+// const options = {
+//   method: 'GET',
+//   headers: {accept: 'application/json', 'x-api-key': 'docs-starkscan-co-api-3'}
+// };
+
 // async function getContracts() {
-//   const data = await
+//   const data = fetch(
+//     'https://api.starkscan.co/api/v0/contract/0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7',
+//     options
+//   )
+//     .then((response) => response.json())
+//     .then((response) => console.log(response))
+//     .catch((err) => console.error(err))
 
 //   const contracts = JSON.parse(data.toString())
 
-// return z.array(taskSchema).parse(tasks)
+//   return z.array(contractSchema).parse(contracts)
 // }
 
 export default function HistoryPage() {
@@ -50,7 +63,7 @@ export default function HistoryPage() {
             </p>
           </div>
         </div>
-        <DataTable data={tasks} columns={columns} />
+        <DataTable data={contracts} columns={columns} />
       </div>
     </div>
   )

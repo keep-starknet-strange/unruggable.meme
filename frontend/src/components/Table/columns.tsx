@@ -1,53 +1,28 @@
-'use client'
-
 import { ColumnDef } from '@tanstack/react-table'
-import { Task } from 'src/pages/History/data/schema'
+import { Contract } from 'src/pages/History/data/schema'
 
-import { labels, priorities, statuses } from '../../pages/History/data/data'
-import { Badge } from '../../pages/History/registry/badge'
-import { Checkbox } from '../../pages/History/registry/checkbox'
+import { statuses, types } from '../../pages/History/data/data'
 import { DataTableColumnHeader } from './data-table-column-header'
-import { DataTableRowActions } from './data-table-row-actions'
 
-export const columns: ColumnDef<Task>[] = [
+export const columns: ColumnDef<Contract>[] = [
   {
-    id: 'select',
-    header: ({ table }) => (
-      <Checkbox
-        checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-        className="translate-y-[2px]"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-        className="translate-y-[2px]"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: 'id',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Task" />,
-    cell: ({ row }) => <div className="w-[80px]">{row.getValue('id')}</div>,
-    enableSorting: false,
-    enableHiding: false,
-  },
-  {
-    accessorKey: 'title',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Title" />,
+    accessorKey: 'deployed_at_timestamp',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Deployed At" />,
     cell: ({ row }) => {
-      const label = labels.find((label) => label.value === row.original.label)
-
+      const timestamp: number = row.getValue('deployed_at_timestamp')
+      const date = new Date(timestamp * 1000).toLocaleString()
+      return <div className="w-[100px]">{date}</div>
+    },
+    enableSorting: false,
+    enableHiding: false,
+  },
+  {
+    accessorKey: 'contract',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Contract Address" />,
+    cell: ({ row }) => {
       return (
         <div className="flex space-x-2">
-          {label && <Badge variant="outline">{label.label}</Badge>}
-          <span className="max-w-[500px] truncate font-medium">{row.getValue('title')}</span>
+          <span className="max-w-[600px] truncate font-medium">{row.getValue('contract')}</span>
         </div>
       )
     },
@@ -74,28 +49,23 @@ export const columns: ColumnDef<Task>[] = [
     },
   },
   {
-    accessorKey: 'priority',
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Priority" />,
+    accessorKey: 'type',
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
     cell: ({ row }) => {
-      const priority = priorities.find((priority) => priority.value === row.getValue('priority'))
+      const type = types.find((type) => type.value === row.getValue('type'))
 
-      if (!priority) {
+      if (!type) {
         return null
       }
 
       return (
         <div className="flex items-center">
-          {priority.icon && <priority.icon className="mr-2 h-4 w-4 text-muted-foreground" />}
-          <span>{priority.label}</span>
+          <span>{type.label}</span>
         </div>
       )
     },
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id))
     },
-  },
-  {
-    id: 'actions',
-    cell: ({ row }) => <DataTableRowActions row={row} />,
   },
 ]

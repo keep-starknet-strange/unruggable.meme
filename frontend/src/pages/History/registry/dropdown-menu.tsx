@@ -1,23 +1,24 @@
-'use client'
+/* eslint-disable react/prop-types */
+
 import '../tailwind.css'
 
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu'
 import { CheckIcon, ChevronRightIcon, DotFilledIcon } from '@radix-ui/react-icons'
 import * as React from 'react'
 
-import { cn } from '../lib/utils'
+import { cn } from '../../../utils/utils'
 
 const DropdownMenu = DropdownMenuPrimitive.Root
 
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger
 
-const DropdownMenuGroup = DropdownMenuPrimitive.Group
+// const DropdownMenuGroup = DropdownMenuPrimitive.Group
 
-const DropdownMenuPortal = DropdownMenuPrimitive.Portal
+// const DropdownMenuPortal = DropdownMenuPrimitive.Portal
 
-const DropdownMenuSub = DropdownMenuPrimitive.Sub
+// const DropdownMenuSub = DropdownMenuPrimitive.Sub
 
-const DropdownMenuRadioGroup = DropdownMenuPrimitive.RadioGroup
+// const DropdownMenuRadioGroup = DropdownMenuPrimitive.RadioGroup
 
 const DropdownMenuSubTrigger = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.SubTrigger>,
@@ -168,16 +169,8 @@ export {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuPortal,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 }

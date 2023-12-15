@@ -1,71 +1,41 @@
-import {
-  ArrowDownIcon,
-  ArrowRightIcon,
-  ArrowUpIcon,
-  CheckCircledIcon,
-  CircleIcon,
-  CrossCircledIcon,
-  QuestionMarkCircledIcon,
-  StopwatchIcon,
-} from '@radix-ui/react-icons'
+import { CheckCircledIcon, CrossCircledIcon } from '@radix-ui/react-icons'
 
-export const labels = [
-  {
-    value: 'bug',
-    label: 'Bug',
-  },
-  {
-    value: 'feature',
-    label: 'Feature',
-  },
-  {
-    value: 'documentation',
-    label: 'Documentation',
-  },
-]
+// See Contract Object: https://starkscan.readme.io/reference/contract-object
 
+// is_verified
 export const statuses = [
   {
-    value: 'backlog',
-    label: 'Backlog',
-    icon: QuestionMarkCircledIcon,
-  },
-  {
-    value: 'todo',
-    label: 'Todo',
-    icon: CircleIcon,
-  },
-  {
-    value: 'in progress',
-    label: 'In Progress',
-    icon: StopwatchIcon,
-  },
-  {
-    value: 'done',
-    label: 'Done',
+    value: 'TRUE',
+    label: 'True',
     icon: CheckCircledIcon,
   },
   {
-    value: 'canceled',
-    label: 'Canceled',
+    value: 'FALSE',
+    label: 'False',
     icon: CrossCircledIcon,
   },
 ]
 
-export const priorities = [
+// implementation_type
+export const types = [
   {
-    label: 'Low',
-    value: 'low',
-    icon: ArrowDownIcon,
+    label: 'ERC20',
+    value: 'ERC20',
   },
   {
-    label: 'Medium',
-    value: 'medium',
-    icon: ArrowRightIcon,
+    label: 'ERC721',
+    value: 'ERC721',
   },
   {
-    label: 'High',
-    value: 'high',
-    icon: ArrowUpIcon,
+    label: 'ERC1155',
+    value: 'ERC1155',
+  },
+  {
+    label: 'ACCOUNT',
+    value: 'ACCOUNT',
+  },
+  {
+    label: 'UNKNOWN',
+    value: 'UNKNOWN',
   },
 ]

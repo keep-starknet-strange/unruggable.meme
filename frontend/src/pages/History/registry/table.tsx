@@ -1,8 +1,10 @@
-import * as React from 'react'
+/* eslint-disable react/prop-types */
 
 import '../tailwind.css'
 
-import { cn } from '../lib/utils'
+import * as React from 'react'
+
+import { cn } from '../../../utils/utils'
 
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
   ({ className, ...props }, ref) => (
@@ -75,4 +77,4 @@ const TableCaption = React.forwardRef<HTMLTableCaptionElement, React.HTMLAttribu
 )
 TableCaption.displayName = 'TableCaption'
 
-export { Table, TableBody, TableCaption, TableCell, TableFooter, TableHead, TableHeader, TableRow }
+export { Table, TableBody, TableCell, TableHead, TableHeader, TableRow }
