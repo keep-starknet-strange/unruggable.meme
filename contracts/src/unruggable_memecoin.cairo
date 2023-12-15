@@ -121,12 +121,13 @@ mod UnruggableMemecoin {
         initial_supply: u256,
         amms: Array<AMM>
     ) {
-        // [Check Owner] Only the Memecoin factory can deploy
+        // TODO: Only the Memecoin factory can deploy
         // assert get_caller_address() == memecoin_factory_address
 
         // Initialize the ERC20 token.
         self.initializer(name, symbol);
 
+        // Read configs from factory
         let mut i = 0;
         loop {
             if amms.len() == i {
@@ -153,10 +154,11 @@ mod UnruggableMemecoin {
         // * UnruggableMemecoin functions
         // ************************************
 
-        /// Launches the Memecoin by creating a liquidity pool with the specified counterparty token.
-        /// The owner needs to send both MT tokens and the tokens of the chosen counterparty (e.g., USDC).
+        /// Launches Memecoin by creating a liquidity pool with the specified counterparty token using the AMMv2 protocol.
+        /// The owner must send both MT tokens (Memecoin) and tokens of the chosen counterparty (e.g., USDC) to initialize the pool.
         ///
         /// # Arguments
+        /// - `amm_v2`: AMMV2 to create pair and send liquidity
         /// - `counterparty_token_address`: The contract address of the counterparty token.
         /// - `liquidity_memecoin_amount`: The amount of Memecoin tokens to be provided as liquidity.
         /// - `liquidity_counterparty_token`: The amount of counterparty tokens to be provided as liquidity.
@@ -184,6 +186,8 @@ mod UnruggableMemecoin {
                 contract_address: self.amm_configs.read(amm_v2.into()),
             };
 
+            assert(amm_router.contract_address.is_non_zero(), 'AMM not supported');
+
             let amm_factory = IFactoryC1Dispatcher { contract_address: amm_router.factory(), };
 
             let pair_address = amm_factory
@@ -204,23 +208,9 @@ mod UnruggableMemecoin {
             );
 
             // [Approve]
-            // TODO: this approve should be memecoin_address to router_address but test its failing
-            self._approve(memecoin_address, caller_address, liquidity_memecoin_amount);
+            self._approve(memecoin_address, amm_router.contract_address, liquidity_memecoin_amount);
             counterparty_token_dispatcher
                 .approve(amm_router.contract_address, liquidity_counterparty_token);
-
-            'router launch()'.print();
-            amm_router.contract_address.print();
-            'memecoin launch()'.print();
-            memecoin_address.print();
-
-            'allowance token 1'.print();
-            self.allowance(memecoin_address, amm_router.contract_address).print();
-
-            'allowance token 2'.print();
-            counterparty_token_dispatcher
-                .allowance(memecoin_address, amm_router.contract_address)
-                .print();
 
             // [Add liquidity]
             amm_router
