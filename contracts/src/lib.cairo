@@ -15,4 +15,8 @@ mod tests_utils {
         mod pair;
         mod router;
     }
+    
+mod tokens {
+    mod interface;
+    mod memecoin;
 }

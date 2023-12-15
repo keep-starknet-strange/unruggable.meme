@@ -1,4 +1,4 @@
-import { useConnectors, useNetwork } from '@starknet-react/core'
+import { useDisconnect, useNetwork } from '@starknet-react/core'
 import { useCallback } from 'react'
 import { useCloseModal, useL2WalletOverviewModal } from 'src/hooks/useModal'
 
@@ -38,7 +38,7 @@ export function L2WalletOverviewModal() {
   const [isOpen] = useL2WalletOverviewModal()
 
   // disconnect
-  const { disconnect } = useConnectors()
+  const { disconnect } = useDisconnect()
 
   // chain infos
   const { chain } = useNetwork()

@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Box from 'src/theme/components/Box'
 import { Row } from 'src/theme/components/Flex'
@@ -7,11 +8,39 @@ import * as Text from 'src/theme/components/Text'
 import Web3Status from '../Web3Status'
 import * as styles from './style.css'
 
+export const links = [
+  {
+    name: 'Launch',
+    path: '/launch',
+  },
+  {
+    name: 'Manage',
+    path: '/manage',
+  },
+  {
+    name: 'Screen',
+    path: '/screen',
+  },
+]
+
 export default function NavBar() {
+  // state
+  const [scrolledOnTop, setScrolledOnTop] = useState(true)
+
   const navigate = useNavigate()
 
+  useEffect(() => {
+    const scrollListener = () => {
+      setScrolledOnTop(!window.scrollY)
+    }
+
+    window.addEventListener('scroll', scrollListener)
+
+    return () => window.removeEventListener('scroll', scrollListener)
+  }, [])
+
   return (
-    <Box as="nav" className={styles.Nav}>
+    <Box as="nav" className={styles.nav({ onTop: scrolledOnTop })}>
       <Row justifyContent="space-between">
         <Row gap="24">
           <Box className={styles.logoContainer}>
@@ -22,15 +51,13 @@ export default function NavBar() {
             />
           </Box>
 
-          <Row gap="12">
-            <Link to="/launch">
-              <Text.Body className={styles.navLink}>Launch</Text.Body>
-            </Link>
-
-            <Link to="/manage">
-              <Text.Body className={styles.navLink}>Manage</Text.Body>
-            </Link>
-          </Row>
+          <Box className={styles.navLinksContainer}>
+            {links.map(({ name, path }) => (
+              <Link key={path} to={path}>
+                <Text.Body className={styles.navLink}>{name}</Text.Body>
+              </Link>
+            ))}
+          </Box>
         </Row>
 
         <Box>

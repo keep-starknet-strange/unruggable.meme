@@ -1,14 +1,19 @@
 import { style } from '@vanilla-extract/css'
 import { sprinkles } from 'src/theme/css/sprinkles.css'
-import { vars } from 'src/theme/css/vars.css'
 
 export const wrapper = style([
-  {
-    padding: '68px 8px 0',
-  },
   sprinkles({
     width: 'full',
     justifyContent: 'center',
+    paddingX: '12',
+    paddingTop: {
+      sm: '20',
+      md: '64',
+    },
+    paddingBottom: {
+      sm: '88',
+      md: '32',
+    },
   }),
 ])
 
@@ -26,15 +31,30 @@ export const container = style([
 
 export const deployButton = style([
   {
-    background: vars.color.vibrantGradient,
+    ':disabled': {
+      opacity: '0.5',
+    },
   },
   sprinkles({
     fontSize: '24',
-    fontWeight: 'bold',
+    fontWeight: 'semibold',
   }),
 ])
 
 export const inputLabel = sprinkles({
   marginLeft: '8',
   fontWeight: 'medium',
+})
+
+export const errorContainer = sprinkles({
+  paddingX: '8',
+  paddingTop: '4',
+  color: 'error',
+})
+
+export const deployedAddress = sprinkles({
+  marginLeft: '8',
+  fontWeight: 'medium',
+  textOverflow: 'ellipsis',
+  overflow: 'hidden',
 })
