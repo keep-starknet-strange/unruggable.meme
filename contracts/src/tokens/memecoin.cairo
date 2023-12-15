@@ -4,6 +4,7 @@ use starknet::ContractAddress;
 
 #[starknet::contract]
 mod UnruggableMemecoin {
+    use core::array::ArrayTrait;
     use integer::BoundedInt;
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait;
@@ -64,6 +65,8 @@ mod UnruggableMemecoin {
     /// * `name` - The name of the token.
     /// * `symbol` - The symbol of the token.
     /// * `initial_supply` - The initial supply of the token.
+    /// * `initial_holders` - The initial holders of the token, an array of (holder_address, amount).
+
     #[constructor]
     fn constructor(
         ref self: ContractState,
@@ -71,7 +74,8 @@ mod UnruggableMemecoin {
         initial_recipient: ContractAddress,
         name: felt252,
         symbol: felt252,
-        initial_supply: u256
+        initial_supply: u256,
+        initial_holders: Array<(ContractAddress, u256)>,
     ) {
         // Initialize the ERC20 token.
         self.erc20.initializer(name, symbol);
@@ -79,8 +83,37 @@ mod UnruggableMemecoin {
         // Initialize the owner.
         self.ownable.initializer(owner);
 
-        // Mint initial supply to the initial recipient.
-        self.erc20._mint(initial_recipient, initial_supply);
+        // Mint initial supply to the initial holders.
+        assert(
+            initial_holders.len() <= MAX_HOLDERS_BEFORE_LAUNCH.into(),
+            'Unruggable: max holders reached'
+        );
+        let mut initial_minted_supply: u256 = 0;
+        let mut team_allocation: u256 = 0;
+        let mut i: usize = 0;
+        loop {
+            if i >= initial_holders.len() {
+                break;
+            }
+            let (address, amount) = *initial_holders.at(i);
+            initial_minted_supply += amount;
+            if (i == 0) {
+                assert(address == initial_recipient, 'initial recipient mismatch');
+                // NO HOLDING LIMIT HERE. IT IS THE ACCOUNT THAT WILL LAUNCH THE LIQUIDITY POOL
+                self.erc20._mint(address, amount);
+            } else {
+                team_allocation += amount;
+                assert(
+                    team_allocation <= (initial_supply
+                        * MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION.into())
+                        / 100,
+                    'Unruggable: max team allocation'
+                );
+                self.erc20._mint(address, amount);
+            }
+            i += 1;
+        };
+        assert(initial_minted_supply <= initial_supply, 'Unruggable: max supply reached');
     }
 
     //
