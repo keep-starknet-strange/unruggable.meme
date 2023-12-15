@@ -7,6 +7,7 @@ import { IconButton, PrimaryButton, SecondaryButton } from 'src/components/Butto
 import Input from 'src/components/Input'
 import NumberInput from 'src/components/NumberInput'
 import { TOKEN_CLASS_HASH, UDC } from 'src/constants/contracts'
+import { useDeploymentStore } from 'src/state/deployment'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
@@ -68,6 +69,8 @@ export default function LaunchPage() {
     name: 'holders',
   })
 
+  const { addDeployedContract } = useDeploymentStore()
+
   const deployToken = useCallback(
     async (data: z.infer<typeof schema>) => {
       if (!account?.address) return
@@ -104,11 +107,13 @@ export default function LaunchPage() {
         })
 
         setDeployedToken({ address: tokenAddress, tx: response.transaction_hash })
+
+        addDeployedContract({ address: tokenAddress, tx: response.transaction_hash })
       } catch (err) {
         console.error(err)
       }
     },
-    [account, writeAsync]
+    [account, writeAsync, addDeployedContract]
   )
 
   const restart = useCallback(() => {
