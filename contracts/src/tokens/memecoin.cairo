@@ -1,7 +1,6 @@
 //! `UnruggableMemecoin` is an ERC20 token has additional features to prevent rug pulls.
 use starknet::ContractAddress;
 
-
 #[starknet::contract]
 mod UnruggableMemecoin {
     use core::array::ArrayTrait;
@@ -75,7 +74,8 @@ mod UnruggableMemecoin {
         name: felt252,
         symbol: felt252,
         initial_supply: u256,
-        initial_holders: Array<(ContractAddress, u256)>,
+        initial_holders: Array<ContractAddress>,
+        initial_holders_amounts: Array<u256>,
     ) {
         // Initialize the ERC20 token.
         self.erc20.initializer(name, symbol);
@@ -88,6 +88,9 @@ mod UnruggableMemecoin {
             initial_holders.len() <= MAX_HOLDERS_BEFORE_LAUNCH.into(),
             'Unruggable: max holders reached'
         );
+        assert(
+            initial_holders.len() == initial_holders_amounts.len(), 'Unruggable: arrays len dif'
+        );
         let mut initial_minted_supply: u256 = 0;
         let mut team_allocation: u256 = 0;
         let mut i: usize = 0;
@@ -95,7 +98,8 @@ mod UnruggableMemecoin {
             if i >= initial_holders.len() {
                 break;
             }
-            let (address, amount) = *initial_holders.at(i);
+            let address = *initial_holders.at(i);
+            let amount = *initial_holders_amounts.at(i);
             initial_minted_supply += amount;
             if (i == 0) {
                 assert(address == initial_recipient, 'initial recipient mismatch');
@@ -103,12 +107,8 @@ mod UnruggableMemecoin {
                 self.erc20._mint(address, amount);
             } else {
                 team_allocation += amount;
-                assert(
-                    team_allocation <= (initial_supply
-                        * MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION.into())
-                        / 100,
-                    'Unruggable: max team allocation'
-                );
+                let max_alloc = initial_supply * MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION.into() / 100;
+                assert(team_allocation <= max_alloc, 'Unruggable: max team allocation');
                 self.erc20._mint(address, amount);
             }
             i += 1;
@@ -130,6 +130,13 @@ mod UnruggableMemecoin {
         // Effects.
 
         // Interactions.
+        }
+
+        /// Returns the team allocation in tokens.
+        fn get_team_allocation(self: @ContractState) -> u256 {
+            self.erc20.ERC20_total_supply.read()
+                * MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION.into()
+                / 100
         }
     }
 

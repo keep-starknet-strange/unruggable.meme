@@ -36,6 +36,7 @@ trait IUnruggableMemecoin<TState> {
     // * Additional functions
     // ************************************
     fn launch_memecoin(ref self: TState);
+    fn get_team_allocation(self: @TState) -> u256;
 }
 
 #[starknet::interface]
@@ -62,4 +63,5 @@ trait IUnruggableMemecoinSnake<TState> {
 #[starknet::interface]
 trait IUnruggableAdditional<TState> {
     fn launch_memecoin(ref self: TState);
+    fn get_team_allocation(self: @TState) -> u256;
 }
