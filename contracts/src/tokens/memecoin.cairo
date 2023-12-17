@@ -74,8 +74,8 @@ mod UnruggableMemecoin {
         name: felt252,
         symbol: felt252,
         initial_supply: u256,
-        initial_holders: Array<ContractAddress>,
-        initial_holders_amounts: Array<u256>,
+        initial_holders: Span<ContractAddress>,
+        initial_holders_amounts: Span<u256>,
     ) {
         // Initialize the ERC20 token.
         self.erc20.initializer(name, symbol);
