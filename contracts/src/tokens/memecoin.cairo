@@ -64,8 +64,8 @@ mod UnruggableMemecoin {
     /// * `name` - The name of the token.
     /// * `symbol` - The symbol of the token.
     /// * `initial_supply` - The initial supply of the token.
-    /// * `initial_holders` - The initial holders of the token, an array of (holder_address, amount).
-
+    /// * `initial_holders` - The initial holders of the token, an array of holder_address
+    /// * `initial_holders_amounts` - The initial amounts of tokens minted to the initial holders, an array of amounts   
     #[constructor]
     fn constructor(
         ref self: ContractState,
@@ -90,29 +90,18 @@ mod UnruggableMemecoin {
             initial_holders.len() <= MAX_HOLDERS_BEFORE_LAUNCH.into(),
             'Unruggable: max holders reached'
         );
-        let mut initial_minted_supply: u256 = 0;
-        let mut team_allocation: u256 = 0;
-        let mut i: usize = 0;
-        loop {
-            if i >= initial_holders.len() {
-                break;
-            }
-            let address = *initial_holders.at(i);
-            let amount = *initial_holders_amounts.at(i);
-            initial_minted_supply += amount;
-            if (i == 0) {
-                assert(address == initial_recipient, 'initial recipient mismatch');
-                // NO HOLDING LIMIT HERE. IT IS THE ACCOUNT THAT WILL LAUNCH THE LIQUIDITY POOL
-                self.erc20._mint(address, amount);
-            } else {
-                team_allocation += amount;
-                let max_alloc = initial_supply * MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION.into() / 100;
-                assert(team_allocation <= max_alloc, 'Unruggable: max team allocation');
-                self.erc20._mint(address, amount);
-            }
-            i += 1;
-        };
-        assert(initial_minted_supply <= initial_supply, 'Unruggable: max supply reached');
+
+        // Initialize the token / internal logic
+        self
+            ._initializer(
+                owner,
+                initial_recipient,
+                name,
+                symbol,
+                initial_supply,
+                initial_holders,
+                initial_holders_amounts
+            );
     }
 
     //
@@ -217,6 +206,53 @@ mod UnruggableMemecoin {
             amount: u256
         ) {
             self.erc20._transfer(sender, recipient, amount);
+        }
+
+        /// Constructor logic.
+        /// # Arguments
+        /// * `owner` - The owner of the contract.
+        /// * `owner` - The owner of the contract.
+        /// * `initial_recipient` - The initial recipient of the initial supply.
+        /// * `name` - The name of the token.
+        /// * `symbol` - The symbol of the token.
+        /// * `initial_supply` - The initial supply of the token.
+        /// * `initial_holders` - The initial holders of the token, an array of holder_address
+        /// * `initial_holders_amounts` - The initial amounts of tokens minted to the initial holders, an array of amounts        
+        fn _initializer(
+            ref self: ContractState,
+            owner: ContractAddress,
+            initial_recipient: ContractAddress,
+            name: felt252,
+            symbol: felt252,
+            initial_supply: u256,
+            initial_holders: Span<ContractAddress>,
+            initial_holders_amounts: Span<u256>
+        ) {
+            let mut initial_minted_supply: u256 = 0;
+            let mut team_allocation: u256 = 0;
+            let mut i: usize = 0;
+            loop {
+                if i >= initial_holders.len() {
+                    break;
+                }
+                let address = *initial_holders.at(i);
+                let amount = *initial_holders_amounts.at(i);
+                initial_minted_supply += amount;
+                if (i == 0) {
+                    assert(address == initial_recipient, 'initial recipient mismatch');
+                    // NO HOLDING LIMIT HERE. IT IS THE ACCOUNT THAT WILL LAUNCH THE LIQUIDITY POOL
+                    self.erc20._mint(address, amount);
+                } else {
+                    team_allocation += amount;
+                    let max_alloc = initial_supply
+                        * MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION.into()
+                        / 100;
+                    assert(team_allocation <= max_alloc, 'Unruggable: max team allocation');
+                    self.erc20._mint(address, amount);
+                }
+                i += 1;
+            };
+            assert(initial_minted_supply <= initial_supply, 'Unruggable: max supply reached');
         }
     }
 }
