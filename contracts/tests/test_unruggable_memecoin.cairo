@@ -1,9 +1,9 @@
-use core::serde::Serde;
-use openzeppelin::utils::serde::SerializedAppend;
 use core::array::ArrayTrait;
 use core::debug::PrintTrait;
+use core::serde::Serde;
 use core::traits::Into;
 use openzeppelin::token::erc20::interface::IERC20;
+use openzeppelin::utils::serde::SerializedAppend;
 use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, RevertedTransaction};
 use starknet::{ContractAddress, contract_address_const,};
 
@@ -1056,7 +1056,10 @@ mod custom_constructor {
 }
 
 mod memecoin_internals {
-    use unruggable::tokens::memecoin::UnruggableMemecoin;
+    use UnruggableMemecoin::{
+        UnruggableMemecoinInternalImpl, SnakeEntrypoints, UnruggableEntrypoints,
+        MAX_HOLDERS_BEFORE_LAUNCH
+    };
     use core::debug::PrintTrait;
     use openzeppelin::token::erc20::interface::IERC20;
     use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
@@ -1065,10 +1068,7 @@ mod memecoin_internals {
     use unruggable::tokens::interface::{
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
-    use UnruggableMemecoin::{
-        UnruggableMemecoinInternalImpl, SnakeEntrypoints, UnruggableEntrypoints,
-        MAX_HOLDERS_BEFORE_LAUNCH
-    };
+    use unruggable::tokens::memecoin::UnruggableMemecoin;
 
     #[test]
     fn test__transfer_recipients_equal_holder_cap() {

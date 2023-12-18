@@ -90,12 +90,9 @@ mod UnruggableMemecoin {
         // Initialize the owner.
         self.ownable.initializer(owner);
 
+        assert(initial_holders.len() == initial_holders_amounts.len(), Errors::ARRAYS_LEN_DIF);
         assert(
-            initial_holders.len() == initial_holders_amounts.len(), Errors::ARRAYS_LEN_DIF
-        );
-        assert(
-            initial_holders.len() <= MAX_HOLDERS_BEFORE_LAUNCH.into(),
-            Errors::MAX_HOLDERS_REACHED
+            initial_holders.len() <= MAX_HOLDERS_BEFORE_LAUNCH.into(), Errors::MAX_HOLDERS_REACHED
         );
 
         // Initialize the token / internal logic
@@ -315,7 +312,6 @@ mod UnruggableMemecoin {
                     assert(address == initial_recipient, 'initial recipient mismatch');
                     // NO HOLDING LIMIT HERE. IT IS THE ACCOUNT THAT WILL LAUNCH THE LIQUIDITY POOL
                     self.erc20._mint(address, amount);
-                    
                 } else {
                     team_allocation += amount;
                     let max_alloc = initial_supply
