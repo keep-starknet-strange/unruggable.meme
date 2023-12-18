@@ -33,27 +33,67 @@ fn deploy_contract(
     Serde::serialize(@initial_holders_amounts.into(), ref constructor_calldata);
     contract.deploy(@constructor_calldata)
 }
+
+fn instantiate_params() -> (
+    ContractAddress,
+    ContractAddress,
+    felt252,
+    felt252,
+    u256,
+    ContractAddress,
+    ContractAddress,
+    Span<ContractAddress>,
+    Span<u256>,
+) {
+    let owner = contract_address_const::<42>();
+    let recipient = contract_address_const::<43>();
+    let name = 'UnruggableMemecoin';
+    let symbol = 'UM';
+    let initial_supply = 1000.into();
+    let initial_holder_1 = contract_address_const::<44>();
+    let initial_holder_2 = contract_address_const::<45>();
+    let initial_holders = array![recipient, initial_holder_1, initial_holder_2].span();
+    let initial_holders_amounts = array![900.into(), 50.into(), 50.into()].span();
+    (
+        owner,
+        recipient,
+        name,
+        symbol,
+        initial_supply,
+        initial_holder_1,
+        initial_holder_2,
+        initial_holders,
+        initial_holders_amounts
+    )
+}
+
+
 mod erc20_metadata {
     use core::debug::PrintTrait;
     use openzeppelin::token::erc20::interface::IERC20;
     use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
     use starknet::{ContractAddress, contract_address_const};
-    use super::deploy_contract;
+    use super::{deploy_contract, instantiate_params};
     use unruggable::tokens::interface::{
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
 
     #[test]
     fn test_name() {
-        let owner = contract_address_const::<42>();
-        let recipient = contract_address_const::<43>();
-        let name = 'UnruggableMemecoin';
-        let symbol = 'UM';
-        let initial_supply = 1000.into();
-        let initial_holder_1 = contract_address_const::<44>();
-        let initial_holder_2 = contract_address_const::<45>();
-        let initial_holders = array![recipient, initial_holder_1, initial_holder_2].span();
-        let initial_holders_amounts = array![900.into(), 50.into(), 50.into()].span();
+        let (
+            owner,
+            recipient,
+            name,
+            symbol,
+            initial_supply,
+            initial_holder_1,
+            initial_holder_2,
+            initial_holders,
+            initial_holders_amounts
+        ) =
+            instantiate_params();
+        // let initial_holders = array![recipient, initial_holder_1, initial_holder_2].span();
+        // let initial_holders_amounts = array![900.into(), 50.into(), 50.into()].span();
         let contract_address =
             match deploy_contract(
                 owner,
@@ -77,15 +117,18 @@ mod erc20_metadata {
 
     #[test]
     fn test_decimals() {
-        let owner = contract_address_const::<42>();
-        let recipient = contract_address_const::<43>();
-        let name = 'UnruggableMemecoin';
-        let symbol = 'UM';
-        let initial_supply = 1000.into();
-        let initial_holder_1 = contract_address_const::<44>();
-        let initial_holder_2 = contract_address_const::<45>();
-        let initial_holders = array![recipient, initial_holder_1, initial_holder_2].span();
-        let initial_holders_amounts = array![900.into(), 50.into(), 50.into()].span();
+        let (
+            owner,
+            recipient,
+            name,
+            symbol,
+            initial_supply,
+            initial_holder_1,
+            initial_holder_2,
+            initial_holders,
+            initial_holders_amounts
+        ) =
+            instantiate_params();
         let contract_address =
             match deploy_contract(
                 owner,
@@ -108,15 +151,18 @@ mod erc20_metadata {
     }
     #[test]
     fn test_symbol() {
-        let owner = contract_address_const::<42>();
-        let recipient = contract_address_const::<43>();
-        let name = 'UnruggableMemecoin';
-        let symbol = 'UM';
-        let initial_supply = 1000.into();
-        let initial_holder_1 = contract_address_const::<44>();
-        let initial_holder_2 = contract_address_const::<45>();
-        let initial_holders = array![recipient, initial_holder_1, initial_holder_2].span();
-        let initial_holders_amounts = array![900.into(), 50.into(), 50.into()].span();
+        let (
+            owner,
+            recipient,
+            name,
+            symbol,
+            initial_supply,
+            initial_holder_1,
+            initial_holder_2,
+            initial_holders,
+            initial_holders_amounts
+        ) =
+            instantiate_params();
         let contract_address =
             match deploy_contract(
                 owner,
@@ -143,7 +189,7 @@ mod erc20_entrypoints {
     use openzeppelin::token::erc20::interface::IERC20;
     use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
     use starknet::{ContractAddress, contract_address_const};
-    use super::deploy_contract;
+    use super::{deploy_contract, instantiate_params};
     use unruggable::tokens::interface::{
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
@@ -152,15 +198,18 @@ mod erc20_entrypoints {
 
     #[test]
     fn test_total_supply() {
-        let owner = contract_address_const::<42>();
-        let recipient = contract_address_const::<43>();
-        let name = 'UnruggableMemecoin';
-        let symbol = 'UM';
-        let initial_supply = 1000.into();
-        let initial_holder_1 = contract_address_const::<44>();
-        let initial_holder_2 = contract_address_const::<45>();
-        let initial_holders = array![recipient, initial_holder_1, initial_holder_2].span();
-        let initial_holders_amounts = array![900.into(), 50.into(), 50.into()].span();
+        let (
+            owner,
+            recipient,
+            name,
+            symbol,
+            initial_supply,
+            initial_holder_1,
+            initial_holder_2,
+            initial_holders,
+            initial_holders_amounts
+        ) =
+            instantiate_params();
         let contract_address =
             match deploy_contract(
                 owner,
@@ -184,18 +233,27 @@ mod erc20_entrypoints {
 
     #[test]
     fn test_balance_of() {
-        let owner = contract_address_const::<42>();
-        let recipient = contract_address_const::<43>();
-        let name = 'UnruggableMemecoin';
-        let symbol = 'UM';
-        let initial_supply = 1000.into();
-        let initial_holder_1 = contract_address_const::<44>();
-        let initial_holder_2 = contract_address_const::<45>();
-        let initial_holders = array![owner, initial_holder_1, initial_holder_2].span();
-        let initial_holders_amounts = array![900.into(), 50.into(), 50.into()].span();
+        let (
+            owner,
+            recipient,
+            name,
+            symbol,
+            initial_supply,
+            initial_holder_1,
+            initial_holder_2,
+            initial_holders,
+            initial_holders_amounts
+        ) =
+            instantiate_params();
         let contract_address =
             match deploy_contract(
-                owner, owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
+                owner,
+                recipient,
+                name,
+                symbol,
+                initial_supply,
+                initial_holders,
+                initial_holders_amounts
             ) {
             Result::Ok(address) => address,
             Result::Err(msg) => panic(msg.panic_data),
@@ -204,7 +262,7 @@ mod erc20_entrypoints {
         let memecoin = IUnruggableMemecoinDispatcher { contract_address };
 
         // Check initial recipient balance. Should be equal to 900.
-        let balance = memecoin.balance_of(owner);
+        let balance = memecoin.balance_of(recipient);
         assert(balance == 900, 'Invalid balance');
         // Check initial holder 1 balance. Should be equal to 50.
         let balance = memecoin.balance_of(initial_holder_1);
@@ -216,15 +274,19 @@ mod erc20_entrypoints {
 
     #[test]
     fn test_approve_allowance() {
-        let owner = contract_address_const::<42>();
-        let spender = contract_address_const::<43>();
-        let name = 'UnruggableMemecoin';
-        let symbol = 'UM';
-        let initial_supply = 1000.into();
-        let initial_holder_1 = contract_address_const::<44>();
-        let initial_holder_2 = contract_address_const::<45>();
+        let (
+            owner,
+            spender,
+            name,
+            symbol,
+            initial_supply,
+            initial_holder_1,
+            initial_holder_2,
+            _,
+            initial_holders_amounts
+        ) =
+            instantiate_params();
         let initial_holders = array![owner, initial_holder_1, initial_holder_2].span();
-        let initial_holders_amounts = array![900.into(), 50.into(), 50.into()].span();
         let contract_address =
             match deploy_contract(
                 owner, owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
@@ -250,15 +312,19 @@ mod erc20_entrypoints {
 
     #[test]
     fn test_transfer() {
-        let owner = contract_address_const::<42>();
-        let recipient = contract_address_const::<43>();
-        let name = 'UnruggableMemecoin';
-        let symbol = 'UM';
-        let initial_supply = 1000.into();
-        let initial_holder_1 = contract_address_const::<44>();
-        let initial_holder_2 = contract_address_const::<45>();
+        let (
+            owner,
+            recipient,
+            name,
+            symbol,
+            initial_supply,
+            initial_holder_1,
+            initial_holder_2,
+            _,
+            initial_holders_amounts
+        ) =
+            instantiate_params();
         let initial_holders = array![owner, initial_holder_1, initial_holder_2].span();
-        let initial_holders_amounts = array![900.into(), 50.into(), 50.into()].span();
         let contract_address =
             match deploy_contract(
                 owner, owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
@@ -284,16 +350,20 @@ mod erc20_entrypoints {
 
     #[test]
     fn test_transfer_from() {
-        let owner = contract_address_const::<42>();
-        let spender = contract_address_const::<43>();
-        let recipient = contract_address_const::<44>();
-        let name = 'UnruggableMemecoin';
-        let symbol = 'UM';
-        let initial_supply = 1000.into();
-        let initial_holder_1 = contract_address_const::<45>();
-        let initial_holder_2 = contract_address_const::<46>();
+        let (
+            owner,
+            recipient,
+            name,
+            symbol,
+            initial_supply,
+            initial_holder_1,
+            initial_holder_2,
+            _,
+            initial_holders_amounts
+        ) =
+            instantiate_params();
+        let spender = contract_address_const::<46>();
         let initial_holders = array![owner, initial_holder_1, initial_holder_2].span();
-        let initial_holders_amounts = array![900.into(), 50.into(), 50.into()].span();
         let contract_address =
             match deploy_contract(
                 owner, owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
@@ -333,17 +403,27 @@ mod erc20_entrypoints {
 
     #[test]
     fn test_totalSupply() {
-        let owner = contract_address_const::<42>();
-        let name = 'UnruggableMemecoin';
-        let symbol = 'UM';
-        let initial_supply = 1000.into();
-        let initial_holder_1 = contract_address_const::<45>();
-        let initial_holder_2 = contract_address_const::<46>();
-        let initial_holders = array![owner, initial_holder_1, initial_holder_2].span();
-        let initial_holders_amounts = array![900.into(), 50.into(), 50.into()].span();
+        let (
+            owner,
+            recipient,
+            name,
+            symbol,
+            initial_supply,
+            initial_holder_1,
+            initial_holder_2,
+            initial_holders,
+            initial_holders_amounts
+        ) =
+            instantiate_params();
         let contract_address =
             match deploy_contract(
-                owner, owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
+                owner,
+                recipient,
+                name,
+                symbol,
+                initial_supply,
+                initial_holders,
+                initial_holders_amounts
             ) {
             Result::Ok(address) => address,
             Result::Err(msg) => panic(msg.panic_data),
@@ -357,14 +437,19 @@ mod erc20_entrypoints {
     }
     #[test]
     fn test_balanceOf() {
-        let owner = contract_address_const::<42>();
-        let name = 'UnruggableMemecoin';
-        let symbol = 'UM';
-        let initial_supply = 1000.into();
-        let initial_holder_1 = contract_address_const::<45>();
-        let initial_holder_2 = contract_address_const::<46>();
+        let (
+            owner,
+            recipient,
+            name,
+            symbol,
+            initial_supply,
+            initial_holder_1,
+            initial_holder_2,
+            _,
+            initial_holders_amounts
+        ) =
+            instantiate_params();
         let initial_holders = array![owner, initial_holder_1, initial_holder_2].span();
-        let initial_holders_amounts = array![900.into(), 50.into(), 50.into()].span();
         let contract_address =
             match deploy_contract(
                 owner, owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
@@ -387,16 +472,20 @@ mod erc20_entrypoints {
     }
     #[test]
     fn test_transferFrom() {
-        let owner = contract_address_const::<42>();
-        let spender = contract_address_const::<43>();
-        let recipient = contract_address_const::<44>();
-        let name = 'UnruggableMemecoin';
-        let symbol = 'UM';
-        let initial_supply = 1000.into();
-        let initial_holder_1 = contract_address_const::<45>();
-        let initial_holder_2 = contract_address_const::<46>();
+        let (
+            owner,
+            recipient,
+            name,
+            symbol,
+            initial_supply,
+            initial_holder_1,
+            initial_holder_2,
+            _,
+            initial_holders_amounts
+        ) =
+            instantiate_params();
         let initial_holders = array![owner, initial_holder_1, initial_holder_2].span();
-        let initial_holders_amounts = array![900.into(), 50.into(), 50.into()].span();
+        let spender = contract_address_const::<46>();
         let contract_address =
             match deploy_contract(
                 owner, owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
@@ -437,22 +526,25 @@ mod memecoin_entrypoints {
     use openzeppelin::token::erc20::interface::IERC20;
     use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
     use starknet::{ContractAddress, contract_address_const};
-    use super::deploy_contract;
+    use super::{deploy_contract, instantiate_params};
     use unruggable::tokens::interface::{
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
 
     #[test]
     fn test_launch_memecoin() {
-        let owner = contract_address_const::<42>();
-        let recipient = contract_address_const::<43>();
-        let name = 'UnruggableMemecoin';
-        let symbol = 'UM';
-        let initial_supply = 1000.into();
-        let initial_holder_1 = contract_address_const::<44>();
-        let initial_holder_2 = contract_address_const::<45>();
-        let initial_holders = array![recipient, initial_holder_1, initial_holder_2].span();
-        let initial_holders_amounts = array![900.into(), 50.into(), 50.into()].span();
+        let (
+            owner,
+            recipient,
+            name,
+            symbol,
+            initial_supply,
+            initial_holder_1,
+            initial_holder_2,
+            initial_holders,
+            initial_holders_amounts
+        ) =
+            instantiate_params();
         let contract_address =
             match deploy_contract(
                 owner,
@@ -477,15 +569,18 @@ mod memecoin_entrypoints {
     #[test]
     #[should_panic(expected: ('Caller is not the owner',))]
     fn test_launch_memecoin_not_owner() {
-        let owner = contract_address_const::<42>();
-        let recipient = contract_address_const::<43>();
-        let name = 'UnruggableMemecoin';
-        let symbol = 'UM';
-        let initial_supply = 1000.into();
-        let initial_holder_1 = contract_address_const::<44>();
-        let initial_holder_2 = contract_address_const::<45>();
-        let initial_holders = array![recipient, initial_holder_1, initial_holder_2].span();
-        let initial_holders_amounts = array![900.into(), 50.into(), 50.into()].span();
+        let (
+            owner,
+            recipient,
+            name,
+            symbol,
+            initial_supply,
+            initial_holder_1,
+            initial_holder_2,
+            initial_holders,
+            initial_holders_amounts
+        ) =
+            instantiate_params();
         let contract_address =
             match deploy_contract(
                 owner,
@@ -507,15 +602,18 @@ mod memecoin_entrypoints {
 
     #[test]
     fn test_get_team_allocation() {
-        let owner = contract_address_const::<42>();
-        let recipient = contract_address_const::<43>();
-        let name = 'UnruggableMemecoin';
-        let symbol = 'UM';
-        let initial_supply = 1000.into();
-        let initial_holder_1 = contract_address_const::<44>();
-        let initial_holder_2 = contract_address_const::<45>();
-        let initial_holders = array![recipient, initial_holder_1, initial_holder_2].span();
-        let initial_holders_amounts = array![900.into(), 50.into(), 50.into()].span();
+        let (
+            owner,
+            recipient,
+            name,
+            symbol,
+            initial_supply,
+            initial_holder_1,
+            initial_holder_2,
+            initial_holders,
+            initial_holders_amounts
+        ) =
+            instantiate_params();
         let contract_address =
             match deploy_contract(
                 owner,
@@ -544,7 +642,7 @@ mod custom_constructor {
     use openzeppelin::token::erc20::interface::IERC20;
     use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
     use starknet::{ContractAddress, contract_address_const};
-    use super::deploy_contract;
+    use super::{deploy_contract, instantiate_params};
     use unruggable::tokens::interface::{
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
@@ -552,13 +650,10 @@ mod custom_constructor {
     #[test]
     #[should_panic(expected: ('Unruggable: arrays len dif',))]
     fn test_constructor_initial_holders_arrays_len_mismatch() {
-        let owner = contract_address_const::<42>();
-        let recipient = contract_address_const::<43>();
-        let name = 'UnruggableMemecoin';
-        let symbol = 'UM';
-        let initial_supply = 1000.into();
-        let initial_holder_1 = contract_address_const::<50>();
-        let initial_holder_2 = contract_address_const::<51>();
+        let (
+            owner, recipient, name, symbol, initial_supply, initial_holder_1, initial_holder_2, _, _
+        ) =
+            instantiate_params();
         let initial_holder_3 = contract_address_const::<52>();
         let initial_holder_4 = contract_address_const::<53>();
         let initial_holders = array![
@@ -575,13 +670,10 @@ mod custom_constructor {
     }
     #[test]
     fn test_constructor_initial_holders_arrays_len_is_equal() {
-        let owner = contract_address_const::<42>();
-        let recipient = contract_address_const::<43>();
-        let name = 'UnruggableMemecoin';
-        let symbol = 'UM';
-        let initial_supply = 1000.into();
-        let initial_holder_1 = contract_address_const::<50>();
-        let initial_holder_2 = contract_address_const::<51>();
+        let (
+            owner, recipient, name, symbol, initial_supply, initial_holder_1, initial_holder_2, _, _
+        ) =
+            instantiate_params();
         let initial_holder_3 = contract_address_const::<52>();
         // array_len is 4
         let initial_holders = array![
@@ -600,13 +692,10 @@ mod custom_constructor {
     #[test]
     #[should_panic(expected: ('Unruggable: max holders reached',))]
     fn test_max_holders_reached() {
-        let owner = contract_address_const::<42>();
-        let recipient = contract_address_const::<43>();
-        let name = 'UnruggableMemecoin';
-        let symbol = 'UM';
-        let initial_supply = 1000.into();
-        let initial_holder_1 = contract_address_const::<50>();
-        let initial_holder_2 = contract_address_const::<51>();
+        let (
+            owner, recipient, name, symbol, initial_supply, initial_holder_1, initial_holder_2, _, _
+        ) =
+            instantiate_params();
         let initial_holder_3 = contract_address_const::<52>();
         let initial_holder_4 = contract_address_const::<53>();
         let initial_holder_5 = contract_address_const::<54>();
@@ -654,13 +743,18 @@ mod custom_constructor {
     }
     #[test]
     fn test_max_holders_not_reached() {
-        let owner = contract_address_const::<42>();
-        let recipient = contract_address_const::<43>();
-        let name = 'UnruggableMemecoin';
-        let symbol = 'UM';
-        let initial_supply = 1000.into();
-        let initial_holder_1 = contract_address_const::<50>();
-        let initial_holder_2 = contract_address_const::<51>();
+       let (
+            owner,
+            recipient,
+            name,
+            symbol,
+            initial_supply,
+            initial_holder_1,
+            initial_holder_2,
+            _,
+            _
+        ) =
+            instantiate_params();
         let initial_holder_3 = contract_address_const::<52>();
         let initial_holder_4 = contract_address_const::<53>();
         let initial_holder_5 = contract_address_const::<54>();
@@ -689,15 +783,19 @@ mod custom_constructor {
     #[test]
     #[should_panic(expected: ('initial recipient mismatch',))]
     fn test_initial_recipient_mismatch() {
-        let owner = contract_address_const::<42>();
-        let recipient = contract_address_const::<43>();
-        let name = 'UnruggableMemecoin';
-        let symbol = 'UM';
-        let initial_supply = 1000.into();
-        let initial_holder_1 = contract_address_const::<50>();
-        let initial_holder_2 = contract_address_const::<51>();
+        let (
+            owner,
+            recipient,
+            name,
+            symbol,
+            initial_supply,
+            initial_holder_1,
+            initial_holder_2,
+            _,
+            initial_holders_amounts
+        ) =
+            instantiate_params();
         let initial_holders = array![initial_holder_1, recipient, initial_holder_2,].span();
-        let initial_holders_amounts = array![900.into(), 50.into(), 50.into(),].span();
 
         match deploy_contract(
             owner, recipient, name, symbol, initial_supply, initial_holders, initial_holders_amounts
@@ -708,15 +806,18 @@ mod custom_constructor {
     }
     #[test]
     fn test_initial_recipient_ok() {
-        let owner = contract_address_const::<42>();
-        let recipient = contract_address_const::<43>();
-        let name = 'UnruggableMemecoin';
-        let symbol = 'UM';
-        let initial_supply = 1000.into();
-        let initial_holder_1 = contract_address_const::<50>();
-        let initial_holder_2 = contract_address_const::<51>();
-        let initial_holders = array![recipient, initial_holder_1, initial_holder_2,].span();
-        let initial_holders_amounts = array![900.into(), 50.into(), 50.into(),].span();
+        let (
+            owner,
+            recipient,
+            name,
+            symbol,
+            initial_supply,
+            initial_holder_1,
+            initial_holder_2,
+            initial_holders,
+            initial_holders_amounts
+        ) =
+            instantiate_params();
 
         match deploy_contract(
             owner, recipient, name, symbol, initial_supply, initial_holders, initial_holders_amounts
@@ -728,14 +829,18 @@ mod custom_constructor {
     #[test]
     #[should_panic(expected: ('Unruggable: max team allocation',))]
     fn test_max_team_allocation_fail() {
-        let owner = contract_address_const::<42>();
-        let recipient = contract_address_const::<43>();
-        let name = 'UnruggableMemecoin';
-        let symbol = 'UM';
-        let initial_supply = 1000.into();
-        let initial_holder_1 = contract_address_const::<50>();
-        let initial_holder_2 = contract_address_const::<51>();
-        let initial_holders = array![recipient, initial_holder_1, initial_holder_2,].span();
+        let (
+            owner,
+            recipient,
+            name,
+            symbol,
+            initial_supply,
+            initial_holder_1,
+            initial_holder_2,
+            initial_holders,
+            _
+        ) =
+            instantiate_params();
         // team should have less than 100 tokens
         let initial_holders_amounts = array![900.into(), 100.into(), 50.into(),].span();
         match deploy_contract(
@@ -747,14 +852,18 @@ mod custom_constructor {
     }
     #[test]
     fn test_max_team_allocation_ok() {
-        let owner = contract_address_const::<42>();
-        let recipient = contract_address_const::<43>();
-        let name = 'UnruggableMemecoin';
-        let symbol = 'UM';
-        let initial_supply = 1000.into();
-        let initial_holder_1 = contract_address_const::<50>();
-        let initial_holder_2 = contract_address_const::<51>();
-        let initial_holders = array![recipient, initial_holder_1, initial_holder_2,].span();
+        let (
+            owner,
+            recipient,
+            name,
+            symbol,
+            initial_supply,
+            initial_holder_1,
+            initial_holder_2,
+            initial_holders,
+            _
+        ) =
+            instantiate_params();
         // team should have less than 100 tokens
         let initial_holders_amounts = array![900.into(), 50.into(), 50.into(),].span();
         match deploy_contract(
@@ -766,14 +875,18 @@ mod custom_constructor {
     }
     #[test]
     fn test_max_team_allocation_ok2() {
-        let owner = contract_address_const::<42>();
-        let recipient = contract_address_const::<43>();
-        let name = 'UnruggableMemecoin';
-        let symbol = 'UM';
-        let initial_supply = 1000.into();
-        let initial_holder_1 = contract_address_const::<50>();
-        let initial_holder_2 = contract_address_const::<51>();
-        let initial_holders = array![recipient, initial_holder_1, initial_holder_2,].span();
+        let (
+            owner,
+            recipient,
+            name,
+            symbol,
+            initial_supply,
+            initial_holder_1,
+            initial_holder_2,
+            initial_holders,
+            _
+        ) =
+            instantiate_params();
         // team should have less than 100 tokens
         let initial_holders_amounts = array![900.into(), 50.into(), 40.into(),].span();
         match deploy_contract(
@@ -786,14 +899,18 @@ mod custom_constructor {
     #[test]
     #[should_panic(expected: ('Unruggable: max supply reached',))]
     fn test_max_supply_reached_fail() {
-        let owner = contract_address_const::<42>();
-        let recipient = contract_address_const::<43>();
-        let name = 'UnruggableMemecoin';
-        let symbol = 'UM';
-        let initial_supply = 1000.into();
-        let initial_holder_1 = contract_address_const::<50>();
-        let initial_holder_2 = contract_address_const::<51>();
-        let initial_holders = array![recipient, initial_holder_1, initial_holder_2,].span();
+        let (
+            owner,
+            recipient,
+            name,
+            symbol,
+            initial_supply,
+            initial_holder_1,
+            initial_holder_2,
+            initial_holders,
+            _
+        ) =
+            instantiate_params();
         // team should have less than 100 tokens
         let initial_holders_amounts = array![910.into(), 50.into(), 50.into(),].span();
         match deploy_contract(
@@ -805,14 +922,18 @@ mod custom_constructor {
     }
     #[test]
     fn test_max_supply_reached_ok() {
-        let owner = contract_address_const::<42>();
-        let recipient = contract_address_const::<43>();
-        let name = 'UnruggableMemecoin';
-        let symbol = 'UM';
-        let initial_supply = 1000.into();
-        let initial_holder_1 = contract_address_const::<50>();
-        let initial_holder_2 = contract_address_const::<51>();
-        let initial_holders = array![recipient, initial_holder_1, initial_holder_2,].span();
+        let (
+            owner,
+            recipient,
+            name,
+            symbol,
+            initial_supply,
+            initial_holder_1,
+            initial_holder_2,
+            initial_holders,
+            _
+        ) =
+            instantiate_params();
         // team should have less than 100 tokens
         let initial_holders_amounts = array![900.into(), 50.into(), 50.into(),].span();
         match deploy_contract(
