@@ -91,6 +91,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="https://t.me/notaihe"><img src="https://avatars.githubusercontent.com/u/22559023?v=4?s=100" width="100px;" alt="akhercha"/><br /><sub><b>akhercha</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=akhercha" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/retroboydev"><img src="https://avatars.githubusercontent.com/u/109076629?v=4?s=100" width="100px;" alt="retroboy"/><br /><sub><b>retroboy</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=retroboydev" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/credence0x"><img src="https://avatars.githubusercontent.com/u/74370710?v=4?s=100" width="100px;" alt="Credence"/><br /><sub><b>Credence</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=credence0x" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/WhoIsNac"><img src="https://avatars.githubusercontent.com/u/90337466?v=4?s=100" width="100px;" alt="0xNac"/><br /><sub><b>0xNac</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=WhoIsNac" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
