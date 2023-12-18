@@ -13,6 +13,7 @@ import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
 import { isValidL2Address } from 'src/utils/address'
+import { parseFormatedAmount } from 'src/utils/amount'
 import { CallData, hash, stark, uint256 } from 'starknet'
 import { z } from 'zod'
 
@@ -22,13 +23,7 @@ import * as styles from './style.css'
 
 const address = z.string().refine((address) => isValidL2Address(address), { message: 'Invalid Starknet address' })
 
-const currencyInput = z.string().refine(
-  (input) => {
-    console.log(input)
-    ;+input.replace(/,/g, '') > 0
-  },
-  { message: 'Invalid amount' }
-)
+const currencyInput = z.string().refine((input) => +parseFormatedAmount(input) > 0, { message: 'Invalid amount' })
 
 const holder = z.object({
   address,
@@ -89,7 +84,7 @@ export default function LaunchPage() {
         data.initialRecipientAddress,
         data.name,
         data.symbol,
-        uint256.bnToUint256(BigInt(data.initialSupply)),
+        uint256.bnToUint256(BigInt(parseFormatedAmount(data.initialSupply))),
       ])
 
       // Token address. Used to transfer tokens to initial holders.
@@ -104,7 +99,7 @@ export default function LaunchPage() {
       const transfers = data.holders.map(({ address, amount }) => ({
         contractAddress: tokenAddress,
         entrypoint: 'transfer',
-        calldata: CallData.compile([address, uint256.bnToUint256(BigInt(amount))]),
+        calldata: CallData.compile([address, uint256.bnToUint256(BigInt(parseFormatedAmount(amount)))]),
       }))
 
       try {
@@ -204,7 +199,7 @@ export default function LaunchPage() {
             <Column gap="4">
               <Text.Body className={styles.inputLabel}>Initial Supply</Text.Body>
 
-              <NumericalInput placeholder="10,000,000,000.00" {...register('initialSupply', { valueAsNumber: true })} />
+              <NumericalInput placeholder="10,000,000,000.00" {...register('initialSupply')} />
 
               <Box className={styles.errorContainer}>
                 {errors.initialSupply?.message ? <Text.Error>{errors.initialSupply.message}</Text.Error> : null}
@@ -218,10 +213,7 @@ export default function LaunchPage() {
                 <Column gap="2" flexDirection="row">
                   <Input placeholder="Holder address" {...register(`holders.${index}.address`)} />
 
-                  <NumericalInput
-                    placeholder="Tokens"
-                    {...register(`holders.${index}.amount`, { valueAsNumber: true })}
-                  />
+                  <NumericalInput placeholder="Tokens" {...register(`holders.${index}.amount`)} />
 
                   <IconButton type="button" onClick={() => remove(index)}>
                     <X />
