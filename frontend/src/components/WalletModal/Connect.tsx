@@ -1,6 +1,5 @@
-import { useAccount } from '@starknet-react/core'
+import { useAccount, useConnect } from '@starknet-react/core'
 import { useEffect } from 'react'
-import { getL2Connections } from 'src/connections'
 import { useWalletConnectModal } from 'src/hooks/useModal'
 import { Column } from 'src/theme/components/Flex'
 
@@ -14,7 +13,7 @@ function WalletConnectContent() {
   const { address: l2Account } = useAccount()
 
   // connections
-  const l2Connections = getL2Connections()
+  const { connectors } = useConnect()
 
   // modal
   const [, toggle] = useWalletConnectModal()
@@ -27,12 +26,12 @@ function WalletConnectContent() {
   }, [toggle, l2Account])
 
   return (
-    <Content title="Connect Starknet wallet" close={toggle}>
+    <Content title="Connect wallet" close={toggle}>
       <Column gap="8">
-        {l2Connections
-          .filter((connection) => connection.shouldDisplay())
+        {connectors
+          .filter((connection) => connection.available())
           .map((connection) => (
-            <L2Option key={connection.getName()} connection={connection} />
+            <L2Option key={connection.id} connection={connection} />
           ))}
       </Column>
     </Content>
