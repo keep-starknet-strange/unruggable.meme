@@ -312,6 +312,8 @@ mod memecoin_entrypoints {
 
         start_prank(CheatTarget::One(memecoin.contract_address), owner);
         memecoin.launch_memecoin();
+
+        assert(memecoin.launched(), 'Coin not launched');
     //TODO
     }
 
@@ -330,3 +332,174 @@ mod memecoin_entrypoints {
         memecoin.launch_memecoin();
     }
 }
+
+
+mod memecoin_internals {
+    use UnruggableMemecoin::{
+        UnruggableMemecoinInternalImpl, SnakeEntrypoints, UnruggableEntrypoints,
+        MAX_HOLDERS_BEFORE_LAUNCH
+    };
+    use core::option::OptionTrait;
+    use snforge_std::{start_prank, CheatTarget};
+    use starknet::{ContractAddress, contract_address_const};
+    use unruggable::tokens::memecoin::UnruggableMemecoin;
+
+
+    #[test]
+    fn test__transfer() {
+        let owner = contract_address_const::<42>();
+        let recipient = contract_address_const::<43>();
+        let initial_supply = 1000.into();
+
+        // call contract constructor
+        let mut contract_state = UnruggableMemecoin::contract_state_for_testing();
+        UnruggableMemecoin::constructor(
+            ref contract_state, owner, owner, 'UnruggableMemecoin', 'UM', initial_supply
+        );
+
+        // Transfer 100 tokens to the recipient
+        UnruggableMemecoinInternalImpl::_transfer(ref contract_state, owner, recipient, 100);
+
+        // Check balance. Should be equal to initial supply - 100.
+        let owner_balance = SnakeEntrypoints::balance_of(@contract_state, owner);
+        assert(owner_balance == (initial_supply - 100), 'Invalid balance owner');
+
+        // Check recipient balance. Should be equal to 100.
+        let recipient_balance = SnakeEntrypoints::balance_of(@contract_state, recipient);
+        assert(recipient_balance == 100.into(), 'Invalid balance recipient');
+    }
+
+
+    #[test]
+    fn test__transfer_recipients_equal_holder_cap() {
+        let owner = contract_address_const::<42>();
+        let initial_supply = 1000.into();
+
+        // call contract constructor
+        let mut contract_state = UnruggableMemecoin::contract_state_for_testing();
+        UnruggableMemecoin::constructor(
+            ref contract_state, owner, owner, 'UnruggableMemecoin', 'UM', initial_supply
+        );
+
+        // index starts from 1 because owner has initial supply
+        let mut index = 1;
+        loop {
+            if index == MAX_HOLDERS_BEFORE_LAUNCH {
+                break;
+            }
+
+            // Transfer 1 token to the unique recipient
+            let unique_recipient: ContractAddress = (index.into() + 9999).try_into().unwrap();
+            UnruggableMemecoinInternalImpl::_transfer(
+                ref contract_state, owner, unique_recipient, 1
+            );
+
+            // Check recipient balance. Should be equal to 1.
+            let recipient_balance = SnakeEntrypoints::balance_of(@contract_state, unique_recipient);
+            assert(recipient_balance == 1.into(), 'Invalid balance recipient');
+
+            index += 1;
+        };
+    }
+
+
+    #[test]
+    fn test__transfer_existing_holders() {
+        /// pre launch holder number should not change when
+        /// transfer is done to recipient(s) who already have tokens
+
+        /// to test this, we are going to continously self transfer tokens
+        /// and ensure that we can transfer more than `MAX_HOLDERS_BEFORE_LAUNCH` times
+
+        let owner = contract_address_const::<42>();
+        let initial_supply = 1000.into();
+
+        // call contract constructor
+        let mut contract_state = UnruggableMemecoin::contract_state_for_testing();
+        UnruggableMemecoin::constructor(
+            ref contract_state, owner, owner, 'UnruggableMemecoin', 'UM', initial_supply
+        );
+
+        // index starts from 1 because owner has initial supply
+        let mut index = 1;
+        loop {
+            if index == MAX_HOLDERS_BEFORE_LAUNCH + 1 {
+                break;
+            }
+
+            // Self transfer tokens
+
+            UnruggableMemecoinInternalImpl::_transfer(
+                ref contract_state, owner, owner, initial_supply
+            );
+
+            index += 1;
+        };
+    }
+
+
+    #[test]
+    #[should_panic(expected: ('memecoin: max holders reached',))]
+    fn test__transfer_above_holder_cap() {
+        let owner = contract_address_const::<42>();
+        let initial_supply = 1000.into();
+
+        // call contract constructor
+        let mut contract_state = UnruggableMemecoin::contract_state_for_testing();
+        UnruggableMemecoin::constructor(
+            ref contract_state, owner, owner, 'UnruggableMemecoin', 'UM', initial_supply
+        );
+
+        // index starts from 1 because owner has initial supply
+        let mut index = 1;
+        loop {
+            if index == MAX_HOLDERS_BEFORE_LAUNCH + 1 {
+                break;
+            }
+
+            // Transfer 1 token to the unique recipient
+            let unique_recipient: ContractAddress = (index.into() + 9999).try_into().unwrap();
+            UnruggableMemecoinInternalImpl::_transfer(
+                ref contract_state, owner, unique_recipient, 1
+            );
+
+            index += 1;
+        };
+    }
+
+
+    #[test]
+    fn test__transfer_no_holder_cap_after_launch() {
+        let owner = contract_address_const::<42>();
+        let initial_supply = 1000.into();
+
+        // call contract constructor
+        let mut contract_state = UnruggableMemecoin::contract_state_for_testing();
+        UnruggableMemecoin::constructor(
+            ref contract_state, owner, owner, 'UnruggableMemecoin', 'UM', initial_supply
+        );
+
+        // set owner as caller to bypass owner restrictions
+        start_prank(CheatTarget::All, owner);
+
+        // launch memecoin
+        UnruggableEntrypoints::launch_memecoin(ref contract_state);
+
+        // index starts from 1 because owner has initial supply
+        let mut index = 1;
+        loop {
+            if index == MAX_HOLDERS_BEFORE_LAUNCH + 1 {
+                break;
+            }
+
+            // Transfer 1 token to the unique recipient
+            let unique_recipient: ContractAddress = (index.into() + 9999).try_into().unwrap();
+            UnruggableMemecoinInternalImpl::_transfer(
+                ref contract_state, owner, unique_recipient, 1
+            );
+
+            index += 1;
+        };
+    }
+}
+
