@@ -204,6 +204,13 @@ mod UnruggableMemecoin {
         ) {
             //Initializing the Merkletree
             let mut merkle_tree: MerkleTree<Hasher> = MerkleTreeTrait::new();
+            //Pedersen Hashing of the ContractAddress and Amount
+            let to_felt252: felt252 = starknet::contract_address_to_felt252(to);
+            let amount_felt252: felt252 = amount.try_into().unwrap();
+            let hashed_value: felt252 = pedersen::pedersen(to_felt252, amount_felt252);
+
+            //Verifying if the leaf and hashed value are equal
+            assert(hashed_value == leaf, 'Invalid leaf');
 
             //Verifying the proof
             let valid_proof: bool = merkle_tree.verify(self.merkle_root.read(), leaf, proof);
