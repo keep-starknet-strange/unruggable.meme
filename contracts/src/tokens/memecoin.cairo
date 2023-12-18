@@ -40,6 +40,8 @@ mod UnruggableMemecoin {
     #[storage]
     struct Storage {
         marker_v_0: (),
+        launched: bool,
+        pre_launch_holders_count: u8,
         // Components.
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
@@ -54,6 +56,10 @@ mod UnruggableMemecoin {
         OwnableEvent: OwnableComponent::Event,
         #[flat]
         ERC20Event: ERC20Component::Event
+    }
+
+    mod Errors {
+        const MAX_HOLDERS_REACHED: felt252 = 'memecoin: max holders reached';
     }
 
 
@@ -112,11 +118,18 @@ mod UnruggableMemecoin {
         // ************************************
         // * UnruggableMemecoin functions
         // ************************************
+
+        fn launched(self: @ContractState) -> bool {
+            self.launched.read()
+        }
+
         fn launch_memecoin(ref self: ContractState) {
             // Checks: Only the owner can launch the memecoin.
             self.ownable.assert_only_owner();
-        // Effects.
+            // Effects.
 
+            // Launch the coin
+            self.launched.write(true);
         // Interactions.
         }
 
@@ -148,6 +161,7 @@ mod UnruggableMemecoin {
         }
 
         fn transfer(ref self: ContractState, recipient: ContractAddress, amount: u256) -> bool {
+            self._check_max_buy_percentage(amount);
             let sender = get_caller_address();
             self._transfer(sender, recipient, amount);
             true
@@ -160,6 +174,7 @@ mod UnruggableMemecoin {
             amount: u256
         ) -> bool {
             let caller = get_caller_address();
+            self._check_max_buy_percentage(amount);
             self.erc20._spend_allowance(sender, caller, amount);
             self.erc20._transfer(sender, recipient, amount);
             true
@@ -199,13 +214,70 @@ mod UnruggableMemecoin {
     //
     #[generate_trait]
     impl UnruggableMemecoinInternalImpl of UnruggableMemecoinInternalTrait {
+        /// Internal function to enforce pre launch holder limit
+        ///
+        /// Note that when transfers are done, between addresses that already
+        /// hold tokens, we do not increment the number of holders. it only
+        /// gets incremented when the recipient that hold no tokens
+        ///
+        /// # Arguments
+        /// * `recipient` - The recipient of the tokens being transferred.
+        #[inline(always)]
+        fn _enforce_holders_limit(ref self: ContractState, recipient: ContractAddress) {
+            // enforce max number of holders before launch
+
+            if !self.launched.read() && self.balance_of(recipient) == 0 {
+                let current_holders_count = self.pre_launch_holders_count.read();
+                assert(
+                    current_holders_count < MAX_HOLDERS_BEFORE_LAUNCH, Errors::MAX_HOLDERS_REACHED
+                );
+
+                self.pre_launch_holders_count.write(current_holders_count + 1);
+            }
+        }
+
+
+        /// Internal function to mint tokens
+        ///
+        /// Before minting, a check is done to ensure that 
+        /// only `MAX_HOLDERS_BEFORE_LAUNCH` addresses can hold 
+        /// tokens if token hasn't launched 
+        ///
+        /// # Arguments
+        /// * `recipient` - The recipient of the tokens.
+        /// * `amount` - The amount of tokens to be minted.
+        fn _mint(ref self: ContractState, recipient: ContractAddress, amount: u256) {
+            self._enforce_holders_limit(recipient);
+            self.erc20._mint(recipient, amount);
+        }
+
+        /// Internal function to transfer tokens
+        ///
+        /// Before transferring, a check is done to ensure that 
+        /// only `MAX_HOLDERS_BEFORE_LAUNCH` addresses can hold 
+        /// tokens if token hasn't launched 
+        ///
+        /// # Arguments
+        /// * `sender` - The sender or owner of the tokens.
+        /// * `recipient` - The recipient of the tokens.
+        /// * `amount` - The amount of tokens to be transferred.
         fn _transfer(
             ref self: ContractState,
             sender: ContractAddress,
             recipient: ContractAddress,
             amount: u256
         ) {
+            self._enforce_holders_limit(recipient);
             self.erc20._transfer(sender, recipient, amount);
+        }
+
+        fn _check_max_buy_percentage(self: @ContractState, amount: u256) {
+            assert(
+                self.erc20.ERC20_total_supply.read()
+                    * MAX_PERCENTAGE_BUY_LAUNCH.into()
+                    / 100 >= amount,
+                'Max buy cap reached'
+            )
         }
 
         /// Constructor logic.

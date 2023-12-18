@@ -1,7 +1,6 @@
 import { goerli, mainnet } from '@starknet-react/chains'
-import { publicProvider, StarknetConfig, starkscan } from '@starknet-react/core'
+import { argent, braavos, publicProvider, StarknetConfig, starkscan, useInjectedConnectors } from '@starknet-react/core'
 import { ArgentMobileConnector } from 'starknetkit/argentMobile'
-import { InjectedConnector } from 'starknetkit/injected'
 import { WebWalletConnector } from 'starknetkit/webwallet'
 
 const network = process.env.REACT_APP_NETWORK ?? 'goerli'
@@ -13,9 +12,13 @@ interface StarknetProviderProps {
 }
 
 export function StarknetProvider({ children }: StarknetProviderProps) {
+  const { connectors: injected } = useInjectedConnectors({
+    recommended: [argent(), braavos()],
+    includeRecommended: 'always',
+  })
+
   const connectors = [
-    new InjectedConnector({ options: { id: 'argentX', name: 'Argent' } }),
-    new InjectedConnector({ options: { id: 'braavos', name: 'Braavos' } }),
+    ...injected,
     new WebWalletConnector({ url: 'https://web.argent.xyz' }),
     new ArgentMobileConnector(),
   ]
