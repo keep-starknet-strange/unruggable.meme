@@ -1254,9 +1254,8 @@ mod memecoin_internals {
         assert(
             memecoin
                 .get_merkle_root() == 0x3022e5c16bd1bf6e9c44b0d0de23ef6eb0bc84bd2b4eaca75306076eb99239a,
-            'Inconsistency'
+            'Incorrect Merkle Root'
         )
-    //TODO
     }
 
     #[test]
@@ -1324,7 +1323,7 @@ mod memecoin_internals {
     }
 
     #[test]
-    fn test_claimairdrop_memecoin() { //Testing claimairdrop 
+    fn test_claimairdrop_memecoin() { 
         let (
             owner,
             recipient,

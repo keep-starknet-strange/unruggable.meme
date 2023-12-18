@@ -168,11 +168,8 @@ mod UnruggableMemecoin {
         /// * `merkle_root` - The new Merkle root to be set, represented as a `felt252`.
 
         fn set_merkle_root(ref self: ContractState, merkle_root: felt252) {
-            //Initializing the merkle root
             self.ownable.assert_only_owner();
-            //Enabling Initialize function
             self.initializable.initialize();
-            //Writing the merkle root value to the state variable
             self.merkle_root.write(merkle_root);
         }
 
@@ -207,9 +204,6 @@ mod UnruggableMemecoin {
         ) {
             //Initializing the Merkletree
             let mut merkle_tree: MerkleTree<Hasher> = MerkleTreeTrait::new();
-            //Type casting it for pedersen hashing
-            let to_felt252: felt252 = starknet::contract_address_to_felt252(to);
-            let amount_felt252: felt252 = amount.try_into().unwrap();
 
             //Verifying the proof
             let valid_proof: bool = merkle_tree.verify(self.merkle_root.read(), leaf, proof);
