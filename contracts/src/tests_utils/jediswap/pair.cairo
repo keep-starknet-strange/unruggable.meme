@@ -8,21 +8,6 @@ use starknet::ClassHash;
 //      Also an ERC20 token
 
 use starknet::ContractAddress;
-//
-// External Interfaces
-//
-#[starknet::interface]
-trait IERC20<T> {
-    fn balance_of(self: @T, account: ContractAddress) -> u256;
-    fn balanceOf(self: @T, account: ContractAddress) -> u256; // TODO Remove after regenesis
-    fn transfer(ref self: T, recipient: ContractAddress, amount: u256) -> bool;
-    fn transfer_from(
-        ref self: T, sender: ContractAddress, recipient: ContractAddress, amount: u256
-    ) -> bool;
-    fn transferFrom(
-        ref self: T, sender: ContractAddress, recipient: ContractAddress, amount: u256
-    ) -> bool; // TODO Remove after regenesis
-}
 
 #[starknet::interface]
 trait IFactory<T> {
@@ -46,11 +31,8 @@ trait IJediSwapCallee<T> {
 #[starknet::interface]
 trait IPairC1<TContractState> {
     // view functions
-    fn name(self: @TContractState) -> felt252;
-    fn symbol(self: @TContractState) -> felt252;
     fn total_supply(self: @TContractState) -> u256;
     fn totalSupply(self: @TContractState) -> u256; //TODO Remove after regenesis?
-    fn decimals(self: @TContractState) -> u8;
     fn balance_of(self: @TContractState, account: ContractAddress) -> u256;
     fn balanceOf(
         self: @TContractState, account: ContractAddress
@@ -101,6 +83,9 @@ trait IPairC1<TContractState> {
 mod PairC1 {
     use array::{ArrayTrait, SpanTrait};
     use integer::{u128_try_from_felt252, u256_sqrt, u256_from_felt252};
+    use openzeppelin::token::erc20::ERC20Component;
+
+    use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
     use result::ResultTrait;
     use starknet::syscalls::{replace_class_syscall, call_contract_syscall};
     use starknet::{
@@ -109,17 +94,31 @@ mod PairC1 {
     };
 
     use super::{
-        IERC20Dispatcher, IERC20DispatcherTrait, IFactoryDispatcher, IFactoryDispatcherTrait,
-        IJediSwapCalleeDispatcher, IJediSwapCalleeDispatcherTrait
+        IFactoryDispatcher, IFactoryDispatcherTrait, IJediSwapCalleeDispatcher,
+        IJediSwapCalleeDispatcherTrait
     };
-    use unruggable::tests_utils::erc_20::ERC20;
+
     use zeroable::Zeroable;
+
+    component!(path: ERC20Component, storage: erc20, event: ERC20Event);
+
+    // Impl
+    impl ERC20Impl = ERC20Component::ERC20Impl<ContractState>;
+
+    // Internals
+    impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
+
+    // ERC20 entrypoints.
+    #[abi(embed_v0)]
+    impl ERC20MetadataImpl = ERC20Component::ERC20MetadataImpl<ContractState>;
 
     //
     // Storage Pair
     //
     #[storage]
     struct Storage {
+        #[substorage(v0)]
+        erc20: ERC20Component::Storage,
         _token0: ContractAddress, // @dev token0 address
         _token1: ContractAddress, // @dev token1 address
         _reserve0: u256, // @dev reserve for token0
@@ -139,7 +138,9 @@ mod PairC1 {
         Mint: Mint,
         Burn: Burn,
         Swap: Swap,
-        Sync: Sync
+        Sync: Sync,
+        #[flat]
+        ERC20Event: ERC20Component::Event
     }
 
     // @notice An event emitted whenever mint() is called.
@@ -189,8 +190,7 @@ mod PairC1 {
     #[constructor]
     fn constructor(ref self: ContractState, token0: ContractAddress, token1: ContractAddress) {
         assert(!token0.is_zero() & !token1.is_zero(), 'must be non zero');
-        let mut erc20_state = ERC20::unsafe_new_contract_state();
-        ERC20::InternalImpl::initializer(ref erc20_state, 'JediSwap Pair', 'JEDI-P');
+        self.erc20.initializer('JediSwap Pair', 'JEDI-P');
         self._locked.write(false);
         self._token0.write(token0);
         self._token1.write(token1);
@@ -204,55 +204,30 @@ mod PairC1 {
         // Getters ERC20
         //
 
-        // @notice Name of the token
-        // @return name
-        fn name(self: @ContractState) -> felt252 {
-            let erc20_state = ERC20::unsafe_new_contract_state();
-            ERC20::ERC20::name(@erc20_state)
-        }
-
-        // @notice Symbol of the token
-        // @return symbol
-        fn symbol(self: @ContractState) -> felt252 {
-            let erc20_state = ERC20::unsafe_new_contract_state();
-            ERC20::ERC20::symbol(@erc20_state)
-        }
-
         // @notice Total Supply of the token
         // @return total supply
         fn total_supply(self: @ContractState) -> u256 {
-            let erc20_state = ERC20::unsafe_new_contract_state();
-            ERC20::ERC20::total_supply(@erc20_state)
+            self.erc20.ERC20_total_supply.read()
         }
 
         // @notice Total Supply of the token
         // @return totalSupply
         fn totalSupply(self: @ContractState) -> u256 {
-            let erc20_state = ERC20::unsafe_new_contract_state();
-            ERC20::ERC20::total_supply(@erc20_state)
-        }
-
-        // @notice Decimals of the token
-        // @return decimals
-        fn decimals(self: @ContractState) -> u8 {
-            let erc20_state = ERC20::unsafe_new_contract_state();
-            ERC20::ERC20::decimals(@erc20_state)
+            self.erc20.ERC20_total_supply.read()
         }
 
         // @notice Balance of `account`
         // @param account Account address whose balance is fetched
         // @return balance Balance of `account`
         fn balance_of(self: @ContractState, account: ContractAddress) -> u256 {
-            let erc20_state = ERC20::unsafe_new_contract_state();
-            ERC20::ERC20::balance_of(@erc20_state, account)
+            self.erc20.ERC20_balances.read(account)
         }
 
         // @notice Balance of `account`
         // @param account Account address whose balance is fetched
         // @return balance Balance of `account`
         fn balanceOf(self: @ContractState, account: ContractAddress) -> u256 {
-            let erc20_state = ERC20::unsafe_new_contract_state();
-            ERC20::ERC20::balance_of(@erc20_state, account)
+            self.erc20.ERC20_balances.read(account)
         }
 
         // @notice Allowance which `spender` can spend on behalf of `owner`
@@ -262,8 +237,7 @@ mod PairC1 {
         fn allowance(
             self: @ContractState, owner: ContractAddress, spender: ContractAddress
         ) -> u256 {
-            let erc20_state = ERC20::unsafe_new_contract_state();
-            ERC20::ERC20::allowance(@erc20_state, owner, spender)
+            self.erc20.ERC20_allowances.read((owner, spender))
         }
 
         //
@@ -317,8 +291,8 @@ mod PairC1 {
         // @param amount Amount of tokens to transfer
         // @return success 0 or 1
         fn transfer(ref self: ContractState, recipient: ContractAddress, amount: u256) -> bool {
-            let mut erc20_state = ERC20::unsafe_new_contract_state();
-            ERC20::ERC20::transfer(ref erc20_state, recipient, amount);
+            let sender = get_caller_address();
+            self.erc20.transfer(recipient, amount);
             true
         }
 
@@ -334,8 +308,7 @@ mod PairC1 {
             recipient: ContractAddress,
             amount: u256
         ) -> bool {
-            let mut erc20_state = ERC20::unsafe_new_contract_state();
-            ERC20::ERC20::transfer_from(ref erc20_state, sender, recipient, amount);
+            self.erc20.transfer_from(sender, recipient, amount);
             true
         }
 
@@ -351,8 +324,7 @@ mod PairC1 {
             recipient: ContractAddress,
             amount: u256
         ) -> bool {
-            let mut erc20_state = ERC20::unsafe_new_contract_state();
-            ERC20::ERC20::transfer_from(ref erc20_state, sender, recipient, amount);
+            self.erc20.transfer_from(sender, recipient, amount);
             true
         }
 
@@ -361,8 +333,7 @@ mod PairC1 {
         // @param amount The amount of tokens to be spent
         // @return success 0 or 1
         fn approve(ref self: ContractState, spender: ContractAddress, amount: u256) -> bool {
-            let mut erc20_state = ERC20::unsafe_new_contract_state();
-            ERC20::ERC20::approve(ref erc20_state, spender, amount);
+            self.erc20.approve(spender, amount);
             true
         }
 
@@ -373,8 +344,7 @@ mod PairC1 {
         fn increase_allowance(
             ref self: ContractState, spender: ContractAddress, added_value: u256
         ) -> bool {
-            let mut erc20_state = ERC20::unsafe_new_contract_state();
-            ERC20::ERC20::increase_allowance(ref erc20_state, spender, added_value);
+            self.erc20._increase_allowance(spender, added_value);
             true
         }
 
@@ -385,8 +355,7 @@ mod PairC1 {
         fn increaseAllowance(
             ref self: ContractState, spender: ContractAddress, added_value: u256
         ) -> bool {
-            let mut erc20_state = ERC20::unsafe_new_contract_state();
-            ERC20::ERC20::increase_allowance(ref erc20_state, spender, added_value);
+            self.erc20._increase_allowance(spender, added_value);
             true
         }
 
@@ -397,8 +366,7 @@ mod PairC1 {
         fn decrease_allowance(
             ref self: ContractState, spender: ContractAddress, subtracted_value: u256
         ) -> bool {
-            let mut erc20_state = ERC20::unsafe_new_contract_state();
-            ERC20::ERC20::decrease_allowance(ref erc20_state, spender, subtracted_value);
+            self.erc20._decrease_allowance(spender, subtracted_value);
             true
         }
 
@@ -409,8 +377,7 @@ mod PairC1 {
         fn decreaseAllowance(
             ref self: ContractState, spender: ContractAddress, subtracted_value: u256
         ) -> bool {
-            let mut erc20_state = ERC20::unsafe_new_contract_state();
-            ERC20::ERC20::decrease_allowance(ref erc20_state, spender, subtracted_value);
+            self.erc20._decrease_allowance(spender, subtracted_value);
             true
         }
 
@@ -450,13 +417,10 @@ mod PairC1 {
 
             assert(liquidity > 0.into(), 'insufficient liquidity minted');
 
-            let mut erc20_state = ERC20::unsafe_new_contract_state();
             if (_total_supply == 0.into()) {
-                ERC20::InternalImpl::_mint(
-                    ref erc20_state, contract_address_const::<1>(), 1000.into()
-                );
+                self.erc20._mint(contract_address_const::<1>(), 1000.into());
             }
-            ERC20::InternalImpl::_mint(ref erc20_state, to, liquidity);
+            self.erc20._mint(to, liquidity);
 
             InternalImpl::_update(ref self, balance0, balance1, reserve0, reserve1);
 
@@ -495,9 +459,7 @@ mod PairC1 {
             let amount1 = (liquidity * balance1) / _total_supply;
             assert(amount0 > 0.into() && amount1 > 0.into(), 'insufficient liquidity burned');
 
-            let mut erc20_state = ERC20::unsafe_new_contract_state();
-
-            ERC20::InternalImpl::_burn(ref erc20_state, self_address, liquidity);
+            self.erc20._burn(self_address, liquidity);
 
             let token0Dispatcher = IERC20Dispatcher { contract_address: token0 };
             token0Dispatcher.transfer(to, amount0);
@@ -696,8 +658,7 @@ mod PairC1 {
                         let denominator = (rootk * 5.into()) + rootklast;
                         let liquidity = numerator / denominator;
                         if (liquidity > 0.into()) {
-                            let mut erc20_state = ERC20::unsafe_new_contract_state();
-                            ERC20::InternalImpl::_mint(ref erc20_state, fee_to, liquidity);
+                            self.erc20._mint(fee_to, liquidity);
                         }
                     }
                 }

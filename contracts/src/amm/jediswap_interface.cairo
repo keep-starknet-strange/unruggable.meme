@@ -15,7 +15,6 @@ trait IFactoryC1<TContractState> {
 
 #[starknet::interface]
 trait IRouterC1<T> {
-    // view functions
     fn factory(self: @T) -> ContractAddress;
     fn sort_tokens(
         self: @T, tokenA: ContractAddress, tokenB: ContractAddress
@@ -38,27 +37,4 @@ trait IPair<T> {
     fn get_reserves(self: @T) -> (u256, u256, u64);
     fn mint(ref self: T, to: ContractAddress) -> u256;
     fn totalSupply(self: @T) -> u256;
-}
-
-#[starknet::interface]
-trait IERC20<TContractState> {
-    // view functions
-    fn name(self: @TContractState) -> felt252;
-    fn symbol(self: @TContractState) -> felt252;
-    fn decimals(self: @TContractState) -> u8;
-    fn total_supply(self: @TContractState) -> u256;
-    fn balance_of(self: @TContractState, account: ContractAddress) -> u256;
-    fn allowance(self: @TContractState, owner: ContractAddress, spender: ContractAddress) -> u256;
-    // external functions
-    fn transfer(ref self: TContractState, recipient: ContractAddress, amount: u256) -> bool;
-    fn transfer_from(
-        ref self: TContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256
-    ) -> bool;
-    fn approve(ref self: TContractState, spender: ContractAddress, amount: u256) -> bool;
-    fn increase_allowance(
-        ref self: TContractState, spender: ContractAddress, added_value: u256
-    ) -> bool;
-    fn decrease_allowance(
-        ref self: TContractState, spender: ContractAddress, subtracted_value: u256
-    ) -> bool;
 }

@@ -6,17 +6,17 @@ mod UnruggableMemecoin {
     use integer::BoundedInt;
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait;
-    use openzeppelin::token::erc20::ERC20Component;
+    use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
+    use openzeppelin::token::erc20::{ERC20Component};
     use starknet::{ContractAddress, get_caller_address};
     use unruggable::amm::amm::{AMM, AMMV2};
     use unruggable::amm::jediswap_interface::{
         IFactoryC1Dispatcher, IFactoryC1DispatcherTrait, IRouterC1Dispatcher,
-        IRouterC1DispatcherTrait, IERC20Dispatcher, IERC20DispatcherTrait
+        IRouterC1DispatcherTrait
     };
     use unruggable::tokens::interface::{
         IUnruggableMemecoinSnake, IUnruggableMemecoinCamel, IUnruggableAdditional
     };
-    use zeroable::Zeroable;
 
     // Components.
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
@@ -77,7 +77,7 @@ mod UnruggableMemecoin {
         name: felt252,
         symbol: felt252,
         initial_supply: u256,
-        amms: Array<AMM>
+        mut amms: Span<AMM>
     ) {
         // Initialize the ERC20 token.
         self.erc20.initializer(name, symbol);
@@ -85,15 +85,11 @@ mod UnruggableMemecoin {
         // Initialize the owner.
         self.ownable.initializer(owner);
 
-        // Read configs from factory
-        let mut i = 0;
         loop {
-            if amms.len() == i {
-                break;
+            match amms.pop_front() {
+                Option::Some(amm) => self.amm_configs.write(*amm.name, *amm.router_address),
+                Option::None => { break; }
             }
-            let amm = *amms[i];
-            self.amm_configs.write(amm.name, amm.router_address);
-            i += 1;
         };
 
         // Mint initial supply to the initial recipient.
@@ -147,7 +143,7 @@ mod UnruggableMemecoin {
                 .create_pair(counterparty_token_address, memecoin_address);
 
             // [Check Balance]
-            let memecoin_balance = self.balance_of(memecoin_address);
+            let memecoin_balance = self.balanceOf(memecoin_address);
             let counterparty_token_dispatcher = IERC20Dispatcher {
                 contract_address: counterparty_token_address,
             };

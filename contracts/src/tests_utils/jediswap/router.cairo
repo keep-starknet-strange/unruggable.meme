@@ -7,18 +7,6 @@ use starknet::ClassHash;
 
 use starknet::ContractAddress;
 
-//
-// External Interfaces
-//
-#[starknet::interface]
-trait IERC20<T> {
-    fn transfer_from(
-        ref self: T, sender: ContractAddress, recipient: ContractAddress, amount: u256
-    ) -> bool;
-    fn transferFrom(
-        ref self: T, sender: ContractAddress, recipient: ContractAddress, amount: u256
-    ) -> bool; // TODO Remove after regenesis
-}
 
 #[starknet::interface]
 trait IPair<T> {
@@ -66,6 +54,7 @@ mod RouterC1 {
 
     use debug::PrintTrait;
     use integer::u256_from_felt252;
+    use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
     use result::ResultTrait;
     use starknet::syscalls::{replace_class_syscall, call_contract_syscall};
     use starknet::{
@@ -73,12 +62,7 @@ mod RouterC1 {
         get_block_timestamp, contract_address_const, contract_address_to_felt252
     };
 
-    use super::{
-        IERC20Dispatcher, IERC20DispatcherTrait, IPairDispatcher, IPairDispatcherTrait,
-        IFactoryDispatcher, IFactoryDispatcherTrait
-    };
-    use traits::Into;
-    use zeroable::Zeroable;
+    use super::{IPairDispatcher, IPairDispatcherTrait, IFactoryDispatcher, IFactoryDispatcherTrait};
 
     //
     // Storage

@@ -68,7 +68,7 @@ mod UnruggableMemecoinFactory {
         ref self: ContractState,
         owner: ContractAddress,
         memecoin_class_hash: ClassHash,
-        amms: Array<AMM>
+        ref amms: Span<AMM>
     ) {
         // Initialize the owner.
         self.ownable.initializer(owner);
@@ -77,11 +77,10 @@ mod UnruggableMemecoinFactory {
         let mut i = 0;
         let amms_len = amms.len();
         loop {
-            if amms_len == i {
-                break;
+            match amms.pop_front() {
+                Option::Some(amm) => self.amms.write(i, *amm),
+                Option::None => { break; }
             }
-            let amm = *amms[i];
-            self.amms.write(i, amm);
             i += 1;
         };
         self.amms_len.write(amms_len);
@@ -123,7 +122,7 @@ mod UnruggableMemecoinFactory {
 
     #[generate_trait]
     impl InternalFunctions of InternalFunctionsTrait {
-        fn whitelisted_amms(self: @ContractState) -> Array<AMM> {
+        fn whitelisted_amms(self: @ContractState) -> Span<AMM> {
             let mut amms = array![];
             let amms_len = self.amms_len.read();
             let mut i = 0;
@@ -135,7 +134,8 @@ mod UnruggableMemecoinFactory {
                 amms.append(self.amms.read(i));
                 i += 1;
             };
-            amms
+
+            amms.span()
         }
     }
 
@@ -146,22 +146,17 @@ mod UnruggableMemecoinFactory {
         symbol: felt252,
         initial_supply: u256
     ) -> Array<felt252> {
-        let mut calldata = array![];
-        calldata.append(owner.into());
-        calldata.append(initial_recipient.into());
-        calldata.append(name.into());
-        calldata.append(symbol.into());
+        let mut calldata = array![
+            owner.into(), initial_recipient.into(), name.into(), symbol.into()
+        ];
         Serde::serialize(@initial_supply, ref calldata);
-
         calldata
     }
 
     fn generate_salt(owner: ContractAddress, name: felt252, symbol: felt252) -> felt252 {
-        let mut data = array![];
-        data.append(owner.into());
-        data.append(name.into());
-        data.append(symbol.into());
-        data.append(starknet::get_block_timestamp().into());
+        let mut data = array![
+            owner.into(), name.into(), symbol.into(), starknet::get_block_timestamp().into()
+        ];
         poseidon_hash_span(data.span())
     }
 }
