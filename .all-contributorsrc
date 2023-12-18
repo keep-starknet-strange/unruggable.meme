@@ -117,6 +117,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "credence0x",
+      "name": "Credence",
+      "avatar_url": "https://avatars.githubusercontent.com/u/74370710?v=4",
+      "profile": "https://github.com/credence0x",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,
