@@ -1,13 +1,13 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useAccount, useContractWrite, useExplorer } from '@starknet-react/core'
+import { useAccount, useContractWrite } from '@starknet-react/core'
 import { Wallet, X } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { IconButton, PrimaryButton, SecondaryButton } from 'src/components/Button'
 import Input from 'src/components/Input'
 import NumericalInput from 'src/components/Input/NumericalInput'
 import { TOKEN_CLASS_HASH, UDC } from 'src/constants/contracts'
-import { MAX_HOLDERS_PER_DEPLOYMENT } from 'src/constants/misc'
+import { DECIMALS, MAX_HOLDERS_PER_DEPLOYMENT } from 'src/constants/misc'
 import { useDeploymentStore } from 'src/hooks/useDeployment'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
@@ -44,12 +44,10 @@ const schema = z.object({
  */
 
 export default function LaunchPage() {
-  const [deployedToken, setDeployedToken] = useState<{ address: string; tx: string } | undefined>(undefined)
   const { pushDeployedContract } = useDeploymentStore()
 
-  const explorer = useExplorer()
   const { account, address } = useAccount()
-  const { writeAsync, isPending, reset: resetWrite } = useContractWrite({})
+  const { writeAsync, isPending } = useContractWrite({})
 
   // If you need the transaction status, you can use this hook.
   // Notice that RPC providers will take some time to receive the transaction,
@@ -62,7 +60,6 @@ export default function LaunchPage() {
     handleSubmit,
     setValue,
     formState: { errors },
-    reset: resetForm,
   } = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
   })
@@ -79,35 +76,27 @@ export default function LaunchPage() {
       const salt = stark.randomAddress()
       const unique = 0
 
-      const ctorCalldata = CallData.compile([
-        data.ownerAddress,
-        data.initialRecipientAddress,
-        data.name,
-        data.symbol,
-        uint256.bnToUint256(BigInt(parseFormatedAmount(data.initialSupply))),
+      const constructorCalldata = CallData.compile([
+        data.ownerAddress, // owner
+        data.initialRecipientAddress, // initial_recipient
+        data.name, // name
+        data.symbol, // symbol
+        uint256.bnToUint256(BigInt(parseFormatedAmount(data.initialSupply)) * BigInt(DECIMALS)), // initial_supply
+        data.holders.map(({ address }) => address), // initial_holders
+        data.holders.map(({ amount }) => uint256.bnToUint256(BigInt(parseFormatedAmount(amount)) * BigInt(DECIMALS))), // initial_holders_amounts
       ])
 
       // Token address. Used to transfer tokens to initial holders.
-      const tokenAddress = hash.calculateContractAddressFromHash(salt, TOKEN_CLASS_HASH, ctorCalldata, unique)
+      const tokenAddress = hash.calculateContractAddressFromHash(salt, TOKEN_CLASS_HASH, constructorCalldata, unique)
 
       const deploy = {
         contractAddress: UDC.ADDRESS,
         entrypoint: UDC.ENTRYPOINT,
-        calldata: [TOKEN_CLASS_HASH, salt, unique, ctorCalldata.length, ...ctorCalldata],
+        calldata: [TOKEN_CLASS_HASH, salt, unique, constructorCalldata.length, ...constructorCalldata],
       }
 
-      const transfers = data.holders.map(({ address, amount }) => ({
-        contractAddress: tokenAddress,
-        entrypoint: 'transfer',
-        calldata: CallData.compile([address, uint256.bnToUint256(BigInt(parseFormatedAmount(amount)))]),
-      }))
-
       try {
-        const response = await writeAsync({
-          calls: [deploy, ...transfers],
-        })
-
-        setDeployedToken({ address: tokenAddress, tx: response.transaction_hash })
+        await writeAsync({ calls: [deploy] })
 
         pushDeployedContract(tokenAddress)
       } catch (err) {
@@ -116,12 +105,6 @@ export default function LaunchPage() {
     },
     [account, writeAsync, pushDeployedContract]
   )
-
-  const restart = useCallback(() => {
-    resetWrite()
-    resetForm()
-    setDeployedToken(undefined)
-  }, [resetForm, resetWrite, setDeployedToken])
 
   return (
     <Row className={styles.wrapper}>
@@ -243,33 +226,9 @@ export default function LaunchPage() {
 
             <div />
 
-            {deployedToken ? (
-              <Column gap="4">
-                <Text.HeadlineMedium textAlign="center">Token deployed!</Text.HeadlineMedium>
-
-                <Column gap="2">
-                  <Text.Body className={styles.inputLabel}>Token address</Text.Body>
-                  <Text.Body className={styles.deployedAddress}>
-                    <a href={explorer.contract(deployedToken.address)}>{deployedToken.address}</a>.
-                  </Text.Body>
-                </Column>
-
-                <Column gap="2">
-                  <Text.Body className={styles.inputLabel}>Transaction</Text.Body>
-                  <Text.Body className={styles.deployedAddress}>
-                    <a href={explorer.transaction(deployedToken.tx)}>{deployedToken.tx}</a>.
-                  </Text.Body>
-                </Column>
-
-                <PrimaryButton onClick={restart} type="button" className={styles.deployButton}>
-                  Start over
-                </PrimaryButton>
-              </Column>
-            ) : (
-              <PrimaryButton disabled={!account || isPending} className={styles.deployButton}>
-                {account ? (isPending ? 'Waiting for signature' : 'Deploy') : 'Connect wallet'}
-              </PrimaryButton>
-            )}
+            <PrimaryButton type="submit" disabled={!account || isPending} className={styles.deployButton} major>
+              {account ? (isPending ? 'Waiting for signature' : 'Deploy') : 'Connect wallet'}
+            </PrimaryButton>
           </Column>
         </Box>
       </Box>

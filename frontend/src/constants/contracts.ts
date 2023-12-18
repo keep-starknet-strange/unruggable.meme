@@ -3,5 +3,4 @@ import { constants } from 'starknet'
 export const UDC = constants.UDC
 
 // Class hashes
-export const TOKEN_CLASS_HASH =
-  process.env.REACT_APP_TOKEN_CLASS_HASH ?? '0x0278da3cbbc2105fc3ac1206a630357c5a4666020f15fed02c892ac5d856d8ef'
+export const TOKEN_CLASS_HASH = '0x0241f7df7b9dc2c2a1730d9d7b32f3ad44162413ad7a500e84c348618ad1b4f9'

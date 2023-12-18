@@ -82,3 +82,24 @@ export const iconButton = style([
     border: 'none',
   }),
 ])
+
+export const thirdDimension = style([
+  primaryButton,
+  {
+    overflow: 'hidden',
+    boxShadow: '0 6px 10px #00000040',
+    position: 'relative',
+
+    '::before': {
+      content: '""',
+      position: 'absolute',
+      zIndex: 1,
+      top: '2px',
+      left: '6px',
+      right: '6px',
+      height: '12px',
+      borderRadius: '20px 20px 100px 100px / 14px 14px 30px 30px',
+      background: 'linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0))',
+    },
+  },
+])
