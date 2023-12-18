@@ -59,7 +59,8 @@ mod UnruggableMemecoin {
     }
 
     mod Errors {
-        const MAX_HOLDERS_REACHED: felt252 = 'memecoin: max holders reached';
+        const MAX_HOLDERS_REACHED: felt252 = 'Unruggable: max holders reached';
+        const ARRAYS_LEN_DIF: felt252 = 'Unruggable: arrays len dif';
     }
 
 
@@ -90,11 +91,11 @@ mod UnruggableMemecoin {
         self.ownable.initializer(owner);
 
         assert(
-            initial_holders.len() == initial_holders_amounts.len(), 'Unruggable: arrays len dif'
+            initial_holders.len() == initial_holders_amounts.len(), Errors::ARRAYS_LEN_DIF
         );
         assert(
             initial_holders.len() <= MAX_HOLDERS_BEFORE_LAUNCH.into(),
-            'Unruggable: max holders reached'
+            Errors::MAX_HOLDERS_REACHED
         );
 
         // Initialize the token / internal logic
@@ -314,6 +315,7 @@ mod UnruggableMemecoin {
                     assert(address == initial_recipient, 'initial recipient mismatch');
                     // NO HOLDING LIMIT HERE. IT IS THE ACCOUNT THAT WILL LAUNCH THE LIQUIDITY POOL
                     self.erc20._mint(address, amount);
+                    
                 } else {
                     team_allocation += amount;
                     let max_alloc = initial_supply
@@ -322,6 +324,7 @@ mod UnruggableMemecoin {
                     assert(team_allocation <= max_alloc, 'Unruggable: max team allocation');
                     self.erc20._mint(address, amount);
                 }
+                self.pre_launch_holders_count.write(self.pre_launch_holders_count.read() + 1);
                 i += 1;
             };
             assert(initial_minted_supply <= initial_supply, 'Unruggable: max supply reached');

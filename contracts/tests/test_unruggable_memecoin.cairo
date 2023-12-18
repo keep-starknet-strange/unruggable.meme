@@ -337,15 +337,15 @@ mod erc20_entrypoints {
 
         // Transfer 100 tokens to recipient.
         start_prank(CheatTarget::One(memecoin.contract_address), owner);
-        memecoin.transfer(recipient, 10.into());
+        memecoin.transfer(recipient, 20.into());
 
-        // Check balance. Should be equal to initial supply - initial distrib (50 each) - 100.
+        // Check balance. Should be equal to initial supply - initial distrib (50 each) - 20.
         let owner_balance = memecoin.balance_of(owner);
-        assert(owner_balance == (900 - 100.into()), 'Invalid balance owner');
+        assert(owner_balance == (900 - 20.into()), 'Invalid balance owner');
 
         // Check recipient balance. Should be equal to 100.
         let recipient_balance = memecoin.balance_of(recipient);
-        assert(recipient_balance == 10.into(), 'Invalid balance recipient');
+        assert(recipient_balance == 20.into(), 'Invalid balance recipient');
     }
 
     #[test]
@@ -384,19 +384,19 @@ mod erc20_entrypoints {
 
         // Transfer 100 tokens to recipient.
         start_prank(CheatTarget::One(memecoin.contract_address), spender);
-        memecoin.transfer_from(owner, recipient, 10.into());
+        memecoin.transfer_from(owner, recipient, 20.into());
 
         // Check balance. Should be equal to initial supply - 100.
         let owner_balance = memecoin.balance_of(owner);
-        assert(owner_balance == (initial_supply - 2 * 50 - 100.into()), 'Invalid balance owner');
+        assert(owner_balance == (initial_supply - 2 * 50 - 20.into()), 'Invalid balance owner');
 
         // Check recipient balance. Should be equal to 100.
         let recipient_balance = memecoin.balance_of(recipient);
-        assert(recipient_balance == 10.into(), 'Invalid balance recipient');
+        assert(recipient_balance == 20.into(), 'Invalid balance recipient');
 
-        // Check allowance. Should be equal to initial supply - 100.
+        // Check allowance. Should be equal to initial supply - transfered amount.
         let allowance = memecoin.allowance(owner, spender);
-        assert(allowance == (initial_supply - 10.into()), 'Invalid allowance');
+        assert(allowance == (initial_supply - 20.into()), 'Invalid allowance');
     }
 
     // Test ERC20 Camel entrypoints
@@ -521,6 +521,7 @@ mod erc20_entrypoints {
         assert(allowance == (initial_supply - 100.into()), 'Invalid allowance');
     }
 }
+
 mod memecoin_entrypoints {
     use core::debug::PrintTrait;
     use core::traits::Into;
@@ -637,6 +638,120 @@ mod memecoin_entrypoints {
         // theorical team allocation is 10%, so initial_supply * MAX_TEAM_ALLOC / 100
         // 1000 * 100 / 100 = 100
         assert(team_alloc == 100, 'Invalid team allocation');
+    }
+
+    #[test]
+    #[should_panic(expected: ('Max buy cap reached',))]
+    fn test_transfer_max_percentage() {
+        let (
+            owner,
+            recipient,
+            name,
+            symbol,
+            initial_supply,
+            initial_holder_1,
+            initial_holder_2,
+            _,
+            initial_holders_amounts
+        ) =
+            instantiate_params();
+        let alice = contract_address_const::<53>();
+        let initial_holders = array![owner, initial_holder_1, initial_holder_2].span();
+
+        let contract_address =
+            match deploy_contract(
+                owner, owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
+            ) {
+            Result::Ok(address) => address,
+            Result::Err(msg) => panic(msg.panic_data),
+        };
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        // Check initial balance. Should be equal to initial supply.
+        let balance = memecoin.balance_of(owner);
+        assert(balance == initial_supply - 100, 'Invalid balance');
+
+        // Transfer 1 token from owner to alice.
+        start_prank(CheatTarget::One(memecoin.contract_address), owner);
+        let send_amount = memecoin.transfer(alice, 500);
+        assert(memecoin.balance_of(alice) == 500.into(), 'Invalid balance');
+    }
+
+
+    #[test]
+    #[should_panic(expected: ('Max buy cap reached',))]
+    fn test_transfer_from_max_percentage() {
+        let (
+            owner,
+            recipient,
+            name,
+            symbol,
+            initial_supply,
+            initial_holder_1,
+            initial_holder_2,
+            _,
+            initial_holders_amounts
+        ) =
+            instantiate_params();
+        let alice = contract_address_const::<53>();
+        let initial_holders = array![owner, initial_holder_1, initial_holder_2].span();
+
+        let contract_address =
+            match deploy_contract(
+                owner, owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
+            ) {
+            Result::Ok(address) => address,
+            Result::Err(msg) => panic(msg.panic_data),
+        };
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        // Check initial balance. Should be equal to initial supply.
+        let balance = memecoin.balance_of(owner);
+        assert(balance == initial_supply - 100, 'Invalid balance');
+
+        // Transfer 1 token from owner to alice.
+        start_prank(CheatTarget::One(memecoin.contract_address), owner);
+        let send_amount = memecoin.transfer_from(owner, alice, 500);
+        assert(memecoin.balance_of(alice) == 500.into(), 'Invalid balance');
+    }
+
+    #[test]
+    fn test_classic_max_percentage() {
+        let (
+            owner,
+            recipient,
+            name,
+            symbol,
+            initial_supply,
+            initial_holder_1,
+            initial_holder_2,
+            _,
+            initial_holders_amounts
+        ) =
+            instantiate_params();
+        let alice = contract_address_const::<53>();
+        let initial_holders = array![owner, initial_holder_1, initial_holder_2].span();
+
+        let contract_address =
+            match deploy_contract(
+                owner, owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
+            ) {
+            Result::Ok(address) => address,
+            Result::Err(msg) => panic(msg.panic_data),
+        };
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        // Check initial balance. Should be equal to initial supply.
+        let balance = memecoin.balance_of(owner);
+        assert(balance == initial_supply - 100, 'Invalid balance');
+
+        // Transfer 1 token from owner to alice.
+        start_prank(CheatTarget::One(memecoin.contract_address), owner);
+        let send_amount = memecoin.transfer(alice, 10.into());
+        assert(memecoin.balance_of(alice) == 10.into(), 'Invalid balance');
     }
 }
 
@@ -940,3 +1055,170 @@ mod custom_constructor {
     }
 }
 
+mod memecoin_internals {
+    use unruggable::tokens::memecoin::UnruggableMemecoin;
+    use core::debug::PrintTrait;
+    use openzeppelin::token::erc20::interface::IERC20;
+    use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
+    use starknet::{ContractAddress, contract_address_const};
+    use super::{deploy_contract, instantiate_params};
+    use unruggable::tokens::interface::{
+        IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
+    };
+    use UnruggableMemecoin::{
+        UnruggableMemecoinInternalImpl, SnakeEntrypoints, UnruggableEntrypoints,
+        MAX_HOLDERS_BEFORE_LAUNCH
+    };
+
+    #[test]
+    fn test__transfer_recipients_equal_holder_cap() {
+        let (
+            owner, recipient, name, symbol, initial_supply, initial_holder_1, initial_holder_2, _, _
+        ) =
+            instantiate_params();
+        let initial_holders = array![owner, initial_holder_1, initial_holder_2].span();
+        let initial_holders_amounts = array![900.into(), 50.into(), 30.into(),].span();
+
+        let contract_address =
+            match deploy_contract(
+                owner, owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
+            ) {
+            Result::Ok(address) => address,
+            Result::Err(msg) => panic(msg.panic_data),
+        };
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        let mut index = 0;
+        loop {
+            // MAX_HOLDERS_BEFORE_LAUNCH - 3 because there are 3 initial holders
+            if index == MAX_HOLDERS_BEFORE_LAUNCH - 3 {
+                break;
+            }
+
+            // Transfer 1 token to the unique recipient
+            // create a unique address
+            let unique_recipient: ContractAddress = (index.into() + 9999).try_into().unwrap();
+            start_prank(CheatTarget::One(memecoin.contract_address), owner);
+            memecoin.transfer(unique_recipient, 1.into());
+
+            // Check recipient balance. Should be equal to 1.
+            let recipient_balance = memecoin.balanceOf(unique_recipient);
+            assert(recipient_balance == 1.into(), 'Invalid balance recipient');
+
+            index += 1;
+        };
+    }
+    #[test]
+    fn test__transfer_existing_holders() {
+        /// pre launch holder number should not change when
+        /// transfer is done to recipient(s) who already have tokens
+
+        /// to test this, we are going to continously self transfer tokens
+        /// and ensure that we can transfer more than `MAX_HOLDERS_BEFORE_LAUNCH` times
+
+        let (
+            owner, recipient, name, symbol, initial_supply, initial_holder_1, initial_holder_2, _, _
+        ) =
+            instantiate_params();
+        let initial_holders = array![owner, initial_holder_1, initial_holder_2].span();
+        let initial_holders_amounts = array![900.into(), 50.into(), 30.into(),].span();
+
+        let contract_address =
+            match deploy_contract(
+                owner, owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
+            ) {
+            Result::Ok(address) => address,
+            Result::Err(msg) => panic(msg.panic_data),
+        };
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        let mut index = 0;
+        loop {
+            if index == MAX_HOLDERS_BEFORE_LAUNCH - 3 {
+                break;
+            }
+
+            // Self transfer tokens
+
+            start_prank(CheatTarget::One(memecoin.contract_address), owner);
+            memecoin.transfer(initial_holder_2, 1.into());
+
+            index += 1;
+        };
+    }
+    #[test]
+    #[should_panic(expected: ('Unruggable: max holders reached',))]
+    fn test__transfer_above_holder_cap() {
+        let (
+            owner, recipient, name, symbol, initial_supply, initial_holder_1, initial_holder_2, _, _
+        ) =
+            instantiate_params();
+        let initial_holders = array![owner, initial_holder_1, initial_holder_2].span();
+        let initial_holders_amounts = array![900.into(), 50.into(), 30.into(),].span();
+
+        let contract_address =
+            match deploy_contract(
+                owner, owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
+            ) {
+            Result::Ok(address) => address,
+            Result::Err(msg) => panic(msg.panic_data),
+        };
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        let mut index = 0;
+        loop {
+            // There are already 3 holders, so MAX_HOLDERS_BEFORE_LAUNCH - 2 should break
+            if index == MAX_HOLDERS_BEFORE_LAUNCH - 2 {
+                break;
+            }
+
+            // Transfer 1 token to the unique recipient
+            let unique_recipient: ContractAddress = (index.into() + 9999).try_into().unwrap();
+            start_prank(CheatTarget::One(memecoin.contract_address), owner);
+            memecoin.transfer(unique_recipient, 1.into());
+
+            index += 1;
+        };
+    }
+    #[test]
+    fn test__transfer_no_holder_cap_after_launch() {
+        let (
+            owner, recipient, name, symbol, initial_supply, initial_holder_1, initial_holder_2, _, _
+        ) =
+            instantiate_params();
+        let initial_holders = array![owner, initial_holder_1, initial_holder_2].span();
+        let initial_holders_amounts = array![900.into(), 50.into(), 30.into(),].span();
+
+        let contract_address =
+            match deploy_contract(
+                owner, owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
+            ) {
+            Result::Ok(address) => address,
+            Result::Err(msg) => panic(msg.panic_data),
+        };
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        // set owner as caller to bypass owner restrictions
+        start_prank(CheatTarget::All, owner);
+
+        // launch memecoin
+        memecoin.launch_memecoin();
+
+        let mut index = 0;
+        loop {
+            if index == MAX_HOLDERS_BEFORE_LAUNCH {
+                break;
+            }
+
+            // Transfer 1 token to the unique recipient
+            let unique_recipient: ContractAddress = (index.into() + 9999).try_into().unwrap();
+            memecoin.transfer(unique_recipient, 1.into());
+
+            index += 1;
+        };
+    }
+}
