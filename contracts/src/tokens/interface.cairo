@@ -42,6 +42,7 @@ trait IUnruggableMemecoin<TState> {
     ///     bool: whether token has launched
     fn launched(self: @TState) -> bool;
     fn launch_memecoin(ref self: TState);
+    fn get_team_allocation(self: @TState) -> u256;
 }
 
 #[starknet::interface]
@@ -73,5 +74,5 @@ trait IUnruggableAdditional<TState> {
     ///     bool: whether token has launched
     fn launched(self: @TState) -> bool;
     fn launch_memecoin(ref self: TState);
-    fn get_max_buy_percentage(self: @TState) -> u256;
+    fn get_team_allocation(self: @TState) -> u256;
 }
