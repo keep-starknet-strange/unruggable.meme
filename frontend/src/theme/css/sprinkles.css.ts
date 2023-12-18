@@ -140,7 +140,7 @@ export const vars = createGlobalTheme(':root', {
     error: '#ff003e',
 
     bg1: '#06080A',
-    bg2: '#0D1114',
+    bg2: '#12181c',
     bg3: '#191B1D',
 
     border1: '#191B1D',

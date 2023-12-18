@@ -2,16 +2,16 @@ import clsx from 'clsx'
 import React, { forwardRef, useEffect, useState } from 'react'
 import Box, { BoxProps } from 'src/theme/components/Box'
 
-import * as styles from './style.css'
+import * as styles from './NumericalInput.css'
 
 const formatNumber = (value: string) => {
-  const numericValue = parseFloat(value.replace(/[^0-9.]/g, ''))
+  // add 999 at the end to not lose potential `.0` and not shift commas
+  const numericValue = parseInt(`${value.replace(/[^0-9]/g, '')}`)
   if (isNaN(numericValue)) return ''
 
   return new Intl.NumberFormat('en-US', {
     style: 'decimal',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    maximumFractionDigits: 18,
   }).format(numericValue)
 }
 
@@ -19,8 +19,8 @@ type NumberInputProps = {
   addon?: React.ReactNode
 } & BoxProps
 
-const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
-  ({ addon, className, value, onChange, onBlur, ...props }, ref) => {
+const NumericalInput = forwardRef<HTMLInputElement, NumberInputProps>(
+  ({ addon, className, value, onChange, ...props }, ref) => {
     const [inputValue, setInputValue] = useState('')
     useEffect(() => {
       if (value !== undefined && value !== null) {
@@ -29,12 +29,8 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
     }, [value])
 
     const handleInputEvent = (event: React.ChangeEvent<HTMLInputElement>) => {
-      setInputValue(event.target.value.replace(/[^0-9.]/g, ''))
-      onChange && onChange(event)
-    }
-    const handleBlurEvent = (event: React.FocusEvent<HTMLInputElement>) => {
       setInputValue(formatNumber(event.target.value))
-      onBlur && onBlur(event)
+      onChange && onChange(event)
     }
 
     return (
@@ -48,13 +44,12 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
           className={styles.input}
           value={inputValue}
           onChange={handleInputEvent}
-          onBlur={handleBlurEvent}
         />
       </Box>
     )
   }
 )
 
-NumberInput.displayName = 'NumberInput'
+NumericalInput.displayName = 'NumericalInput'
 
-export default NumberInput
+export default NumericalInput
