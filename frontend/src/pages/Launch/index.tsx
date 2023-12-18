@@ -5,31 +5,34 @@ import { useCallback, useState } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { IconButton, PrimaryButton, SecondaryButton } from 'src/components/Button'
 import Input from 'src/components/Input'
-import NumberInput from 'src/components/NumberInput'
+import NumericalInput from 'src/components/Input/NumericalInput'
 import { TOKEN_CLASS_HASH, UDC } from 'src/constants/contracts'
+import { MAX_HOLDERS_PER_DEPLOYMENT } from 'src/constants/misc'
 import { useDeploymentStore } from 'src/hooks/useDeployment'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
+import { isValidL2Address } from 'src/utils/address'
 import { CallData, hash, stark, uint256 } from 'starknet'
 import { z } from 'zod'
 
 import * as styles from './style.css'
 
-const MAX_HOLDERS = 10
+// zod schemes
 
-const address = z.string().refine(
-  (addr) => {
-    // Wallets like to omit leading zeroes, so we cannot check for a fixed length.
-    // On the other hand, we don't want users to mistakenly enter an Ethereum address.
-    return /^0x[0-9a-fA-F]{50,64}$/.test(addr)
+const address = z.string().refine((address) => isValidL2Address(address), { message: 'Invalid Starknet address' })
+
+const currencyInput = z.string().refine(
+  (input) => {
+    console.log(input)
+    ;+input.replace(/,/g, '') > 0
   },
-  { message: 'Invalid Starknet address' }
+  { message: 'Invalid amount' }
 )
 
 const holder = z.object({
   address,
-  amount: z.number().min(0),
+  amount: currencyInput,
 })
 
 const schema = z.object({
@@ -37,9 +40,13 @@ const schema = z.object({
   symbol: z.string().min(1),
   initialRecipientAddress: address,
   ownerAddress: address,
-  initialSupply: z.number().min(1),
+  initialSupply: currencyInput,
   holders: z.array(holder),
 })
+
+/**
+ * LaunchPage component
+ */
 
 export default function LaunchPage() {
   const [deployedToken, setDeployedToken] = useState<{ address: string; tx: string } | undefined>(undefined)
@@ -128,7 +135,9 @@ export default function LaunchPage() {
           <Column gap="20">
             <Column gap="4">
               <Text.Body className={styles.inputLabel}>Name</Text.Body>
+
               <Input placeholder="Unruggable" {...register('name')} />
+
               <Box className={styles.errorContainer}>
                 {errors.name?.message ? <Text.Error>{errors.name.message}</Text.Error> : null}
               </Box>
@@ -136,7 +145,9 @@ export default function LaunchPage() {
 
             <Column gap="4">
               <Text.Body className={styles.inputLabel}>Symbol</Text.Body>
+
               <Input placeholder="MEME" {...register('symbol')} />
+
               <Box className={styles.errorContainer}>
                 {errors.symbol?.message ? <Text.Error>{errors.symbol.message}</Text.Error> : null}
               </Box>
@@ -144,18 +155,23 @@ export default function LaunchPage() {
 
             <Column gap="4">
               <Text.Body className={styles.inputLabel}>Initial Recipient Address</Text.Body>
+
               <Input
                 placeholder="0x000000000000000000"
                 addon={
                   <IconButton
+                    type="button"
                     disabled={!address}
-                    onClick={() => (address ? setValue('initialRecipientAddress', address) : null)}
+                    onClick={() =>
+                      address ? setValue('initialRecipientAddress', address, { shouldValidate: true }) : null
+                    }
                   >
                     <Wallet />
                   </IconButton>
                 }
                 {...register('initialRecipientAddress')}
               />
+
               <Box className={styles.errorContainer}>
                 {errors.initialRecipientAddress?.message ? (
                   <Text.Error>{errors.initialRecipientAddress.message}</Text.Error>
@@ -165,19 +181,21 @@ export default function LaunchPage() {
 
             <Column gap="4">
               <Text.Body className={styles.inputLabel}>Owner Address</Text.Body>
+
               <Input
                 placeholder="0x000000000000000000"
                 addon={
                   <IconButton
                     type="button"
                     disabled={!address}
-                    onClick={() => (address ? setValue('ownerAddress', address) : null)}
+                    onClick={() => (address ? setValue('ownerAddress', address, { shouldValidate: true }) : null)}
                   >
                     <Wallet />
                   </IconButton>
                 }
                 {...register('ownerAddress')}
               />
+
               <Box className={styles.errorContainer}>
                 {errors.ownerAddress?.message ? <Text.Error>{errors.ownerAddress.message}</Text.Error> : null}
               </Box>
@@ -185,7 +203,9 @@ export default function LaunchPage() {
 
             <Column gap="4">
               <Text.Body className={styles.inputLabel}>Initial Supply</Text.Body>
-              <NumberInput placeholder="10,000,000,000.00" {...register('initialSupply', { valueAsNumber: true })} />
+
+              <NumericalInput placeholder="10,000,000,000.00" {...register('initialSupply', { valueAsNumber: true })} />
+
               <Box className={styles.errorContainer}>
                 {errors.initialSupply?.message ? <Text.Error>{errors.initialSupply.message}</Text.Error> : null}
               </Box>
@@ -194,17 +214,25 @@ export default function LaunchPage() {
             {fields.map((field, index) => (
               <Column gap="4" key={field.id}>
                 <Text.Body className={styles.inputLabel}>Holder {index + 1}</Text.Body>
+
                 <Column gap="2" flexDirection="row">
                   <Input placeholder="Holder address" {...register(`holders.${index}.address`)} />
-                  <Input placeholder="Tokens" {...register(`holders.${index}.amount`, { valueAsNumber: true })} />
+
+                  <NumericalInput
+                    placeholder="Tokens"
+                    {...register(`holders.${index}.amount`, { valueAsNumber: true })}
+                  />
+
                   <IconButton type="button" onClick={() => remove(index)}>
                     <X />
                   </IconButton>
                 </Column>
+
                 <Box className={styles.errorContainer}>
                   {errors.holders?.[index]?.address?.message ? (
                     <Text.Error>{errors.holders?.[index]?.address?.message}</Text.Error>
                   ) : null}
+
                   {errors.holders?.[index]?.amount?.message ? (
                     <Text.Error>{errors.holders?.[index]?.amount?.message}</Text.Error>
                   ) : null}
@@ -212,27 +240,35 @@ export default function LaunchPage() {
               </Column>
             ))}
 
-            <SecondaryButton disabled={fields.length >= MAX_HOLDERS} onClick={() => append({ address: '', amount: 0 })}>
-              Add holder
-            </SecondaryButton>
+            {fields.length < MAX_HOLDERS_PER_DEPLOYMENT && (
+              <SecondaryButton
+                type="button"
+                onClick={() => append({ address: '', amount: '' }, { shouldFocus: false })}
+              >
+                Add holder
+              </SecondaryButton>
+            )}
 
             <div />
 
             {deployedToken ? (
               <Column gap="4">
                 <Text.HeadlineMedium textAlign="center">Token deployed!</Text.HeadlineMedium>
+
                 <Column gap="2">
                   <Text.Body className={styles.inputLabel}>Token address</Text.Body>
                   <Text.Body className={styles.deployedAddress}>
                     <a href={explorer.contract(deployedToken.address)}>{deployedToken.address}</a>.
                   </Text.Body>
                 </Column>
+
                 <Column gap="2">
                   <Text.Body className={styles.inputLabel}>Transaction</Text.Body>
                   <Text.Body className={styles.deployedAddress}>
                     <a href={explorer.transaction(deployedToken.tx)}>{deployedToken.tx}</a>.
                   </Text.Body>
                 </Column>
+
                 <PrimaryButton onClick={restart} type="button" className={styles.deployButton}>
                   Start over
                 </PrimaryButton>
