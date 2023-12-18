@@ -159,12 +159,29 @@ mod UnruggableMemecoin {
                 * MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION.into()
                 / 100
         }
+
+        /// Sets the Merkle root for the contract.
+        /// This function updates the Merkle root stored in the contract's state.
+        /// It is essential for maintaining the integrity of the Merkle tree used in various contract functionalities.
+        
+        /// # Arguments
+        /// * `merkle_root` - The new Merkle root to be set, represented as a `felt252`.
+
         fn set_merkle_root(ref self: ContractState, merkle_root: felt252) {
             //Initializing the merkle root
             self.ownable.assert_only_owner();
+            //Enabling Initialize function
             self.initializable.initialize();
+            //Writing the merkle root value to the state variable
             self.merkle_root.write(merkle_root);
         }
+
+        /// Retrieves the current Merkle root from the contract.
+        /// This function allows the contract owner to obtain the current Merkle root stored in the contract's state.
+        /// The Merkle root is crucial for verifying proofs in various contract operations.
+
+        /// # Returns
+        /// * `felt252` - The current Merkle root stored in the contract.
 
         fn get_merkle_root(self: @ContractState) -> felt252 {
             //Getting the merkle root
@@ -172,6 +189,15 @@ mod UnruggableMemecoin {
             self.merkle_root.read()
         }
 
+        /// Claims an airdrop for a specific account.
+        /// This function is part of the contract's state and is used to claim airdrops for accounts.
+        /// It involves a Merkle tree verification process to ensure the legitimacy of the claim.
+
+        /// # Arguments
+        /// * `to` - The address of the contract for which the airdrop is being claimed.
+        /// * `amount` - The amount of tokens to be airdropped, represented as a `u256`.
+        /// * `leaf` - A mutable leaf node in the Merkle tree, represented as a `felt252`.
+        /// * `proof` - A mutable span of `felt252` elements representing the Merkle proof.
         fn claim_airdrop(
             ref self: ContractState,
             to: ContractAddress,
