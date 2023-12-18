@@ -74,8 +74,8 @@ mod UnruggableMemecoin {
         name: felt252,
         symbol: felt252,
         initial_supply: u256,
-        initial_holders: Array<ContractAddress>,
-        initial_holders_amounts: Array<u256>,
+        initial_holders: Span<ContractAddress>,
+        initial_holders_amounts: Span<u256>,
     ) {
         // Initialize the ERC20 token.
         self.erc20.initializer(name, symbol);
@@ -83,13 +83,12 @@ mod UnruggableMemecoin {
         // Initialize the owner.
         self.ownable.initializer(owner);
 
-        // Mint initial supply to the initial holders.
+        assert(
+            initial_holders.len() == initial_holders_amounts.len(), 'Unruggable: arrays len dif'
+        );
         assert(
             initial_holders.len() <= MAX_HOLDERS_BEFORE_LAUNCH.into(),
             'Unruggable: max holders reached'
-        );
-        assert(
-            initial_holders.len() == initial_holders_amounts.len(), 'Unruggable: arrays len dif'
         );
         let mut initial_minted_supply: u256 = 0;
         let mut team_allocation: u256 = 0;
