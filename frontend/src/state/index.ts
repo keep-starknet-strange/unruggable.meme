@@ -3,15 +3,17 @@ import { persist } from 'zustand/middleware'
 import { immer } from 'zustand/middleware/immer'
 
 import { ApplicationSlice, createApplicationSlice } from './application'
+import { ContractsSlice, createContractsSlice } from './contracts'
 
-export type StoreState = ApplicationSlice
+export type StoreState = ApplicationSlice & ContractsSlice
 
-const PERSISTING_KEYS: (keyof StoreState)[] = []
+const PERSISTING_KEYS: (keyof StoreState)[] = ['deployedContracts']
 
 export const useBoundStore = create<StoreState>()(
   persist(
     immer<StoreState>((...a) => ({
       ...createApplicationSlice(...a),
+      ...createContractsSlice(...a),
     })),
     {
       name: 'unruggable-state-storage',
