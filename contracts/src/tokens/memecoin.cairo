@@ -5,6 +5,8 @@ use starknet::ContractAddress;
 mod UnruggableMemecoin {
     use core::array::ArrayTrait;
     use integer::BoundedInt;
+    use openzeppelin::security::interface::IInitializable;
+    use openzeppelin::security::initializable::InitializableComponent::InternalTrait as InitializableTrait;
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait;
     use openzeppelin::token::erc20::ERC20Component;
@@ -19,6 +21,7 @@ mod UnruggableMemecoin {
     impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
 
     component!(path: ERC20Component, storage: erc20, event: ERC20Event);
+    component!(path: InitializableComponent, storage: initializable, event: InitializableEvent);
     // Internals
     impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
 
@@ -46,7 +49,12 @@ mod UnruggableMemecoin {
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
         #[substorage(v0)]
-        erc20: ERC20Component::Storage
+        erc20: ERC20Component::Storage,
+        #[substorage(v0)]
+        initializable: InitializableComponent::Storage,
+        //Contract Storage
+        merkle_root: felt252,
+        has_claimed: LegacyMap::<ContractAddress, bool>,
     }
 
     #[event]
@@ -55,12 +63,22 @@ mod UnruggableMemecoin {
         #[flat]
         OwnableEvent: OwnableComponent::Event,
         #[flat]
-        ERC20Event: ERC20Component::Event
+        ERC20Event: ERC20Component::Event,
+        #[flat]
+        InitializableEvent: InitializableComponent::Event,
+        //Contract Events
+        ClaimedAirdrop: ClaimedAirdrop,
     }
 
     mod Errors {
         const MAX_HOLDERS_REACHED: felt252 = 'Unruggable: max holders reached';
         const ARRAYS_LEN_DIF: felt252 = 'Unruggable: arrays len dif';
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct ClaimedAirdrop {
+        account: ContractAddress,
+        amount: u256
     }
 
 
@@ -136,6 +154,46 @@ mod UnruggableMemecoin {
             self.erc20.ERC20_total_supply.read()
                 * MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION.into()
                 / 100
+        }
+
+        fn set_merkle_root(ref self: ContractState, merkle_root: felt252) {
+            //Initializing the merkle root
+            self.ownable.assert_only_owner();
+            self.initializable.initialize();
+            self.merkle_root.write(merkle_root);
+        }
+
+        fn get_merkle_root(self: @ContractState) -> felt252 {
+            //Getting the merkle root
+            self.ownable.assert_only_owner();
+            self.merkle_root.read()
+        }
+
+        fn claim_airdrop(
+            ref self: ContractState,
+            to: ContractAddress,
+            amount: u256,
+            mut leaf: felt252,
+            mut proof: Span<felt252>,
+        ) {
+            //Initializing the Merkletree
+            let mut merkle_tree: MerkleTree<Hasher> = MerkleTreeTrait::new();
+            //Type casting it for pedersen hashing
+            let to_felt252: felt252 = starknet::contract_address_to_felt252(to);
+            let amount_felt252: felt252 = amount.try_into().unwrap();
+
+            //Verifying the proof
+            let valid_proof: bool = merkle_tree.verify(self.merkle_root.read(), leaf, proof);
+            assert(self.has_claimed.read(to) == false, 'Already Claimed');
+            assert(valid_proof == true, 'Invalid proof');
+
+            //Changing the has_claimed state to true
+            self.has_claimed.write(to, true);
+
+            //Minting the tokens
+            self.erc20._mint(to, amount);
+            //Emitting an event of ClaimedAirdrop
+            self.emit(ClaimedAirdrop { account: to, amount: amount });
         }
     }
 

@@ -1221,4 +1221,158 @@ mod memecoin_internals {
             index += 1;
         };
     }
+
+    #[test]
+    fn test_set_merkle_root() {
+        let owner = contract_address_const::<42>();
+        let recipient = contract_address_const::<43>();
+        let initial_supply = 1000.into();
+        let contract_address = deploy_contract(
+            owner, recipient, 'UnruggableMemecoin', 'UM', initial_supply
+        );
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        start_prank(CheatTarget::One(memecoin.contract_address), owner);
+        memecoin.set_merkle_root(0x3022e5c16bd1bf6e9c44b0d0de23ef6eb0bc84bd2b4eaca75306076eb99239a);
+
+        assert(
+            memecoin
+                .get_merkle_root() == 0x3022e5c16bd1bf6e9c44b0d0de23ef6eb0bc84bd2b4eaca75306076eb99239a,
+            'Inconsistency'
+        )
+    //TODO
+    }
+
+    #[test]
+    #[should_panic(expected: ('Caller is not the owner',))]
+    fn test_set_merkle_root_not_owner() {
+        let owner = contract_address_const::<42>();
+        let recipient = contract_address_const::<43>();
+        let initial_supply = 1000.into();
+        let contract_address = deploy_contract(
+            owner, recipient, 'UnruggableMemecoin', 'UM', initial_supply
+        );
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        memecoin.set_merkle_root(0x4c5b879125d0fe0e0359dc87eea9c7370756635ca87c59148fb313c2cfb0579);
+    }
+
+    #[test]
+    #[should_panic(expected: ('Initializable: is initialized',))]
+    fn test_set_merkle_root_initialized() {
+        let owner = contract_address_const::<42>();
+        let recipient = contract_address_const::<43>();
+        let initial_supply = 1000.into();
+        let contract_address = deploy_contract(
+            owner, recipient, 'UnruggableMemecoin', 'UM', initial_supply
+        );
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+        start_prank(CheatTarget::One(memecoin.contract_address), owner);
+
+        memecoin.set_merkle_root(0x4c5b879125d0fe0e0359dc87eea9c7370756635ca87c59148fb313c2cfb0579);
+        memecoin.set_merkle_root(0x4c5b879125d0fe0e0359dc87eea9c7370756635ca87c59148fb313c2cfb0579);
+    }
+
+    #[test]
+    fn test_claimairdrop_memecoin() { //Testing claimairdrop 
+        let owner = contract_address_const::<42>();
+        let recipient = contract_address_const::<43>();
+
+        let initial_supply = 1000.into();
+        let contract_address = deploy_contract(
+            owner, recipient, 'UnruggableMemecoin', 'UM', initial_supply
+        );
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        start_prank(CheatTarget::One(memecoin.contract_address), owner);
+
+        //These values have been generated through the merkle.ts script
+        memecoin.set_merkle_root(0x4c5b879125d0fe0e0359dc87eea9c7370756635ca87c59148fb313c2cfb0579);
+
+        let to = contract_address_const::<
+            0x02038e178565b977c99f3e6c8d4ba327356e1b279e84cdc2f1949022c91653bd
+        >();
+        let amount = 500_u256;
+
+        let leaf = 0x57d0e61d7b5849581495af551721710023a83e705710c58facfa3f4e36e8fac;
+        let valid_proof = array![0x3bf438e95d7428d14eb4270528ff8b1e2f9cb30113724626d5cf9943551ee4d]
+            .span();
+
+        memecoin.claim_airdrop(to, amount, leaf, valid_proof);
+
+        let balance = memecoin.balanceOf(to);
+        assert(balance == amount, 'No balance');
+    }
+
+    #[test]
+    #[should_panic(expected: ('Already Claimed',))]
+    fn test_claimairdrop_memecoin_should_fail() { //Already Claimed
+        let owner = contract_address_const::<42>();
+        let recipient = contract_address_const::<43>();
+
+        let initial_supply = 1000.into();
+        let contract_address = deploy_contract(
+            owner, recipient, 'UnruggableMemecoin', 'UM', initial_supply
+        );
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        start_prank(CheatTarget::One(memecoin.contract_address), owner);
+
+        //These values have been generated through the merkle.ts script
+        memecoin.set_merkle_root(0x4c5b879125d0fe0e0359dc87eea9c7370756635ca87c59148fb313c2cfb0579);
+
+        let to = contract_address_const::<
+            0x02038e178565b977c99f3e6c8d4ba327356e1b279e84cdc2f1949022c91653bd
+        >();
+        let amount = 500_u256;
+
+        let leaf = 0x57d0e61d7b5849581495af551721710023a83e705710c58facfa3f4e36e8fac;
+        let valid_proof = array![0x3bf438e95d7428d14eb4270528ff8b1e2f9cb30113724626d5cf9943551ee4d]
+            .span();
+
+        memecoin.claim_airdrop(to, amount, leaf, valid_proof);
+
+        let balance = memecoin.balanceOf(to);
+        assert(balance == amount, 'No balance');
+
+        memecoin.claim_airdrop(to, amount, leaf, valid_proof);
+    }
+
+    #[test]
+    #[should_panic(expected: ('Invalid proof',))]
+    fn test_claimairdrop_memecoin_should_fail_2() { //Invalid Proof
+        let owner = contract_address_const::<42>();
+        let recipient = contract_address_const::<43>();
+
+        let initial_supply = 1000.into();
+        let contract_address = deploy_contract(
+            owner, recipient, 'UnruggableMemecoin', 'UM', initial_supply
+        );
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        start_prank(CheatTarget::One(memecoin.contract_address), owner);
+
+        //These values have been generated through the merkle.ts script
+        memecoin.set_merkle_root(0x3022e5c16bd1bf6e9c44b0d0de23ef6eb0bc84bd2b4eaca75306076eb99239a);
+
+        let to = contract_address_const::<
+            0x02038e178565b977c99f3e6c8d4ba327356e1b279e84cdc2f1949022c91653bd
+        >();
+        let amount = 500_u256;
+
+        let leaf = 0x57d0e61d7b5849581495af551721710023a83e705710c58facfa3f4e36e8fac;
+        let valid_proof = array![0x3bf438e95d7428d14eb4270528ff8b1e2f9cb30113724626d5cf9943551ee4d]
+            .span();
+
+        memecoin.claim_airdrop(to, amount, leaf, valid_proof);
+
+        let balance = memecoin.balanceOf(to);
+        assert(balance == amount, 'No balance');
+    }
 }
