@@ -10,6 +10,7 @@ starknet = "2.3.1"
 
 # External dependencies
 openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.8.0" }
+alexandria_merkle_tree = { git = "https://github.com/keep-starknet-strange/alexandria" }
 
 [[target.starknet-contract]]
 sierra = true

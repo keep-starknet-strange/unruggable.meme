@@ -43,6 +43,11 @@ trait IUnruggableMemecoin<TState> {
     fn launched(self: @TState) -> bool;
     fn launch_memecoin(ref self: TState);
     fn get_team_allocation(self: @TState) -> u256;
+    fn set_merkle_root(ref self: TState, merkle_root: felt252);
+    fn get_merkle_root(self: @TState) -> felt252;
+    fn claim_airdrop(
+        ref self: TState, to: ContractAddress, amount: u256, leaf: felt252, proof: Span<felt252>,
+    );
 }
 
 #[starknet::interface]
@@ -75,4 +80,9 @@ trait IUnruggableAdditional<TState> {
     fn launched(self: @TState) -> bool;
     fn launch_memecoin(ref self: TState);
     fn get_team_allocation(self: @TState) -> u256;
+    fn set_merkle_root(ref self: TState, merkle_root: felt252);
+    fn get_merkle_root(self: @TState) -> felt252;
+    fn claim_airdrop(
+        ref self: TState, to: ContractAddress, amount: u256, leaf: felt252, proof: Span<felt252>,
+    );
 }
