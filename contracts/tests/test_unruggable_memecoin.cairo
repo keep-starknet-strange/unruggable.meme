@@ -171,15 +171,15 @@ mod erc20_entrypoints {
 
         // Transfer 100 tokens to recipient.
         start_prank(CheatTarget::One(memecoin.contract_address), owner);
-        memecoin.transfer(recipient, 100.into());
+        memecoin.transfer(recipient, 10.into());
 
         // Check balance. Should be equal to initial supply - 100.
         let owner_balance = memecoin.balance_of(owner);
-        assert(owner_balance == (initial_supply - 100.into()), 'Invalid balance owner');
+        assert(owner_balance == (initial_supply - 10.into()), 'Invalid balance owner');
 
         // Check recipient balance. Should be equal to 100.
         let recipient_balance = memecoin.balance_of(recipient);
-        assert(recipient_balance == 100.into(), 'Invalid balance recipient');
+        assert(recipient_balance == 10.into(), 'Invalid balance recipient');
     }
 
     #[test]
@@ -204,19 +204,19 @@ mod erc20_entrypoints {
 
         // Transfer 100 tokens to recipient.
         start_prank(CheatTarget::One(memecoin.contract_address), spender);
-        memecoin.transfer_from(owner, recipient, 100.into());
+        memecoin.transfer_from(owner, recipient, 10.into());
 
         // Check balance. Should be equal to initial supply - 100.
         let owner_balance = memecoin.balance_of(owner);
-        assert(owner_balance == (initial_supply - 100.into()), 'Invalid balance owner');
+        assert(owner_balance == (initial_supply - 10.into()), 'Invalid balance owner');
 
         // Check recipient balance. Should be equal to 100.
         let recipient_balance = memecoin.balance_of(recipient);
-        assert(recipient_balance == 100.into(), 'Invalid balance recipient');
+        assert(recipient_balance == 10.into(), 'Invalid balance recipient');
 
         // Check allowance. Should be equal to initial supply - 100.
         let allowance = memecoin.allowance(owner, spender);
-        assert(allowance == (initial_supply - 100.into()), 'Invalid allowance');
+        assert(allowance == (initial_supply - 10.into()), 'Invalid allowance');
     }
 
     // Test ERC20 Camel entrypoints
@@ -291,6 +291,7 @@ mod erc20_entrypoints {
 
 mod memecoin_entrypoints {
     use core::debug::PrintTrait;
+    use core::traits::Into;
     use openzeppelin::token::erc20::interface::IERC20;
     use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
     use starknet::{ContractAddress, contract_address_const};
@@ -330,6 +331,72 @@ mod memecoin_entrypoints {
         let memecoin = IUnruggableMemecoinDispatcher { contract_address };
 
         memecoin.launch_memecoin();
+    }
+
+    #[test]
+    #[should_panic(expected: ('Max buy cap reached',))]
+    fn test_transfer_max_percentage() {
+        let owner = contract_address_const::<42>();
+        let alice = contract_address_const::<53>();
+        let initial_supply = 1000.into();
+        let contract_address = deploy_contract(
+            owner, owner, 'UnruggableMemecoin', 'MT', initial_supply
+        );
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        // Check initial balance. Should be equal to initial supply.
+        let balance = memecoin.balance_of(owner);
+        assert(balance == initial_supply, 'Invalid balance');
+
+        // Transfer 1 token from owner to alice.
+        start_prank(CheatTarget::One(memecoin.contract_address), owner);
+        let send_amount = memecoin.transfer(alice, 500);
+        assert(memecoin.balance_of(alice) == 500.into(), 'Invalid balance');
+    }
+
+
+    #[test]
+    #[should_panic(expected: ('Max buy cap reached',))]
+    fn test_transfer_from_max_percentage() {
+        let owner = contract_address_const::<42>();
+        let alice = contract_address_const::<53>();
+        let initial_supply = 1000.into();
+        let contract_address = deploy_contract(
+            owner, owner, 'UnruggableMemecoin', 'MT', initial_supply
+        );
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        // Check initial balance. Should be equal to initial supply.
+        let balance = memecoin.balance_of(owner);
+        assert(balance == initial_supply, 'Invalid balance');
+
+        // Transfer 1 token from owner to alice.
+        start_prank(CheatTarget::One(memecoin.contract_address), owner);
+        let send_amount = memecoin.transfer_from(owner, alice, 500);
+        assert(memecoin.balance_of(alice) == 500.into(), 'Invalid balance');
+    }
+
+    #[test]
+    fn test_classic_max_percentage() {
+        let owner = contract_address_const::<42>();
+        let alice = contract_address_const::<53>();
+        let initial_supply = 1000.into();
+        let contract_address = deploy_contract(
+            owner, owner, 'UnruggableMemecoin', 'MT', initial_supply
+        );
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        // Check initial balance. Should be equal to initial supply.
+        let balance = memecoin.balance_of(owner);
+        assert(balance == initial_supply, 'Invalid balance');
+
+        // Transfer 1 token from owner to alice.
+        start_prank(CheatTarget::One(memecoin.contract_address), owner);
+        let send_amount = memecoin.transfer(alice, 10.into());
+        assert(memecoin.balance_of(alice) == 10.into(), 'Invalid balance');
     }
 }
 

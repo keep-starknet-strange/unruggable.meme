@@ -73,4 +73,5 @@ trait IUnruggableAdditional<TState> {
     ///     bool: whether token has launched
     fn launched(self: @TState) -> bool;
     fn launch_memecoin(ref self: TState);
+    fn get_max_buy_percentage(self: @TState) -> u256;
 }
