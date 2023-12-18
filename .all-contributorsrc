@@ -135,6 +135,15 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "Maxservais",
+      "name": "Maxime Servais",
+      "avatar_url": "https://avatars.githubusercontent.com/u/43566493?v=4",
+      "profile": "https://www.web3xplorer.com/",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,

@@ -93,6 +93,9 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/credence0x"><img src="https://avatars.githubusercontent.com/u/74370710?v=4?s=100" width="100px;" alt="Credence"/><br /><sub><b>Credence</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=credence0x" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/WhoIsNac"><img src="https://avatars.githubusercontent.com/u/90337466?v=4?s=100" width="100px;" alt="0xNac"/><br /><sub><b>0xNac</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=WhoIsNac" title="Code">💻</a></td>
     </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://www.web3xplorer.com/"><img src="https://avatars.githubusercontent.com/u/43566493?v=4?s=100" width="100px;" alt="Maxime Servais"/><br /><sub><b>Maxime Servais</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=Maxservais" title="Code">💻</a></td>
+    </tr>
   </tbody>
 </table>
 
