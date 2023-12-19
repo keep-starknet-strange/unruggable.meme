@@ -1,61 +1,23 @@
 import { style } from '@vanilla-extract/css'
-import { sprinkles, vars } from 'src/theme/css/sprinkles.css'
+import { sprinkles } from 'src/theme/css/sprinkles.css'
 
-export const wrapper = style([
+export const noTokensContainer = style([
   sprinkles({
+    borderColor: 'text1',
+    borderWidth: '1px',
+    borderStyle: 'solid',
     width: 'full',
-    justifyContent: 'center',
-    paddingX: '12',
-    paddingTop: {
-      sm: '20',
-      md: '64',
-    },
-    paddingBottom: {
-      sm: '88',
-      md: '32',
-    },
+    borderRadius: '10',
+    paddingY: '16',
   }),
 ])
 
 export const container = style([
   {
-    padding: '16px 12px 12px',
-    boxShadow: `0 0 16px ${vars.color.bg1}`,
+    maxWidth: '720px',
   },
   sprinkles({
-    maxWidth: '480',
     width: 'full',
-    background: 'bg2',
-    borderRadius: '10',
+    gap: '32',
   }),
 ])
-
-export const deployButton = style([
-  {
-    ':disabled': {
-      opacity: '0.5',
-    },
-  },
-  sprinkles({
-    fontSize: '24',
-    fontWeight: 'semibold',
-  }),
-])
-
-export const inputLabel = sprinkles({
-  marginLeft: '8',
-  fontWeight: 'medium',
-})
-
-export const errorContainer = sprinkles({
-  paddingX: '8',
-  paddingTop: '4',
-  color: 'error',
-})
-
-export const deployedAddress = sprinkles({
-  marginLeft: '8',
-  fontWeight: 'medium',
-  textOverflow: 'ellipsis',
-  overflow: 'hidden',
-})

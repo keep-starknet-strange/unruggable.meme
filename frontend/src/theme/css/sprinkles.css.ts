@@ -146,7 +146,7 @@ export const vars = createGlobalTheme(':root', {
     border1: '#191B1D',
   },
   border: {
-    light: '1px solid rgba(0, 0, 0, 0.3)',
+    light: '1px solid #191B1D',
     none: 'none',
   },
   radii: {

@@ -2,9 +2,9 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 
 import AppLayout from './components/Layout/App'
 import HomeLayout from './components/Layout/Home'
+import DeployPage from './pages/Deploy'
 import HomePage from './pages/Home'
 import LaunchPage from './pages/Launch'
-import ManagePage from './pages/Manage'
 import ScreenPage from './pages/Screen'
 
 const router = createBrowserRouter([
@@ -17,18 +17,18 @@ const router = createBrowserRouter([
     ),
   },
   {
-    path: '/launch',
+    path: '/deploy',
     element: (
       <AppLayout>
-        <LaunchPage />
+        <DeployPage />
       </AppLayout>
     ),
   },
   {
-    path: '/manage',
+    path: '/launch',
     element: (
       <AppLayout>
-        <ManagePage />
+        <LaunchPage />
       </AppLayout>
     ),
   },

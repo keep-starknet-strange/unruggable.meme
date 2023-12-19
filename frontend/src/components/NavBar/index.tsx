@@ -10,12 +10,12 @@ import * as styles from './style.css'
 
 export const links = [
   {
-    name: 'Launch',
-    path: '/launch',
+    name: 'Deploy',
+    path: '/deploy',
   },
   {
-    name: 'Manage',
-    path: '/manage',
+    name: 'Launch',
+    path: '/launch',
   },
   {
     name: 'Screen',

@@ -7,7 +7,7 @@ import { ContractsSlice, createContractsSlice } from './contracts'
 
 export type StoreState = ApplicationSlice & ContractsSlice
 
-const PERSISTING_KEYS: (keyof StoreState)[] = ['deployedContracts']
+const PERSISTING_KEYS: (keyof StoreState)[] = ['deployedTokenContracts']
 
 export const useBoundStore = create<StoreState>()(
   persist(
