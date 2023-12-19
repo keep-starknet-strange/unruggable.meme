@@ -8,7 +8,7 @@ mod UnruggableMemecoin {
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait;
     use openzeppelin::token::erc20::ERC20Component;
-    use starknet::{ContractAddress, get_caller_address};
+    use starknet::{ContractAddress, get_caller_address, get_contract_address};
     use unruggable::tokens::interface::{
         IUnruggableMemecoinSnake, IUnruggableMemecoinCamel, IUnruggableAdditional
     };
@@ -77,7 +77,6 @@ mod UnruggableMemecoin {
     fn constructor(
         ref self: ContractState,
         owner: ContractAddress,
-        initial_recipient: ContractAddress,
         name: felt252,
         symbol: felt252,
         initial_supply: u256,
@@ -90,21 +89,10 @@ mod UnruggableMemecoin {
         // Initialize the owner.
         self.ownable.initializer(owner);
 
-        assert(initial_holders.len() == initial_holders_amounts.len(), Errors::ARRAYS_LEN_DIF);
-        assert(
-            initial_holders.len() <= MAX_HOLDERS_BEFORE_LAUNCH.into(), Errors::MAX_HOLDERS_REACHED
-        );
-
         // Initialize the token / internal logic
         self
             ._initializer(
-                owner,
-                initial_recipient,
-                name,
-                symbol,
-                initial_supply,
-                initial_holders,
-                initial_holders_amounts
+                owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
             );
     }
 
@@ -288,14 +276,17 @@ mod UnruggableMemecoin {
         fn _initializer(
             ref self: ContractState,
             owner: ContractAddress,
-            initial_recipient: ContractAddress,
             name: felt252,
             symbol: felt252,
             initial_supply: u256,
             initial_holders: Span<ContractAddress>,
             initial_holders_amounts: Span<u256>
         ) {
-            let mut initial_minted_supply: u256 = 0;
+            assert(initial_holders.len() == initial_holders_amounts.len(), Errors::ARRAYS_LEN_DIF);
+            assert(
+                initial_holders.len() <= MAX_HOLDERS_BEFORE_LAUNCH.into(),
+                Errors::MAX_HOLDERS_REACHED
+            );
             let mut team_allocation: u256 = 0;
             let mut i: usize = 0;
             loop {
@@ -304,23 +295,16 @@ mod UnruggableMemecoin {
                 }
                 let address = *initial_holders.at(i);
                 let amount = *initial_holders_amounts.at(i);
-                initial_minted_supply += amount;
-                if (i == 0) {
-                    assert(address == initial_recipient, 'initial recipient mismatch');
-                    // NO HOLDING LIMIT HERE. IT IS THE ACCOUNT THAT WILL LAUNCH THE LIQUIDITY POOL
-                    self.erc20._mint(address, amount);
-                } else {
-                    team_allocation += amount;
-                    let max_alloc = initial_supply
-                        * MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION.into()
-                        / 100;
-                    assert(team_allocation <= max_alloc, 'Unruggable: max team allocation');
-                    self.erc20._mint(address, amount);
-                }
+                team_allocation += amount;
+                let max_alloc = initial_supply * MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION.into() / 100;
+                assert(team_allocation <= max_alloc, 'Unruggable: max team allocation');
+                self.erc20._mint(address, amount);
+
                 self.pre_launch_holders_count.write(self.pre_launch_holders_count.read() + 1);
                 i += 1;
             };
-            assert(initial_minted_supply <= initial_supply, 'Unruggable: max supply reached');
+            let liquidity_for_pool = initial_supply - team_allocation;
+            self.erc20._mint(get_contract_address(), liquidity_for_pool);
         }
     }
 }
