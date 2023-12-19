@@ -8,7 +8,9 @@ trait IUnruggableMemecoinFactory<TContractState> {
         initial_recipient: ContractAddress,
         name: felt252,
         symbol: felt252,
-        initial_supply: u256
+        initial_supply: u256,
+        initial_holders: Span<ContractAddress>,
+        initial_holders_amounts: Span<u256>,
     ) -> ContractAddress;
 }
 
@@ -107,7 +109,9 @@ mod UnruggableMemecoinFactory {
             initial_recipient: ContractAddress,
             name: felt252,
             symbol: felt252,
-            initial_supply: u256
+            initial_supply: u256,
+            initial_holders: Span<ContractAddress>,
+            initial_holders_amounts: Span<u256>,
         ) -> ContractAddress {
             let contract_address_salt = generate_salt(owner, name, symbol);
 
@@ -115,8 +119,9 @@ mod UnruggableMemecoinFactory {
             let mut calldata = serialize_calldata(
                 owner, initial_recipient, name, symbol, initial_supply
             );
-
             Serde::serialize(@self.whitelisted_amms().into(), ref calldata);
+            Serde::serialize(@initial_holders.into(), ref calldata);
+            Serde::serialize(@initial_holders_amounts.into(), ref calldata);
 
             let (memecoin_address, _) = deploy_syscall(
                 self.memecoin_class_hash.read(), contract_address_salt, calldata.span(), false

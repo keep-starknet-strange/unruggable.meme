@@ -140,13 +140,13 @@ export const vars = createGlobalTheme(':root', {
     error: '#ff003e',
 
     bg1: '#06080A',
-    bg2: '#0D1114',
+    bg2: '#12181c',
     bg3: '#191B1D',
 
     border1: '#191B1D',
   },
   border: {
-    light: '1px solid rgba(0, 0, 0, 0.3)',
+    light: '1px solid #191B1D',
     none: 'none',
   },
   radii: {

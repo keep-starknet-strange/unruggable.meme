@@ -35,6 +35,11 @@ trait IUnruggableMemecoin<TState> {
     // ************************************
     // * Additional functions
     // ************************************
+    /// Checks whether token has launched
+    ///
+    /// # Returns 
+    ///     bool: whether token has launched
+    fn launched(self: @TState) -> bool;
     fn launch_memecoin(
         ref self: TState,
         amm_v2: AMMV2,
@@ -42,6 +47,7 @@ trait IUnruggableMemecoin<TState> {
         liquidity_memecoin_amount: u256,
         liquidity_counterparty_token: u256
     );
+    fn get_team_allocation(self: @TState) -> u256;
 }
 
 #[starknet::interface]
@@ -67,6 +73,11 @@ trait IUnruggableMemecoinSnake<TState> {
 
 #[starknet::interface]
 trait IUnruggableAdditional<TState> {
+    /// Checks whether token has launched
+    ///
+    /// # Returns 
+    ///     bool: whether token has launched
+    fn launched(self: @TState) -> bool;
     fn launch_memecoin(
         ref self: TState,
         amm_v2: AMMV2,
@@ -74,4 +85,5 @@ trait IUnruggableAdditional<TState> {
         liquidity_memecoin_amount: u256,
         liquidity_counterparty_token: u256
     );
+    fn get_team_allocation(self: @TState) -> u256;
 }

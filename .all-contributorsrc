@@ -108,6 +108,51 @@
       "contributions": [
         "code"
       ]
+    },
+    {
+      "login": "retroboydev",
+      "name": "retroboy",
+      "avatar_url": "https://avatars.githubusercontent.com/u/109076629?v=4",
+      "profile": "https://github.com/retroboydev",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "credence0x",
+      "name": "Credence",
+      "avatar_url": "https://avatars.githubusercontent.com/u/74370710?v=4",
+      "profile": "https://github.com/credence0x",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "WhoIsNac",
+      "name": "0xNac",
+      "avatar_url": "https://avatars.githubusercontent.com/u/90337466?v=4",
+      "profile": "https://github.com/WhoIsNac",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "Maxservais",
+      "name": "Maxime Servais",
+      "avatar_url": "https://avatars.githubusercontent.com/u/43566493?v=4",
+      "profile": "https://www.web3xplorer.com/",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "0xEniotna",
+      "name": "Antoine",
+      "avatar_url": "https://avatars.githubusercontent.com/u/101047205?v=4",
+      "profile": "https://github.com/0xEniotna",
+      "contributions": [
+        "code"
+      ]
     }
   ],
   "contributorsPerLine": 7,

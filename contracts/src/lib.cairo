@@ -4,9 +4,7 @@ mod amm {
 }
 
 mod tests_utils {
-    mod constants;
     mod deployer_helper;
-    mod erc_20;
     mod jediswap {
         mod factory;
         mod pair;
@@ -15,6 +13,7 @@ mod tests_utils {
 }
 
 mod tokens {
+    mod erc20;
     mod factory;
     mod interface;
     mod memecoin;

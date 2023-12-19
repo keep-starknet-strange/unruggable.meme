@@ -5,8 +5,12 @@ import * as styles from './style.css'
 
 type ButtonProps = Omit<BoxProps, 'as'>
 
-export const PrimaryButton = ({ className, ...props }: ButtonProps) => (
-  <Box as="button" className={clsx(className, styles.primaryButton)} {...props} />
+interface PrimaryButtonProps extends ButtonProps {
+  major?: boolean
+}
+
+export const PrimaryButton = ({ className, major = false, ...props }: PrimaryButtonProps) => (
+  <Box as="button" className={clsx(className, major ? styles.thirdDimension : styles.primaryButton)} {...props} />
 )
 
 interface SecondaryButtonProps extends ButtonProps {

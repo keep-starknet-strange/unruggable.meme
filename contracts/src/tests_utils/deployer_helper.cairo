@@ -2,16 +2,17 @@ mod DeployerHelper {
     use snforge_std::{
         ContractClass, ContractClassTrait, CheatTarget, declare, start_prank, stop_prank
     };
-    use starknet::{ContractAddress, ClassHash};
+    use starknet::{ContractAddress, ClassHash, contract_address_const};
     use unruggable::amm::amm::AMM;
-    use unruggable::tests_utils::constants::{DEPLOYER, TOKEN0_NAME, SYMBOL};
 
     fn deploy_contracts() -> (ContractAddress, ContractAddress) {
+        let deployer = contract_address_const::<'DEPLOYER'>();
         let pair_class = declare('PairC1');
 
         let mut factory_constructor_calldata = Default::default();
+
         Serde::serialize(@pair_class.class_hash, ref factory_constructor_calldata);
-        Serde::serialize(@DEPLOYER(), ref factory_constructor_calldata);
+        Serde::serialize(@deployer, ref factory_constructor_calldata);
         let factory_class = declare('FactoryC1');
 
         let factory_address = factory_class.deploy(@factory_constructor_calldata).unwrap();
@@ -58,11 +59,9 @@ mod DeployerHelper {
     }
 
     fn deploy_erc20(initial_supply: u256, recipient: ContractAddress) -> ContractAddress {
-        let erc20_class = declare('ERC20');
+        let erc20_class = declare('ERC20Token');
 
         let mut token0_constructor_calldata = Default::default();
-        Serde::serialize(@TOKEN0_NAME, ref token0_constructor_calldata);
-        Serde::serialize(@SYMBOL, ref token0_constructor_calldata);
         Serde::serialize(@initial_supply, ref token0_constructor_calldata);
         Serde::serialize(@recipient, ref token0_constructor_calldata);
 
