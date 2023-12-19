@@ -68,7 +68,7 @@ mod UnruggableMemecoinFactory {
         ref self: ContractState,
         owner: ContractAddress,
         memecoin_class_hash: ClassHash,
-        ref amms: Span<AMM>
+        mut amms: Span<AMM>
     ) {
         // Initialize the owner.
         self.ownable.initializer(owner);
@@ -88,6 +88,19 @@ mod UnruggableMemecoinFactory {
 
     #[external(v0)]
     impl UnruggableMemeCoinFactoryImpl of IUnruggableMemecoinFactory<ContractState> {
+        /// Deploys a new Memecoin smart contract instance with the specified parameters.
+        ///
+        /// # Arguments
+        ///
+        /// * `owner` - The address of the Memecoin contract owner.
+        /// * `initial_recipient` - The initial recipient's address.
+        /// * `name` - The name of the Memecoin.
+        /// * `symbol` - The symbol of the Memecoin.
+        /// * `initial_supply` - The initial supply of the Memecoin.
+        ///
+        /// # Returns
+        ///
+        /// The address of the newly created Memecoin smart contract.
         fn create_memecoin(
             ref self: ContractState,
             owner: ContractAddress,
@@ -122,6 +135,11 @@ mod UnruggableMemecoinFactory {
 
     #[generate_trait]
     impl InternalFunctions of InternalFunctionsTrait {
+        /// Returns a span containing the whitelisted Automated Market Makers (AMMs).
+        ///
+        /// # Returns
+        ///
+        /// A span containing a collection of whitelisted AMMs.
         fn whitelisted_amms(self: @ContractState) -> Span<AMM> {
             let mut amms = array![];
             let amms_len = self.amms_len.read();
@@ -139,6 +157,19 @@ mod UnruggableMemecoinFactory {
         }
     }
 
+    /// Serializes input parameters into calldata.
+    ///
+    /// # Arguments
+    ///
+    /// * `owner` - The address of the contract owner.
+    /// * `initial_recipient` - The initial recipient's address.
+    /// * `name` - The name of the contract.
+    /// * `symbol` - The symbol of the contract.
+    /// * `initial_supply` - The initial supply of the contract.
+    ///
+    /// # Returns
+    ///
+    /// An array containing the serialized calldata.
     fn serialize_calldata(
         owner: ContractAddress,
         initial_recipient: ContractAddress,
@@ -153,6 +184,18 @@ mod UnruggableMemecoinFactory {
         calldata
     }
 
+
+    /// Generates a unique salt.
+    ///
+    /// # Arguments
+    ///
+    /// * `owner` - The address of the contract owner.
+    /// * `name` - The name of the contract.
+    /// * `symbol` - The symbol of the contract.
+    ///
+    /// # Returns
+    ///
+    /// A unique salt value (felt252) for contract function execution.
     fn generate_salt(owner: ContractAddress, name: felt252, symbol: felt252) -> felt252 {
         let mut data = array![
             owner.into(), name.into(), symbol.into(), starknet::get_block_timestamp().into()
