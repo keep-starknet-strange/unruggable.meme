@@ -3,18 +3,17 @@ use starknet::ContractAddress;
 
 #[starknet::contract]
 mod UnruggableMemecoin {
-    use core::array::ArrayTrait;
-    use integer::BoundedInt;
-    use openzeppelin::access::ownable::OwnableComponent;
-    use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait;
-    use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
-    use openzeppelin::token::erc20::{ERC20Component};
-    use starknet::{ContractAddress, get_caller_address};
+    use array::ArrayTrait;
+    use starknet::{ContractAddress, contract_address_const, get_contract_address, get_caller_address};
     use unruggable::amm::amm::{AMM, AMMV2};
     use unruggable::amm::jediswap_interface::{
         IFactoryC1Dispatcher, IFactoryC1DispatcherTrait, IRouterC1Dispatcher,
         IRouterC1DispatcherTrait
     };
+    use openzeppelin::token::erc20::ERC20Component;
+    use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
+    use openzeppelin::access::ownable::OwnableComponent;
+    use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait as OwnableInternalTrait;
     use unruggable::tokens::interface::{
         IUnruggableMemecoinSnake, IUnruggableMemecoinCamel, IUnruggableAdditional
     };
@@ -38,15 +37,16 @@ mod UnruggableMemecoin {
     const MAX_HOLDERS_BEFORE_LAUNCH: u8 = 10;
     /// The maximum percentage of the total supply that can be allocated to the team.
     /// This is to prevent the team from having too much control over the supply.
-    const MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION: u8 = 10;
+    const MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION: u16 = 1_000; // 10%
     /// The maximum percentage of the supply that can be bought at once.
-    const MAX_PERCENTAGE_BUY_LAUNCH: u8 = 2;
+    const MAX_PERCENTAGE_BUY_LAUNCH: u8 = 200; // 2%
 
     #[storage]
     struct Storage {
         marker_v_0: (),
         launched: bool,
         pre_launch_holders_count: u8,
+        team_allocation: u256,
         // Components.
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
@@ -67,6 +67,7 @@ mod UnruggableMemecoin {
     mod Errors {
         const MAX_HOLDERS_REACHED: felt252 = 'Unruggable: max holders reached';
         const ARRAYS_LEN_DIF: felt252 = 'Unruggable: arrays len dif';
+        const MAX_TEAM_ALLOCATION_REACHED: felt252 = 'Unruggable: max team allocation';
     }
 
 
@@ -78,12 +79,11 @@ mod UnruggableMemecoin {
     /// * `symbol` - The symbol of the token.
     /// * `initial_supply` - The initial supply of the token.
     /// * `initial_holders` - The initial holders of the token, an array of holder_address
-    /// * `initial_holders_amounts` - The initial amounts of tokens minted to the initial holders, an array of amounts   
+    /// * `initial_holders_amounts` - The initial amounts of tokens minted to the initial holders, an array of amounts
     #[constructor]
     fn constructor(
         ref self: ContractState,
         owner: ContractAddress,
-        initial_recipient: ContractAddress,
         name: felt252,
         symbol: felt252,
         initial_supply: u256,
@@ -96,6 +96,8 @@ mod UnruggableMemecoin {
 
         // Initialize the owner.
         self.ownable.initializer(owner);
+        
+        // Add AMMs configurations
         loop {
             match amms.pop_front() {
                 Option::Some(amm) => self.amm_configs.write(*amm.name, *amm.router_address),
@@ -103,22 +105,8 @@ mod UnruggableMemecoin {
             }
         };
 
-        assert(initial_holders.len() == initial_holders_amounts.len(), Errors::ARRAYS_LEN_DIF);
-        assert(
-            initial_holders.len() <= MAX_HOLDERS_BEFORE_LAUNCH.into(), Errors::MAX_HOLDERS_REACHED
-        );
-
         // Initialize the token / internal logic
-        self
-            ._initializer(
-                owner,
-                initial_recipient,
-                name,
-                symbol,
-                initial_supply,
-                initial_holders,
-                initial_holders_amounts
-            );
+        self._initializer(:initial_supply, :initial_holders, :initial_holders_amounts);
     }
 
     //
@@ -174,6 +162,7 @@ mod UnruggableMemecoin {
             };
             let counterparty_token_balance = counterparty_token_dispatcher
                 .balance_of(memecoin_address);
+            counterparty_token_balance.print();
 
             assert(memecoin_balance >= liquidity_memecoin_amount, 'insufficient memecoin funds');
             assert(
@@ -198,6 +187,10 @@ mod UnruggableMemecoin {
                     memecoin_address,
                     0, // deadline
                 );
+
+
+            // Launch the coin
+            self.launched.write(true);
         }
 
         fn launched(self: @ContractState) -> bool {
@@ -206,9 +199,7 @@ mod UnruggableMemecoin {
 
         /// Returns the team allocation in tokens.
         fn get_team_allocation(self: @ContractState) -> u256 {
-            self.erc20.ERC20_total_supply.read()
-                * MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION.into()
-                / 100
+            self.team_allocation.read()
         }
     }
 
@@ -288,44 +279,65 @@ mod UnruggableMemecoin {
         ///
         /// Note that when transfers are done, between addresses that already
         /// hold tokens, we do not increment the number of holders. it only
-        /// gets incremented when the recipient that hold no tokens
+        /// gets incremented when the recipient that hold no tokens.
+        /// But if the sender will no longer hold tokens after the transfer,
+        /// the number of holders is decremented.
         ///
         /// # Arguments
+        /// * `sender` - The sender of the tokens being transferred.
         /// * `recipient` - The recipient of the tokens being transferred.
+        /// * `amount` - The amount of tokens being transferred.
         #[inline(always)]
-        fn _enforce_holders_limit(ref self: ContractState, recipient: ContractAddress) {
-            // enforce max number of holders before launch
+        fn _enforce_holders_limit(
+            ref self: ContractState,
+            sender: ContractAddress,
+            recipient: ContractAddress,
+            amount: u256
+        ) {
+            if !self.launched.read() {
+                // if the sender will no longer hold tokens
+                if sender.is_non_zero() && self.balance_of(sender) == amount {
+                    let current_holders_count = self.pre_launch_holders_count.read();
 
-            if !self.launched.read() && self.balance_of(recipient) == 0 {
-                let current_holders_count = self.pre_launch_holders_count.read();
-                assert(
-                    current_holders_count < MAX_HOLDERS_BEFORE_LAUNCH, Errors::MAX_HOLDERS_REACHED
-                );
+                    // decrease holders count
+                    self.pre_launch_holders_count.write(current_holders_count - 1);
+                }
 
-                self.pre_launch_holders_count.write(current_holders_count + 1);
+                // if the recipient doesn't hold tokens yet
+                if self.balance_of(recipient).is_zero() {
+                    let current_holders_count = self.pre_launch_holders_count.read();
+
+                    // assert max holders limit is not reached
+                    assert(
+                        current_holders_count < MAX_HOLDERS_BEFORE_LAUNCH,
+                        Errors::MAX_HOLDERS_REACHED
+                    );
+
+                    // increase holders count
+                    self.pre_launch_holders_count.write(current_holders_count + 1);
+                }
             }
         }
 
-
         /// Internal function to mint tokens
         ///
-        /// Before minting, a check is done to ensure that 
-        /// only `MAX_HOLDERS_BEFORE_LAUNCH` addresses can hold 
-        /// tokens if token hasn't launched 
+        /// Before minting, a check is done to ensure that
+        /// only `MAX_HOLDERS_BEFORE_LAUNCH` addresses can hold
+        /// tokens if token hasn't launched
         ///
         /// # Arguments
         /// * `recipient` - The recipient of the tokens.
         /// * `amount` - The amount of tokens to be minted.
         fn _mint(ref self: ContractState, recipient: ContractAddress, amount: u256) {
-            self._enforce_holders_limit(recipient);
+            self._enforce_holders_limit(sender: contract_address_const::<0>(), :recipient, :amount);
             self.erc20._mint(recipient, amount);
         }
 
         /// Internal function to transfer tokens
         ///
-        /// Before transferring, a check is done to ensure that 
-        /// only `MAX_HOLDERS_BEFORE_LAUNCH` addresses can hold 
-        /// tokens if token hasn't launched 
+        /// Before transferring, a check is done to ensure that
+        /// only `MAX_HOLDERS_BEFORE_LAUNCH` addresses can hold
+        /// tokens if token hasn't launched
         ///
         /// # Arguments
         /// * `sender` - The sender or owner of the tokens.
@@ -337,71 +349,98 @@ mod UnruggableMemecoin {
             recipient: ContractAddress,
             amount: u256
         ) {
-            self._enforce_holders_limit(recipient);
+            self._enforce_holders_limit(:sender, :recipient, :amount);
             self.erc20._transfer(sender, recipient, amount);
         }
 
+        /// Internal function to approve spending of tokens.
+        ///
+        /// # Arguments
+        ///
+        /// * `self` - A mutable reference to the contract state.
+        /// * `owner` - The owner of the tokens.
+        /// * `spender` - The address allowed to spend the tokens.
+        /// * `amount` - The amount of tokens to be approved for spending.
         fn _approve(
             ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256
         ) {
             self.erc20._approve(owner, spender, amount);
         }
 
+        /// Internal function to assert the buy limit is not reached
+        ///
+        /// This check ensure that an address cannot buy more
+        /// than the maximum percentage of the supply that can
+        /// be bought at once.
+        ///
+        /// # Arguments
+        /// * `amount` - The amount of tokens being transferred.
+        #[inline(always)]
         fn _check_max_buy_percentage(self: @ContractState, amount: u256) {
             assert(
                 self.erc20.ERC20_total_supply.read()
                     * MAX_PERCENTAGE_BUY_LAUNCH.into()
-                    / 100 >= amount,
+                    / 10_000 >= amount,
                 'Max buy cap reached'
             )
         }
 
         /// Constructor logic.
         /// # Arguments
-        /// * `owner` - The owner of the contract.
-        /// * `owner` - The owner of the contract.
-        /// * `initial_recipient` - The initial recipient of the initial supply.
-        /// * `name` - The name of the token.
-        /// * `symbol` - The symbol of the token.
         /// * `initial_supply` - The initial supply of the token.
         /// * `initial_holders` - The initial holders of the token, an array of holder_address
-        /// * `initial_holders_amounts` - The initial amounts of tokens minted to the initial holders, an array of amounts        
+        /// * `initial_holders_amounts` - The initial amounts of tokens minted to the initial holders, an array of amounts
         fn _initializer(
             ref self: ContractState,
-            owner: ContractAddress,
-            initial_recipient: ContractAddress,
-            name: felt252,
-            symbol: felt252,
             initial_supply: u256,
             initial_holders: Span<ContractAddress>,
             initial_holders_amounts: Span<u256>
         ) {
-            let mut initial_minted_supply: u256 = 0;
             let mut team_allocation: u256 = 0;
+            let max_team_allocation = initial_supply
+                * MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION.into()
+                / 10_000;
             let mut i: usize = 0;
+
+            // check initial holders len match
+            assert(initial_holders.len() == initial_holders_amounts.len(), Errors::ARRAYS_LEN_DIF);
+
+            // check on max holders count
+            assert(
+                initial_holders.len() <= MAX_HOLDERS_BEFORE_LAUNCH.into(),
+                Errors::MAX_HOLDERS_REACHED
+            );
+
             loop {
                 if i >= initial_holders.len() {
                     break;
                 }
+
                 let address = *initial_holders.at(i);
                 let amount = *initial_holders_amounts.at(i);
-                initial_minted_supply += amount;
-                if (i == 0) {
-                    assert(address == initial_recipient, 'initial recipient mismatch');
-                    // NO HOLDING LIMIT HERE. IT IS THE ACCOUNT THAT WILL LAUNCH THE LIQUIDITY POOL
-                    self.erc20._mint(address, amount);
-                } else {
-                    team_allocation += amount;
-                    let max_alloc = initial_supply
-                        * MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION.into()
-                        / 100;
-                    assert(team_allocation <= max_alloc, 'Unruggable: max team allocation');
-                    self.erc20._mint(address, amount);
-                }
-                self.pre_launch_holders_count.write(self.pre_launch_holders_count.read() + 1);
+
+                // increase team allocation
+                team_allocation += amount;
+
+                // check on max team allocation
+                assert(team_allocation <= max_team_allocation, Errors::MAX_TEAM_ALLOCATION_REACHED);
+
+                // mint to holder using the erc20 internal to avoid triggering pre launch safeguards and waste gas.
+                self.erc20._mint(recipient: address, :amount);
+
                 i += 1;
             };
-            assert(initial_minted_supply <= initial_supply, 'Unruggable: max supply reached');
+
+            // mint remaining supply to the contract
+            self
+                .erc20
+                ._mint(recipient: get_contract_address(), amount: initial_supply - team_allocation);
+
+            // save team allocation
+            self.team_allocation.write(team_allocation);
+
+            // save pre launch holders count
+            self.pre_launch_holders_count.write(initial_holders.len().try_into().unwrap());
         }
     }
 }

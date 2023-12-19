@@ -5,7 +5,6 @@ trait IUnruggableMemecoinFactory<TContractState> {
     fn create_memecoin(
         ref self: TContractState,
         owner: ContractAddress,
-        initial_recipient: ContractAddress,
         name: felt252,
         symbol: felt252,
         initial_supply: u256,
@@ -48,7 +47,6 @@ mod UnruggableMemecoinFactory {
     #[derive(Drop, starknet::Event)]
     struct MemeCoinCreated {
         owner: ContractAddress,
-        initial_recipient: ContractAddress,
         name: felt252,
         symbol: felt252,
         initial_supply: u256,
@@ -106,7 +104,6 @@ mod UnruggableMemecoinFactory {
         fn create_memecoin(
             ref self: ContractState,
             owner: ContractAddress,
-            initial_recipient: ContractAddress,
             name: felt252,
             symbol: felt252,
             initial_supply: u256,
@@ -117,7 +114,7 @@ mod UnruggableMemecoinFactory {
 
             // General calldata
             let mut calldata = serialize_calldata(
-                owner, initial_recipient, name, symbol, initial_supply
+                owner, name, symbol, initial_supply
             );
             Serde::serialize(@self.whitelisted_amms().into(), ref calldata);
             Serde::serialize(@initial_holders.into(), ref calldata);
@@ -131,7 +128,7 @@ mod UnruggableMemecoinFactory {
             self
                 .emit(
                     MemeCoinCreated {
-                        owner, name, symbol, initial_recipient, initial_supply, memecoin_address
+                        owner, name, symbol, initial_supply, memecoin_address
                     }
                 );
             memecoin_address
@@ -177,13 +174,12 @@ mod UnruggableMemecoinFactory {
     /// An array containing the serialized calldata.
     fn serialize_calldata(
         owner: ContractAddress,
-        initial_recipient: ContractAddress,
         name: felt252,
         symbol: felt252,
         initial_supply: u256
     ) -> Array<felt252> {
         let mut calldata = array![
-            owner.into(), initial_recipient.into(), name.into(), symbol.into()
+            owner.into(), name.into(), symbol.into()
         ];
         Serde::serialize(@initial_supply, ref calldata);
         calldata
