@@ -4,16 +4,25 @@ import { StoreState } from './index'
 
 export type ContractsSlice = State & Actions
 
+export interface TokenContract {
+  address: string
+  name: string
+  symbol: string
+  maxSupply: string
+  teamAllocation: string
+  launched: boolean
+}
+
 interface State {
-  deployedContracts: string[]
+  deployedTokenContracts: TokenContract[]
 }
 
 interface Actions {
-  pushDeployedContract: (...contracts: string[]) => void
+  pushDeployedTokenContracts: (...contracts: TokenContract[]) => void
 }
 
 const initialState: State = {
-  deployedContracts: [],
+  deployedTokenContracts: [],
 }
 
 // Create a deployment slice with Zustand and persist middleware
@@ -22,8 +31,8 @@ export const createContractsSlice: StateCreator<StoreState, [['zustand/immer', n
 ) => ({
   ...initialState,
 
-  pushDeployedContract: (...contracts: string[]) =>
+  pushDeployedTokenContracts: (...contracts: TokenContract[]) =>
     set((state) => {
-      state.deployedContracts.push(...(contracts as any[]))
+      state.deployedTokenContracts.push(...(contracts as any[]))
     }),
 })

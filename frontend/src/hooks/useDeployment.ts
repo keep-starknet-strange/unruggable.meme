@@ -2,7 +2,7 @@ import { useBoundStore } from 'src/state'
 
 export function useDeploymentStore() {
   return useBoundStore((state) => ({
-    deployedContracts: state.deployedContracts,
-    pushDeployedContract: state.pushDeployedContract,
+    deployedTokenContracts: state.deployedTokenContracts,
+    pushDeployedTokenContracts: state.pushDeployedTokenContracts,
   }))
 }

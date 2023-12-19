@@ -14,6 +14,7 @@
     "@starknet-react/chains": "^0.1.0",
     "@starknet-react/core": "^2.0.0",
     "@types/react-dom": "^18.2.1",
+    "@uniswap/sdk-core": "^4.0.9",
     "@vanilla-extract/css": "^1.11.0",
     "@vanilla-extract/recipes": "^0.4.0",
     "@vanilla-extract/sprinkles": "^1.6.0",
