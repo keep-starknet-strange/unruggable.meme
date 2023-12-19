@@ -199,10 +199,7 @@ mod UnruggableMemecoin {
             recipient: ContractAddress,
             amount: u256
         ) -> bool {
-            let caller = get_caller_address();
-            self.erc20._spend_allowance(sender, caller, amount);
-            self._transfer(sender, recipient, amount);
-            true
+            return self.transfer_from(sender, recipient, amount);
         }
     }
 
