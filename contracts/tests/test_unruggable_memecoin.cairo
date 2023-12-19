@@ -37,7 +37,7 @@ fn deploy_contract(
 ) -> Result<ContractAddress, RevertedTransaction> {
     let contract = declare('UnruggableMemecoin');
     let mut constructor_calldata = array![
-        owner.into(), name, symbol, initial_supply.low.into(), initial_supply.high.into()
+        owner.into(), 'locker', name, symbol, initial_supply.low.into(), initial_supply.high.into()
     ];
     Serde::serialize(@initial_holders.into(), ref constructor_calldata);
     Serde::serialize(@initial_holders_amounts.into(), ref constructor_calldata);
