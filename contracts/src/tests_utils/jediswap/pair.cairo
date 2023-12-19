@@ -31,40 +31,12 @@ trait IJediSwapCallee<T> {
 #[starknet::interface]
 trait IPairC1<TContractState> {
     // view functions
-    fn total_supply(self: @TContractState) -> u256;
-    fn totalSupply(self: @TContractState) -> u256; //TODO Remove after regenesis?
-    fn balance_of(self: @TContractState, account: ContractAddress) -> u256;
-    fn balanceOf(
-        self: @TContractState, account: ContractAddress
-    ) -> u256; //TODO Remove after regenesis?
-    fn allowance(self: @TContractState, owner: ContractAddress, spender: ContractAddress) -> u256;
     fn token0(self: @TContractState) -> ContractAddress;
     fn token1(self: @TContractState) -> ContractAddress;
     fn get_reserves(self: @TContractState) -> (u256, u256, u64);
     fn price_0_cumulative_last(self: @TContractState) -> u256;
     fn price_1_cumulative_last(self: @TContractState) -> u256;
     fn klast(self: @TContractState) -> u256;
-    // external functions
-    fn transfer(ref self: TContractState, recipient: ContractAddress, amount: u256) -> bool;
-    fn transfer_from(
-        ref self: TContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256
-    ) -> bool;
-    fn transferFrom(
-        ref self: TContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256
-    ) -> bool; //TODO Remove after regenesis?
-    fn approve(ref self: TContractState, spender: ContractAddress, amount: u256) -> bool;
-    fn increase_allowance(
-        ref self: TContractState, spender: ContractAddress, added_value: u256
-    ) -> bool;
-    fn increaseAllowance(
-        ref self: TContractState, spender: ContractAddress, added_value: u256
-    ) -> bool; //TODO Remove after regenesis?
-    fn decrease_allowance(
-        ref self: TContractState, spender: ContractAddress, subtracted_value: u256
-    ) -> bool;
-    fn decreaseAllowance(
-        ref self: TContractState, spender: ContractAddress, subtracted_value: u256
-    ) -> bool; //TODO Remove after regenesis?
     fn mint(ref self: TContractState, to: ContractAddress) -> u256;
     fn burn(ref self: TContractState, to: ContractAddress) -> (u256, u256);
     fn swap(
@@ -81,12 +53,10 @@ trait IPairC1<TContractState> {
 
 #[starknet::contract]
 mod PairC1 {
-    use array::{ArrayTrait, SpanTrait};
     use integer::{u128_try_from_felt252, u256_sqrt, u256_from_felt252};
     use openzeppelin::token::erc20::ERC20Component;
 
     use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
-    use result::ResultTrait;
     use starknet::syscalls::{replace_class_syscall, call_contract_syscall};
     use starknet::{
         ContractAddress, ClassHash, SyscallResult, SyscallResultTrait, get_caller_address,
@@ -98,8 +68,6 @@ mod PairC1 {
         IJediSwapCalleeDispatcherTrait
     };
 
-    use zeroable::Zeroable;
-
     component!(path: ERC20Component, storage: erc20, event: ERC20Event);
 
     // Impl
@@ -107,10 +75,6 @@ mod PairC1 {
 
     // Internals
     impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
-
-    // ERC20 entrypoints.
-    #[abi(embed_v0)]
-    impl ERC20MetadataImpl = ERC20Component::ERC20MetadataImpl<ContractState>;
 
     //
     // Storage Pair
@@ -201,46 +165,6 @@ mod PairC1 {
     #[external(v0)]
     impl PairC1 of super::IPairC1<ContractState> {
         //
-        // Getters ERC20
-        //
-
-        // @notice Total Supply of the token
-        // @return total supply
-        fn total_supply(self: @ContractState) -> u256 {
-            self.erc20.ERC20_total_supply.read()
-        }
-
-        // @notice Total Supply of the token
-        // @return totalSupply
-        fn totalSupply(self: @ContractState) -> u256 {
-            self.erc20.ERC20_total_supply.read()
-        }
-
-        // @notice Balance of `account`
-        // @param account Account address whose balance is fetched
-        // @return balance Balance of `account`
-        fn balance_of(self: @ContractState, account: ContractAddress) -> u256 {
-            self.erc20.ERC20_balances.read(account)
-        }
-
-        // @notice Balance of `account`
-        // @param account Account address whose balance is fetched
-        // @return balance Balance of `account`
-        fn balanceOf(self: @ContractState, account: ContractAddress) -> u256 {
-            self.erc20.ERC20_balances.read(account)
-        }
-
-        // @notice Allowance which `spender` can spend on behalf of `owner`
-        // @param owner Account address whose tokens are spent
-        // @param spender Account address which can spend the tokens
-        // @return remaining
-        fn allowance(
-            self: @ContractState, owner: ContractAddress, spender: ContractAddress
-        ) -> u256 {
-            self.erc20.ERC20_allowances.read((owner, spender))
-        }
-
-        //
         // Getters Pair
         //
 
@@ -283,105 +207,6 @@ mod PairC1 {
         }
 
         //
-        // Externals ERC20
-        //
-
-        // @notice Transfer `amount` tokens from `caller` to `recipient`
-        // @param recipient Account address to which tokens are transferred
-        // @param amount Amount of tokens to transfer
-        // @return success 0 or 1
-        fn transfer(ref self: ContractState, recipient: ContractAddress, amount: u256) -> bool {
-            let sender = get_caller_address();
-            self.erc20.transfer(recipient, amount);
-            true
-        }
-
-        // @notice Transfer `amount` tokens from `sender` to `recipient`
-        // @dev Checks for allowance.
-        // @param sender Account address from which tokens are transferred
-        // @param recipient Account address to which tokens are transferred
-        // @param amount Amount of tokens to transfer
-        // @return success 0 or 1
-        fn transfer_from(
-            ref self: ContractState,
-            sender: ContractAddress,
-            recipient: ContractAddress,
-            amount: u256
-        ) -> bool {
-            self.erc20.transfer_from(sender, recipient, amount);
-            true
-        }
-
-        // @notice Transfer `amount` tokens from `sender` to `recipient`
-        // @dev Checks for allowance.
-        // @param sender Account address from which tokens are transferred
-        // @param recipient Account address to which tokens are transferred
-        // @param amount Amount of tokens to transfer
-        // @return success 0 or 1
-        fn transferFrom(
-            ref self: ContractState,
-            sender: ContractAddress,
-            recipient: ContractAddress,
-            amount: u256
-        ) -> bool {
-            self.erc20.transfer_from(sender, recipient, amount);
-            true
-        }
-
-        // @notice Approve `spender` to transfer `amount` tokens on behalf of `caller`
-        // @param spender The address which will spend the funds
-        // @param amount The amount of tokens to be spent
-        // @return success 0 or 1
-        fn approve(ref self: ContractState, spender: ContractAddress, amount: u256) -> bool {
-            self.erc20.approve(spender, amount);
-            true
-        }
-
-        // @notice Increase allowance of `spender` to transfer `added_value` more tokens on behalf of `caller`
-        // @param spender The address which will spend the funds
-        // @param added_value The increased amount of tokens to be spent
-        // @return success 0 or 1
-        fn increase_allowance(
-            ref self: ContractState, spender: ContractAddress, added_value: u256
-        ) -> bool {
-            self.erc20._increase_allowance(spender, added_value);
-            true
-        }
-
-        // @notice Increase allowance of `spender` to transfer `added_value` more tokens on behalf of `caller`
-        // @param spender The address which will spend the funds
-        // @param added_value The increased amount of tokens to be spent
-        // @return success 0 or 1
-        fn increaseAllowance(
-            ref self: ContractState, spender: ContractAddress, added_value: u256
-        ) -> bool {
-            self.erc20._increase_allowance(spender, added_value);
-            true
-        }
-
-        // @notice Decrease allowance of `spender` to transfer `subtracted_value` less tokens on behalf of `caller`
-        // @param spender The address which will spend the funds
-        // @param subtracted_value The decreased amount of tokens to be spent
-        // @return success 0 or 1
-        fn decrease_allowance(
-            ref self: ContractState, spender: ContractAddress, subtracted_value: u256
-        ) -> bool {
-            self.erc20._decrease_allowance(spender, subtracted_value);
-            true
-        }
-
-        // @notice Decrease allowance of `spender` to transfer `subtracted_value` less tokens on behalf of `caller`
-        // @param spender The address which will spend the funds
-        // @param subtracted_value The decreased amount of tokens to be spent
-        // @return success 0 or 1
-        fn decreaseAllowance(
-            ref self: ContractState, spender: ContractAddress, subtracted_value: u256
-        ) -> bool {
-            self.erc20._decrease_allowance(spender, subtracted_value);
-            true
-        }
-
-        //
         // Externals Pair
         //
 
@@ -400,7 +225,7 @@ mod PairC1 {
             let amount0 = balance0 - reserve0;
             let amount1 = balance1 - reserve1;
             let fee_on = InternalImpl::_mint_protocol_fee(ref self, reserve0, reserve1);
-            let _total_supply = PairC1::total_supply(@self);
+            let _total_supply = self.erc20.total_supply();
             let mut liquidity = 0.into();
             if (_total_supply == 0.into()) {
                 liquidity =
@@ -451,9 +276,9 @@ mod PairC1 {
             let mut balance0 = _balance_of_token(token0, self_address);
             let token1 = self._token1.read();
             let mut balance1 = _balance_of_token(token1, self_address);
-            let liquidity = PairC1::balance_of(@self, self_address);
+            let liquidity = self.erc20.balance_of(self_address);
             let fee_on = InternalImpl::_mint_protocol_fee(ref self, reserve0, reserve1);
-            let _total_supply = PairC1::total_supply(@self);
+            let _total_supply = self.erc20.total_supply();
 
             let amount0 = (liquidity * balance0) / _total_supply;
             let amount1 = (liquidity * balance1) / _total_supply;
@@ -654,7 +479,7 @@ mod PairC1 {
                     let rootk = u256 { low: u256_sqrt(reserve0 * reserve1), high: 0 };
                     let rootklast = u256 { low: u256_sqrt(klast), high: 0 };
                     if (rootk > rootklast) {
-                        let numerator = PairC1::total_supply(@self) * (rootk - rootklast);
+                        let numerator = self.erc20.total_supply() * (rootk - rootklast);
                         let denominator = (rootk * 5.into()) + rootklast;
                         let liquidity = numerator / denominator;
                         if (liquidity > 0.into()) {
