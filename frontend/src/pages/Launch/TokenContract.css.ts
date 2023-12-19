@@ -39,7 +39,7 @@ export const teamAllocation = style([
 export const launchStatus = recipe({
   base: [
     {
-      borderRadius: '2px',
+      borderRadius: '6px',
       boxShadow: '0 0 4px #00000080',
 
       '::before': {
