@@ -162,7 +162,6 @@ mod UnruggableMemecoin {
             };
             let counterparty_token_balance = counterparty_token_dispatcher
                 .balance_of(memecoin_address);
-            counterparty_token_balance.print();
 
             assert(memecoin_balance >= liquidity_memecoin_amount, 'insufficient memecoin funds');
             assert(
