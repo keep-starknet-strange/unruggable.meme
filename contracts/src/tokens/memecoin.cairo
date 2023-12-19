@@ -220,22 +220,28 @@ mod UnruggableMemecoin {
             recipient: ContractAddress,
             amount: u256
         ) {
-            // enforce max number of holders before launch
+            if !self.launched.read() {
+                // if the sender will no longer hold tokens
+                if sender.is_non_zero() && self.balance_of(sender) == amount {
+                    let current_holders_count = self.pre_launch_holders_count.read();
 
-            let current_holders_count = self.pre_launch_holders_count.read();
+                    // decrease holders count
+                    self.pre_launch_holders_count.write(current_holders_count - 1);
+                }
 
-            // if the sender will no longer hold tokens
-            if sender.is_non_zero() && self.balance_of(sender) == amount {
-                self.pre_launch_holders_count.write(current_holders_count - 1);
-            }
+                // if the recipient doesn't hold tokens yet
+                if self.balance_of(recipient).is_zero() {
+                    let current_holders_count = self.pre_launch_holders_count.read();
 
-            // if the recipient doesn't hold tokens yet
-            if !self.launched.read() && self.balance_of(recipient).is_zero() {
-                assert(
-                    current_holders_count < MAX_HOLDERS_BEFORE_LAUNCH, Errors::MAX_HOLDERS_REACHED
-                );
+                    // assert max holders limit is not reached
+                    assert(
+                        current_holders_count < MAX_HOLDERS_BEFORE_LAUNCH,
+                        Errors::MAX_HOLDERS_REACHED
+                    );
 
-                self.pre_launch_holders_count.write(current_holders_count + 1);
+                    // increase holders count
+                    self.pre_launch_holders_count.write(current_holders_count + 1);
+                }
             }
         }
 

@@ -967,6 +967,64 @@ mod memecoin_internals {
     }
 
     #[test]
+    fn test__transfer_initial_holder_whole_balance() {
+        let (
+            owner,
+            name,
+            symbol,
+            initial_supply,
+            initial_holder_1,
+            initial_holder_2,
+            initial_holders,
+            _,
+        ) =
+            instantiate_params();
+        let initial_holders_amounts = array![50, 20].span();
+        let contract_address =
+            match deploy_contract(
+                owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
+            ) {
+            Result::Ok(address) => address,
+            Result::Err(msg) => panic(msg.panic_data),
+        };
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        // set initial_holder_1 as caller to distribute tokens
+        start_prank(CheatTarget::One(memecoin.contract_address), initial_holder_1);
+
+        let mut index = 0;
+        loop {
+            // MAX_HOLDERS_BEFORE_LAUNCH - 2 because there are 2 initial holders
+            if index == MAX_HOLDERS_BEFORE_LAUNCH - 2 {
+                break;
+            }
+
+            // create a unique address
+            let unique_recipient: ContractAddress = (index.into() + 9999).try_into().unwrap();
+
+            // Transfer 1 token to the unique recipient
+            memecoin.transfer(unique_recipient, 1);
+
+            // Check recipient balance. Should be equal to 1.
+            let recipient_balance = memecoin.balanceOf(unique_recipient);
+            assert(recipient_balance == 1, 'Invalid balance recipient');
+
+            index += 1;
+        };
+
+        let unique_recipient: ContractAddress = (index.into() + 9999).try_into().unwrap();
+
+        // Send initial_holder_2 whole balance to the unique recipient
+        start_prank(CheatTarget::One(memecoin.contract_address), initial_holder_2);
+        memecoin.transfer(unique_recipient, 20);
+
+        // Check recipient balance. Should be equal to 0.
+        let initial_holder_2_balance = memecoin.balanceOf(initial_holder_2);
+        assert(initial_holder_2_balance.is_zero(), 'Invalid balance holder 2');
+    }
+
+    #[test]
     fn test__transfer_existing_holders() {
         /// pre launch holder number should not change when
         /// transfer is done to recipient(s) who already have tokens
