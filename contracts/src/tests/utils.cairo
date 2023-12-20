@@ -1,7 +1,9 @@
 use core::traits::TryInto;
 use openzeppelin::token::erc20::interface::ERC20ABIDispatcher;
 use openzeppelin::token::erc20::interface::ERC20ABIDispatcherTrait;
-use snforge_std::{ContractClass, ContractClassTrait, CheatTarget, declare, start_prank, stop_prank};
+use snforge_std::{
+    ContractClass, ContractClassTrait, CheatTarget, declare, start_prank, stop_prank, TxInfoMock
+};
 use starknet::ContractAddress;
 use unruggable::amm::amm::{AMM, AMMV2, AMMTrait};
 use unruggable::factory::{IFactoryDispatcher, IFactoryDispatcherTrait};
@@ -43,6 +45,26 @@ fn DEPLOYER() -> ContractAddress {
 fn SALT() -> felt252 {
     'salty'.try_into().unwrap()
 }
+
+
+trait TxInfoMockTrait {
+    fn default() -> TxInfoMock;
+}
+
+impl DefaultTxInfoMock of Default<TxInfoMock> {
+    fn default() -> TxInfoMock {
+        TxInfoMock {
+            version: Option::None,
+            account_contract_address: Option::None,
+            max_fee: Option::None,
+            signature: Option::None,
+            transaction_hash: Option::None,
+            chain_id: Option::None,
+            nonce: Option::None,
+        }
+    }
+}
+
 
 // NOT THE ACTUAL ETH ADDRESS
 // It's set to a the maximum possible value for a contract address
