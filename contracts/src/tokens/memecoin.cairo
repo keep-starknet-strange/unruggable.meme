@@ -3,9 +3,6 @@ use starknet::ContractAddress;
 
 #[starknet::contract]
 mod UnruggableMemecoin {
-    use array::ArrayTrait;
-    use core::box::BoxTrait;
-    use core::clone::Clone;
     use debug::PrintTrait;
     use integer::BoundedInt;
     use openzeppelin::access::ownable::OwnableComponent;
