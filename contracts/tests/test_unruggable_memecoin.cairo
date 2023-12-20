@@ -617,9 +617,9 @@ mod memecoin_entrypoints {
         token_dispatcher.transfer(memecoin_address, 1 * TOKEN_MULTIPLIER);
         stop_prank(CheatTarget::One(counterparty_token_address));
 
-        // Transfer 0.02 (2% of 100 * TOKEN_MULTIPLIER) memecoin to UnruggableMemecoin contract
+        // Transfer 1 memecoin to UnruggableMemecoin contract
         start_prank(CheatTarget::One(memecoin_address), owner);
-        unruggable_memecoin.transfer(memecoin_address, 20000000000000000);
+        unruggable_memecoin.transfer(memecoin_address, 1 * TOKEN_MULTIPLIER);
         stop_prank(CheatTarget::One(memecoin_address));
     // NOTE:
     // 1. The initial call to `memecoin_address` should be made by the owner.
@@ -765,13 +765,13 @@ mod memecoin_entrypoints {
 
         // Transfer 0.02 (2% of 100 * TOKEN_MULTIPLIER) memecoin to UnruggableMemecoin contract
         start_prank(CheatTarget::One(memecoin_address), owner);
-        unruggable_memecoin.transfer(memecoin_address, 20000000000000000);
+        unruggable_memecoin.transfer(memecoin_address, 1 * TOKEN_MULTIPLIER);
         stop_prank(CheatTarget::One(memecoin_address));
 
         start_prank(CheatTarget::One(memecoin_address), owner);
         unruggable_memecoin
             .launch_memecoin(
-                AMMV2::JediSwap, counterparty_token_address, 20000000000000000, 20000000000000000
+                AMMV2::JediSwap, counterparty_token_address, 1 * TOKEN_MULTIPLIER, 1 * TOKEN_MULTIPLIER
             );
         stop_prank(CheatTarget::One(memecoin_address));
     }

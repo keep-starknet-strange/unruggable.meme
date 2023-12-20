@@ -390,12 +390,15 @@ mod UnruggableMemecoin {
         ) {
             let locker_address = self.locker_contract.read();
             if (sender != locker_address && recipient != locker_address) {
-                assert(
-                    self.erc20.ERC20_total_supply.read()
-                        * MAX_PERCENTAGE_BUY_LAUNCH.into()
-                        / 10_000 >= amount,
-                    'Max buy cap reached'
-                )
+                // If its a memecoin pool, we want to avoid validation
+                if !self.is_memecoin_pool.read(sender) {
+                    assert(
+                        self.erc20.ERC20_total_supply.read()
+                            * MAX_PERCENTAGE_BUY_LAUNCH.into()
+                            / 10_000 >= amount,
+                        'Max buy cap reached'
+                    )
+                }
             }
         }
 
