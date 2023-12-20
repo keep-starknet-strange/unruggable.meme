@@ -4,6 +4,8 @@ use starknet::ContractAddress;
 #[starknet::contract]
 mod UnruggableMemecoin {
     use array::ArrayTrait;
+
+    use debug::PrintTrait;
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait as OwnableInternalTrait;
     use openzeppelin::token::erc20::ERC20Component;
@@ -56,7 +58,6 @@ mod UnruggableMemecoin {
         #[substorage(v0)]
         erc20: ERC20Component::Storage,
         amm_configs: LegacyMap<felt252, ContractAddress>,
-        is_memecoin_pool: LegacyMap<ContractAddress, bool>
     }
 
     #[event]
@@ -127,10 +128,11 @@ mod UnruggableMemecoin {
         // ************************************
 
         /// Launches Memecoin by creating a liquidity pool with the specified counterparty token using the AMMv2 protocol.
-        /// The owner must send both MT tokens (Memecoin) and tokens of the chosen counterparty (e.g., USDC) to launch memecoin.
+        ///
+        /// The owner must send tokens of the chosen counterparty (e.g., USDC) to launch Memecoin.
         ///
         /// # Arguments
-        /// - `amm_v2`: AMMV2 to create pair and send liquidity
+        /// - `amm_v2`: AMMV2 to create a pair and send liquidity.
         /// - `counterparty_token_address`: The contract address of the counterparty token.
         /// - `liquidity_memecoin_amount`: The amount of Memecoin tokens to be provided as liquidity.
         /// - `liquidity_counterparty_token`: The amount of counterparty tokens to be provided as liquidity.
@@ -140,13 +142,16 @@ mod UnruggableMemecoin {
         /// - The caller is not the owner of the contract.
         /// - Insufficient Memecoin funds are available for liquidity.
         /// - Insufficient counterparty token funds are available for liquidity.
+        ///
+        /// # Returns
+        /// Returns the contract address of the created liquidity pool.
         fn launch_memecoin(
             ref self: ContractState,
             amm_v2: AMMV2,
             counterparty_token_address: ContractAddress,
             liquidity_memecoin_amount: u256,
             liquidity_counterparty_token: u256,
-        ) {
+        ) -> ContractAddress {
             // [Check Owner] Only the owner can launch the Memecoin
             self.ownable.assert_only_owner();
 
@@ -198,8 +203,7 @@ mod UnruggableMemecoin {
             // Launch the coin
             self.launched.write(true);
 
-            // Save address as pool to avoid transfer limitation
-            self.is_memecoin_pool.write(pair_address, true);
+            pair_address
         }
 
         fn launched(self: @ContractState) -> bool {
@@ -245,7 +249,12 @@ mod UnruggableMemecoin {
             amount: u256
         ) -> bool {
             let caller = get_caller_address();
-            self._check_max_buy_percentage(sender, recipient, amount);
+            // When we call launch_memecoin(), we invoke the add_liquidity() of the router, 
+            // which performs a transfer_from() to send the tokens to the pool.
+            // Therefore, we need to bypass this validation if the sender is the memecoin contract.
+            if sender != get_contract_address() {
+                self._check_max_buy_percentage(sender, recipient, amount);
+            }
             self.erc20._spend_allowance(sender, caller, amount);
             self.erc20._transfer(sender, recipient, amount);
             true
@@ -390,15 +399,12 @@ mod UnruggableMemecoin {
         ) {
             let locker_address = self.locker_contract.read();
             if (sender != locker_address && recipient != locker_address) {
-                // If its a memecoin pool, we want to avoid validation
-                if !self.is_memecoin_pool.read(sender) {
-                    assert(
-                        self.erc20.ERC20_total_supply.read()
-                            * MAX_PERCENTAGE_BUY_LAUNCH.into()
-                            / 10_000 >= amount,
-                        'Max buy cap reached'
-                    )
-                }
+                assert(
+                    self.erc20.ERC20_total_supply.read()
+                        * MAX_PERCENTAGE_BUY_LAUNCH.into()
+                        / 10_000 >= amount,
+                    'Max buy cap reached'
+                )
             }
         }
 

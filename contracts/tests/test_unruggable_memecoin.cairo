@@ -492,7 +492,7 @@ mod memecoin_entrypoints {
     use unruggable::amm::amm::{AMM, AMMV2};
     use unruggable::amm::jediswap_interface::{
         IFactoryC1, IFactoryC1Dispatcher, IFactoryC1DispatcherTrait, IRouterC1, IRouterC1Dispatcher,
-        IRouterC1DispatcherTrait
+        IRouterC1DispatcherTrait, IPairDispatcher, IPairDispatcherTrait
     };
     use unruggable::tests_utils::deployer_helper::DeployerHelper::{
         deploy_contracts, deploy_erc20, deploy_unruggable_memecoin_contract, deploy_memecoin_factory
@@ -574,7 +574,7 @@ mod memecoin_entrypoints {
         let initial_holders = array![owner].span();
         let initial_holders_amounts = array![1 * TOKEN_MULTIPLIER].span();
 
-        let initial_supply: u256 = 100 * TOKEN_MULTIPLIER;
+        let initial_supply: u256 = 10 * TOKEN_MULTIPLIER;
         let counterparty_token_address = deploy_erc20(initial_supply, owner);
 
         // Declare availables AMMs for this factory
@@ -614,27 +614,35 @@ mod memecoin_entrypoints {
 
         // Transfer 1 counterparty_token to UnruggableMemecoin contract
         start_prank(CheatTarget::One(counterparty_token_address), owner);
-        token_dispatcher.transfer(memecoin_address, 1 * TOKEN_MULTIPLIER);
+        token_dispatcher.transfer(memecoin_address, 5 * TOKEN_MULTIPLIER);
         stop_prank(CheatTarget::One(counterparty_token_address));
 
-        // Transfer 1 memecoin to UnruggableMemecoin contract
-        start_prank(CheatTarget::One(memecoin_address), owner);
-        unruggable_memecoin.transfer(memecoin_address, 1 * TOKEN_MULTIPLIER);
-        stop_prank(CheatTarget::One(memecoin_address));
-    // NOTE:
-    // 1. The initial call to `memecoin_address` should be made by the owner.
-    // 2. Subsequently, the router needs to call memecoin to transfer tokens to the pool.
-    // 3. The second call to `memecoin_address` should be made by the router. 
-    //    However, note that the prank still designates owner as the caller.
-    // `set_contract_address()` from starknet cannot be used in this context.
-    // related issue: https://github.com/foundry-rs/starknet-foundry/issues/1402
+        // NOTE:
+        // 1. The initial call to `memecoin_address` should be made by the owner.
+        // 2. Subsequently, the router needs to call memecoin to transfer tokens to the pool.
+        // 3. The second call to `memecoin_address` should be made by the router. 
+        //    However, note that the prank still designates owner as the caller.
+        // `set_contract_address()` from starknet cannot be used in this context.
+        // related issue: https://github.com/foundry-rs/starknet-foundry/issues/1402
+        
+        // If we want to test this now (without the foundry fix), we need to comment
+        // out the assert_only_owner() in the launch_memecoin() method in memecoin.cairo. 
+        // Then, we can uncomment the following lines, and this will make the test pass.
+        // start_prank(CheatTarget::One(router_address), memecoin_address);
+        // let pool_address = unruggable_memecoin
+        //     .launch_memecoin(
+        //         AMMV2::JediSwap,
+        //         counterparty_token_address,
+        //         5 * TOKEN_MULTIPLIER,
+        //         2 * TOKEN_MULTIPLIER
+        //     );
 
-    // start_prank(CheatTarget::One(memecoin_address), router_address); 
-    // start_prank(CheatTarget::One(router_address), memecoin_address);
-    // unruggable_memecoin
-    //     .launch_memecoin(
-    //         AMMV2::JediSwap, counterparty_token_address, 20000000000000000, 1 * TOKEN_MULTIPLIER
-    //     );
+        // let pool_dispatcher = IPairDispatcher { contract_address: pool_address };
+        // let (token_0_reserves, token_1_reserves, _) = pool_dispatcher.get_reserves();
+        // assert(pool_dispatcher.token0() == counterparty_token_address, 'wrong token 0 address');
+        // assert(pool_dispatcher.token1() == memecoin_address, 'wrong token 1 address');
+        // assert(token_0_reserves == 2 * TOKEN_MULTIPLIER, 'wrong pool memecoin reserves');
+        // assert(token_1_reserves == 5 * TOKEN_MULTIPLIER, 'wrong pool token reserves');
     }
 
     #[test]

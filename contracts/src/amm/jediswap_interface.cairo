@@ -34,6 +34,8 @@ trait IRouterC1<T> {
 
 #[starknet::interface]
 trait IPair<T> {
+    fn token0(self: @T) -> ContractAddress;
+    fn token1(self: @T) -> ContractAddress;
     fn get_reserves(self: @T) -> (u256, u256, u64);
     fn mint(ref self: T, to: ContractAddress) -> u256;
     fn totalSupply(self: @T) -> u256;
