@@ -1,3 +1,13 @@
+mod errors;
+mod token_locker;
+
+mod tokens {
+    mod erc20;
+    mod factory;
+    mod interface;
+    mod memecoin;
+}
+
 mod amm {
     mod amm;
     mod jediswap_interface;
@@ -10,11 +20,4 @@ mod tests_utils {
         mod pair;
         mod router;
     }
-}
-
-mod tokens {
-    mod erc20;
-    mod factory;
-    mod interface;
-    mod memecoin;
 }

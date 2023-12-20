@@ -47,6 +47,7 @@ mod UnruggableMemecoin {
         launched: bool,
         pre_launch_holders_count: u8,
         team_allocation: u256,
+        locker_contract: ContractAddress,
         // Components.
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
@@ -84,6 +85,7 @@ mod UnruggableMemecoin {
     fn constructor(
         ref self: ContractState,
         owner: ContractAddress,
+        locker_address: ContractAddress,
         name: felt252,
         symbol: felt252,
         initial_supply: u256,
@@ -106,7 +108,10 @@ mod UnruggableMemecoin {
         };
 
         // Initialize the token / internal logic
-        self._initializer(:initial_supply, :initial_holders, :initial_holders_amounts);
+        self
+            ._initializer(
+                locker_address, :initial_supply, :initial_holders, :initial_holders_amounts
+            );
     }
 
     //
@@ -222,8 +227,8 @@ mod UnruggableMemecoin {
         }
 
         fn transfer(ref self: ContractState, recipient: ContractAddress, amount: u256) -> bool {
-            self._check_max_buy_percentage(amount);
             let sender = get_caller_address();
+            self._check_max_buy_percentage(sender, recipient, amount);
             self._transfer(sender, recipient, amount);
             true
         }
@@ -235,7 +240,7 @@ mod UnruggableMemecoin {
             amount: u256
         ) -> bool {
             let caller = get_caller_address();
-            self._check_max_buy_percentage(amount);
+            self._check_max_buy_percentage(sender, recipient, amount);
             self.erc20._spend_allowance(sender, caller, amount);
             self.erc20._transfer(sender, recipient, amount);
             true
@@ -375,26 +380,34 @@ mod UnruggableMemecoin {
         /// # Arguments
         /// * `amount` - The amount of tokens being transferred.
         #[inline(always)]
-        fn _check_max_buy_percentage(self: @ContractState, amount: u256) {
-            assert(
-                self.erc20.ERC20_total_supply.read()
-                    * MAX_PERCENTAGE_BUY_LAUNCH.into()
-                    / 10_000 >= amount,
-                'Max buy cap reached'
-            )
+        fn _check_max_buy_percentage(
+            self: @ContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256
+        ) {
+            let locker_address = self.locker_contract.read();
+            if (sender != locker_address && recipient != locker_address) {
+                assert(
+                    self.erc20.ERC20_total_supply.read()
+                        * MAX_PERCENTAGE_BUY_LAUNCH.into()
+                        / 10_000 >= amount,
+                    'Max buy cap reached'
+                )
+            }
         }
 
         /// Constructor logic.
         /// # Arguments
+        /// * `locker_address` - Token locker contract address.
         /// * `initial_supply` - The initial supply of the token.
         /// * `initial_holders` - The initial holders of the token, an array of holder_address
         /// * `initial_holders_amounts` - The initial amounts of tokens minted to the initial holders, an array of amounts
         fn _initializer(
             ref self: ContractState,
+            locker_address: ContractAddress,
             initial_supply: u256,
             initial_holders: Span<ContractAddress>,
             initial_holders_amounts: Span<u256>
         ) {
+            self.locker_contract.write(locker_address);
             let mut team_allocation: u256 = 0;
             let max_team_allocation = initial_supply
                 * MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION.into()
