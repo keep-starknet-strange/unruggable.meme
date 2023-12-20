@@ -4,11 +4,11 @@ use snforge_std::{
     declare, ContractClassTrait, start_prank, stop_prank, start_warp, stop_warp, CheatTarget
 };
 use starknet::{ContractAddress, contract_address_const};
+use unruggable::amm::amm::AMM;
 use unruggable::token_locker::{ITokenLockerDispatcher, ITokenLockerDispatcherTrait};
 use unruggable::tokens::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
 };
-
 
 fn setup() -> (ContractAddress, ContractAddress, ContractAddress) {
     let owner: ContractAddress = 'owner'.try_into().unwrap();
@@ -24,6 +24,9 @@ fn setup() -> (ContractAddress, ContractAddress, ContractAddress) {
     let mut token_calldata = array![
         owner.into(), locker_address.into(), 'TEST', 'TST', 100000.into(), 0.into()
     ];
+
+    let amms: Array<AMM> = array![];
+    Serde::serialize(@amms.into(), ref token_calldata);
 
     Serde::serialize(@initial_holders.into(), ref token_calldata);
     Serde::serialize(@initial_holders_amounts.into(), ref token_calldata);
