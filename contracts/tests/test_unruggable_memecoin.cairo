@@ -543,7 +543,13 @@ mod memecoin_entrypoints {
         // Create a MemeCoin
         let memecoin_address = unruggable_meme_factory
             .create_memecoin(
-                owner, locker_address, name, symbol, initial_supply, initial_holders, initial_holders_amounts
+                owner,
+                locker_address,
+                name,
+                symbol,
+                initial_supply,
+                initial_holders,
+                initial_holders_amounts
             );
 
         let unruggable_memecoin = IUnruggableMemecoinDispatcher {
@@ -592,7 +598,13 @@ mod memecoin_entrypoints {
         // Create a MemeCoin
         let memecoin_address = unruggable_meme_factory
             .create_memecoin(
-                owner, locker_address, name, symbol, initial_supply, initial_holders, initial_holders_amounts
+                owner,
+                locker_address,
+                name,
+                symbol,
+                initial_supply,
+                initial_holders,
+                initial_holders_amounts
             );
         let unruggable_memecoin = IUnruggableMemecoinDispatcher {
             contract_address: memecoin_address
@@ -670,7 +682,13 @@ mod memecoin_entrypoints {
         // Create a MemeCoin
         let memecoin_address = unruggable_meme_factory
             .create_memecoin(
-                owner, locker_address, name, symbol, initial_supply, initial_holders, initial_holders_amounts
+                owner,
+                locker_address,
+                name,
+                symbol,
+                initial_supply,
+                initial_holders,
+                initial_holders_amounts
             );
         let unruggable_memecoin = IUnruggableMemecoinDispatcher {
             contract_address: memecoin_address
@@ -730,7 +748,13 @@ mod memecoin_entrypoints {
         // Create a MemeCoin
         let memecoin_address = unruggable_meme_factory
             .create_memecoin(
-                owner, locker_address, name, symbol, initial_supply, initial_holders, initial_holders_amounts
+                owner,
+                locker_address,
+                name,
+                symbol,
+                initial_supply,
+                initial_holders,
+                initial_holders_amounts
             );
 
         let unruggable_memecoin = IUnruggableMemecoinDispatcher {
