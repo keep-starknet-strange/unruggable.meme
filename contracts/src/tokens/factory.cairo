@@ -1,7 +1,9 @@
 use starknet::ContractAddress;
+use unruggable::amm::amm::AMM;
 
 #[starknet::interface]
 trait IUnruggableMemecoinFactory<TContractState> {
+    fn registered_amms(self: @TContractState) -> Span<AMM>;
     fn create_memecoin(
         ref self: TContractState,
         owner: ContractAddress,
@@ -131,6 +133,20 @@ mod UnruggableMemecoinFactory {
 
             self.emit(MemeCoinCreated { owner, name, symbol, initial_supply, memecoin_address });
             memecoin_address
+        }
+
+        fn registered_amms(self: @ContractState) -> Span<AMM> {
+            let mut i = 0;
+            let amms_len = self.amms_len.read();
+            let mut amms = array![];
+            loop {
+                if amms_len == i {
+                    break;
+                }
+                amms.append(self.amms.read(i));
+                i += 1;
+            };
+            amms.span()
         }
     }
 
