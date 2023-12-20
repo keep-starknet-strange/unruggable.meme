@@ -4,16 +4,18 @@ use starknet::ContractAddress;
 #[starknet::contract]
 mod UnruggableMemecoin {
     use array::ArrayTrait;
-    use starknet::{ContractAddress, contract_address_const, get_contract_address, get_caller_address};
+    use openzeppelin::access::ownable::OwnableComponent;
+    use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait as OwnableInternalTrait;
+    use openzeppelin::token::erc20::ERC20Component;
+    use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
+    use starknet::{
+        ContractAddress, contract_address_const, get_contract_address, get_caller_address
+    };
     use unruggable::amm::amm::{AMM, AMMV2};
     use unruggable::amm::jediswap_interface::{
         IFactoryC1Dispatcher, IFactoryC1DispatcherTrait, IRouterC1Dispatcher,
         IRouterC1DispatcherTrait
     };
-    use openzeppelin::token::erc20::ERC20Component;
-    use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
-    use openzeppelin::access::ownable::OwnableComponent;
-    use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait as OwnableInternalTrait;
     use unruggable::tokens::interface::{
         IUnruggableMemecoinSnake, IUnruggableMemecoinCamel, IUnruggableAdditional
     };
@@ -98,7 +100,7 @@ mod UnruggableMemecoin {
 
         // Initialize the owner.
         self.ownable.initializer(owner);
-        
+
         // Add AMMs configurations
         loop {
             match amms.pop_front() {
@@ -191,7 +193,6 @@ mod UnruggableMemecoin {
                     memecoin_address,
                     0, // deadline
                 );
-
 
             // Launch the coin
             self.launched.write(true);
