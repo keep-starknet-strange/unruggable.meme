@@ -94,10 +94,12 @@ mod UnruggableMemecoinFactory {
         /// # Arguments
         ///
         /// * `owner` - The address of the Memecoin contract owner.
-        /// * `initial_recipient` - The initial recipient's address.
+        /// * `locker_address` - The address of the locker contract associated with the Memecoin.
         /// * `name` - The name of the Memecoin.
         /// * `symbol` - The symbol of the Memecoin.
         /// * `initial_supply` - The initial supply of the Memecoin.
+        /// * `initial_holders` - An array containing the initial holders' addresses.
+        /// * `initial_holders_amounts` - An array containing the initial amounts held by each corresponding initial holder.
         ///
         /// # Returns
         ///
@@ -161,7 +163,7 @@ mod UnruggableMemecoinFactory {
     /// # Arguments
     ///
     /// * `owner` - The address of the contract owner.
-    /// * `initial_recipient` - The initial recipient's address.
+    /// * `locker_address` - The address of the locker contract associated with the contract.
     /// * `name` - The name of the contract.
     /// * `symbol` - The symbol of the contract.
     /// * `initial_supply` - The initial supply of the contract.
