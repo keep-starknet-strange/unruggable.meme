@@ -17,12 +17,19 @@ mod UnruggableMemecoin {
         IUnruggableMemecoinSnake, IUnruggableMemecoinCamel, IUnruggableAdditional
     };
     use zeroable::Zeroable;
+    use alexandria_merkle_tree::merkle_tree::{
+        Hasher, MerkleTree, pedersen::PedersenHasherImpl, MerkleTreeTrait, MerkleTreeImpl
+    };
+    use openzeppelin::security::initializable::InitializableComponent::InternalTrait as InitializableTrait;
+    use openzeppelin::security::initializable::InitializableComponent;
 
     // Components.
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
 
     component!(path: ERC20Component, storage: erc20, event: ERC20Event);
+
+    component!(path: InitializableComponent, storage: initializable, event: InitializableEvent);
     // Internals
     impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
 
@@ -52,7 +59,12 @@ mod UnruggableMemecoin {
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
         #[substorage(v0)]
-        erc20: ERC20Component::Storage
+        erc20: ERC20Component::Storage,
+        #[substorage(v0)]
+        initializable: InitializableComponent::Storage,
+        //Contract Storage
+        merkle_root: felt252,
+        has_claimed: LegacyMap::<ContractAddress, bool>,
     }
 
     #[event]
@@ -61,13 +73,23 @@ mod UnruggableMemecoin {
         #[flat]
         OwnableEvent: OwnableComponent::Event,
         #[flat]
-        ERC20Event: ERC20Component::Event
+        ERC20Event: ERC20Component::Event,
+        #[flat]
+        InitializableEvent: InitializableComponent::Event,
+        //Contract Events
+        ClaimedAirdrop: ClaimedAirdrop,
     }
 
     mod Errors {
         const MAX_HOLDERS_REACHED: felt252 = 'Unruggable: max holders reached';
         const ARRAYS_LEN_DIF: felt252 = 'Unruggable: arrays len dif';
         const MAX_TEAM_ALLOCATION_REACHED: felt252 = 'Unruggable: max team allocation';
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct ClaimedAirdrop {
+        account: ContractAddress,
+        amount: u256
     }
 
 
@@ -130,6 +152,72 @@ mod UnruggableMemecoin {
         /// Returns the team allocation in tokens.
         fn get_team_allocation(self: @ContractState) -> u256 {
             self.team_allocation.read()
+        }
+
+        /// Sets the Merkle root for the contract.
+        /// This function updates the Merkle root stored in the contract's state.
+        /// It is essential for maintaining the integrity of the Merkle tree used in various contract functionalities.
+        
+        /// # Arguments
+        /// * `merkle_root` - The new Merkle root to be set, represented as a `felt252`.
+
+        fn set_merkle_root(ref self: ContractState, merkle_root: felt252) {
+            self.ownable.assert_only_owner();
+            self.initializable.initialize();
+            self.merkle_root.write(merkle_root);
+        }
+
+        /// Retrieves the current Merkle root from the contract.
+        /// This function allows the contract owner to obtain the current Merkle root stored in the contract's state.
+        /// The Merkle root is crucial for verifying proofs in various contract operations.
+
+        /// # Returns
+        /// * `felt252` - The current Merkle root stored in the contract.
+
+        fn get_merkle_root(self: @ContractState) -> felt252 {
+            //Getting the merkle root
+            self.ownable.assert_only_owner();
+            self.merkle_root.read()
+        }
+
+        /// Claims an airdrop for a specific account.
+        /// This function is part of the contract's state and is used to claim airdrops for accounts.
+        /// It involves a Merkle tree verification process to ensure the legitimacy of the claim.
+
+        /// # Arguments
+        /// * `to` - The address of the contract for which the airdrop is being claimed.
+        /// * `amount` - The amount of tokens to be airdropped, represented as a `u256`.
+        /// * `leaf` - A mutable leaf node in the Merkle tree, represented as a `felt252`.
+        /// * `proof` - A mutable span of `felt252` elements representing the Merkle proof.
+        fn claim_airdrop(
+            ref self: ContractState,
+            to: ContractAddress,
+            amount: u256,
+            mut leaf: felt252,
+            mut proof: Span<felt252>,
+        ) {
+            //Initializing the Merkletree
+            let mut merkle_tree: MerkleTree<Hasher> = MerkleTreeTrait::new();
+            //Pedersen Hashing of the ContractAddress and Amount
+            let to_felt252: felt252 = starknet::contract_address_to_felt252(to);
+            let amount_felt252: felt252 = amount.try_into().unwrap();
+            let hashed_value: felt252 = pedersen::pedersen(to_felt252, amount_felt252);
+
+            //Verifying if the leaf and hashed value are equal
+            assert(hashed_value == leaf, 'Invalid leaf');
+
+            //Verifying the proof
+            let valid_proof: bool = merkle_tree.verify(self.merkle_root.read(), leaf, proof);
+            assert(self.has_claimed.read(to) == false, 'Already Claimed');
+            assert(valid_proof == true, 'Invalid proof');
+
+            //Changing the has_claimed state to true
+            self.has_claimed.write(to, true);
+
+            //Minting the tokens
+            self.erc20._mint(to, amount);
+            //Emitting an event of ClaimedAirdrop
+            self.emit(ClaimedAirdrop { account: to, amount: amount });
         }
     }
 
