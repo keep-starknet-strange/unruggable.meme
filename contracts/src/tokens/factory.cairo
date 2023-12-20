@@ -5,6 +5,7 @@ trait IUnruggableMemecoinFactory<TContractState> {
     fn create_memecoin(
         ref self: TContractState,
         owner: ContractAddress,
+        locker_address: ContractAddress,
         name: felt252,
         symbol: felt252,
         initial_supply: u256,
@@ -104,6 +105,7 @@ mod UnruggableMemecoinFactory {
         fn create_memecoin(
             ref self: ContractState,
             owner: ContractAddress,
+            locker_address: ContractAddress,
             name: felt252,
             symbol: felt252,
             initial_supply: u256,
@@ -113,7 +115,7 @@ mod UnruggableMemecoinFactory {
             let contract_address_salt = generate_salt(owner, name, symbol);
 
             // General calldata
-            let mut calldata = serialize_calldata(owner, name, symbol, initial_supply);
+            let mut calldata = serialize_calldata(owner, locker_address, name, symbol, initial_supply);
             Serde::serialize(@self.whitelisted_amms().into(), ref calldata);
             Serde::serialize(@initial_holders.into(), ref calldata);
             Serde::serialize(@initial_holders_amounts.into(), ref calldata);
@@ -166,9 +168,9 @@ mod UnruggableMemecoinFactory {
     ///
     /// An array containing the serialized calldata.
     fn serialize_calldata(
-        owner: ContractAddress, name: felt252, symbol: felt252, initial_supply: u256
+        owner: ContractAddress, locker_address: ContractAddress, name: felt252, symbol: felt252, initial_supply: u256
     ) -> Array<felt252> {
-        let mut calldata = array![owner.into(), name.into(), symbol.into()];
+        let mut calldata = array![owner.into(), locker_address.into(), name.into(), symbol.into()];
         Serde::serialize(@initial_supply, ref calldata);
         calldata
     }

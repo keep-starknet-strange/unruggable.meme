@@ -523,6 +523,7 @@ mod memecoin_entrypoints {
 
         let initial_supply: u256 = 100 * TOKEN_MULTIPLIER;
         let counterparty_token_address = deploy_erc20(initial_supply, owner);
+        'deploy erc20'.print();
 
         // Declare availables AMMs for this factory
         let mut amms = array![AMM { name: AMMV2::JediSwap.into(), router_address }];
@@ -541,6 +542,7 @@ mod memecoin_entrypoints {
             .create_memecoin(
                 owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
             );
+        'deploy mmeecoin'.print();
 
         let unruggable_memecoin = IUnruggableMemecoinDispatcher {
             contract_address: memecoin_address

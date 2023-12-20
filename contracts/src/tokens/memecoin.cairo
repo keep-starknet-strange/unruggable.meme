@@ -56,6 +56,7 @@ mod UnruggableMemecoin {
         #[substorage(v0)]
         erc20: ERC20Component::Storage,
         amm_configs: LegacyMap<felt252, ContractAddress>,
+        is_memecoin_pool: LegacyMap<ContractAddress, bool>
     }
 
     #[event]
@@ -71,8 +72,8 @@ mod UnruggableMemecoin {
         const MAX_HOLDERS_REACHED: felt252 = 'Unruggable: max holders reached';
         const ARRAYS_LEN_DIF: felt252 = 'Unruggable: arrays len dif';
         const MAX_TEAM_ALLOCATION_REACHED: felt252 = 'Unruggable: max team allocation';
+        const AMM_NOT_SUPPORTED: felt252 = 'Unruggable: AMM not supported';
     }
-
 
     /// Constructor called once when the contract is deployed.
     /// # Arguments
@@ -156,7 +157,7 @@ mod UnruggableMemecoin {
             let amm_router = IRouterC1Dispatcher {
                 contract_address: self.amm_configs.read(amm_v2.into()),
             };
-            assert(amm_router.contract_address.is_non_zero(), 'AMM not supported');
+            assert(amm_router.contract_address.is_non_zero(), Errors::AMM_NOT_SUPPORTED);
 
             let amm_factory = IFactoryC1Dispatcher { contract_address: amm_router.factory(), };
             let pair_address = amm_factory
@@ -196,6 +197,9 @@ mod UnruggableMemecoin {
 
             // Launch the coin
             self.launched.write(true);
+
+            // Save address as pool to avoid transfer limitation
+            self.is_memecoin_pool.write(pair_address, true);
         }
 
         fn launched(self: @ContractState) -> bool {
