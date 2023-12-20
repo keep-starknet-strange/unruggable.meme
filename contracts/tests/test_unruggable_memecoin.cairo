@@ -771,7 +771,10 @@ mod memecoin_entrypoints {
         start_prank(CheatTarget::One(memecoin_address), owner);
         unruggable_memecoin
             .launch_memecoin(
-                AMMV2::JediSwap, counterparty_token_address, 1 * TOKEN_MULTIPLIER, 1 * TOKEN_MULTIPLIER
+                AMMV2::JediSwap,
+                counterparty_token_address,
+                1 * TOKEN_MULTIPLIER,
+                1 * TOKEN_MULTIPLIER
             );
         stop_prank(CheatTarget::One(memecoin_address));
     }
