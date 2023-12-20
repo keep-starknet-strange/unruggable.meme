@@ -4,19 +4,23 @@ use starknet::ContractAddress;
 #[starknet::contract]
 mod UnruggableMemecoin {
     use array::ArrayTrait;
-    use integer::BoundedInt;
+
+    use debug::PrintTrait;
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait as OwnableInternalTrait;
     use openzeppelin::token::erc20::ERC20Component;
-    use option::OptionTrait;
+    use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
     use starknet::{
         ContractAddress, contract_address_const, get_contract_address, get_caller_address
     };
-    use traits::TryInto;
+    use unruggable::amm::amm::{AMM, AMMV2};
+    use unruggable::amm::jediswap_interface::{
+        IFactoryC1Dispatcher, IFactoryC1DispatcherTrait, IRouterC1Dispatcher,
+        IRouterC1DispatcherTrait
+    };
     use unruggable::tokens::interface::{
         IUnruggableMemecoinSnake, IUnruggableMemecoinCamel, IUnruggableAdditional
     };
-    use zeroable::Zeroable;
 
     // Components.
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
@@ -52,7 +56,8 @@ mod UnruggableMemecoin {
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
         #[substorage(v0)]
-        erc20: ERC20Component::Storage
+        erc20: ERC20Component::Storage,
+        amm_configs: LegacyMap<felt252, ContractAddress>,
     }
 
     #[event]
@@ -68,8 +73,8 @@ mod UnruggableMemecoin {
         const MAX_HOLDERS_REACHED: felt252 = 'Unruggable: max holders reached';
         const ARRAYS_LEN_DIF: felt252 = 'Unruggable: arrays len dif';
         const MAX_TEAM_ALLOCATION_REACHED: felt252 = 'Unruggable: max team allocation';
+        const AMM_NOT_SUPPORTED: felt252 = 'Unruggable: AMM not supported';
     }
-
 
     /// Constructor called once when the contract is deployed.
     /// # Arguments
@@ -88,6 +93,7 @@ mod UnruggableMemecoin {
         name: felt252,
         symbol: felt252,
         initial_supply: u256,
+        mut amms: Span<AMM>,
         initial_holders: Span<ContractAddress>,
         initial_holders_amounts: Span<u256>,
     ) {
@@ -96,6 +102,14 @@ mod UnruggableMemecoin {
 
         // Initialize the owner.
         self.ownable.initializer(owner);
+
+        // Add AMMs configurations
+        loop {
+            match amms.pop_front() {
+                Option::Some(amm) => self.amm_configs.write(*amm.name, *amm.router_address),
+                Option::None => { break; }
+            }
+        };
 
         // Initialize the token / internal logic
         self
@@ -113,18 +127,87 @@ mod UnruggableMemecoin {
         // * UnruggableMemecoin functions
         // ************************************
 
-        fn launched(self: @ContractState) -> bool {
-            self.launched.read()
-        }
-
-        fn launch_memecoin(ref self: ContractState) {
-            // Checks: Only the owner can launch the memecoin.
+        /// Launches Memecoin by creating a liquidity pool with the specified counterparty token using the AMMv2 protocol.
+        ///
+        /// The owner must send tokens of the chosen counterparty (e.g., USDC) to launch Memecoin.
+        ///
+        /// # Arguments
+        /// - `amm_v2`: AMMV2 to create a pair and send liquidity.
+        /// - `counterparty_token_address`: The contract address of the counterparty token.
+        /// - `liquidity_memecoin_amount`: The amount of Memecoin tokens to be provided as liquidity.
+        /// - `liquidity_counterparty_token`: The amount of counterparty tokens to be provided as liquidity.
+        ///
+        /// # Panics
+        /// This method will panic if:
+        /// - The caller is not the owner of the contract.
+        /// - Insufficient Memecoin funds are available for liquidity.
+        /// - Insufficient counterparty token funds are available for liquidity.
+        ///
+        /// # Returns
+        /// Returns the contract address of the created liquidity pool.
+        fn launch_memecoin(
+            ref self: ContractState,
+            amm_v2: AMMV2,
+            counterparty_token_address: ContractAddress,
+            liquidity_memecoin_amount: u256,
+            liquidity_counterparty_token: u256,
+        ) -> ContractAddress {
+            // [Check Owner] Only the owner can launch the Memecoin
             self.ownable.assert_only_owner();
-            // Effects.
+
+            let memecoin_address = starknet::get_contract_address();
+            let caller_address = get_caller_address();
+
+            // [Create Pool]
+            let amm_router = IRouterC1Dispatcher {
+                contract_address: self.amm_configs.read(amm_v2.into()),
+            };
+            assert(amm_router.contract_address.is_non_zero(), Errors::AMM_NOT_SUPPORTED);
+
+            let amm_factory = IFactoryC1Dispatcher { contract_address: amm_router.factory(), };
+            let pair_address = amm_factory
+                .create_pair(counterparty_token_address, memecoin_address);
+
+            // [Check Balance]
+            let memecoin_balance = self.balanceOf(memecoin_address);
+            let counterparty_token_dispatcher = IERC20Dispatcher {
+                contract_address: counterparty_token_address,
+            };
+            let counterparty_token_balance = counterparty_token_dispatcher
+                .balance_of(memecoin_address);
+
+            assert(memecoin_balance >= liquidity_memecoin_amount, 'insufficient memecoin funds');
+            assert(
+                counterparty_token_balance >= liquidity_counterparty_token,
+                'insufficient token funds',
+            );
+
+            // [Approve]
+            self._approve(memecoin_address, amm_router.contract_address, liquidity_memecoin_amount);
+            counterparty_token_dispatcher
+                .approve(amm_router.contract_address, liquidity_counterparty_token);
+
+            // [Add liquidity]
+            amm_router
+                .add_liquidity(
+                    memecoin_address,
+                    counterparty_token_address,
+                    liquidity_memecoin_amount,
+                    liquidity_counterparty_token,
+                    1, // amount_a_min
+                    1, // amount_b_min
+                    memecoin_address,
+                    0, // deadline
+                );
 
             // Launch the coin
             self.launched.write(true);
-        // Interactions.
+
+            pair_address
+        }
+
+        fn launched(self: @ContractState) -> bool {
+            self.launched.read()
         }
 
         /// Returns the team allocation in tokens.
@@ -166,7 +249,12 @@ mod UnruggableMemecoin {
             amount: u256
         ) -> bool {
             let caller = get_caller_address();
-            self._check_max_buy_percentage(sender, recipient, amount);
+            // When we call launch_memecoin(), we invoke the add_liquidity() of the router, 
+            // which performs a transfer_from() to send the tokens to the pool.
+            // Therefore, we need to bypass this validation if the sender is the memecoin contract.
+            if sender != get_contract_address() {
+                self._check_max_buy_percentage(sender, recipient, amount);
+            }
             self.erc20._spend_allowance(sender, caller, amount);
             self.erc20._transfer(sender, recipient, amount);
             true
@@ -199,7 +287,6 @@ mod UnruggableMemecoin {
             true
         }
     }
-
 
     //
     // Internal
@@ -282,6 +369,20 @@ mod UnruggableMemecoin {
         ) {
             self._enforce_holders_limit(:sender, :recipient, :amount);
             self.erc20._transfer(sender, recipient, amount);
+        }
+
+        /// Internal function to approve spending of tokens.
+        ///
+        /// # Arguments
+        ///
+        /// * `self` - A mutable reference to the contract state.
+        /// * `owner` - The owner of the tokens.
+        /// * `spender` - The address allowed to spend the tokens.
+        /// * `amount` - The amount of tokens to be approved for spending.
+        fn _approve(
+            ref self: ContractState, owner: ContractAddress, spender: ContractAddress, amount: u256
+        ) {
+            self.erc20._approve(owner, spender, amount);
         }
 
         /// Internal function to assert the buy limit is not reached
