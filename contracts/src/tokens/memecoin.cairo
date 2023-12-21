@@ -49,6 +49,7 @@ mod UnruggableMemecoin {
     /// The maximum percentage of the supply that can be bought at once.
     const MAX_PERCENTAGE_BUY_LAUNCH: u8 = 200; // 2%
 
+
     #[storage]
     struct Storage {
         marker_v_0: (),
@@ -491,6 +492,12 @@ mod UnruggableMemecoin {
 
             // save pre launch holders count
             self.pre_launch_holders_count.write(initial_holders.len().try_into().unwrap());
+        }
+
+        fn _get_eth_address() -> ContractAddress {
+            contract_address_const::<
+                0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7
+            >()
         }
     }
 }
