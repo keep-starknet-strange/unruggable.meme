@@ -22,7 +22,7 @@ fn setup() -> (ContractAddress, ContractAddress, ContractAddress) {
     let initial_holders_amounts: Span<u256> = array![1000, 50].span();
 
     let mut token_calldata = array![
-        owner.into(), locker_address.into(), 'TEST', 'TST', 100000.into(), 0.into()
+        owner.into(), locker_address.into(), 1000.into(), 'TEST', 'TST', 100000.into(), 0.into()
     ];
 
     let amms: Array<AMM> = array![];

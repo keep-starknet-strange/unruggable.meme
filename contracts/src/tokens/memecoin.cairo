@@ -11,7 +11,7 @@ mod UnruggableMemecoin {
     use openzeppelin::token::erc20::ERC20Component;
     use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
     use starknet::{
-        ContractAddress, contract_address_const, get_contract_address, get_caller_address
+        ContractAddress, contract_address_const, get_contract_address, get_caller_address, get_block_timestamp
     };
     use unruggable::amm::amm::{AMM, AMMV2};
     use unruggable::amm::jediswap_interface::{
@@ -52,6 +52,8 @@ mod UnruggableMemecoin {
         pre_launch_holders_count: u8,
         team_allocation: u256,
         locker_contract: ContractAddress,
+        transfer_delay: u64,
+        launch_time: u64,
         // Components.
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
@@ -79,7 +81,8 @@ mod UnruggableMemecoin {
     /// Constructor called once when the contract is deployed.
     /// # Arguments
     /// * `owner` - The owner of the contract.
-    /// * `initial_recipient` - The initial recipient of the initial supply.
+    /// * `locker_address` - Token locker address.
+    /// * `limit_delay` - Delay timestamp to release transfer amount check.
     /// * `name` - The name of the token.
     /// * `symbol` - The symbol of the token.
     /// * `initial_supply` - The initial supply of the token.
@@ -90,6 +93,7 @@ mod UnruggableMemecoin {
         ref self: ContractState,
         owner: ContractAddress,
         locker_address: ContractAddress,
+        limit_delay: u64,
         name: felt252,
         symbol: felt252,
         initial_supply: u256,
@@ -114,7 +118,7 @@ mod UnruggableMemecoin {
         // Initialize the token / internal logic
         self
             ._initializer(
-                locker_address, :initial_supply, :initial_holders, :initial_holders_amounts
+                locker_address, limit_delay, :initial_supply, :initial_holders, :initial_holders_amounts
             );
     }
 
@@ -202,6 +206,7 @@ mod UnruggableMemecoin {
 
             // Launch the coin
             self.launched.write(true);
+            self.launch_time.write(get_block_timestamp());
 
             pair_address
         }
@@ -397,31 +402,40 @@ mod UnruggableMemecoin {
         fn _check_max_buy_percentage(
             self: @ContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256
         ) {
-            let locker_address = self.locker_contract.read();
-            if (sender != locker_address && recipient != locker_address) {
-                assert(
-                    self.erc20.ERC20_total_supply.read()
-                        * MAX_PERCENTAGE_BUY_LAUNCH.into()
-                        / 10_000 >= amount,
-                    'Max buy cap reached'
-                )
+            let launch_time = self.launch_time.read();
+            let transfer_delay = self.transfer_delay.read();
+            let current_time = get_block_timestamp();
+            if(current_time < (launch_time + transfer_delay) || launch_time == 0_u64) {
+                let locker_address = self.locker_contract.read();
+                if (sender != locker_address && recipient != locker_address) {
+                    assert(
+                        self.erc20.ERC20_total_supply.read()
+                            * MAX_PERCENTAGE_BUY_LAUNCH.into()
+                            / 10_000 >= amount,
+                        'Max buy cap reached'
+                    )
+                }
             }
         }
 
         /// Constructor logic.
         /// # Arguments
         /// * `locker_address` - Token locker contract address.
+        /// * `limit_delay` - Delay timestamp to release transfer amount check.
         /// * `initial_supply` - The initial supply of the token.
         /// * `initial_holders` - The initial holders of the token, an array of holder_address
         /// * `initial_holders_amounts` - The initial amounts of tokens minted to the initial holders, an array of amounts
         fn _initializer(
             ref self: ContractState,
             locker_address: ContractAddress,
+            limit_delay: u64,
             initial_supply: u256,
             initial_holders: Span<ContractAddress>,
             initial_holders_amounts: Span<u256>
         ) {
             self.locker_contract.write(locker_address);
+            self.transfer_delay.write(limit_delay);
+
             let mut team_allocation: u256 = 0;
             let max_team_allocation = initial_supply
                 * MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION.into()

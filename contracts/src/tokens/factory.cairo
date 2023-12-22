@@ -194,7 +194,7 @@ mod UnruggableMemecoinFactory {
         symbol: felt252,
         initial_supply: u256
     ) -> Array<felt252> {
-        let mut calldata = array![owner.into(), locker_address.into(), name.into(), symbol.into()];
+        let mut calldata = array![owner.into(), locker_address.into(), 1000.into(), name.into(), symbol.into()]; // Third param should be lock delay.
         Serde::serialize(@initial_supply, ref calldata);
         calldata
     }

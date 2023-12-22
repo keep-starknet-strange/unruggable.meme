@@ -34,7 +34,7 @@ fn deploy_contract(
 ) -> Result<ContractAddress, RevertedTransaction> {
     let contract = declare('UnruggableMemecoin');
     let mut constructor_calldata = array![
-        owner.into(), 'locker', name, symbol, initial_supply.low.into(), initial_supply.high.into()
+        owner.into(), 'locker', 1000.into(), name, symbol, initial_supply.low.into(), initial_supply.high.into()
     ];
     let amms: Array<AMM> = array![];
     Serde::serialize(@amms.into(), ref constructor_calldata);
@@ -172,7 +172,7 @@ mod erc20_entrypoints {
     use core::debug::PrintTrait;
     use core::traits::Into;
     use openzeppelin::token::erc20::interface::IERC20;
-    use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
+    use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, start_warp, CheatTarget};
     use starknet::{ContractAddress, contract_address_const};
     use super::{deploy_contract, instantiate_params};
     use unruggable::tokens::interface::{
@@ -486,7 +486,7 @@ mod memecoin_entrypoints {
     use debug::PrintTrait;
 
     use openzeppelin::token::erc20::interface::{IERC20, IERC20Dispatcher, IERC20DispatcherTrait};
-    use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
+    use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, start_warp, CheatTarget};
     use starknet::{ContractAddress, contract_address_const};
     use super::{deploy_contract, instantiate_params};
     use unruggable::amm::amm::{AMM, AMMV2};
