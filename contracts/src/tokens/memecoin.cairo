@@ -3,6 +3,8 @@ use starknet::ContractAddress;
 
 #[starknet::contract]
 mod UnruggableMemecoin {
+    use core::box::BoxTrait;
+    use openzeppelin::token::erc20::interface::IERC20Metadata;
     use array::ArrayTrait;
 
     use debug::PrintTrait;
@@ -12,7 +14,7 @@ mod UnruggableMemecoin {
     use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
     use starknet::{
         ContractAddress, contract_address_const, get_contract_address, get_caller_address,
-        get_block_timestamp
+        get_tx_info, get_block_timestamp
     };
     use unruggable::amm::amm::{AMM, AMMV2};
     use unruggable::amm::jediswap_interface::{
@@ -24,6 +26,10 @@ mod UnruggableMemecoin {
     };
     use unruggable::tokens::interface::{
         IUnruggableMemecoinSnake, IUnruggableMemecoinCamel, IUnruggableAdditional
+    };
+
+    use unruggable::errors::{
+        MAX_HOLDERS_REACHED, ARRAYS_LEN_DIF, MAX_TEAM_ALLOCATION_REACHED, AMM_NOT_SUPPORTED
     };
 
     // Components.
@@ -48,6 +54,8 @@ mod UnruggableMemecoin {
     const MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION: u16 = 1_000; // 10%
     /// The maximum percentage of the supply that can be bought at once.
     const MAX_PERCENTAGE_BUY_LAUNCH: u8 = 200; // 2%
+
+    const ETH_UNIT_DECIMALS: u256 = 1000000000000000000;
 
 
     #[storage]
@@ -74,13 +82,6 @@ mod UnruggableMemecoin {
         OwnableEvent: OwnableComponent::Event,
         #[flat]
         ERC20Event: ERC20Component::Event
-    }
-
-    mod Errors {
-        const MAX_HOLDERS_REACHED: felt252 = 'Unruggable: max holders reached';
-        const ARRAYS_LEN_DIF: felt252 = 'Unruggable: arrays len dif';
-        const MAX_TEAM_ALLOCATION_REACHED: felt252 = 'Unruggable: max team allocation';
-        const AMM_NOT_SUPPORTED: felt252 = 'Unruggable: AMM not supported';
     }
 
     /// Constructor called once when the contract is deployed.
@@ -140,7 +141,6 @@ mod UnruggableMemecoin {
         ///
         /// # Arguments
         /// - `amm_v2`: AMMV2 to create a pair and send liquidity.
-        /// - `counterparty_token_address`: The contract address of the counterparty token.
         /// - `liquidity_memecoin_amount`: The amount of Memecoin tokens to be provided as liquidity.
         /// - `liquidity_counterparty_token`: The amount of counterparty tokens to be provided as liquidity.
         /// - `deadline`: The deadline beyond which the operation will revert.
@@ -156,7 +156,6 @@ mod UnruggableMemecoin {
         fn launch_memecoin(
             ref self: ContractState,
             amm_v2: AMMV2,
-            counterparty_token_address: ContractAddress,
             liquidity_memecoin_amount: u256,
             liquidity_counterparty_token: u256,
             deadline: u64
@@ -171,10 +170,10 @@ mod UnruggableMemecoin {
                 contract_address: factory_address
             }
                 .amm_router_address(amm_name: amm_v2.into());
-
+            let counterparty_token_address = _get_eth_address();
             // [Create Pool]
             let amm_router = IRouterC1Dispatcher { contract_address: router_address };
-            assert(amm_router.contract_address.is_non_zero(), Errors::AMM_NOT_SUPPORTED);
+            assert(amm_router.contract_address.is_non_zero(), AMM_NOT_SUPPORTED);
 
             let amm_factory = IFactoryC1Dispatcher { contract_address: amm_router.factory(), };
             let pair_address = amm_factory
@@ -336,10 +335,7 @@ mod UnruggableMemecoin {
                     let current_holders_count = self.pre_launch_holders_count.read();
 
                     // assert max holders limit is not reached
-                    assert(
-                        current_holders_count < MAX_HOLDERS_BEFORE_LAUNCH,
-                        Errors::MAX_HOLDERS_REACHED
-                    );
+                    assert(current_holders_count < MAX_HOLDERS_BEFORE_LAUNCH, MAX_HOLDERS_REACHED);
 
                     // increase holders count
                     self.pre_launch_holders_count.write(current_holders_count + 1);
@@ -454,13 +450,10 @@ mod UnruggableMemecoin {
             let mut i: usize = 0;
 
             // check initial holders len match
-            assert(initial_holders.len() == initial_holders_amounts.len(), Errors::ARRAYS_LEN_DIF);
+            assert(initial_holders.len() == initial_holders_amounts.len(), ARRAYS_LEN_DIF);
 
             // check on max holders count
-            assert(
-                initial_holders.len() <= MAX_HOLDERS_BEFORE_LAUNCH.into(),
-                Errors::MAX_HOLDERS_REACHED
-            );
+            assert(initial_holders.len() <= MAX_HOLDERS_BEFORE_LAUNCH.into(), MAX_HOLDERS_REACHED);
 
             loop {
                 if i >= initial_holders.len() {
@@ -474,7 +467,7 @@ mod UnruggableMemecoin {
                 team_allocation += amount;
 
                 // check on max team allocation
-                assert(team_allocation <= max_team_allocation, Errors::MAX_TEAM_ALLOCATION_REACHED);
+                assert(team_allocation <= max_team_allocation, MAX_TEAM_ALLOCATION_REACHED);
 
                 // mint to holder using the erc20 internal to avoid triggering pre launch safeguards and waste gas.
                 self.erc20._mint(recipient: address, :amount);
@@ -493,11 +486,11 @@ mod UnruggableMemecoin {
             // save pre launch holders count
             self.pre_launch_holders_count.write(initial_holders.len().try_into().unwrap());
         }
+    }
 
-        fn _get_eth_address() -> ContractAddress {
-            contract_address_const::<
-                0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7
-            >()
-        }
+    fn _get_eth_address() -> ContractAddress {
+        contract_address_const::<
+            0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7
+        >()
     }
 }

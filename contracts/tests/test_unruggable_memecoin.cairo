@@ -517,7 +517,6 @@ mod memecoin_entrypoints {
 
     const TOKEN_MULTIPLIER: u256 = 1000000000000000000;
 
-
     #[test]
     #[should_panic(expected: ('Caller is not the owner',))]
     fn test_launch_memecoin_not_owner() {
@@ -947,7 +946,6 @@ mod memecoin_entrypoints {
         start_prank(CheatTarget::One(memecoin.contract_address), initial_holder_1);
         let send_amount = memecoin.transfer(alice, 21);
     }
-
 
     #[test]
     #[should_panic(expected: ('Max buy cap reached',))]
