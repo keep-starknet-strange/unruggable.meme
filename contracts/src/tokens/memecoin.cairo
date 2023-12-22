@@ -11,7 +11,8 @@ mod UnruggableMemecoin {
     use openzeppelin::token::erc20::ERC20Component;
     use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
     use starknet::{
-        ContractAddress, contract_address_const, get_contract_address, get_caller_address, get_block_timestamp
+        ContractAddress, contract_address_const, get_contract_address, get_caller_address,
+        get_block_timestamp
     };
     use unruggable::amm::amm::{AMM, AMMV2};
     use unruggable::amm::jediswap_interface::{
@@ -118,7 +119,11 @@ mod UnruggableMemecoin {
         // Initialize the token / internal logic
         self
             ._initializer(
-                locker_address, limit_delay, :initial_supply, :initial_holders, :initial_holders_amounts
+                locker_address,
+                limit_delay,
+                :initial_supply,
+                :initial_holders,
+                :initial_holders_amounts
             );
     }
 
@@ -405,7 +410,7 @@ mod UnruggableMemecoin {
             let launch_time = self.launch_time.read();
             let transfer_delay = self.transfer_delay.read();
             let current_time = get_block_timestamp();
-            if(current_time < (launch_time + transfer_delay) || launch_time == 0_u64) {
+            if (current_time < (launch_time + transfer_delay) || launch_time == 0_u64) {
                 let locker_address = self.locker_contract.read();
                 if (sender != locker_address && recipient != locker_address) {
                     assert(
