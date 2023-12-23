@@ -13,6 +13,7 @@ trait IUnruggableMemecoinFactory<TContractState> {
         initial_supply: u256,
         initial_holders: Span<ContractAddress>,
         initial_holders_amounts: Span<u256>,
+        contract_address_salt: felt252
     ) -> ContractAddress;
 }
 
@@ -102,6 +103,7 @@ mod UnruggableMemecoinFactory {
         /// * `initial_supply` - The initial supply of the Memecoin.
         /// * `initial_holders` - An array containing the initial holders' addresses.
         /// * `initial_holders_amounts` - An array containing the initial amounts held by each corresponding initial holder.
+        /// * `contract_address_salt` - A unique salt value for contract deployment
         ///
         /// # Returns
         ///
@@ -115,9 +117,8 @@ mod UnruggableMemecoinFactory {
             initial_supply: u256,
             initial_holders: Span<ContractAddress>,
             initial_holders_amounts: Span<u256>,
+            contract_address_salt: felt252
         ) -> ContractAddress {
-            let contract_address_salt = generate_salt(owner, name, symbol);
-
             // General calldata
             let mut calldata = serialize_calldata(
                 owner, locker_address, name, symbol, initial_supply
@@ -197,24 +198,5 @@ mod UnruggableMemecoinFactory {
         let mut calldata = array![owner.into(), locker_address.into(), name.into(), symbol.into()];
         Serde::serialize(@initial_supply, ref calldata);
         calldata
-    }
-
-
-    /// Generates a unique salt.
-    ///
-    /// # Arguments
-    ///
-    /// * `owner` - The address of the contract owner.
-    /// * `name` - The name of the contract.
-    /// * `symbol` - The symbol of the contract.
-    ///
-    /// # Returns
-    ///
-    /// A unique salt value (felt252) for contract function execution.
-    fn generate_salt(owner: ContractAddress, name: felt252, symbol: felt252) -> felt252 {
-        let mut data = array![
-            owner.into(), name.into(), symbol.into(), starknet::get_block_timestamp().into()
-        ];
-        poseidon_hash_span(data.span())
     }
 }

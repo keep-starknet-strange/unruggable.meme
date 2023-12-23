@@ -21,6 +21,7 @@ fn instantiate_params() -> (
     ContractAddress,
     Span<ContractAddress>,
     Span<u256>,
+    felt252
 ) {
     let owner = contract_address_const::<42>();
     let name = 'UnruggableMemecoin';
@@ -30,6 +31,7 @@ fn instantiate_params() -> (
     let initial_holder_2 = contract_address_const::<45>();
     let initial_holders = array![initial_holder_1, initial_holder_2].span();
     let initial_holders_amounts = array![50, 50].span();
+    let contract_address_salt = 'salty';
     (
         owner,
         name,
@@ -38,7 +40,8 @@ fn instantiate_params() -> (
         initial_holder_1,
         initial_holder_2,
         initial_holders,
-        initial_holders_amounts
+        initial_holders_amounts,
+        contract_address_salt
     )
 }
 
@@ -96,7 +99,8 @@ fn test_deploy_memecoin() {
         initial_holder_1,
         initial_holder_2,
         initial_holders,
-        initial_holders_amounts
+        initial_holders_amounts,
+        contract_address_salt
     ) =
         instantiate_params();
 
@@ -106,13 +110,14 @@ fn test_deploy_memecoin() {
 
     let memecoin_address = memecoin_factory
         .create_memecoin(
-            owner,
-            locker_address,
-            name,
-            symbol,
-            initial_supply,
-            initial_holders,
-            initial_holders_amounts
+            :owner,
+            :locker_address,
+            :name,
+            :symbol,
+            :initial_supply,
+            :initial_holders,
+            :initial_holders_amounts,
+            :contract_address_salt
         );
     let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
 
