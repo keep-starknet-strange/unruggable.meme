@@ -28,6 +28,11 @@ export const tokenContractContainer = style([
   }),
 ])
 
+export const tokenName = style({
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+})
+
 export const teamAllocation = style([
   sprinkles({
     fontSize: '18',

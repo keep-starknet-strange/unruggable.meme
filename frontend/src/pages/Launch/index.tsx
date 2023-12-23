@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { PrimaryButton } from 'src/components/Button'
+import { PrimaryButton, SecondaryButton } from 'src/components/Button'
 import Section from 'src/components/Section'
 import { useDeploymentStore } from 'src/hooks/useDeployment'
 import Box from 'src/theme/components/Box'
@@ -15,13 +15,17 @@ export default function LaunchPage() {
   return (
     <Section>
       <Column className={styles.container}>
-        <Row justifyContent="space-between">
+        <Box className={styles.headerContainer}>
           <Text.HeadlineMedium>Your deployed tokens</Text.HeadlineMedium>
 
-          <Link to="/deploy">
-            <PrimaryButton>Deploy a token</PrimaryButton>
-          </Link>
-        </Row>
+          <Row gap="16">
+            <SecondaryButton>Import a token</SecondaryButton>
+
+            <Link to="/deploy">
+              <PrimaryButton>Deploy a token</PrimaryButton>
+            </Link>
+          </Row>
+        </Box>
 
         {[...deployedTokenContracts]
           .sort((a, b) => (a.launched === b.launched ? 0 : a.launched ? 1 : -1))

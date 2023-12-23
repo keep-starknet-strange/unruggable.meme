@@ -31,9 +31,9 @@ export default function TokenContract({ tokenContract, ...props }: TokenContract
       {...props}
     >
       <Column gap="24">
-        <Row justifyContent="space-between">
-          <Row gap="16" alignItems="baseline">
-            <Text.HeadlineMedium>{tokenContract.name}</Text.HeadlineMedium>
+        <Row justifyContent="space-between" gap="8">
+          <Row gap="12" alignItems="baseline" minWidth="0" flex="1">
+            <Text.HeadlineMedium className={styles.tokenName}>{tokenContract.name}</Text.HeadlineMedium>
             <Text.Body color="text2">${tokenContract.symbol}</Text.Body>
           </Row>
 

@@ -21,3 +21,14 @@ export const container = style([
     gap: '32',
   }),
 ])
+
+export const headerContainer = sprinkles({
+  display: 'flex',
+  gap: '16',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  flexDirection: {
+    sm: 'column',
+    md: 'row',
+  },
+})
