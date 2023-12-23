@@ -23,7 +23,7 @@ export default function LaunchPage() {
           </Link>
         </Row>
 
-        {deployedTokenContracts
+        {[...deployedTokenContracts]
           .sort((a, b) => (a.launched === b.launched ? 0 : a.launched ? 1 : -1))
           .map((tokenContract) => (
             <TokenContract key={tokenContract.address} tokenContract={tokenContract} />

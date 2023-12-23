@@ -1,20 +1,21 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useAccount, useContractWrite } from '@starknet-react/core'
+import { starknetChainId, useAccount, useContractWrite } from '@starknet-react/core'
 import { Wallet, X } from 'lucide-react'
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { IconButton, PrimaryButton, SecondaryButton } from 'src/components/Button'
 import Input from 'src/components/Input'
 import NumericalInput from 'src/components/Input/NumericalInput'
 import Section from 'src/components/Section'
-import { TOKEN_CLASS_HASH, UDC } from 'src/constants/contracts'
-import { DECIMALS, MAX_HOLDERS_PER_DEPLOYMENT } from 'src/constants/misc'
+import { FACTORY_ADDRESSES, LOCKER_ADDRESSES, TOKEN_CLASS_HASH } from 'src/constants/contracts'
+import { DECIMALS, MAX_HOLDERS_PER_DEPLOYMENT, Selector } from 'src/constants/misc'
 import { useDeploymentStore } from 'src/hooks/useDeployment'
 import Box from 'src/theme/components/Box'
 import { Column } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
 import { isValidL2Address } from 'src/utils/address'
 import { parseFormatedAmount } from 'src/utils/amount'
+import { decimalsScale } from 'src/utils/decimals'
 import { CallData, hash, stark, uint256 } from 'starknet'
 import { z } from 'zod'
 
@@ -34,7 +35,6 @@ const holder = z.object({
 const schema = z.object({
   name: z.string().min(1),
   symbol: z.string().min(1),
-  initialRecipientAddress: address,
   ownerAddress: address,
   initialSupply: currencyInput,
   holders: z.array(holder),
@@ -47,8 +47,10 @@ const schema = z.object({
 export default function DeployPage() {
   const { pushDeployedTokenContracts } = useDeploymentStore()
 
-  const { account, address } = useAccount()
+  const { account, address, chainId } = useAccount()
   const { writeAsync, isPending } = useContractWrite({})
+
+  const accountChainId = useMemo(() => (chainId ? starknetChainId(chainId) : undefined), [chainId])
 
   // If you need the transaction status, you can use this hook.
   // Notice that RPC providers will take some time to receive the transaction,
@@ -72,7 +74,7 @@ export default function DeployPage() {
 
   const deployToken = useCallback(
     async (data: z.infer<typeof schema>) => {
-      if (!account?.address) return
+      if (!account?.address || !accountChainId) return
 
       const salt = stark.randomAddress()
       const unique = 0
@@ -85,25 +87,28 @@ export default function DeployPage() {
 
       const constructorCalldata = CallData.compile([
         data.ownerAddress, // owner
-        data.initialRecipientAddress, // initial_recipient
+        LOCKER_ADDRESSES[accountChainId], // locker
         data.name, // name
         data.symbol, // symbol
-        uint256.bnToUint256(BigInt(parsedInitialSupply) * BigInt(DECIMALS)), // initial_supply
+        uint256.bnToUint256(BigInt(parsedInitialSupply) * BigInt(decimalsScale(DECIMALS))), // initial_supply
         data.holders.map(({ address }) => address), // initial_holders
-        data.holders.map(({ amount }) => uint256.bnToUint256(BigInt(parseFormatedAmount(amount)) * BigInt(DECIMALS))), // initial_holders_amounts
+        data.holders.map(({ amount }) =>
+          uint256.bnToUint256(BigInt(parseFormatedAmount(amount)) * BigInt(decimalsScale(DECIMALS)))
+        ), // initial_holders_amounts
+        stark.randomAddress(), // contract salt
       ])
 
       // Token address. Used to transfer tokens to initial holders.
-      const tokenAddress = hash.calculateContractAddressFromHash(salt, TOKEN_CLASS_HASH, constructorCalldata, unique)
-
-      const deploy = {
-        contractAddress: UDC.ADDRESS,
-        entrypoint: UDC.ENTRYPOINT,
-        calldata: [TOKEN_CLASS_HASH, salt, unique, constructorCalldata.length, ...constructorCalldata],
+      const createMemecoin = {
+        contractAddress: FACTORY_ADDRESSES[accountChainId],
+        entrypoint: Selector.CREATE_MEMECOIN,
+        calldata: constructorCalldata,
       }
 
+      const tokenAddress = hash.calculateContractAddressFromHash(salt, TOKEN_CLASS_HASH, constructorCalldata, unique)
+
       try {
-        await writeAsync({ calls: [deploy] })
+        await writeAsync({ calls: [createMemecoin] })
 
         pushDeployedTokenContracts({
           address: tokenAddress,
@@ -117,7 +122,7 @@ export default function DeployPage() {
         console.error(err)
       }
     },
-    [account, writeAsync, pushDeployedTokenContracts]
+    [account, writeAsync, pushDeployedTokenContracts, accountChainId]
   )
 
   return (
@@ -142,32 +147,6 @@ export default function DeployPage() {
 
               <Box className={styles.errorContainer}>
                 {errors.symbol?.message ? <Text.Error>{errors.symbol.message}</Text.Error> : null}
-              </Box>
-            </Column>
-
-            <Column gap="4">
-              <Text.Body className={styles.inputLabel}>Initial Recipient Address</Text.Body>
-
-              <Input
-                placeholder="0x000000000000000000"
-                addon={
-                  <IconButton
-                    type="button"
-                    disabled={!address}
-                    onClick={() =>
-                      address ? setValue('initialRecipientAddress', address, { shouldValidate: true }) : null
-                    }
-                  >
-                    <Wallet />
-                  </IconButton>
-                }
-                {...register('initialRecipientAddress')}
-              />
-
-              <Box className={styles.errorContainer}>
-                {errors.initialRecipientAddress?.message ? (
-                  <Text.Error>{errors.initialRecipientAddress.message}</Text.Error>
-                ) : null}
               </Box>
             </Column>
 
