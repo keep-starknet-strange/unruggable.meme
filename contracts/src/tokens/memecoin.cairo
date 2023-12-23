@@ -18,6 +18,9 @@ mod UnruggableMemecoin {
         IFactoryC1Dispatcher, IFactoryC1DispatcherTrait, IRouterC1Dispatcher,
         IRouterC1DispatcherTrait
     };
+    use unruggable::tokens::factory::{
+        IUnruggableMemecoinFactoryDispatcher, IUnruggableMemecoinFactoryDispatcherTrait
+    };
     use unruggable::tokens::interface::{
         IUnruggableMemecoinSnake, IUnruggableMemecoinCamel, IUnruggableAdditional
     };
@@ -52,12 +55,12 @@ mod UnruggableMemecoin {
         pre_launch_holders_count: u8,
         team_allocation: u256,
         locker_contract: ContractAddress,
+        factory_contract: ContractAddress,
         // Components.
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
         #[substorage(v0)]
         erc20: ERC20Component::Storage,
-        amm_configs: LegacyMap<felt252, ContractAddress>,
     }
 
     #[event]
@@ -93,7 +96,6 @@ mod UnruggableMemecoin {
         name: felt252,
         symbol: felt252,
         initial_supply: u256,
-        mut amms: Span<AMM>,
         initial_holders: Span<ContractAddress>,
         initial_holders_amounts: Span<u256>,
     ) {
@@ -103,18 +105,16 @@ mod UnruggableMemecoin {
         // Initialize the owner.
         self.ownable.initializer(owner);
 
-        // Add AMMs configurations
-        loop {
-            match amms.pop_front() {
-                Option::Some(amm) => self.amm_configs.write(*amm.name, *amm.router_address),
-                Option::None => { break; }
-            }
-        };
-
         // Initialize the token / internal logic
+        let factory_address = get_caller_address();
+
         self
             ._initializer(
-                locker_address, :initial_supply, :initial_holders, :initial_holders_amounts
+                locker_address,
+                :factory_address,
+                :initial_supply,
+                :initial_holders,
+                :initial_holders_amounts
             );
     }
 
@@ -157,11 +157,14 @@ mod UnruggableMemecoin {
 
             let memecoin_address = starknet::get_contract_address();
             let caller_address = get_caller_address();
+            let factory_address = self.factory_contract.read();
+            let router_address = IUnruggableMemecoinFactoryDispatcher {
+                contract_address: factory_address
+            }
+                .amm_router_address(amm_name: amm_v2.into());
 
             // [Create Pool]
-            let amm_router = IRouterC1Dispatcher {
-                contract_address: self.amm_configs.read(amm_v2.into()),
-            };
+            let amm_router = IRouterC1Dispatcher { contract_address: router_address };
             assert(amm_router.contract_address.is_non_zero(), Errors::AMM_NOT_SUPPORTED);
 
             let amm_factory = IFactoryC1Dispatcher { contract_address: amm_router.factory(), };
@@ -249,7 +252,7 @@ mod UnruggableMemecoin {
             amount: u256
         ) -> bool {
             let caller = get_caller_address();
-            // When we call launch_memecoin(), we invoke the add_liquidity() of the router, 
+            // When we call launch_memecoin(), we invoke the add_liquidity() of the router,
             // which performs a transfer_from() to send the tokens to the pool.
             // Therefore, we need to bypass this validation if the sender is the memecoin contract.
             if sender != get_contract_address() {
@@ -411,17 +414,24 @@ mod UnruggableMemecoin {
         /// Constructor logic.
         /// # Arguments
         /// * `locker_address` - Token locker contract address.
+        /// * `factory_address` - Token factory contract address.
         /// * `initial_supply` - The initial supply of the token.
         /// * `initial_holders` - The initial holders of the token, an array of holder_address
         /// * `initial_holders_amounts` - The initial amounts of tokens minted to the initial holders, an array of amounts
         fn _initializer(
             ref self: ContractState,
             locker_address: ContractAddress,
+            factory_address: ContractAddress,
             initial_supply: u256,
             initial_holders: Span<ContractAddress>,
             initial_holders_amounts: Span<u256>
         ) {
+            // save locker contract
             self.locker_contract.write(locker_address);
+
+            // save factory contract
+            self.factory_contract.write(factory_address);
+
             let mut team_allocation: u256 = 0;
             let max_team_allocation = initial_supply
                 * MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION.into()

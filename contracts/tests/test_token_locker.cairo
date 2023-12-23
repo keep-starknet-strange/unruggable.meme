@@ -25,9 +25,6 @@ fn setup() -> (ContractAddress, ContractAddress, ContractAddress) {
         owner.into(), locker_address.into(), 'TEST', 'TST', 100000.into(), 0.into()
     ];
 
-    let amms: Array<AMM> = array![];
-    Serde::serialize(@amms.into(), ref token_calldata);
-
     Serde::serialize(@initial_holders.into(), ref token_calldata);
     Serde::serialize(@initial_holders_amounts.into(), ref token_calldata);
 

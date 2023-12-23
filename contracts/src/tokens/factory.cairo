@@ -3,7 +3,7 @@ use unruggable::amm::amm::AMM;
 
 #[starknet::interface]
 trait IUnruggableMemecoinFactory<TContractState> {
-    fn registered_amms(self: @TContractState) -> Span<AMM>;
+    fn amm_router_address(self: @TContractState, amm_name: felt252) -> ContractAddress;
     fn create_memecoin(
         ref self: TContractState,
         owner: ContractAddress,
@@ -63,8 +63,7 @@ mod UnruggableMemecoinFactory {
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
         memecoin_class_hash: ClassHash,
-        amms: LegacyMap<u32, AMM>,
-        amms_len: u32
+        amm_configs: LegacyMap<felt252, ContractAddress>,
     }
 
     #[constructor]
@@ -78,16 +77,13 @@ mod UnruggableMemecoinFactory {
         self.ownable.initializer(owner);
         self.memecoin_class_hash.write(memecoin_class_hash);
 
-        let mut i = 0;
-        let amms_len = amms.len();
+        // Add AMMs configurations
         loop {
             match amms.pop_front() {
-                Option::Some(amm) => self.amms.write(i, *amm),
+                Option::Some(amm) => self.amm_configs.write(*amm.name, *amm.router_address),
                 Option::None => { break; }
             }
-            i += 1;
         };
-        self.amms_len.write(amms_len);
     }
 
     #[external(v0)]
@@ -123,7 +119,6 @@ mod UnruggableMemecoinFactory {
             let mut calldata = serialize_calldata(
                 owner, locker_address, name, symbol, initial_supply
             );
-            Serde::serialize(@self.whitelisted_amms().into(), ref calldata);
             Serde::serialize(@initial_holders.into(), ref calldata);
             Serde::serialize(@initial_holders_amounts.into(), ref calldata);
 
@@ -136,42 +131,8 @@ mod UnruggableMemecoinFactory {
             memecoin_address
         }
 
-        fn registered_amms(self: @ContractState) -> Span<AMM> {
-            let mut i = 0;
-            let amms_len = self.amms_len.read();
-            let mut amms = array![];
-            loop {
-                if amms_len == i {
-                    break;
-                }
-                amms.append(self.amms.read(i));
-                i += 1;
-            };
-            amms.span()
-        }
-    }
-
-    #[generate_trait]
-    impl InternalFunctions of InternalFunctionsTrait {
-        /// Returns a span containing the whitelisted Automated Market Makers (AMMs).
-        ///
-        /// # Returns
-        ///
-        /// A span containing a collection of whitelisted AMMs.
-        fn whitelisted_amms(self: @ContractState) -> Span<AMM> {
-            let mut amms = array![];
-            let amms_len = self.amms_len.read();
-            let mut i = 0;
-
-            loop {
-                if amms_len == i {
-                    break;
-                }
-                amms.append(self.amms.read(i));
-                i += 1;
-            };
-
-            amms.span()
+        fn amm_router_address(self: @ContractState, amm_name: felt252) -> ContractAddress {
+            self.amm_configs.read(amm_name)
         }
     }
 

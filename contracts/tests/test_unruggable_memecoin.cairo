@@ -36,8 +36,6 @@ fn deploy_contract(
     let mut constructor_calldata = array![
         owner.into(), 'locker', name, symbol, initial_supply.low.into(), initial_supply.high.into()
     ];
-    let amms: Array<AMM> = array![];
-    Serde::serialize(@amms.into(), ref constructor_calldata);
 
     Serde::serialize(@initial_holders.into(), ref constructor_calldata);
     Serde::serialize(@initial_holders_amounts.into(), ref constructor_calldata);

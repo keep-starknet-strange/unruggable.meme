@@ -46,7 +46,7 @@ fn instantiate_params() -> (
 }
 
 #[test]
-fn test_deploy_factory_register_amms() {
+fn test_deploy_factory_amm_router_address() {
     let (_, router_address) = deploy_contracts();
 
     // Declare UnruggableMemecoin and use ClassHash for the Factory
@@ -65,10 +65,8 @@ fn test_deploy_factory_register_amms() {
         contract_address: memecoin_factory_address
     };
 
-    let amms: Span<AMM> = memecoin_factory.registered_amms();
-    assert(amms.len() == 1, 'wrong amm len');
-    assert((*amms.at(0)).name == jediswap_name, 'wrong amm name');
-    assert((*amms.at(0)).router_address == router_address, 'wrong amm router_address');
+    let amm_router_address = memecoin_factory.amm_router_address(amm_name: jediswap_name);
+    assert(amm_router_address == router_address, 'wrong amm router_address');
 }
 
 #[test]
