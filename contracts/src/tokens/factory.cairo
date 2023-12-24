@@ -30,7 +30,6 @@ mod UnruggableMemecoinFactory {
     use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait;
     use openzeppelin::token::erc20::interface::{IERC20, IERC20Dispatcher, IERC20DispatcherTrait};
 
-
     // Core dependencies.
     use poseidon::poseidon_hash_span;
     use starknet::SyscallResultTrait;
@@ -145,18 +144,14 @@ mod UnruggableMemecoinFactory {
             let eth_amount: u256 = 1 * ETH_UNIT_DECIMALS;
             assert(
                 eth_contract.allowance(caller, get_contract_address()) == eth_amount,
-                'ETH allowance should be 1eth'
+                'ETH allowance not enough'
             );
-            assert(eth_contract.balance_of(caller) >= eth_amount, 'invalid bal');
-            // assert(
-            //     eth_contract
-            //         .transfer_from(sender: caller, recipient: memecoin_address, amount: eth_amount),
-            //     'ETH transfer failed'
-            // );
-            let res = eth_contract
-                .transfer_from(
-                    sender: caller, recipient: get_contract_address(), amount: eth_amount
-                );
+            assert(eth_contract.balance_of(caller) >= eth_amount, 'ETH balance is not enough');
+            assert(
+                eth_contract
+                    .transfer_from(sender: caller, recipient: memecoin_address, amount: eth_amount),
+                'ETH transfer failed'
+            );
             assert(
                 eth_contract.balance_of(memecoin_address) == eth_amount, 'memecoin should have 1ETH'
             );

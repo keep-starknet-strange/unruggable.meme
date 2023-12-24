@@ -43,6 +43,7 @@ trait IUnruggableMemecoin<TState> {
     fn launch_memecoin(
         ref self: TState,
         amm_v2: AMMV2,
+        counterparty_token_address: ContractAddress,
         liquidity_memecoin_amount: u256,
         liquidity_counterparty_token: u256,
         deadline: u64
@@ -81,6 +82,7 @@ trait IUnruggableAdditional<TState> {
     fn launch_memecoin(
         ref self: TState,
         amm_v2: AMMV2,
+        counterparty_token_address: ContractAddress,
         liquidity_memecoin_amount: u256,
         liquidity_counterparty_token: u256,
         deadline: u64

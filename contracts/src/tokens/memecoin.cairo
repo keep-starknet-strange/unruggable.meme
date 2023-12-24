@@ -156,6 +156,7 @@ mod UnruggableMemecoin {
         fn launch_memecoin(
             ref self: ContractState,
             amm_v2: AMMV2,
+            counterparty_token_address: ContractAddress,
             liquidity_memecoin_amount: u256,
             liquidity_counterparty_token: u256,
             deadline: u64
@@ -190,7 +191,7 @@ mod UnruggableMemecoin {
             assert(memecoin_balance >= liquidity_memecoin_amount, 'insufficient memecoin funds');
             assert(
                 counterparty_token_balance >= liquidity_counterparty_token,
-                'insufficient token funds',
+                'insufficient eth funds',
             );
 
             // [Approve]
