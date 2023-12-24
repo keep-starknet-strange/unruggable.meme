@@ -1,5 +1,6 @@
 use snforge_std::{declare, ContractClassTrait};
 use starknet::{ContractAddress, contract_address_const};
+use traits::{Into, TryInto};
 use unruggable::amm::amm::{AMM, AMMV2};
 use unruggable::tests_utils::deployer_helper::DeployerHelper::{
     deploy_memecoin_factory, deploy_contracts
@@ -125,4 +126,59 @@ fn test_deploy_memecoin() {
     assert(memecoin.balance_of(memecoin_address) == initial_supply - 100, 'wrong initial supply');
     assert(memecoin.balance_of(initial_holder_1) == 50, 'wrong initial_holder_1 balance');
     assert(memecoin.balance_of(initial_holder_2) == 50, 'wrong initial_holder_2 balance');
+}
+
+#[test]
+fn test_is_memecoin() {
+    let (_, router_address) = deploy_contracts();
+
+    // Declare UnruggableMemecoin and use ClassHash for the Factory
+    let declare_memecoin = declare('UnruggableMemecoin');
+
+    // Declare availables AMMs for this factory
+    let owner = contract_address_const::<42>();
+    let mut amms = array![];
+
+    let memecoin_factory_address = deploy_memecoin_factory(
+        owner, declare_memecoin.class_hash, amms
+    );
+
+    let memecoin_factory = IUnruggableMemecoinFactoryDispatcher {
+        contract_address: memecoin_factory_address
+    };
+
+    let (
+        _,
+        name,
+        symbol,
+        initial_supply,
+        initial_holder_1,
+        initial_holder_2,
+        initial_holders,
+        initial_holders_amounts,
+        contract_address_salt
+    ) =
+        instantiate_params();
+
+    let locker_calldata = array![200];
+    let locker_contract = declare('TokenLocker');
+    let locker_address = locker_contract.deploy(@locker_calldata).unwrap();
+
+    let memecoin_address = memecoin_factory
+        .create_memecoin(
+            :owner,
+            :locker_address,
+            :name,
+            :symbol,
+            :initial_supply,
+            :initial_holders,
+            :initial_holders_amounts,
+            :contract_address_salt
+        );
+
+    assert(memecoin_factory.is_memecoin(address: memecoin_address), 'wrong memecoin status');
+    assert(
+        !memecoin_factory.is_memecoin(address: (memecoin_address.into() + 1).try_into().unwrap()),
+        'wrong memecoin status'
+    );
 }
