@@ -1,5 +1,5 @@
-use openzeppelin::utils::serde::SerializedAppend;
 use openzeppelin::token::erc20::interface::{IERC20, IERC20Dispatcher, IERC20DispatcherTrait};
+use openzeppelin::utils::serde::SerializedAppend;
 
 use snforge_std::{
     declare, ContractClassTrait, start_prank, stop_prank, RevertedTransaction, CheatTarget

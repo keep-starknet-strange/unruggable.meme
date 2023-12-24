@@ -1,3 +1,4 @@
+use openzeppelin::token::erc20::interface::{IERC20, IERC20Dispatcher, IERC20DispatcherTrait};
 use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
 use starknet::{ContractAddress, contract_address_const};
 use traits::{Into, TryInto};
@@ -5,6 +6,7 @@ use unruggable::amm::amm::{AMM, AMMV2};
 use unruggable::tests_utils::deployer_helper::DeployerHelper::{
     deploy_memecoin_factory, deploy_contracts
 };
+use unruggable::tokens::erc20::{ERC20Token};
 use unruggable::tokens::factory::{
     IUnruggableMemecoinFactory, IUnruggableMemecoinFactoryDispatcher,
     IUnruggableMemecoinFactoryDispatcherTrait
@@ -12,9 +14,6 @@ use unruggable::tokens::factory::{
 use unruggable::tokens::interface::{
     IUnruggableMemecoin, IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
 };
-use unruggable::tokens::erc20::{ERC20Token};
-
-use openzeppelin::token::erc20::interface::{IERC20, IERC20Dispatcher, IERC20DispatcherTrait};
 
 const ETH_UNIT_DECIMALS: u256 = 1000000000000000000;
 

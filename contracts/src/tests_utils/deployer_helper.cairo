@@ -1,10 +1,10 @@
 mod DeployerHelper {
+    use openzeppelin::token::erc20::interface::{IERC20, IERC20Dispatcher, IERC20DispatcherTrait};
     use snforge_std::{
         ContractClass, ContractClassTrait, CheatTarget, declare, start_prank, stop_prank
     };
     use starknet::{ContractAddress, ClassHash, contract_address_const};
     use unruggable::amm::amm::AMM;
-    use openzeppelin::token::erc20::interface::{IERC20, IERC20Dispatcher, IERC20DispatcherTrait};
 
     const ETH_UNIT_DECIMALS: u256 = 1000000000000000000;
 

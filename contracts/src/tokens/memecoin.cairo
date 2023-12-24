@@ -3,14 +3,14 @@ use starknet::ContractAddress;
 
 #[starknet::contract]
 mod UnruggableMemecoin {
-    use core::box::BoxTrait;
-    use openzeppelin::token::erc20::interface::IERC20Metadata;
     use array::ArrayTrait;
+    use core::box::BoxTrait;
 
     use debug::PrintTrait;
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait as OwnableInternalTrait;
     use openzeppelin::token::erc20::ERC20Component;
+    use openzeppelin::token::erc20::interface::IERC20Metadata;
     use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
     use starknet::{
         ContractAddress, contract_address_const, get_contract_address, get_caller_address,
@@ -21,15 +21,15 @@ mod UnruggableMemecoin {
         IFactoryC1Dispatcher, IFactoryC1DispatcherTrait, IRouterC1Dispatcher,
         IRouterC1DispatcherTrait
     };
+
+    use unruggable::errors::{
+        MAX_HOLDERS_REACHED, ARRAYS_LEN_DIF, MAX_TEAM_ALLOCATION_REACHED, AMM_NOT_SUPPORTED
+    };
     use unruggable::tokens::factory::{
         IUnruggableMemecoinFactoryDispatcher, IUnruggableMemecoinFactoryDispatcherTrait
     };
     use unruggable::tokens::interface::{
         IUnruggableMemecoinSnake, IUnruggableMemecoinCamel, IUnruggableAdditional
-    };
-
-    use unruggable::errors::{
-        MAX_HOLDERS_REACHED, ARRAYS_LEN_DIF, MAX_TEAM_ALLOCATION_REACHED, AMM_NOT_SUPPORTED
     };
 
     // Components.
