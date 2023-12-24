@@ -4,6 +4,7 @@ use unruggable::amm::amm::AMM;
 #[starknet::interface]
 trait IUnruggableMemecoinFactory<TContractState> {
     fn amm_router_address(self: @TContractState, amm_name: felt252) -> ContractAddress;
+    fn is_memecoin(self: @TContractState, address: ContractAddress) -> bool;
     fn create_memecoin(
         ref self: TContractState,
         owner: ContractAddress,
@@ -59,11 +60,12 @@ mod UnruggableMemecoinFactory {
 
     #[storage]
     struct Storage {
+        memecoin_class_hash: ClassHash,
+        amm_configs: LegacyMap<felt252, ContractAddress>,
+        memcoins: LegacyMap<ContractAddress, bool>,
         // Components.
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
-        memecoin_class_hash: ClassHash,
-        amm_configs: LegacyMap<felt252, ContractAddress>,
     }
 
     #[constructor]
@@ -127,12 +129,19 @@ mod UnruggableMemecoinFactory {
             )
                 .unwrap_syscall();
 
+            // save memecoin address
+            self.memcoins.write(memecoin_address, true);
+
             self.emit(MemeCoinCreated { owner, name, symbol, initial_supply, memecoin_address });
             memecoin_address
         }
 
         fn amm_router_address(self: @ContractState, amm_name: felt252) -> ContractAddress {
             self.amm_configs.read(amm_name)
+        }
+
+        fn is_memecoin(self: @ContractState, address: ContractAddress) -> bool {
+            self.memcoins.read(address)
         }
     }
 
