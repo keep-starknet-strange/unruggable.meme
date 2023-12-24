@@ -125,6 +125,7 @@ fn test_deploy_memecoin() {
     assert(eth.balance_of(owner) == eth_amount * 2, 'wrong eth balance');
     start_prank(CheatTarget::One(eth.contract_address), owner);
     eth.approve(spender: memecoin_factory.contract_address, amount: eth_amount);
+    stop_prank(CheatTarget::One(eth.contract_address));
     assert(
         eth.allowance(:owner, spender: memecoin_factory.contract_address) == eth_amount,
         'wrong eth allowance'
@@ -142,6 +143,8 @@ fn test_deploy_memecoin() {
             eth_contract: eth,
             :contract_address_salt
         );
+    stop_prank(CheatTarget::One(memecoin_factory.contract_address));
+
     let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
 
     assert(memecoin.name() == name, 'wrong memecoin name');
