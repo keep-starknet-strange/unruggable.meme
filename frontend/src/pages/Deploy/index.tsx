@@ -13,24 +13,15 @@ import { useDeploymentStore } from 'src/hooks/useDeployment'
 import Box from 'src/theme/components/Box'
 import { Column } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
-import { isValidL2Address } from 'src/utils/address'
 import { parseFormatedAmount } from 'src/utils/amount'
 import { decimalsScale } from 'src/utils/decimals'
+import { address, currencyInput, holder } from 'src/utils/zod'
 import { CallData, hash, stark, uint256 } from 'starknet'
 import { z } from 'zod'
 
 import * as styles from './style.css'
 
 // zod schemes
-
-const address = z.string().refine((address) => isValidL2Address(address), { message: 'Invalid Starknet address' })
-
-const currencyInput = z.string().refine((input) => +parseFormatedAmount(input) > 0, { message: 'Invalid amount' })
-
-const holder = z.object({
-  address,
-  amount: currencyInput,
-})
 
 const schema = z.object({
   name: z.string().min(1),
@@ -130,7 +121,7 @@ export default function DeployPage() {
       <Box className={styles.container}>
         <Box as="form" onSubmit={handleSubmit(deployToken)}>
           <Column gap="20">
-            <Column gap="4">
+            <Column gap="8">
               <Text.Body className={styles.inputLabel}>Name</Text.Body>
 
               <Input placeholder="Unruggable" {...register('name')} />
@@ -140,7 +131,7 @@ export default function DeployPage() {
               </Box>
             </Column>
 
-            <Column gap="4">
+            <Column gap="8">
               <Text.Body className={styles.inputLabel}>Symbol</Text.Body>
 
               <Input placeholder="MEME" {...register('symbol')} />
@@ -150,7 +141,7 @@ export default function DeployPage() {
               </Box>
             </Column>
 
-            <Column gap="4">
+            <Column gap="8">
               <Text.Body className={styles.inputLabel}>Owner Address</Text.Body>
 
               <Input
@@ -172,7 +163,7 @@ export default function DeployPage() {
               </Box>
             </Column>
 
-            <Column gap="4">
+            <Column gap="8">
               <Text.Body className={styles.inputLabel}>Initial Supply</Text.Body>
 
               <NumericalInput placeholder="10,000,000,000.00" {...register('initialSupply')} />
@@ -183,10 +174,10 @@ export default function DeployPage() {
             </Column>
 
             {fields.map((field, index) => (
-              <Column gap="4" key={field.id}>
+              <Column gap="8" key={field.id}>
                 <Text.Body className={styles.inputLabel}>Holder {index + 1}</Text.Body>
 
-                <Column gap="2" flexDirection="row">
+                <Column gap="8" flexDirection="row">
                   <Input placeholder="Holder address" {...register(`holders.${index}.address`)} />
 
                   <NumericalInput placeholder="Tokens" {...register(`holders.${index}.amount`)} />

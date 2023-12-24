@@ -25,8 +25,9 @@ export const container = style([
   sprinkles({
     maxWidth: '480',
     width: 'full',
-    background: 'bg2',
+    background: 'bg1',
     borderRadius: '10',
+    border: 'light',
   }),
 ])
 

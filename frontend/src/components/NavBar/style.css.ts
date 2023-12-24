@@ -7,7 +7,11 @@ export const nav = recipe({
     sprinkles({
       position: 'sticky',
       top: '0',
-      padding: '24',
+      paddingX: '24',
+      paddingY: {
+        sm: '16',
+        md: '24',
+      },
       zIndex: 'sticky',
       transition: '125',
     }),
@@ -18,7 +22,7 @@ export const nav = recipe({
       true: {},
       false: [
         sprinkles({
-          background: 'bg2',
+          background: 'bg1',
           borderWidth: '0px',
           borderBottomWidth: '1px',
           borderColor: 'border1',

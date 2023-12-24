@@ -25,6 +25,7 @@ export const tokenContractContainer = style([
     paddingX: '12',
     cursor: 'pointer',
     transitionDuration: '125',
+    border: 'light',
   }),
 ])
 
@@ -59,7 +60,7 @@ export const launchStatus = recipe({
       display: 'flex',
       alignItems: 'center',
       gap: '8',
-      background: 'bg3',
+      background: 'bg2',
       paddingX: '8',
       paddingY: '4',
       color: 'text1',

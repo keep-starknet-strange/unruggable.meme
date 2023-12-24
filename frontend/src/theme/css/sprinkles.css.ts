@@ -9,7 +9,6 @@ const themeContractValues = {
 
     bg1: null,
     bg2: null,
-    bg3: null,
 
     appGradient: null,
     accentGradient: null,
@@ -139,9 +138,8 @@ export const vars = createGlobalTheme(':root', {
 
     error: '#ff003e',
 
-    bg1: '#06080A',
-    bg2: '#12181c',
-    bg3: '#191B1D',
+    bg1: '#0c1012',
+    bg2: '#1a1f23',
 
     border1: '#191B1D',
   },

@@ -4,7 +4,7 @@ export const inputContainer = sprinkles({
   display: 'flex',
   alignItems: 'center',
   borderRadius: '10',
-  borderWidth: '1px',
+  borderWidth: '1.5px',
   borderStyle: 'solid',
   overflow: 'hidden',
   padding: '12',
@@ -15,7 +15,7 @@ export const inputContainer = sprinkles({
   },
   gap: '8',
   transitionDuration: '125',
-  backgroundColor: 'bg1',
+  backgroundColor: 'bg2',
 })
 
 export const input = sprinkles({

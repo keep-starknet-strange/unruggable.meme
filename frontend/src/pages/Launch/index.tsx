@@ -19,7 +19,9 @@ export default function LaunchPage() {
           <Text.HeadlineMedium>Your deployed tokens</Text.HeadlineMedium>
 
           <Row gap="16">
-            <SecondaryButton>Import a token</SecondaryButton>
+            <Link to="/deploy">
+              <SecondaryButton>Import a token</SecondaryButton>
+            </Link>
 
             <Link to="/deploy">
               <PrimaryButton>Deploy a token</PrimaryButton>
