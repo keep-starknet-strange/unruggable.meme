@@ -136,6 +136,7 @@ mod UnruggableMemecoin {
         /// - `counterparty_token_address`: The contract address of the counterparty token.
         /// - `liquidity_memecoin_amount`: The amount of Memecoin tokens to be provided as liquidity.
         /// - `liquidity_counterparty_token`: The amount of counterparty tokens to be provided as liquidity.
+        /// - `deadline`: The deadline beyond which the operation will revert.
         ///
         /// # Panics
         /// This method will panic if:
@@ -151,6 +152,7 @@ mod UnruggableMemecoin {
             counterparty_token_address: ContractAddress,
             liquidity_memecoin_amount: u256,
             liquidity_counterparty_token: u256,
+            deadline:u64
         ) -> ContractAddress {
             // [Check Owner] Only the owner can launch the Memecoin
             self.ownable.assert_only_owner();
@@ -200,7 +202,7 @@ mod UnruggableMemecoin {
                     1, // amount_a_min
                     1, // amount_b_min
                     memecoin_address,
-                    0, // deadline
+                    deadline, // deadline
                 );
 
             // Launch the coin
