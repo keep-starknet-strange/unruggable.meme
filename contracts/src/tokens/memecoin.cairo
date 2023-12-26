@@ -152,7 +152,7 @@ mod UnruggableMemecoin {
             counterparty_token_address: ContractAddress,
             liquidity_memecoin_amount: u256,
             liquidity_counterparty_token: u256,
-            deadline:u64
+            deadline: u64
         ) -> ContractAddress {
             // [Check Owner] Only the owner can launch the Memecoin
             self.ownable.assert_only_owner();

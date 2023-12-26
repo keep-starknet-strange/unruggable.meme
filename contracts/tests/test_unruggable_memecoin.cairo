@@ -484,7 +484,9 @@ mod memecoin_entrypoints {
     use debug::PrintTrait;
 
     use openzeppelin::token::erc20::interface::{IERC20, IERC20Dispatcher, IERC20DispatcherTrait};
-    use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget,start_warp};
+    use snforge_std::{
+        declare, ContractClassTrait, start_prank, stop_prank, CheatTarget, start_warp
+    };
     use starknet::{ContractAddress, contract_address_const};
     use super::{deploy_contract, instantiate_params};
     use unruggable::amm::amm::{AMM, AMMV2};
@@ -848,7 +850,6 @@ mod memecoin_entrypoints {
         start_warp(CheatTarget::One(memecoin_address), 1000);
         start_warp(CheatTarget::One(router_address), 1000);
 
-
         let unruggable_memecoin = IUnruggableMemecoinDispatcher {
             contract_address: memecoin_address
         };
@@ -859,7 +860,6 @@ mod memecoin_entrypoints {
         start_prank(CheatTarget::One(memecoin_address), owner);
         unruggable_memecoin.transfer(memecoin_address, 1 * TOKEN_MULTIPLIER);
         stop_prank(CheatTarget::One(memecoin_address));
-
 
         let token_dispatcher = IERC20Dispatcher { contract_address: counterparty_token_address };
         // Transfer 1 counterparty_token to UnruggableMemecoin contract
@@ -878,7 +878,6 @@ mod memecoin_entrypoints {
             );
         stop_prank(CheatTarget::One(memecoin_address));
     }
-
 
 
     #[test]
