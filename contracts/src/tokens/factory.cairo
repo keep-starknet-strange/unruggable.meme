@@ -3,7 +3,8 @@ use unruggable::amm::amm::AMM;
 
 #[starknet::interface]
 trait IUnruggableMemecoinFactory<TContractState> {
-    fn registered_amms(self: @TContractState) -> Span<AMM>;
+    fn amm_router_address(self: @TContractState, amm_name: felt252) -> ContractAddress;
+    fn is_memecoin(self: @TContractState, address: ContractAddress) -> bool;
     fn create_memecoin(
         ref self: TContractState,
         owner: ContractAddress,
@@ -13,6 +14,7 @@ trait IUnruggableMemecoinFactory<TContractState> {
         initial_supply: u256,
         initial_holders: Span<ContractAddress>,
         initial_holders_amounts: Span<u256>,
+        contract_address_salt: felt252
     ) -> ContractAddress;
 }
 
@@ -58,12 +60,12 @@ mod UnruggableMemecoinFactory {
 
     #[storage]
     struct Storage {
+        memecoin_class_hash: ClassHash,
+        amm_configs: LegacyMap<felt252, ContractAddress>,
+        memcoins: LegacyMap<ContractAddress, bool>,
         // Components.
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
-        memecoin_class_hash: ClassHash,
-        amms: LegacyMap<u32, AMM>,
-        amms_len: u32
     }
 
     #[constructor]
@@ -77,16 +79,13 @@ mod UnruggableMemecoinFactory {
         self.ownable.initializer(owner);
         self.memecoin_class_hash.write(memecoin_class_hash);
 
-        let mut i = 0;
-        let amms_len = amms.len();
+        // Add AMMs configurations
         loop {
             match amms.pop_front() {
-                Option::Some(amm) => self.amms.write(i, *amm),
+                Option::Some(amm) => self.amm_configs.write(*amm.name, *amm.router_address),
                 Option::None => { break; }
             }
-            i += 1;
         };
-        self.amms_len.write(amms_len);
     }
 
     #[external(v0)]
@@ -102,6 +101,7 @@ mod UnruggableMemecoinFactory {
         /// * `initial_supply` - The initial supply of the Memecoin.
         /// * `initial_holders` - An array containing the initial holders' addresses.
         /// * `initial_holders_amounts` - An array containing the initial amounts held by each corresponding initial holder.
+        /// * `contract_address_salt` - A unique salt value for contract deployment
         ///
         /// # Returns
         ///
@@ -115,14 +115,12 @@ mod UnruggableMemecoinFactory {
             initial_supply: u256,
             initial_holders: Span<ContractAddress>,
             initial_holders_amounts: Span<u256>,
+            contract_address_salt: felt252
         ) -> ContractAddress {
-            let contract_address_salt = generate_salt(owner, name, symbol);
-
             // General calldata
             let mut calldata = serialize_calldata(
                 owner, locker_address, name, symbol, initial_supply
             );
-            Serde::serialize(@self.whitelisted_amms().into(), ref calldata);
             Serde::serialize(@initial_holders.into(), ref calldata);
             Serde::serialize(@initial_holders_amounts.into(), ref calldata);
 
@@ -131,46 +129,19 @@ mod UnruggableMemecoinFactory {
             )
                 .unwrap_syscall();
 
+            // save memecoin address
+            self.memcoins.write(memecoin_address, true);
+
             self.emit(MemeCoinCreated { owner, name, symbol, initial_supply, memecoin_address });
             memecoin_address
         }
 
-        fn registered_amms(self: @ContractState) -> Span<AMM> {
-            let mut i = 0;
-            let amms_len = self.amms_len.read();
-            let mut amms = array![];
-            loop {
-                if amms_len == i {
-                    break;
-                }
-                amms.append(self.amms.read(i));
-                i += 1;
-            };
-            amms.span()
+        fn amm_router_address(self: @ContractState, amm_name: felt252) -> ContractAddress {
+            self.amm_configs.read(amm_name)
         }
-    }
 
-    #[generate_trait]
-    impl InternalFunctions of InternalFunctionsTrait {
-        /// Returns a span containing the whitelisted Automated Market Makers (AMMs).
-        ///
-        /// # Returns
-        ///
-        /// A span containing a collection of whitelisted AMMs.
-        fn whitelisted_amms(self: @ContractState) -> Span<AMM> {
-            let mut amms = array![];
-            let amms_len = self.amms_len.read();
-            let mut i = 0;
-
-            loop {
-                if amms_len == i {
-                    break;
-                }
-                amms.append(self.amms.read(i));
-                i += 1;
-            };
-
-            amms.span()
+        fn is_memecoin(self: @ContractState, address: ContractAddress) -> bool {
+            self.memcoins.read(address)
         }
     }
 
@@ -199,24 +170,5 @@ mod UnruggableMemecoinFactory {
         ]; // Third param should be lock delay.
         Serde::serialize(@initial_supply, ref calldata);
         calldata
-    }
-
-
-    /// Generates a unique salt.
-    ///
-    /// # Arguments
-    ///
-    /// * `owner` - The address of the contract owner.
-    /// * `name` - The name of the contract.
-    /// * `symbol` - The symbol of the contract.
-    ///
-    /// # Returns
-    ///
-    /// A unique salt value (felt252) for contract function execution.
-    fn generate_salt(owner: ContractAddress, name: felt252, symbol: felt252) -> felt252 {
-        let mut data = array![
-            owner.into(), name.into(), symbol.into(), starknet::get_block_timestamp().into()
-        ];
-        poseidon_hash_span(data.span())
     }
 }
