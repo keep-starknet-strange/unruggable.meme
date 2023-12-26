@@ -45,7 +45,8 @@ trait IUnruggableMemecoin<TState> {
         amm_v2: AMMV2,
         counterparty_token_address: ContractAddress,
         liquidity_memecoin_amount: u256,
-        liquidity_counterparty_token: u256
+        liquidity_counterparty_token: u256,
+        deadline: u64
     ) -> ContractAddress;
     fn get_team_allocation(self: @TState) -> u256;
 }
@@ -83,7 +84,8 @@ trait IUnruggableAdditional<TState> {
         amm_v2: AMMV2,
         counterparty_token_address: ContractAddress,
         liquidity_memecoin_amount: u256,
-        liquidity_counterparty_token: u256
+        liquidity_counterparty_token: u256,
+        deadline: u64
     ) -> ContractAddress;
     fn get_team_allocation(self: @TState) -> u256;
 }
