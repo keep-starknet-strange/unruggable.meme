@@ -164,7 +164,8 @@ fn test_is_memecoin() {
 
     // Declare availables AMMs for this factory
     let owner = contract_address_const::<42>();
-    let mut amms = array![];
+    let jediswap_name: felt252 = AMMV2::JediSwap.into();
+    let mut amms = array![AMM { name: jediswap_name, router_address }];
 
     let memecoin_factory_address = deploy_memecoin_factory(
         owner, declare_memecoin.class_hash, amms
@@ -192,6 +193,16 @@ fn test_is_memecoin() {
     let locker_contract = declare('TokenLocker');
     let locker_address = locker_contract.deploy(@locker_calldata).unwrap();
 
+    let eth_amount: u256 = 1 * ETH_UNIT_DECIMALS;
+    assert(eth.balance_of(owner) == eth_amount * 2, 'wrong eth balance');
+    start_prank(CheatTarget::One(eth.contract_address), owner);
+    eth.approve(spender: memecoin_factory.contract_address, amount: eth_amount);
+    stop_prank(CheatTarget::One(eth.contract_address));
+    assert(
+        eth.allowance(:owner, spender: memecoin_factory.contract_address) == eth_amount,
+        'wrong eth allowance'
+    );
+    start_prank(CheatTarget::One(memecoin_factory.contract_address), owner);
     let memecoin_address = memecoin_factory
         .create_memecoin(
             :owner,
@@ -204,6 +215,7 @@ fn test_is_memecoin() {
             eth_contract: eth,
             :contract_address_salt
         );
+    stop_prank(CheatTarget::One(memecoin_factory.contract_address));
 
     assert(memecoin_factory.is_memecoin(address: memecoin_address), 'wrong memecoin status');
     assert(

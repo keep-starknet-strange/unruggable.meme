@@ -577,7 +577,11 @@ mod memecoin_entrypoints {
         };
         unruggable_memecoin
             .launch_memecoin(
-                AMMV2::JediSwap, eth.contract_address, 1 * ETH_UNIT_DECIMALS, 1 * ETH_UNIT_DECIMALS
+                AMMV2::JediSwap,
+                eth.contract_address,
+                1 * ETH_UNIT_DECIMALS,
+                1 * ETH_UNIT_DECIMALS,
+                100
             );
     }
     #[test]
@@ -635,41 +639,28 @@ mod memecoin_entrypoints {
         let memecoin_bal_meme = unruggable_memecoin.balance_of(memecoin_address);
         let memecoin_bal_eth = eth.balance_of(memecoin_address);
 
-        start_prank(CheatTarget::One(unruggable_meme_factory.contract_address), memecoin_address);
-        unruggable_memecoin
+        // NOTE:
+        // 1. The initial call to `memecoin_address` should be made by the owner.
+        // 2. Subsequently, the router needs to call memecoin to transfer tokens to the pool.
+        // 3. The second call to `memecoin_address` should be made by the router.
+        //    However, note that the prank still designates owner as the caller.
+        // Since we can't switch the mock caller target inside a function call, we cannot rely on
+        // starknet foundry's `start_prank` to test this.
+        // However, if we make the test contract the owner of the memecoin, 
+        // then we can simply call `launch_memecoin` and all caller contexts will be correct.
+
+        start_prank(CheatTarget::One(router_address), memecoin_address);
+        let pool_address = unruggable_memecoin
             .launch_memecoin(
                 AMMV2::JediSwap, eth.contract_address, memecoin_bal_meme, memecoin_bal_eth, 100
             );
         stop_prank(CheatTarget::One(unruggable_meme_factory.contract_address));
-    // NOTE:
-    // 1. The initial call to `memecoin_address` should be made by the owner.
-    // 2. Subsequently, the router needs to call memecoin to transfer tokens to the pool.
-    // 3. The second call to `memecoin_address` should be made by the router.
-    //    However, note that the prank still designates owner as the caller.
-    // Since we can't switch the mock caller target inside a function call, we cannot rely on
-    // starknet foundry's `start_prank` to test this.
-    // However, if we make the test contract the owner of the memecoin, t
-    // then we can simply call `launch_memecoin` and all caller contexts will be correct.
-    // related issue: https://github.com/foundry-rs/starknet-foundry/issues/1402
-
-    // If we want to test this now (without the foundry fix), we need to comment
-    // out the assert_only_owner() in the launch_memecoin() method in memecoin.cairo.
-    // Then, we can uncomment the following lines, and this will make the test pass.
-    // start_prank(CheatTarget::One(router_address), memecoin_address);
-    // let pool_address = unruggable_memecoin
-    //     .launch_memecoin(
-    //         AMMV2::JediSwap,
-    //         counterparty_token_address,
-    //         5 * ETH_UNIT_DECIMALS,
-    //         2 * ETH_UNIT_DECIMALS
-    //     );
-
-    // let pool_dispatcher = IPairDispatcher { contract_address: pool_address };
-    // let (token_0_reserves, token_1_reserves, _) = pool_dispatcher.get_reserves();
-    // assert(pool_dispatcher.token0() == counterparty_token_address, 'wrong token 0 address');
-    // assert(pool_dispatcher.token1() == memecoin_address, 'wrong token 1 address');
-    // assert(token_0_reserves == 2 * ETH_UNIT_DECIMALS, 'wrong pool memecoin reserves');
-    // assert(token_1_reserves == 5 * ETH_UNIT_DECIMALS, 'wrong pool token reserves');
+        let pool_dispatcher = IPairDispatcher { contract_address: pool_address };
+        let (token_0_reserves, token_1_reserves, _) = pool_dispatcher.get_reserves();
+        assert(pool_dispatcher.token0() == eth.contract_address, 'wrong token 0 address');
+        assert(pool_dispatcher.token1() == memecoin_address, 'wrong token 1 address');
+        assert(token_0_reserves == memecoin_bal_eth, 'wrong pool memecoin reserves');
+        assert(token_1_reserves == memecoin_bal_meme, 'wrong pool token reserves');
     }
     #[test]
     #[should_panic(expected: ('insufficient memecoin funds',))]
@@ -742,7 +733,8 @@ mod memecoin_entrypoints {
                 AMMV2::JediSwap,
                 eth.contract_address, // this is +1 of initial supply - split to owner 
                 100 * ETH_UNIT_DECIMALS,
-                1 * ETH_UNIT_DECIMALS
+                1 * ETH_UNIT_DECIMALS,
+                100
             );
         stop_prank(CheatTarget::One(memecoin_address));
     }
@@ -803,7 +795,11 @@ mod memecoin_entrypoints {
         start_prank(CheatTarget::One(memecoin_address), owner);
         unruggable_memecoin
             .launch_memecoin(
-                AMMV2::JediSwap, eth.contract_address, 1 * ETH_UNIT_DECIMALS, 1 * ETH_UNIT_DECIMALS
+                AMMV2::JediSwap,
+                eth.contract_address,
+                1 * ETH_UNIT_DECIMALS,
+                1 * ETH_UNIT_DECIMALS,
+                100
             );
         stop_prank(CheatTarget::One(memecoin_address));
     }
@@ -815,6 +811,7 @@ mod memecoin_entrypoints {
         let (_, router_address) = deploy_contracts();
         let router_dispatcher = IRouterC1Dispatcher { contract_address: router_address };
         let (owner, name, symbol, _, _, _, _, _) = instantiate_params();
+        let contract_address_salt = 'salty';
         let initial_holders = array![owner].span();
         let initial_holders_amounts = array![1 * ETH_UNIT_DECIMALS].span();
 
@@ -873,7 +870,8 @@ mod memecoin_entrypoints {
                 initial_supply,
                 initial_holders,
                 initial_holders_amounts,
-                eth
+                eth,
+                contract_address_salt
             );
         stop_prank(CheatTarget::One(unruggable_meme_factory.contract_address));
 
@@ -884,7 +882,11 @@ mod memecoin_entrypoints {
         start_prank(CheatTarget::One(memecoin_address), owner);
         unruggable_memecoin
             .launch_memecoin(
-                AMMV2::JediSwap, eth.contract_address, 1 * ETH_UNIT_DECIMALS, 1 * ETH_UNIT_DECIMALS
+                AMMV2::JediSwap,
+                eth.contract_address,
+                1 * ETH_UNIT_DECIMALS,
+                1 * ETH_UNIT_DECIMALS,
+                100
             );
         stop_prank(CheatTarget::One(memecoin_address));
     }
@@ -896,17 +898,16 @@ mod memecoin_entrypoints {
         // Setup
         let (_, router_address) = deploy_contracts();
         let router_dispatcher = IRouterC1Dispatcher { contract_address: router_address };
-        let (owner, name, symbol, _, _, _, _, _) = instantiate_params();
+        let (_, name, symbol, _, _, _, _, _) = instantiate_params();
+        let owner = starknet::get_contract_address();
         let contract_address_salt = 'salty';
         let initial_holders = array![owner].span();
-        let initial_holders_amounts = array![1 * TOKEN_MULTIPLIER].span();
+        let initial_holders_amounts = array![1 * ETH_UNIT_DECIMALS].span();
 
-        let initial_supply: u256 = 100 * TOKEN_MULTIPLIER;
-        let counterparty_token_address = deploy_erc20(initial_supply, owner);
+        let initial_supply: u256 = 10 * ETH_UNIT_DECIMALS;
 
         // Declare availables AMMs for this factory
-        let mut amms = array![];
-        amms.append(AMM { name: AMMV2::JediSwap.into(), router_address });
+        let mut amms = array![AMM { name: AMMV2::JediSwap.into(), router_address }];
 
         // Declare UnruggableMemecoin and use ClassHash for the Factory
         let declare_memecoin = declare('UnruggableMemecoin');
@@ -923,6 +924,9 @@ mod memecoin_entrypoints {
         let locker_contract = declare('TokenLocker');
         let locker_address = locker_contract.deploy(@locker_calldata).unwrap();
 
+        let eth = create_eth(initial_supply, owner, unruggable_meme_factory.contract_address);
+
+        start_prank(CheatTarget::One(unruggable_meme_factory.contract_address), owner);
         // Create a MemeCoin
         let memecoin_address = unruggable_meme_factory
             .create_memecoin(
@@ -933,40 +937,26 @@ mod memecoin_entrypoints {
                 initial_supply,
                 initial_holders,
                 initial_holders_amounts,
+                eth,
                 contract_address_salt
             );
-
-        // Change the block timestamp for Router and Memecoin
-        start_warp(CheatTarget::One(memecoin_address), 1000);
-        start_warp(CheatTarget::One(router_address), 1000);
-
+        stop_prank(CheatTarget::One(unruggable_meme_factory.contract_address));
         let unruggable_memecoin = IUnruggableMemecoinDispatcher {
             contract_address: memecoin_address
         };
 
-        let token_dispatcher = IERC20Dispatcher { contract_address: counterparty_token_address };
+        let memecoin_bal_meme = unruggable_memecoin.balance_of(memecoin_address);
+        let memecoin_bal_eth = eth.balance_of(memecoin_address);
+        // Change the block timestamp for Router and Memecoin
+        start_warp(CheatTarget::One(memecoin_address), 1000);
+        start_warp(CheatTarget::One(router_address), 1000);
 
-        // Transfer 0.02 (2% of 100 * TOKEN_MULTIPLIER) memecoin to UnruggableMemecoin contract
-        start_prank(CheatTarget::One(memecoin_address), owner);
-        unruggable_memecoin.transfer(memecoin_address, 1 * TOKEN_MULTIPLIER);
-        stop_prank(CheatTarget::One(memecoin_address));
-
-        let token_dispatcher = IERC20Dispatcher { contract_address: counterparty_token_address };
-        // Transfer 1 counterparty_token to UnruggableMemecoin contract
-        start_prank(CheatTarget::One(counterparty_token_address), owner);
-        token_dispatcher.transfer(memecoin_address, 5 * TOKEN_MULTIPLIER);
-        stop_prank(CheatTarget::One(counterparty_token_address));
-
-        start_prank(CheatTarget::One(memecoin_address), owner);
-        unruggable_memecoin
+        start_prank(CheatTarget::One(router_address), memecoin_address);
+        let pool_address = unruggable_memecoin
             .launch_memecoin(
-                AMMV2::JediSwap,
-                counterparty_token_address,
-                1 * TOKEN_MULTIPLIER,
-                1 * TOKEN_MULTIPLIER,
-                100
+                AMMV2::JediSwap, eth.contract_address, memecoin_bal_meme, memecoin_bal_eth, 100
             );
-        stop_prank(CheatTarget::One(memecoin_address));
+        stop_prank(CheatTarget::One(unruggable_meme_factory.contract_address));
     }
 
     #[test]
