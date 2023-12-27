@@ -585,7 +585,8 @@ mod memecoin_entrypoints {
         // Setup
         let (_, router_address) = deploy_contracts();
         let router_dispatcher = IRouterC1Dispatcher { contract_address: router_address };
-        let (owner, name, symbol, _, _, _, _, _) = instantiate_params();
+        let (_, name, symbol, _, _, _, _, _) = instantiate_params();
+        let owner = starknet::get_contract_address();
         let contract_address_salt = 'salty';
         let initial_holders = array![owner].span();
         let initial_holders_amounts = array![1 * ETH_UNIT_DECIMALS].span();
@@ -630,12 +631,25 @@ mod memecoin_entrypoints {
         let unruggable_memecoin = IUnruggableMemecoinDispatcher {
             contract_address: memecoin_address
         };
+
+        let memecoin_bal_meme = unruggable_memecoin.balance_of(memecoin_address);
+        let memecoin_bal_eth = eth.balance_of(memecoin_address);
+
+        start_prank(CheatTarget::One(unruggable_meme_factory.contract_address), memecoin_address);
+        unruggable_memecoin
+            .launch_memecoin(
+                AMMV2::JediSwap, eth.contract_address, memecoin_bal_meme, memecoin_bal_eth, 100
+            );
+        stop_prank(CheatTarget::One(unruggable_meme_factory.contract_address));
     // NOTE:
     // 1. The initial call to `memecoin_address` should be made by the owner.
     // 2. Subsequently, the router needs to call memecoin to transfer tokens to the pool.
     // 3. The second call to `memecoin_address` should be made by the router.
     //    However, note that the prank still designates owner as the caller.
-    // `set_contract_address()` from starknet cannot be used in this context.
+    // Since we can't switch the mock caller target inside a function call, we cannot rely on
+    // starknet foundry's `start_prank` to test this.
+    // However, if we make the test contract the owner of the memecoin, t
+    // then we can simply call `launch_memecoin` and all caller contexts will be correct.
     // related issue: https://github.com/foundry-rs/starknet-foundry/issues/1402
 
     // If we want to test this now (without the foundry fix), we need to comment
