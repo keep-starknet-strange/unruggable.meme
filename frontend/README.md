@@ -8,8 +8,7 @@
 
 > Warning: You should do these operations all in the `/frontend` folder, not in the root folder of Unruggable-meme project.
 
-To build the Unruggable interface, you need to install [Node.js](https://nodejs.org/en) and [NPM](https://www.npmjs.com/). We suggest you using `20.10.0 LTS`.
-
+To build the Unruggable interface, you need to install [Node.js](https://nodejs.org/en), [NPM](https://www.npmjs.com/) and [YARN](https://yarnpkg.com/). We suggest you using `20.10.0 LTS` node version.
 You can do it manually, but we suggest you install Node and NPM using [NVM](https://github.com/nvm-sh/nvm).
 
 After you installed nvm, run:
@@ -17,25 +16,26 @@ After you installed nvm, run:
 nvm install --lts
 ```
 
-Next, you need to install [TypeScript](https://www.typescriptlang.org/). Run the following command:
+Install yarn dependency manager globally:
 ```
-npm i typescript@~4 
+npm install -g yarn
 ```
 
-Afterward, execute:
+Go to `unruggable.meme/frontend` directory and execute:
 ```
-npm install
+yarn install
 ```
-This will install all dependencies.
+This will install all the dependencies. Find some useful yarn cli commands [here](https://yarnpkg.com/cli).
 
 To build the front-end, use the following command:
 ```
-npm run build
+yarn build
 ```
+You can also check `scripts` within `package.json` file to know the exact command used for build.
 
 For running a local development server, execute:
 ```
-npm run start
+yarn start
 ```
 
 ## Contribution
