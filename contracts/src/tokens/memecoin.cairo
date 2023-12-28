@@ -3,7 +3,6 @@ use starknet::ContractAddress;
 
 #[starknet::contract]
 mod UnruggableMemecoin {
-    use openzeppelin::token::erc20::interface::IERC20;
     use array::ArrayTrait;
     use core::box::BoxTrait;
 
@@ -11,6 +10,7 @@ mod UnruggableMemecoin {
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait as OwnableInternalTrait;
     use openzeppelin::token::erc20::ERC20Component;
+    use openzeppelin::token::erc20::interface::IERC20;
     use openzeppelin::token::erc20::interface::IERC20Metadata;
     use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
     use starknet::{
