@@ -1,5 +1,7 @@
 mod DeployerHelper {
-    use openzeppelin::token::erc20::interface::{IERC20, IERC20Dispatcher, IERC20DispatcherTrait};
+    use openzeppelin::token::erc20::interface::{
+        IERC20, ERC20ABIDispatcher, ERC20ABIDispatcherTrait
+    };
     use snforge_std::{
         ContractClass, ContractClassTrait, CheatTarget, declare, start_prank, stop_prank
     };
@@ -63,7 +65,7 @@ mod DeployerHelper {
 
     fn create_eth(
         initial_supply: u256, owner: ContractAddress, factory: ContractAddress
-    ) -> IERC20Dispatcher {
+    ) -> ERC20ABIDispatcher {
         let erc20_token = declare('ERC20Token');
         let eth_amount: u256 = initial_supply;
         let erc20_calldata: Array<felt252> = array![
@@ -77,8 +79,8 @@ mod DeployerHelper {
                 >()
             )
             .unwrap();
-        let eth = IERC20Dispatcher { contract_address: eth_address };
-        assert(eth.balance_of(owner) == initial_supply, 'wrong eth balance');
+        let eth = ERC20ABIDispatcher { contract_address: eth_address };
+        assert(eth.balanceOf(owner) == initial_supply, 'wrong eth balance');
         start_prank(CheatTarget::One(eth.contract_address), owner);
         eth.approve(spender: factory, amount: 1 * ETH_UNIT_DECIMALS);
         stop_prank(CheatTarget::One(eth.contract_address));

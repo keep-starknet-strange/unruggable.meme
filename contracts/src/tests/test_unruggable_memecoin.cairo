@@ -1,11 +1,11 @@
-use openzeppelin::token::erc20::interface::{IERC20, IERC20Dispatcher, IERC20DispatcherTrait};
+use openzeppelin::token::erc20::interface::{IERC20, ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
 use openzeppelin::utils::serde::SerializedAppend;
 
 use snforge_std::{
     declare, ContractClassTrait, start_prank, stop_prank, RevertedTransaction, CheatTarget
 };
 use starknet::{ContractAddress, contract_address_const};
-use unruggable::amm::amm::{AMM, AMMV2};
+use unruggable::amm::amm::{AMM, AMMV2, AMMTrait};
 
 use unruggable::tokens::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -249,13 +249,13 @@ mod erc20_entrypoints {
         let memecoin = IUnruggableMemecoinDispatcher { contract_address };
 
         // Check initial contract balance. Should be equal to 900.
-        let balance = memecoin.balance_of(contract_address);
+        let balance = memecoin.balanceOf(contract_address);
         assert(balance == 900, 'Invalid balance');
         // Check initial holder 1 balance. Should be equal to 50.
-        let balance = memecoin.balance_of(initial_holder_1);
+        let balance = memecoin.balanceOf(initial_holder_1);
         assert(balance == 50, 'Invalid balance');
         // Check initial holder 2 balance. Should be equal to 50.
-        let balance = memecoin.balance_of(initial_holder_1);
+        let balance = memecoin.balanceOf(initial_holder_1);
         assert(balance == 50, 'Invalid balance');
     }
 
@@ -325,11 +325,11 @@ mod erc20_entrypoints {
         memecoin.transfer(recipient, 20);
 
         // Check balance. Should be equal to initial balance - 20.
-        let initial_holder_1_balance = memecoin.balance_of(initial_holder_1);
+        let initial_holder_1_balance = memecoin.balanceOf(initial_holder_1);
         assert(initial_holder_1_balance == 50 - 20, 'Invalid balance holder 1');
 
         // Check recipient balance. Should be equal to 20.
-        let recipient_balance = memecoin.balance_of(recipient);
+        let recipient_balance = memecoin.balanceOf(recipient);
         assert(recipient_balance == 20, 'Invalid balance recipient');
     }
 
@@ -359,7 +359,7 @@ mod erc20_entrypoints {
         let memecoin = IUnruggableMemecoinDispatcher { contract_address };
 
         // Check initial balance. Should be equal to 50.
-        let balance = memecoin.balance_of(initial_holder_1);
+        let balance = memecoin.balanceOf(initial_holder_1);
         assert(balance == 50, 'Invalid balance');
 
         // Approve initial supply tokens.
@@ -371,11 +371,11 @@ mod erc20_entrypoints {
         memecoin.transfer_from(initial_holder_1, recipient, 20);
 
         // Check balance. Should be equal to initial balance - 20.
-        let initial_holder_1_balance = memecoin.balance_of(initial_holder_1);
+        let initial_holder_1_balance = memecoin.balanceOf(initial_holder_1);
         assert(initial_holder_1_balance == 50 - 20, 'Invalid balance holder 1');
 
         // Check recipient balance. Should be equal to 20.
-        let recipient_balance = memecoin.balance_of(recipient);
+        let recipient_balance = memecoin.balanceOf(recipient);
         assert(recipient_balance == 20, 'Invalid balance recipient');
 
         // Check allowance. Should be equal to initial supply - transfered amount.
@@ -473,7 +473,7 @@ mod erc20_entrypoints {
         let memecoin = IUnruggableMemecoinDispatcher { contract_address };
 
         // Check initial balance. Should be equal to 50.
-        let balance = memecoin.balance_of(initial_holder_1);
+        let balance = memecoin.balanceOf(initial_holder_1);
         assert(balance == 50, 'Invalid balance');
 
         // Approve initial supply tokens.
@@ -485,11 +485,11 @@ mod erc20_entrypoints {
         memecoin.transferFrom(initial_holder_1, recipient, 20);
 
         // Check balance. Should be equal to initial balance - 20.
-        let initial_holder_1_balance = memecoin.balance_of(initial_holder_1);
+        let initial_holder_1_balance = memecoin.balanceOf(initial_holder_1);
         assert(initial_holder_1_balance == 50 - 20, 'Invalid balance holder 1');
 
         // Check recipient balance. Should be equal to 20.
-        let recipient_balance = memecoin.balance_of(recipient);
+        let recipient_balance = memecoin.balanceOf(recipient);
         assert(recipient_balance == 20, 'Invalid balance recipient');
 
         // Check allowance. Should be equal to initial supply - transfered amount.
@@ -501,13 +501,15 @@ mod erc20_entrypoints {
 mod memecoin_entrypoints {
     use debug::PrintTrait;
 
-    use openzeppelin::token::erc20::interface::{IERC20, IERC20Dispatcher, IERC20DispatcherTrait};
+    use openzeppelin::token::erc20::interface::{
+        IERC20, ERC20ABIDispatcher, ERC20ABIDispatcherTrait
+    };
     use snforge_std::{
         declare, ContractClassTrait, start_prank, stop_prank, CheatTarget, start_warp
     };
     use starknet::{ContractAddress, contract_address_const};
     use super::{deploy_contract, instantiate_params, ETH_UNIT_DECIMALS};
-    use unruggable::amm::amm::{AMM, AMMV2};
+    use unruggable::amm::amm::{AMM, AMMV2, AMMTrait};
     use unruggable::amm::jediswap_interface::{
         IFactoryC1, IFactoryC1Dispatcher, IFactoryC1DispatcherTrait, IRouterC1, IRouterC1Dispatcher,
         IRouterC1DispatcherTrait, IPairDispatcher, IPairDispatcherTrait
@@ -538,7 +540,7 @@ mod memecoin_entrypoints {
         let initial_holders_amounts = array![1 * ETH_UNIT_DECIMALS].span();
 
         // Declare availables AMMs for this factory
-        let mut amms = array![AMM { name: AMMV2::JediSwap.into(), router_address }];
+        let mut amms = array![AMM { name: AMMV2::JediSwap.to_string(), router_address }];
 
         // Declare UnruggableMemecoin and use ClassHash for the Factory
         let declare_memecoin = declare('UnruggableMemecoin');
@@ -598,7 +600,7 @@ mod memecoin_entrypoints {
         let initial_supply: u256 = 10 * ETH_UNIT_DECIMALS;
 
         // Declare availables AMMs for this factory
-        let mut amms = array![AMM { name: AMMV2::JediSwap.into(), router_address }];
+        let mut amms = array![AMM { name: AMMV2::JediSwap.to_string(), router_address }];
 
         // Declare UnruggableMemecoin and use ClassHash for the Factory
         let declare_memecoin = declare('UnruggableMemecoin');
@@ -636,8 +638,8 @@ mod memecoin_entrypoints {
             contract_address: memecoin_address
         };
 
-        let memecoin_bal_meme = unruggable_memecoin.balance_of(memecoin_address);
-        let memecoin_bal_eth = eth.balance_of(memecoin_address);
+        let memecoin_bal_meme = unruggable_memecoin.balanceOf(memecoin_address);
+        let memecoin_bal_eth = eth.balanceOf(memecoin_address);
 
         // NOTE:
         // 1. The initial call to `memecoin_address` should be made by the owner.
@@ -688,7 +690,7 @@ mod memecoin_entrypoints {
         let initial_supply: u256 = 100 * ETH_UNIT_DECIMALS;
 
         // Declare availables AMMs for this factory
-        let mut amms = array![AMM { name: AMMV2::JediSwap.into(), router_address }];
+        let mut amms = array![AMM { name: AMMV2::JediSwap.to_string(), router_address }];
 
         // Declare UnruggableMemecoin and use ClassHash for the Factory
         let declare_memecoin = declare('UnruggableMemecoin');
@@ -753,7 +755,7 @@ mod memecoin_entrypoints {
 
         // Declare availables AMMs for this factory
         let mut amms = array![];
-        amms.append(AMM { name: AMMV2::JediSwap.into(), router_address });
+        amms.append(AMM { name: AMMV2::JediSwap.to_string(), router_address });
 
         // Declare UnruggableMemecoin and use ClassHash for the Factory
         let declare_memecoin = declare('UnruggableMemecoin');
@@ -819,7 +821,7 @@ mod memecoin_entrypoints {
 
         // Declare availables AMMs for this factory
         let mut amms = array![];
-        amms.append(AMM { name: AMMV2::JediSwap.into(), router_address });
+        amms.append(AMM { name: AMMV2::JediSwap.to_string(), router_address });
 
         // Declare UnruggableMemecoin and use ClassHash for the Factory
         let declare_memecoin = declare('UnruggableMemecoin');
@@ -849,8 +851,8 @@ mod memecoin_entrypoints {
                 >()
             )
             .unwrap();
-        let eth = IERC20Dispatcher { contract_address: eth_address };
-        assert(eth.balance_of(owner) == initial_supply, 'wrong eth balance');
+        let eth = ERC20ABIDispatcher { contract_address: eth_address };
+        assert(eth.balanceOf(owner) == initial_supply, 'wrong eth balance');
         start_prank(CheatTarget::One(eth.contract_address), owner);
         eth
             .approve(
@@ -907,7 +909,7 @@ mod memecoin_entrypoints {
         let initial_supply: u256 = 10 * ETH_UNIT_DECIMALS;
 
         // Declare availables AMMs for this factory
-        let mut amms = array![AMM { name: AMMV2::JediSwap.into(), router_address }];
+        let mut amms = array![AMM { name: AMMV2::JediSwap.to_string(), router_address }];
 
         // Declare UnruggableMemecoin and use ClassHash for the Factory
         let declare_memecoin = declare('UnruggableMemecoin');
@@ -945,8 +947,8 @@ mod memecoin_entrypoints {
             contract_address: memecoin_address
         };
 
-        let memecoin_bal_meme = unruggable_memecoin.balance_of(memecoin_address);
-        let memecoin_bal_eth = eth.balance_of(memecoin_address);
+        let memecoin_bal_meme = unruggable_memecoin.balanceOf(memecoin_address);
+        let memecoin_bal_eth = eth.balanceOf(memecoin_address);
         // Change the block timestamp for Router and Memecoin
         start_warp(CheatTarget::One(memecoin_address), 1000);
         start_warp(CheatTarget::One(router_address), 1000);
@@ -1078,7 +1080,7 @@ mod memecoin_entrypoints {
         // Transfer 1 token from owner to alice.
         start_prank(CheatTarget::One(memecoin.contract_address), initial_holder_1);
         let send_amount = memecoin.transfer(alice, 20);
-        assert(memecoin.balance_of(alice) == 20, 'Invalid balance');
+        assert(memecoin.balanceOf(alice) == 20, 'Invalid balance');
     }
 }
 

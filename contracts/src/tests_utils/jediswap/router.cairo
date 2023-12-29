@@ -55,7 +55,8 @@ mod RouterC1 {
     use debug::PrintTrait;
     use integer::u256_from_felt252;
     use openzeppelin::token::erc20::interface::{
-        IERC20CamelDispatcher, IERC20CamelDispatcherTrait, IERC20Dispatcher, IERC20DispatcherTrait
+        IERC20CamelDispatcher, IERC20CamelDispatcherTrait, ERC20ABIDispatcher,
+        ERC20ABIDispatcherTrait
     };
     use result::ResultTrait;
     use starknet::syscalls::{replace_class_syscall, call_contract_syscall};
