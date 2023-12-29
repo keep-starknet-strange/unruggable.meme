@@ -4,19 +4,27 @@ use starknet::ContractAddress;
 #[starknet::contract]
 mod UnruggableMemecoin {
     use array::ArrayTrait;
+    use core::box::BoxTrait;
 
     use debug::PrintTrait;
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait as OwnableInternalTrait;
     use openzeppelin::token::erc20::ERC20Component;
-    use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
+    use openzeppelin::token::erc20::interface::IERC20;
+    use openzeppelin::token::erc20::interface::IERC20Metadata;
+    use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
     use starknet::{
-        ContractAddress, contract_address_const, get_contract_address, get_caller_address
+        ContractAddress, contract_address_const, get_contract_address, get_caller_address,
+        get_tx_info, get_block_timestamp
     };
-    use unruggable::amm::amm::{AMM, AMMV2};
+    use unruggable::amm::amm::{AMM, AMMV2, AMMTrait};
     use unruggable::amm::jediswap_interface::{
         IFactoryC1Dispatcher, IFactoryC1DispatcherTrait, IRouterC1Dispatcher,
         IRouterC1DispatcherTrait
+    };
+
+    use unruggable::errors::{
+        MAX_HOLDERS_REACHED, ARRAYS_LEN_DIF, MAX_TEAM_ALLOCATION_REACHED, AMM_NOT_SUPPORTED
     };
     use unruggable::tokens::factory::{
         IUnruggableMemecoinFactoryDispatcher, IUnruggableMemecoinFactoryDispatcherTrait
@@ -48,6 +56,9 @@ mod UnruggableMemecoin {
     /// The maximum percentage of the supply that can be bought at once.
     const MAX_PERCENTAGE_BUY_LAUNCH: u8 = 200; // 2%
 
+    const ETH_UNIT_DECIMALS: u256 = 1000000000000000000;
+
+
     #[storage]
     struct Storage {
         marker_v_0: (),
@@ -55,6 +66,8 @@ mod UnruggableMemecoin {
         pre_launch_holders_count: u8,
         team_allocation: u256,
         locker_contract: ContractAddress,
+        transfer_delay: u64,
+        launch_time: u64,
         factory_contract: ContractAddress,
         // Components.
         #[substorage(v0)]
@@ -72,17 +85,11 @@ mod UnruggableMemecoin {
         ERC20Event: ERC20Component::Event
     }
 
-    mod Errors {
-        const MAX_HOLDERS_REACHED: felt252 = 'Unruggable: max holders reached';
-        const ARRAYS_LEN_DIF: felt252 = 'Unruggable: arrays len dif';
-        const MAX_TEAM_ALLOCATION_REACHED: felt252 = 'Unruggable: max team allocation';
-        const AMM_NOT_SUPPORTED: felt252 = 'Unruggable: AMM not supported';
-    }
-
     /// Constructor called once when the contract is deployed.
     /// # Arguments
     /// * `owner` - The owner of the contract.
-    /// * `initial_recipient` - The initial recipient of the initial supply.
+    /// * `locker_address` - Token locker address.
+    /// * `limit_delay` - Delay timestamp to release transfer amount check.
     /// * `name` - The name of the token.
     /// * `symbol` - The symbol of the token.
     /// * `initial_supply` - The initial supply of the token.
@@ -93,6 +100,7 @@ mod UnruggableMemecoin {
         ref self: ContractState,
         owner: ContractAddress,
         locker_address: ContractAddress,
+        limit_delay: u64,
         name: felt252,
         symbol: felt252,
         initial_supply: u256,
@@ -111,6 +119,7 @@ mod UnruggableMemecoin {
         self
             ._initializer(
                 locker_address,
+                limit_delay,
                 :factory_address,
                 :initial_supply,
                 :initial_holders,
@@ -133,7 +142,6 @@ mod UnruggableMemecoin {
         ///
         /// # Arguments
         /// - `amm_v2`: AMMV2 to create a pair and send liquidity.
-        /// - `counterparty_token_address`: The contract address of the counterparty token.
         /// - `liquidity_memecoin_amount`: The amount of Memecoin tokens to be provided as liquidity.
         /// - `liquidity_counterparty_token`: The amount of counterparty tokens to be provided as liquidity.
         /// - `deadline`: The deadline beyond which the operation will revert.
@@ -163,11 +171,11 @@ mod UnruggableMemecoin {
             let router_address = IUnruggableMemecoinFactoryDispatcher {
                 contract_address: factory_address
             }
-                .amm_router_address(amm_name: amm_v2.into());
+                .amm_router_address(amm_name: amm_v2.to_string());
 
             // [Create Pool]
             let amm_router = IRouterC1Dispatcher { contract_address: router_address };
-            assert(amm_router.contract_address.is_non_zero(), Errors::AMM_NOT_SUPPORTED);
+            assert(amm_router.contract_address.is_non_zero(), AMM_NOT_SUPPORTED);
 
             let amm_factory = IFactoryC1Dispatcher { contract_address: amm_router.factory(), };
             let pair_address = amm_factory
@@ -175,16 +183,16 @@ mod UnruggableMemecoin {
 
             // [Check Balance]
             let memecoin_balance = self.balanceOf(memecoin_address);
-            let counterparty_token_dispatcher = IERC20Dispatcher {
+            let counterparty_token_dispatcher = ERC20ABIDispatcher {
                 contract_address: counterparty_token_address,
             };
             let counterparty_token_balance = counterparty_token_dispatcher
-                .balance_of(memecoin_address);
+                .balanceOf(memecoin_address);
 
             assert(memecoin_balance >= liquidity_memecoin_amount, 'insufficient memecoin funds');
             assert(
                 counterparty_token_balance >= liquidity_counterparty_token,
-                'insufficient token funds',
+                'insufficient eth funds',
             );
 
             // [Approve]
@@ -207,6 +215,7 @@ mod UnruggableMemecoin {
 
             // Launch the coin
             self.launched.write(true);
+            self.launch_time.write(get_block_timestamp());
 
             pair_address
         }
@@ -286,10 +295,7 @@ mod UnruggableMemecoin {
             recipient: ContractAddress,
             amount: u256
         ) -> bool {
-            let caller = get_caller_address();
-            self.erc20._spend_allowance(sender, caller, amount);
-            self._transfer(sender, recipient, amount);
-            true
+            return self.transfer_from(sender, recipient, amount);
         }
     }
 
@@ -319,7 +325,7 @@ mod UnruggableMemecoin {
         ) {
             if !self.launched.read() {
                 // if the sender will no longer hold tokens
-                if sender.is_non_zero() && self.balance_of(sender) == amount {
+                if sender.is_non_zero() && self.balanceOf(sender) == amount {
                     let current_holders_count = self.pre_launch_holders_count.read();
 
                     // decrease holders count
@@ -327,14 +333,11 @@ mod UnruggableMemecoin {
                 }
 
                 // if the recipient doesn't hold tokens yet
-                if self.balance_of(recipient).is_zero() {
+                if self.balanceOf(recipient).is_zero() {
                     let current_holders_count = self.pre_launch_holders_count.read();
 
                     // assert max holders limit is not reached
-                    assert(
-                        current_holders_count < MAX_HOLDERS_BEFORE_LAUNCH,
-                        Errors::MAX_HOLDERS_REACHED
-                    );
+                    assert(current_holders_count < MAX_HOLDERS_BEFORE_LAUNCH, MAX_HOLDERS_REACHED);
 
                     // increase holders count
                     self.pre_launch_holders_count.write(current_holders_count + 1);
@@ -402,20 +405,26 @@ mod UnruggableMemecoin {
         fn _check_max_buy_percentage(
             self: @ContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256
         ) {
-            let locker_address = self.locker_contract.read();
-            if (sender != locker_address && recipient != locker_address) {
-                assert(
-                    self.erc20.ERC20_total_supply.read()
-                        * MAX_PERCENTAGE_BUY_LAUNCH.into()
-                        / 10_000 >= amount,
-                    'Max buy cap reached'
-                )
+            let launch_time = self.launch_time.read();
+            let transfer_delay = self.transfer_delay.read();
+            let current_time = get_block_timestamp();
+            if (current_time < (launch_time + transfer_delay) || launch_time == 0_u64) {
+                let locker_address = self.locker_contract.read();
+                if (sender != locker_address && recipient != locker_address) {
+                    assert(
+                        self.erc20.ERC20_total_supply.read()
+                            * MAX_PERCENTAGE_BUY_LAUNCH.into()
+                            / 10_000 >= amount,
+                        'Max buy cap reached'
+                    )
+                }
             }
         }
 
         /// Constructor logic.
         /// # Arguments
         /// * `locker_address` - Token locker contract address.
+        /// * `limit_delay` - Delay timestamp to release transfer amount check.
         /// * `factory_address` - Token factory contract address.
         /// * `initial_supply` - The initial supply of the token.
         /// * `initial_holders` - The initial holders of the token, an array of holder_address
@@ -423,6 +432,7 @@ mod UnruggableMemecoin {
         fn _initializer(
             ref self: ContractState,
             locker_address: ContractAddress,
+            limit_delay: u64,
             factory_address: ContractAddress,
             initial_supply: u256,
             initial_holders: Span<ContractAddress>,
@@ -430,6 +440,7 @@ mod UnruggableMemecoin {
         ) {
             // save locker contract
             self.locker_contract.write(locker_address);
+            self.transfer_delay.write(limit_delay);
 
             // save factory contract
             self.factory_contract.write(factory_address);
@@ -441,13 +452,10 @@ mod UnruggableMemecoin {
             let mut i: usize = 0;
 
             // check initial holders len match
-            assert(initial_holders.len() == initial_holders_amounts.len(), Errors::ARRAYS_LEN_DIF);
+            assert(initial_holders.len() == initial_holders_amounts.len(), ARRAYS_LEN_DIF);
 
             // check on max holders count
-            assert(
-                initial_holders.len() <= MAX_HOLDERS_BEFORE_LAUNCH.into(),
-                Errors::MAX_HOLDERS_REACHED
-            );
+            assert(initial_holders.len() <= MAX_HOLDERS_BEFORE_LAUNCH.into(), MAX_HOLDERS_REACHED);
 
             loop {
                 if i >= initial_holders.len() {
@@ -461,7 +469,7 @@ mod UnruggableMemecoin {
                 team_allocation += amount;
 
                 // check on max team allocation
-                assert(team_allocation <= max_team_allocation, Errors::MAX_TEAM_ALLOCATION_REACHED);
+                assert(team_allocation <= max_team_allocation, MAX_TEAM_ALLOCATION_REACHED);
 
                 // mint to holder using the erc20 internal to avoid triggering pre launch safeguards and waste gas.
                 self.erc20._mint(recipient: address, :amount);
@@ -480,5 +488,11 @@ mod UnruggableMemecoin {
             // save pre launch holders count
             self.pre_launch_holders_count.write(initial_holders.len().try_into().unwrap());
         }
+    }
+
+    fn _get_eth_address() -> ContractAddress {
+        contract_address_const::<
+            0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7
+        >()
     }
 }

@@ -1,4 +1,7 @@
 mod errors;
+
+#[cfg(test)]
+mod tests;
 mod token_locker;
 
 mod tokens {

@@ -1,9 +1,14 @@
 mod DeployerHelper {
+    use openzeppelin::token::erc20::interface::{
+        IERC20, ERC20ABIDispatcher, ERC20ABIDispatcherTrait
+    };
     use snforge_std::{
         ContractClass, ContractClassTrait, CheatTarget, declare, start_prank, stop_prank
     };
     use starknet::{ContractAddress, ClassHash, contract_address_const};
     use unruggable::amm::amm::AMM;
+
+    const ETH_UNIT_DECIMALS: u256 = 1000000000000000000;
 
     fn deploy_contracts() -> (ContractAddress, ContractAddress) {
         let deployer = contract_address_const::<'DEPLOYER'>();
@@ -58,13 +63,30 @@ mod DeployerHelper {
         contract.deploy(@calldata).unwrap()
     }
 
-    fn deploy_erc20(initial_supply: u256, recipient: ContractAddress) -> ContractAddress {
-        let erc20_class = declare('ERC20Token');
-
-        let mut token0_constructor_calldata = Default::default();
-        Serde::serialize(@initial_supply, ref token0_constructor_calldata);
-        Serde::serialize(@recipient, ref token0_constructor_calldata);
-
-        erc20_class.deploy(@token0_constructor_calldata).unwrap()
+    fn create_eth(
+        initial_supply: u256, owner: ContractAddress, factory: ContractAddress
+    ) -> ERC20ABIDispatcher {
+        let erc20_token = declare('ERC20Token');
+        let eth_amount: u256 = initial_supply;
+        let erc20_calldata: Array<felt252> = array![
+            eth_amount.low.into(), eth_amount.high.into(), owner.into()
+        ];
+        let eth_address = erc20_token
+            .deploy_at(
+                @erc20_calldata,
+                contract_address_const::<
+                    0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7
+                >()
+            )
+            .unwrap();
+        let eth = ERC20ABIDispatcher { contract_address: eth_address };
+        assert(eth.balanceOf(owner) == initial_supply, 'wrong eth balance');
+        start_prank(CheatTarget::One(eth.contract_address), owner);
+        eth.approve(spender: factory, amount: 1 * ETH_UNIT_DECIMALS);
+        stop_prank(CheatTarget::One(eth.contract_address));
+        assert(
+            eth.allowance(:owner, spender: factory) == 1 * ETH_UNIT_DECIMALS, 'wrong eth allowance'
+        );
+        eth
     }
 }
