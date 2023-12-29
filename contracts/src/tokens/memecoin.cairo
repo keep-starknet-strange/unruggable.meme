@@ -10,14 +10,15 @@ mod UnruggableMemecoin {
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait as OwnableInternalTrait;
     use openzeppelin::token::erc20::ERC20Component;
-    use openzeppelin::token::erc20::interface::IERC20;
-    use openzeppelin::token::erc20::interface::IERC20Metadata;
-    use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
+
+    use openzeppelin::token::erc20::interface::{
+        IERC20, IERC20Metadata, ERC20ABIDispatcher, ERC20ABIDispatcherTrait
+    };
     use starknet::{
         ContractAddress, contract_address_const, get_contract_address, get_caller_address,
         get_tx_info, get_block_timestamp
     };
-    use unruggable::amm::amm::{AMM, AMMV2};
+    use unruggable::amm::amm::{AMM, AMMV2, AMMTrait};
     use unruggable::amm::jediswap_interface::{
         IFactoryC1Dispatcher, IFactoryC1DispatcherTrait, IRouterC1Dispatcher,
         IRouterC1DispatcherTrait
@@ -32,6 +33,8 @@ mod UnruggableMemecoin {
     use unruggable::tokens::interface::{
         IUnruggableMemecoinSnake, IUnruggableMemecoinCamel, IUnruggableAdditional
     };
+    use unruggable::token_locker::{ITokenLockerDispatcher, ITokenLockerDispatcherTrait};
+
 
     // Components.
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
@@ -158,8 +161,6 @@ mod UnruggableMemecoin {
             ref self: ContractState,
             amm_v2: AMMV2,
             counterparty_token_address: ContractAddress,
-            liquidity_memecoin_amount: u256,
-            liquidity_counterparty_token: u256,
             deadline: u64
         ) -> ContractAddress {
             // [Check Owner] Only the owner can launch the Memecoin
@@ -171,7 +172,7 @@ mod UnruggableMemecoin {
             let router_address = IUnruggableMemecoinFactoryDispatcher {
                 contract_address: factory_address
             }
-                .amm_router_address(amm_name: amm_v2.into());
+                .amm_router_address(amm_name: amm_v2.to_string());
 
             // [Create Pool]
             let amm_router = IRouterC1Dispatcher { contract_address: router_address };
@@ -183,35 +184,36 @@ mod UnruggableMemecoin {
 
             // [Check Balance]
             let memecoin_balance = self.balanceOf(memecoin_address);
-            let counterparty_token_dispatcher = IERC20Dispatcher {
+            let counterparty_token_dispatcher = ERC20ABIDispatcher {
                 contract_address: counterparty_token_address,
             };
             let counterparty_token_balance = counterparty_token_dispatcher
-                .balance_of(memecoin_address);
-
-            assert(memecoin_balance >= liquidity_memecoin_amount, 'insufficient memecoin funds');
-            assert(
-                counterparty_token_balance >= liquidity_counterparty_token,
-                'insufficient eth funds',
-            );
+                .balanceOf(memecoin_address);
 
             // [Approve]
-            self._approve(memecoin_address, amm_router.contract_address, liquidity_memecoin_amount);
+            self._approve(memecoin_address, amm_router.contract_address, memecoin_balance);
             counterparty_token_dispatcher
-                .approve(amm_router.contract_address, liquidity_counterparty_token);
+                .approve(amm_router.contract_address, counterparty_token_balance);
 
             // [Add liquidity]
-            amm_router
+            let (amount_memecoin, amount_eth, liquidity_received) = amm_router
                 .add_liquidity(
                     memecoin_address,
                     counterparty_token_address,
-                    liquidity_memecoin_amount,
-                    liquidity_counterparty_token,
+                    memecoin_balance,
+                    counterparty_token_balance,
                     1, // amount_a_min
                     1, // amount_b_min
                     memecoin_address,
                     deadline, // deadline
                 );
+
+            // [Lock LP tokens]
+            let locker_address = self.locker_contract.read();
+            let locker_dispatcher = ITokenLockerDispatcher { contract_address: locker_address };
+            let pair = ERC20ABIDispatcher { contract_address: pair_address, };
+            locker_dispatcher.lock(pair_address, liquidity_received);
+            assert(pair.balanceOf(pair_address) == liquidity_received, 'lock failed');
 
             // Launch the coin
             self.launched.write(true);
