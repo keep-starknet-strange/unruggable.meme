@@ -10,9 +10,10 @@ mod UnruggableMemecoin {
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait as OwnableInternalTrait;
     use openzeppelin::token::erc20::ERC20Component;
-    use openzeppelin::token::erc20::interface::IERC20;
-    use openzeppelin::token::erc20::interface::IERC20Metadata;
-    use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
+
+    use openzeppelin::token::erc20::interface::{
+        IERC20, IERC20Metadata, ERC20ABIDispatcher, ERC20ABIDispatcherTrait
+    };
     use starknet::{
         ContractAddress, contract_address_const, get_contract_address, get_caller_address,
         get_tx_info, get_block_timestamp
@@ -26,10 +27,12 @@ mod UnruggableMemecoin {
     use unruggable::errors::{
         MAX_HOLDERS_REACHED, ARRAYS_LEN_DIF, MAX_TEAM_ALLOCATION_REACHED, AMM_NOT_SUPPORTED
     };
-    use unruggable::factory::{IFactoryDispatcher, IFactoryDispatcherTrait};
+    use unruggable::factory::{IFactory, IFactoryDispatcher, IFactoryDispatcherTrait};
+    use unruggable::locker::{ITokenLockerDispatcher, ITokenLockerDispatcherTrait};
     use unruggable::tokens::interface::{
         IUnruggableMemecoinSnake, IUnruggableMemecoinCamel, IUnruggableAdditional
     };
+
 
     // Components.
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
@@ -156,8 +159,6 @@ mod UnruggableMemecoin {
             ref self: ContractState,
             amm_v2: AMMV2,
             counterparty_token_address: ContractAddress,
-            liquidity_memecoin_amount: u256,
-            liquidity_counterparty_token: u256,
             deadline: u64
         ) -> ContractAddress {
             // [Check Owner] Only the owner can launch the Memecoin
@@ -185,29 +186,46 @@ mod UnruggableMemecoin {
             let counterparty_token_balance = counterparty_token_dispatcher
                 .balanceOf(memecoin_address);
 
-            assert(memecoin_balance >= liquidity_memecoin_amount, 'insufficient memecoin funds');
-            assert(
-                counterparty_token_balance >= liquidity_counterparty_token,
-                'insufficient eth funds',
-            );
-
             // [Approve]
-            self._approve(memecoin_address, amm_router.contract_address, liquidity_memecoin_amount);
+            self._approve(memecoin_address, amm_router.contract_address, memecoin_balance);
             counterparty_token_dispatcher
-                .approve(amm_router.contract_address, liquidity_counterparty_token);
+                .approve(amm_router.contract_address, counterparty_token_balance);
 
             // [Add liquidity]
-            amm_router
+            let (amount_memecoin, amount_eth, liquidity_received) = amm_router
                 .add_liquidity(
                     memecoin_address,
                     counterparty_token_address,
-                    liquidity_memecoin_amount,
-                    liquidity_counterparty_token,
+                    memecoin_balance,
+                    counterparty_token_balance,
                     1, // amount_a_min
                     1, // amount_b_min
                     memecoin_address,
                     deadline, // deadline
                 );
+            assert(self.balanceOf(pair_address) == memecoin_balance, 'add liquidity meme failed');
+            assert(
+                counterparty_token_dispatcher.balanceOf(pair_address) == counterparty_token_balance,
+                'add liquidity eth failed'
+            );
+            let pair = ERC20ABIDispatcher { contract_address: pair_address, };
+
+            assert(pair.balanceOf(memecoin_address) == liquidity_received, 'wrong LP tkns amount');
+
+            // [Lock LP tokens]
+            let locker_address = self.locker_contract.read();
+            let locker_dispatcher = ITokenLockerDispatcher { contract_address: locker_address };
+            pair.approve(locker_address, liquidity_received);
+            // unlock_time: u64,
+            // withdrawer: ContractAddress
+            locker_dispatcher
+                .lock_tokens(
+                    token: pair_address,
+                    amount: liquidity_received,
+                    unlock_time: 15780000, // 6 months in seconds
+                    withdrawer: self.ownable.Ownable_owner.read(),
+                );
+            assert(pair.balanceOf(locker_address) == liquidity_received, 'lock failed');
 
             // Launch the coin
             self.launched.write(true);

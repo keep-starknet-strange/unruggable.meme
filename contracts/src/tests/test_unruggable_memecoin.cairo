@@ -83,420 +83,6 @@ fn instantiate_params() -> (
     )
 }
 
-mod erc20_metadata {
-    use core::debug::PrintTrait;
-    use openzeppelin::token::erc20::interface::IERC20;
-    use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
-    use starknet::{ContractAddress, contract_address_const};
-    use super::{deploy_contract, instantiate_params};
-    use unruggable::tokens::interface::{
-        IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
-    };
-
-    #[test]
-    fn test_name() {
-        let (
-            owner,
-            name,
-            symbol,
-            initial_supply,
-            initial_holder_1,
-            initial_holder_2,
-            initial_holders,
-            initial_holders_amounts
-        ) =
-            instantiate_params();
-        let contract_address =
-            match deploy_contract(
-                owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-            ) {
-            Result::Ok(address) => address,
-            Result::Err(msg) => panic(msg.panic_data),
-        };
-
-        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
-
-        // Check name. Should be equal to 'UnruggableMemecoin'.
-        let name = memecoin.name();
-        assert(name == 'UnruggableMemecoin', 'Invalid name');
-    }
-
-    #[test]
-    fn test_decimals() {
-        let (
-            owner,
-            name,
-            symbol,
-            initial_supply,
-            initial_holder_1,
-            initial_holder_2,
-            initial_holders,
-            initial_holders_amounts
-        ) =
-            instantiate_params();
-        let contract_address =
-            match deploy_contract(
-                owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-            ) {
-            Result::Ok(address) => address,
-            Result::Err(msg) => panic(msg.panic_data),
-        };
-
-        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
-
-        // Check decimals. Should be equal to 18.
-        let decimals = memecoin.decimals();
-        assert(decimals == 18, 'Invalid decimals');
-    }
-
-    #[test]
-    fn test_symbol() {
-        let (
-            owner,
-            name,
-            symbol,
-            initial_supply,
-            initial_holder_1,
-            initial_holder_2,
-            initial_holders,
-            initial_holders_amounts
-        ) =
-            instantiate_params();
-        let contract_address =
-            match deploy_contract(
-                owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-            ) {
-            Result::Ok(address) => address,
-            Result::Err(msg) => panic(msg.panic_data),
-        };
-        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
-
-        // Check symbol. Should be equal to 'UM'.
-        let symbol = memecoin.symbol();
-        assert(symbol == symbol, 'Invalid symbol');
-    }
-}
-
-mod erc20_entrypoints {
-    use core::array::SpanTrait;
-    use core::debug::PrintTrait;
-    use core::traits::Into;
-    use openzeppelin::token::erc20::interface::IERC20;
-    use snforge_std::{
-        declare, ContractClassTrait, start_prank, stop_prank, start_warp, CheatTarget
-    };
-    use starknet::{ContractAddress, contract_address_const};
-    use super::{deploy_contract, instantiate_params};
-    use unruggable::tests::utils::DeployerHelper::{
-        deploy_contracts, deploy_unruggable_memecoin_contract, deploy_memecoin_factory, create_eth
-    };
-    use unruggable::tokens::interface::{
-        IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
-    };
-
-    // Test ERC20 snake entrypoints
-
-    #[test]
-    fn test_total_supply() {
-        let (
-            owner,
-            name,
-            symbol,
-            initial_supply,
-            initial_holder_1,
-            initial_holder_2,
-            initial_holders,
-            initial_holders_amounts
-        ) =
-            instantiate_params();
-        let contract_address =
-            match deploy_contract(
-                owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-            ) {
-            Result::Ok(address) => address,
-            Result::Err(msg) => panic(msg.panic_data),
-        };
-
-        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
-
-        // Check total supply. Should be equal to initial supply.
-        let total_supply = memecoin.total_supply();
-        assert(total_supply == initial_supply, 'Invalid total supply');
-    }
-
-    #[test]
-    fn test_balance_of() {
-        let (
-            owner,
-            name,
-            symbol,
-            initial_supply,
-            initial_holder_1,
-            initial_holder_2,
-            initial_holders,
-            initial_holders_amounts
-        ) =
-            instantiate_params();
-        let contract_address =
-            match deploy_contract(
-                owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-            ) {
-            Result::Ok(address) => address,
-            Result::Err(msg) => panic(msg.panic_data),
-        };
-
-        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
-
-        // Check initial contract balance. Should be equal to 900.
-        let balance = memecoin.balanceOf(contract_address);
-        assert(balance == 900, 'Invalid balance');
-        // Check initial holder 1 balance. Should be equal to 50.
-        let balance = memecoin.balanceOf(initial_holder_1);
-        assert(balance == 50, 'Invalid balance');
-        // Check initial holder 2 balance. Should be equal to 50.
-        let balance = memecoin.balanceOf(initial_holder_1);
-        assert(balance == 50, 'Invalid balance');
-    }
-
-    #[test]
-    fn test_approve_allowance() {
-        let (
-            owner,
-            name,
-            symbol,
-            initial_supply,
-            initial_holder_1,
-            initial_holder_2,
-            initial_holders,
-            initial_holders_amounts
-        ) =
-            instantiate_params();
-        let spender = super::SPENDER();
-        let contract_address =
-            match deploy_contract(
-                owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-            ) {
-            Result::Ok(address) => address,
-            Result::Err(msg) => panic(msg.panic_data),
-        };
-
-        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
-
-        // Check initial allowance. Should be equal to 0.
-        let allowance = memecoin.allowance(owner, spender);
-        assert(allowance == 0, 'Invalid allowance before');
-
-        // Approve initial supply tokens.
-        start_prank(CheatTarget::One(memecoin.contract_address), owner);
-        memecoin.approve(spender, initial_supply);
-
-        // Check allowance. Should be equal to initial supply.
-        let allowance = memecoin.allowance(owner, spender);
-        assert(allowance == initial_supply, 'Invalid allowance after');
-    }
-
-    #[test]
-    fn test_transfer() {
-        let (
-            owner,
-            name,
-            symbol,
-            initial_supply,
-            initial_holder_1,
-            initial_holder_2,
-            initial_holders,
-            initial_holders_amounts
-        ) =
-            instantiate_params();
-        let recipient = super::RECIPIENT();
-        let contract_address =
-            match deploy_contract(
-                owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-            ) {
-            Result::Ok(address) => address,
-            Result::Err(msg) => panic(msg.panic_data),
-        };
-
-        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
-
-        // Transfer 20 tokens to recipient.
-        start_prank(CheatTarget::One(memecoin.contract_address), initial_holder_1);
-        memecoin.transfer(recipient, 20);
-
-        // Check balance. Should be equal to initial balance - 20.
-        let initial_holder_1_balance = memecoin.balanceOf(initial_holder_1);
-        assert(initial_holder_1_balance == 50 - 20, 'Invalid balance holder 1');
-
-        // Check recipient balance. Should be equal to 20.
-        let recipient_balance = memecoin.balanceOf(recipient);
-        assert(recipient_balance == 20, 'Invalid balance recipient');
-    }
-
-    #[test]
-    fn test_transfer_from() {
-        let (
-            owner,
-            name,
-            symbol,
-            initial_supply,
-            initial_holder_1,
-            initial_holder_2,
-            initial_holders,
-            initial_holders_amounts
-        ) =
-            instantiate_params();
-        let spender = super::SPENDER();
-        let recipient = super::RECIPIENT();
-        let contract_address =
-            match deploy_contract(
-                owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-            ) {
-            Result::Ok(address) => address,
-            Result::Err(msg) => panic(msg.panic_data),
-        };
-
-        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
-
-        // Check initial balance. Should be equal to 50.
-        let balance = memecoin.balanceOf(initial_holder_1);
-        assert(balance == 50, 'Invalid balance');
-
-        // Approve initial supply tokens.
-        start_prank(CheatTarget::One(memecoin.contract_address), initial_holder_1);
-        memecoin.approve(spender, initial_supply);
-
-        // Transfer 20 tokens to recipient.
-        start_prank(CheatTarget::One(memecoin.contract_address), spender);
-        memecoin.transfer_from(initial_holder_1, recipient, 20);
-
-        // Check balance. Should be equal to initial balance - 20.
-        let initial_holder_1_balance = memecoin.balanceOf(initial_holder_1);
-        assert(initial_holder_1_balance == 50 - 20, 'Invalid balance holder 1');
-
-        // Check recipient balance. Should be equal to 20.
-        let recipient_balance = memecoin.balanceOf(recipient);
-        assert(recipient_balance == 20, 'Invalid balance recipient');
-
-        // Check allowance. Should be equal to initial supply - transfered amount.
-        let allowance = memecoin.allowance(initial_holder_1, spender);
-        assert(allowance == (initial_supply - 20), 'Invalid allowance');
-    }
-
-    // Test ERC20 Camel entrypoints
-
-    #[test]
-    fn test_totalSupply() {
-        let (
-            owner,
-            name,
-            symbol,
-            initial_supply,
-            initial_holder_1,
-            initial_holder_2,
-            initial_holders,
-            initial_holders_amounts
-        ) =
-            instantiate_params();
-        let contract_address =
-            match deploy_contract(
-                owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-            ) {
-            Result::Ok(address) => address,
-            Result::Err(msg) => panic(msg.panic_data),
-        };
-
-        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
-
-        // Check total supply. Should be equal to initial supply.
-        let total_supply = memecoin.totalSupply();
-        assert(total_supply == initial_supply, 'Invalid total supply');
-    }
-
-    #[test]
-    fn test_balanceOf() {
-        let (
-            owner,
-            name,
-            symbol,
-            initial_supply,
-            initial_holder_1,
-            initial_holder_2,
-            initial_holders,
-            initial_holders_amounts
-        ) =
-            instantiate_params();
-        let contract_address =
-            match deploy_contract(
-                owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-            ) {
-            Result::Ok(address) => address,
-            Result::Err(msg) => panic(msg.panic_data),
-        };
-
-        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
-
-        // Check initial contract balance. Should be equal to 900.
-        let balance = memecoin.balanceOf(contract_address);
-        assert(balance == 900, 'Invalid balance');
-        // Check initial holder 1 balance. Should be equal to 50.
-        let balance = memecoin.balanceOf(initial_holder_1);
-        assert(balance == 50, 'Invalid balance');
-        // Check initial holder 2 balance. Should be equal to 50.
-        let balance = memecoin.balanceOf(initial_holder_1);
-        assert(balance == 50, 'Invalid balance');
-    }
-
-    #[test]
-    fn test_transferFrom() {
-        let (
-            owner,
-            name,
-            symbol,
-            initial_supply,
-            initial_holder_1,
-            initial_holder_2,
-            initial_holders,
-            initial_holders_amounts
-        ) =
-            instantiate_params();
-        let spender = super::SPENDER();
-        let recipient = super::RECIPIENT();
-        let contract_address =
-            match deploy_contract(
-                owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-            ) {
-            Result::Ok(address) => address,
-            Result::Err(msg) => panic(msg.panic_data),
-        };
-
-        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
-
-        // Check initial balance. Should be equal to 50.
-        let balance = memecoin.balanceOf(initial_holder_1);
-        assert(balance == 50, 'Invalid balance');
-
-        // Approve initial supply tokens.
-        start_prank(CheatTarget::One(memecoin.contract_address), initial_holder_1);
-        memecoin.approve(spender, initial_supply);
-
-        // Transfer 20 tokens to recipient.
-        start_prank(CheatTarget::One(memecoin.contract_address), spender);
-        memecoin.transferFrom(initial_holder_1, recipient, 20);
-
-        // Check balance. Should be equal to initial balance - 20.
-        let initial_holder_1_balance = memecoin.balanceOf(initial_holder_1);
-        assert(initial_holder_1_balance == 50 - 20, 'Invalid balance holder 1');
-
-        // Check recipient balance. Should be equal to 20.
-        let recipient_balance = memecoin.balanceOf(recipient);
-        assert(recipient_balance == 20, 'Invalid balance recipient');
-
-        // Check allowance. Should be equal to initial supply - transfered amount.
-        let allowance = memecoin.allowance(initial_holder_1, spender);
-        assert(allowance == (initial_supply - 20), 'Invalid allowance');
-    }
-}
-
 mod memecoin_entrypoints {
     use debug::PrintTrait;
 
@@ -578,14 +164,7 @@ mod memecoin_entrypoints {
         let unruggable_memecoin = IUnruggableMemecoinDispatcher {
             contract_address: memecoin_address
         };
-        unruggable_memecoin
-            .launch_memecoin(
-                AMMV2::JediSwap,
-                eth.contract_address,
-                1 * ETH_UNIT_DECIMALS,
-                1 * ETH_UNIT_DECIMALS,
-                100
-            );
+        unruggable_memecoin.launch_memecoin(AMMV2::JediSwap, eth.contract_address, 100);
     }
     #[test]
     fn test_launch_memecoin_happy_path() {
@@ -635,94 +214,18 @@ mod memecoin_entrypoints {
         let memecoin_bal_eth = eth.balanceOf(memecoin_address);
 
         start_prank(CheatTarget::One(router_address), memecoin_address);
-        let pool_address = memecoin
-            .launch_memecoin(
-                AMMV2::JediSwap, eth.contract_address, memecoin_bal_meme, memecoin_bal_eth, 100
-            );
+        let pool_address = memecoin.launch_memecoin(AMMV2::JediSwap, eth.contract_address, 100);
         stop_prank(CheatTarget::One(memecoin_factory_address));
         let pool_dispatcher = IPairDispatcher { contract_address: pool_address };
         let (token_0_reserves, token_1_reserves, _) = pool_dispatcher.get_reserves();
-        assert(pool_dispatcher.token0() == memecoin_address, 'wrong token 1 address');
-        assert(pool_dispatcher.token1() == eth.contract_address, 'wrong token 0 address');
+        assert(pool_dispatcher.token0() == memecoin_address, 'wrong token 0 address');
+        assert(pool_dispatcher.token1() == eth.contract_address, 'wrong token 1 address');
         assert(token_0_reserves == memecoin_bal_meme, 'wrong pool token reserves');
         assert(token_1_reserves == memecoin_bal_eth, 'wrong pool memecoin reserves');
+        let lp_token = ERC20ABIDispatcher { contract_address: pool_address };
+        assert(lp_token.balanceOf(memecoin_address) == 0, 'shouldnt have lp tokens');
     }
-    #[test]
-    #[should_panic(expected: ('insufficient memecoin funds',))]
-    fn test_launch_memecoin_no_balance_memecoin() {
-        // Setup
-        let (_, router_address) = deploy_contracts();
-        let router_dispatcher = IRouterC1Dispatcher { contract_address: router_address };
-        let (
-            owner,
-            name,
-            symbol,
-            initial_supply,
-            initial_holder_1,
-            initial_holder_2,
-            _,
-            initial_holders_amounts
-        ) =
-            instantiate_params();
 
-        let contract_address_salt = 'salty';
-
-        let initial_holders = array![owner].span();
-        let initial_holders_amounts = array![1 * ETH_UNIT_DECIMALS].span();
-
-        let initial_supply: u256 = 100 * ETH_UNIT_DECIMALS;
-
-        // Declare availables AMMs for this factory
-        let mut amms = array![AMM { name: AMMV2::JediSwap.to_string(), router_address }];
-
-        // Declare UnruggableMemecoin and use ClassHash for the Factory
-        let declare_memecoin = declare('UnruggableMemecoin');
-        let memecoin_factory_address = deploy_memecoin_factory(
-            owner, declare_memecoin.class_hash, amms
-        );
-
-        // Deploy Factory
-        let unruggable_meme_factory = IFactoryDispatcher {
-            contract_address: memecoin_factory_address
-        };
-
-        let locker_calldata = array![200];
-        let locker_contract = declare('TokenLocker');
-        let locker_address = locker_contract.deploy(@locker_calldata).unwrap();
-
-        let eth = create_eth(initial_supply, owner, unruggable_meme_factory.contract_address);
-
-        // Create a MemeCoin
-        start_prank(CheatTarget::One(unruggable_meme_factory.contract_address), owner);
-        let memecoin_address = unruggable_meme_factory
-            .create_memecoin(
-                owner,
-                locker_address,
-                name,
-                symbol,
-                initial_supply,
-                initial_holders,
-                initial_holders_amounts,
-                eth,
-                contract_address_salt
-            );
-        stop_prank(CheatTarget::One(unruggable_meme_factory.contract_address));
-
-        let unruggable_memecoin = IUnruggableMemecoinDispatcher {
-            contract_address: memecoin_address
-        };
-
-        start_prank(CheatTarget::One(memecoin_address), owner);
-        unruggable_memecoin
-            .launch_memecoin(
-                AMMV2::JediSwap,
-                eth.contract_address, // this is +1 of initial supply - split to owner 
-                100 * ETH_UNIT_DECIMALS,
-                1 * ETH_UNIT_DECIMALS,
-                100
-            );
-        stop_prank(CheatTarget::One(memecoin_address));
-    }
     #[test]
     #[should_panic(expected: ('ETH balance is not enough',))]
     #[ignore]
@@ -774,14 +277,7 @@ mod memecoin_entrypoints {
         };
 
         start_prank(CheatTarget::One(memecoin_address), OWNER());
-        unruggable_memecoin
-            .launch_memecoin(
-                AMMV2::JediSwap,
-                eth.contract_address,
-                1 * ETH_UNIT_DECIMALS,
-                1 * ETH_UNIT_DECIMALS,
-                100
-            );
+        unruggable_memecoin.launch_memecoin(AMMV2::JediSwap, eth.contract_address, 100);
         stop_prank(CheatTarget::One(memecoin_address));
     }
 
@@ -861,17 +357,9 @@ mod memecoin_entrypoints {
         };
 
         start_prank(CheatTarget::One(memecoin_address), owner);
-        unruggable_memecoin
-            .launch_memecoin(
-                AMMV2::JediSwap,
-                eth.contract_address,
-                1 * ETH_UNIT_DECIMALS,
-                1 * ETH_UNIT_DECIMALS,
-                100
-            );
+        unruggable_memecoin.launch_memecoin(AMMV2::JediSwap, eth.contract_address, 100);
         stop_prank(CheatTarget::One(memecoin_address));
     }
-
 
     #[test]
     #[should_panic(expected: ('expired',))]
@@ -926,17 +414,13 @@ mod memecoin_entrypoints {
             contract_address: memecoin_address
         };
 
-        let memecoin_bal_meme = unruggable_memecoin.balanceOf(memecoin_address);
-        let memecoin_bal_eth = eth.balanceOf(memecoin_address);
         // Change the block timestamp for Router and Memecoin
         start_warp(CheatTarget::One(memecoin_address), 1000);
         start_warp(CheatTarget::One(router_address), 1000);
 
         start_prank(CheatTarget::One(router_address), memecoin_address);
         let pool_address = unruggable_memecoin
-            .launch_memecoin(
-                AMMV2::JediSwap, eth.contract_address, memecoin_bal_meme, memecoin_bal_eth, 100
-            );
+            .launch_memecoin(AMMV2::JediSwap, eth.contract_address, 100);
         stop_prank(CheatTarget::One(unruggable_meme_factory.contract_address));
     }
 
@@ -1062,7 +546,6 @@ mod memecoin_entrypoints {
         assert(memecoin.balanceOf(alice) == 20, 'Invalid balance');
     }
 }
-
 mod custom_constructor {
     use core::debug::PrintTrait;
     use openzeppelin::token::erc20::interface::IERC20;
