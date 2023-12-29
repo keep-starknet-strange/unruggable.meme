@@ -102,11 +102,12 @@ mod test_internals {
         lock_list.append(3);
         assert(lock_list.len() == 3, 'should have 3 elements');
         state.remove_user_lock(2, user);
+        lock_list = state.user_locks.read(user);
         assert(lock_list.len() == 2, 'should have 2 elements');
         assert(lock_list.array().unwrap_syscall() == array![1_u128, 3_u128], 'should have 1 and 3');
 
         // Check that the last element is no longer accessible
-        assert(lock_list.get(2).unwrap_syscall().is_none(), 'prev len should be nonce');
+        assert(lock_list.get(2).unwrap_syscall().is_none(), 'prev len should be none');
     }
 }
 
@@ -404,11 +405,12 @@ mod test_withdrawal {
     use core::traits::TryInto;
     use snforge_std::{start_warp, stop_warp};
     use starknet::contract_address_const;
+    use unruggable::tests::utils::ETH_INITIAL_SUPPLY;
     use super::{
         setup, setup_and_lock, ITokenLockerDispatcher, ITokenLockerDispatcherTrait, OWNER,
         deploy_locker, start_prank, stop_prank, CheatTarget, ERC20ABIDispatcherTrait,
         DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, spy_events, SpyOn, EventSpy, EventAssertions,
-        TokenLocker
+        TokenLocker,
     };
     use unruggable::token_locker::TokenLock;
 
@@ -426,7 +428,7 @@ mod test_withdrawal {
         };
 
         start_prank(CheatTarget::One(locker.contract_address), OWNER());
-        start_warp(CheatTarget::One(locker.contract_address), 301);
+        start_warp(CheatTarget::One(locker.contract_address), DEFAULT_LOCK_DEADLINE + 1);
         let mut spy = spy_events(SpyOn::One(locker.contract_address));
         locker.withdraw(lock_id);
         stop_prank(CheatTarget::One(locker.contract_address));
@@ -460,6 +462,51 @@ mod test_withdrawal {
     }
 
     #[test]
+    fn test_withdraw_one_of_many_locks() {
+        let (token, locker, lock_id) = setup_and_lock(
+            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+        );
+
+        // approve and lock another time
+        start_prank(CheatTarget::One(token.contract_address), OWNER());
+        token.approve(locker.contract_address, 200);
+        stop_prank(CheatTarget::One(token.contract_address));
+
+        start_prank(CheatTarget::One(locker.contract_address), OWNER());
+        let new_lock_id = locker.lock_tokens(token.contract_address, 200, 500, OWNER());
+        stop_prank(CheatTarget::One(locker.contract_address));
+
+        // Withdraw the first lock
+        let expected_lock = TokenLock {
+            token: contract_address_const::<0>(),
+            owner: contract_address_const::<0>(),
+            amount: 0,
+            unlock_time: 0
+        };
+
+        start_prank(CheatTarget::One(locker.contract_address), OWNER());
+        start_warp(CheatTarget::One(locker.contract_address), DEFAULT_LOCK_DEADLINE + 1);
+        let mut spy = spy_events(SpyOn::One(locker.contract_address));
+        locker.withdraw(lock_id);
+        stop_prank(CheatTarget::One(locker.contract_address));
+
+        let lock = locker.get_lock_details(lock_id);
+        assert(lock == expected_lock, 'lock should be empty');
+
+        // Check remaining lock is correctly tracked.
+        let mut expected_remaining_lock = TokenLock {
+            token: token.contract_address, owner: OWNER(), amount: 200, unlock_time: 500
+        };
+        let user_locks_length = locker.user_locks_length(OWNER());
+        let user_lock_id = locker.user_lock_at(OWNER(), 0);
+        let remaining_lock = locker.get_lock_details(user_lock_id);
+
+        assert(user_locks_length == 1, 'user locks length is incorrect');
+        assert(user_lock_id == new_lock_id, 'user lock is incorrect');
+        assert(remaining_lock == expected_remaining_lock, 'remaining lock is incorrect');
+    }
+
+    #[test]
     fn test_partial_withdraw() {
         let (token, locker, lock_id) = setup_and_lock(
             DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
@@ -470,7 +517,7 @@ mod test_withdrawal {
         expected_lock.amount -= partial_amount;
 
         start_prank(CheatTarget::One(locker.contract_address), OWNER());
-        start_warp(CheatTarget::One(locker.contract_address), 301);
+        start_warp(CheatTarget::One(locker.contract_address), DEFAULT_LOCK_DEADLINE + 1);
         let mut spy = spy_events(SpyOn::One(locker.contract_address));
         locker.partial_withdraw(lock_id, partial_amount);
         stop_prank(CheatTarget::One(locker.contract_address));
@@ -495,6 +542,21 @@ mod test_withdrawal {
             );
 
         assert(spy.events.len() == 0, 'There should be no events');
+
+        // Check token balances
+        let owner_balance = token.balanceOf(OWNER());
+        assert(
+            owner_balance == ETH_INITIAL_SUPPLY() - DEFAULT_LOCK_AMOUNT + partial_amount,
+            'owner balance is incorrect'
+        );
+        let locker_balance = token.balanceOf(locker.contract_address);
+        assert(locker_balance == expected_lock.amount, 'locker balance is incorrect');
+
+        // Check that user position is still tracked
+        let user_locks_length = locker.user_locks_length(OWNER());
+        assert(user_locks_length == 1, 'user locks length is incorrect');
+        let user_lock = locker.user_lock_at(OWNER(), 0);
+        assert(user_lock == lock_id, 'user lock is incorrect');
     }
 
     #[test]
@@ -505,7 +567,7 @@ mod test_withdrawal {
         );
 
         start_prank(CheatTarget::One(locker.contract_address), 'not_owner'.try_into().unwrap());
-        start_warp(CheatTarget::One(locker.contract_address), 301);
+        start_warp(CheatTarget::One(locker.contract_address), DEFAULT_LOCK_DEADLINE + 1);
         locker.withdraw(lock_id);
         stop_prank(CheatTarget::One(locker.contract_address));
         stop_warp(CheatTarget::One(locker.contract_address));
@@ -535,7 +597,7 @@ mod test_withdrawal {
             DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
         );
 
-        start_warp(CheatTarget::One(locker.contract_address), 301);
+        start_warp(CheatTarget::One(locker.contract_address), DEFAULT_LOCK_DEADLINE + 1);
         start_prank(CheatTarget::One(locker.contract_address), OWNER());
         locker.partial_withdraw(lock_id, DEFAULT_LOCK_AMOUNT + 1);
         stop_prank(CheatTarget::One(locker.contract_address));
