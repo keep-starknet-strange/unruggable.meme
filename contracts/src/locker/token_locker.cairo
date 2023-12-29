@@ -22,6 +22,7 @@ mod TokenLocker {
         lock_nonce: u128,
         locks: LegacyMap<u128, TokenLock>,
         user_locks: LegacyMap<ContractAddress, List<u128>>,
+        token_locks: LegacyMap<ContractAddress, List<u128>>,
     }
 
 
@@ -236,6 +237,16 @@ mod TokenLocker {
             let user_locks: List<u128> = self.user_locks.read(user);
             user_locks[index]
         }
+
+        fn token_locks_length(self: @ContractState, token: ContractAddress) -> u32 {
+            let list: List<u128> = self.token_locks.read(token);
+            list.len()
+        }
+
+        fn token_locked_at(self: @ContractState, token: ContractAddress, index: u32) -> u128 {
+            let token_locks: List<u128> = self.token_locks.read(token);
+            token_locks[index]
+        }
     }
 
     #[generate_trait]
@@ -312,8 +323,7 @@ mod TokenLocker {
         /// Internally, this function reads the list of locks of the specified `owner` from the `user_locks` mapping.
         /// It then iterates over the list and replaces the specified `lock_id` with the last element of the list.
         /// The length of the list is then decremented by one, and the last element of the list is set to zero.
-        fn remove_user_lock(self: @ContractState, lock_id: u128, owner: ContractAddress) {
-            let mut list = self.user_locks.read(owner);
+        fn remove_user_lock(self: @ContractState, lock_id: u128, mut list: List<u128>) {
             let list_len = list.len();
             let mut i = 0;
             loop {

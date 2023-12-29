@@ -51,6 +51,7 @@ fn test_constructor_sets_min_locktime() {
 }
 
 mod test_internals {
+    use unruggable::locker::token_locker::TokenLocker::token_locks::InternalContractMemberStateTrait;
     use TokenLocker::{
         contract_state_for_testing, InternalLockerTrait, TokenLock, locksContractMemberStateTrait,
         user_locksContractMemberStateTrait
@@ -99,7 +100,8 @@ mod test_internals {
         lock_list.append(2);
         lock_list.append(3);
         assert(lock_list.len() == 3, 'should have 3 elements');
-        state.remove_user_lock(2, user);
+        let mut list: List<u128> = state.token_locks.read(user);
+        state.remove_user_lock(2, list);
         lock_list = state.user_locks.read(user);
         assert(lock_list.len() == 2, 'should have 2 elements');
         assert(lock_list.array().unwrap_syscall() == array![1_u128, 3_u128], 'should have 1 and 3');

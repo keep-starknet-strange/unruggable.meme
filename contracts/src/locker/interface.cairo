@@ -192,4 +192,37 @@ trait ITokenLocker<TContractState> {
     ///
     /// * `u128` - The ID of the lock.
     fn user_lock_at(self: @TContractState, user: ContractAddress, index: u32) -> u128;
+
+    /// Retrieves the number of locks associated with a specified token.
+    ///
+    /// This function returns the total number of locks that have been created for a given token.
+    /// It reads the length of the lock list associated with the token address from the `token_locks` mapping.
+    ///
+    /// # Arguments
+    ///
+    /// * `token` - The address of the token contract.
+    ///
+    /// # Returns
+    ///
+    /// * `u32` - The number of locks associated with the specified token.
+    ///
+    fn token_locks_length(self: @TContractState, token: ContractAddress) -> u32;
+
+    /// Retrieves the ID of a lock associated with a specified token at a given index.
+    ///
+    /// This function returns the lock ID for a specific token based on the provided index.
+    /// It reads the list of lock IDs from the `token_locks` mapping and returns the lock ID at the specified index.
+    /// If the index is out of bounds, the function should handle this appropriately, possibly by returning an error or a special value.
+    ///
+    /// # Arguments
+    ///
+    /// * `token` - The address of the token contract.
+    /// * `index` - The index of the lock in the token's lock list.
+    ///
+    /// # Returns
+    ///
+    /// * `u128` - The ID of the lock at the given index for the specified token.
+    ///   Returns an error or a special value if the index is out of bounds.
+    ///
+    fn token_locked_at(self: @TContractState, token: ContractAddress, index: u32) -> u128;
 }
