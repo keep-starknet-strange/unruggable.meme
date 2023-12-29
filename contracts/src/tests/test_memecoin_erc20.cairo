@@ -2,11 +2,12 @@ use openzeppelin::token::erc20::interface::{IERC20, IERC20Dispatcher, IERC20Disp
 use openzeppelin::utils::serde::SerializedAppend;
 
 use snforge_std::{
-    declare, ContractClassTrait, start_prank, stop_prank, RevertedTransaction, CheatTarget
+    declare, ContractClassTrait, start_prank, stop_prank, RevertedTransaction, CheatTarget,
+    TxInfoMock
 };
 use starknet::{ContractAddress, contract_address_const};
 use unruggable::amm::amm::{AMM, AMMV2};
-
+use unruggable::tests::utils::{TxInfoMockTrait};
 use unruggable::tokens::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
 };
@@ -183,13 +184,14 @@ mod erc20_entrypoints {
     use core::traits::Into;
     use openzeppelin::token::erc20::interface::IERC20;
     use snforge_std::{
-        declare, ContractClassTrait, start_prank, stop_prank, start_warp, CheatTarget
+        declare, ContractClassTrait, start_prank, stop_prank, start_warp, CheatTarget, TxInfoMock
     };
     use starknet::{ContractAddress, contract_address_const};
     use super::{deploy_contract, instantiate_params};
-    use unruggable::tests_utils::deployer_helper::DeployerHelper::{
+    use unruggable::tests::utils::DeployerHelper::{
         deploy_contracts, deploy_unruggable_memecoin_contract, deploy_memecoin_factory, create_eth
     };
+    use unruggable::tests::utils::{DefaultTxInfoMock};
     use unruggable::tokens::interface::{
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
@@ -319,6 +321,11 @@ mod erc20_entrypoints {
 
         let memecoin = IUnruggableMemecoinDispatcher { contract_address };
 
+        // setting tx_hash here 
+        let mut tx_info: TxInfoMock = Default::default();
+        tx_info.transaction_hash = Option::Some(1234);
+        snforge_std::start_spoof(CheatTarget::One(memecoin.contract_address), tx_info);
+
         // Transfer 20 tokens to recipient.
         start_prank(CheatTarget::One(memecoin.contract_address), initial_holder_1);
         memecoin.transfer(recipient, 20);
@@ -364,6 +371,11 @@ mod erc20_entrypoints {
         // Approve initial supply tokens.
         start_prank(CheatTarget::One(memecoin.contract_address), initial_holder_1);
         memecoin.approve(spender, initial_supply);
+
+        // setting tx_hash here 
+        let mut tx_info: TxInfoMock = Default::default();
+        tx_info.transaction_hash = Option::Some(1234);
+        snforge_std::start_spoof(CheatTarget::One(memecoin.contract_address), tx_info);
 
         // Transfer 20 tokens to recipient.
         start_prank(CheatTarget::One(memecoin.contract_address), spender);
@@ -478,6 +490,11 @@ mod erc20_entrypoints {
         // Approve initial supply tokens.
         start_prank(CheatTarget::One(memecoin.contract_address), initial_holder_1);
         memecoin.approve(spender, initial_supply);
+
+        // setting tx_hash here 
+        let mut tx_info: TxInfoMock = Default::default();
+        tx_info.transaction_hash = Option::Some(1234);
+        snforge_std::start_spoof(CheatTarget::One(memecoin.contract_address), tx_info);
 
         // Transfer 20 tokens to recipient.
         start_prank(CheatTarget::One(memecoin.contract_address), spender);

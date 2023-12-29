@@ -3,10 +3,8 @@ use starknet::ContractAddress;
 
 #[starknet::contract]
 mod UnruggableMemecoin {
-    use array::ArrayTrait;
-    use core::box::BoxTrait;
-
     use debug::PrintTrait;
+    use integer::BoundedInt;
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait as OwnableInternalTrait;
     use openzeppelin::token::erc20::ERC20Component;
@@ -66,6 +64,7 @@ mod UnruggableMemecoin {
         launched: bool,
         pre_launch_holders_count: u8,
         team_allocation: u256,
+        tx_hash_tracker: LegacyMap<ContractAddress, felt252>,
         locker_contract: ContractAddress,
         transfer_delay: u64,
         launch_time: u64,
@@ -265,6 +264,7 @@ mod UnruggableMemecoin {
 
         fn transfer(ref self: ContractState, recipient: ContractAddress, amount: u256) -> bool {
             let sender = get_caller_address();
+            self.ensure_not_multicall(recipient);
             self._check_max_buy_percentage(sender, recipient, amount);
             self._transfer(sender, recipient, amount);
             true
@@ -281,6 +281,7 @@ mod UnruggableMemecoin {
             // which performs a transfer_from() to send the tokens to the pool.
             // Therefore, we need to bypass this validation if the sender is the memecoin contract.
             if sender != get_contract_address() {
+                self.ensure_not_multicall(sender);
                 self._check_max_buy_percentage(sender, recipient, amount);
             }
             self.erc20._spend_allowance(sender, caller, amount);
@@ -435,7 +436,23 @@ mod UnruggableMemecoin {
             }
         }
 
-        /// Constructor logic.
+        /// Ensures that the current call is not a part of a multicall.
+        ///
+        /// By keeping track of the last transaction hash each address has received tokens at,
+        /// we can ensure that the current call is not part of a transaction already performed.
+        ///
+        /// # Arguments
+        /// * `recipient` - The contract address of the recipient.
+        //TODO(audit): Verify whether this can cause a problem for trading through aggregators, that can
+        // do multiple transfers when using complex routes.
+        #[inline(always)]
+        fn ensure_not_multicall(ref self: ContractState, recipient: ContractAddress) {
+            let tx_hash: felt252 = get_tx_info().unbox().transaction_hash;
+            assert(self.tx_hash_tracker.read(recipient) != tx_hash, 'Multi calls not allowed');
+            self.tx_hash_tracker.write(recipient, tx_hash);
+        }
+
+        /// Cons\tructor logic.
         /// # Arguments
         /// * `locker_address` - Token locker contract address.
         /// * `limit_delay` - Delay timestamp to release transfer amount check.

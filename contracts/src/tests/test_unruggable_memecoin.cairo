@@ -2,11 +2,12 @@ use openzeppelin::token::erc20::interface::{IERC20, ERC20ABIDispatcher, ERC20ABI
 use openzeppelin::utils::serde::SerializedAppend;
 
 use snforge_std::{
-    declare, ContractClassTrait, start_prank, stop_prank, RevertedTransaction, CheatTarget
+    declare, ContractClassTrait, start_prank, stop_prank, RevertedTransaction, CheatTarget,
+    TxInfoMock,
 };
 use starknet::{ContractAddress, contract_address_const};
 use unruggable::amm::amm::{AMM, AMMV2, AMMTrait};
-
+use unruggable::tests::utils::DefaultTxInfoMock;
 use unruggable::tokens::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
 };
@@ -90,7 +91,7 @@ mod memecoin_entrypoints {
         IERC20, ERC20ABIDispatcher, ERC20ABIDispatcherTrait
     };
     use snforge_std::{
-        declare, ContractClassTrait, start_prank, stop_prank, CheatTarget, start_warp
+        declare, ContractClassTrait, start_prank, stop_prank, CheatTarget, start_warp, TxInfoMock
     };
     use starknet::{ContractAddress, contract_address_const};
     use super::{deploy_contract, instantiate_params, ETH_UNIT_DECIMALS};
@@ -102,12 +103,12 @@ mod memecoin_entrypoints {
 
     use unruggable::factory::{IFactory, IFactoryDispatcher, IFactoryDispatcherTrait};
     use unruggable::tests::utils::DeployerHelper::{
-        deploy_contracts, deploy_unruggable_memecoin_contract, deploy_memecoin_factory, create_eth
+        deploy_contracts, deploy_unruggable_memecoin_contract, deploy_memecoin_factory, create_eth,
     };
     use unruggable::tests::utils::{
         deploy_amm_factory_and_router, deploy_meme_factory_with_owner, deploy_locker,
         deploy_eth_with_owner, OWNER, NAME, SYMBOL, ETH_INITIAL_SUPPLY, INITIAL_HOLDERS,
-        INITIAL_HOLDERS_AMOUNTS, SALT
+        INITIAL_HOLDERS_AMOUNTS, SALT, DefaultTxInfoMock
     };
     use unruggable::tokens::interface::{
         IUnruggableMemecoin, IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -479,6 +480,11 @@ mod memecoin_entrypoints {
 
         let memecoin = IUnruggableMemecoinDispatcher { contract_address };
 
+        // setting tx_hash here 
+        let mut tx_info: TxInfoMock = Default::default();
+        tx_info.transaction_hash = Option::Some(1234);
+        snforge_std::start_spoof(CheatTarget::One(memecoin.contract_address), tx_info);
+
         // Transfer 21 token from owner to alice.
         start_prank(CheatTarget::One(memecoin.contract_address), initial_holder_1);
         let send_amount = memecoin.transfer(alice, 21);
@@ -510,9 +516,51 @@ mod memecoin_entrypoints {
 
         let memecoin = IUnruggableMemecoinDispatcher { contract_address };
 
+        // setting tx_hash here 
+        let mut tx_info: TxInfoMock = Default::default();
+        tx_info.transaction_hash = Option::Some(1234);
+        snforge_std::start_spoof(CheatTarget::One(memecoin.contract_address), tx_info);
+
         // Transfer 21 token from owner to alice.
         start_prank(CheatTarget::One(memecoin.contract_address), initial_holder_1);
         let send_amount = memecoin.transfer_from(initial_holder_1, alice, 500);
+    }
+
+    #[test]
+    #[should_panic(expected: ('Multi calls not allowed',))]
+    fn test_transfer_from_multi_call() {
+        let (
+            owner,
+            name,
+            symbol,
+            initial_supply,
+            initial_holder_1,
+            initial_holder_2,
+            initial_holders,
+            initial_holders_amounts
+        ) =
+            instantiate_params();
+        let alice = contract_address_const::<53>();
+        let bob = contract_address_const::<54>();
+
+        let contract_address =
+            match deploy_contract(
+                owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
+            ) {
+            Result::Ok(address) => address,
+            Result::Err(msg) => panic(msg.panic_data),
+        };
+
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        // setting tx_hash here 
+        let mut tx_info: TxInfoMock = Default::default();
+        tx_info.transaction_hash = Option::Some(1234);
+
+        // Transfer token from owner to alice twice - should fail
+        start_prank(CheatTarget::One(memecoin.contract_address), initial_holder_1);
+        let send_amount = memecoin.transfer_from(initial_holder_1, alice, 0);
+        let send_amount = memecoin.transfer_from(initial_holder_1, alice, 0);
     }
 
     #[test]
@@ -539,6 +587,11 @@ mod memecoin_entrypoints {
         };
 
         let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+
+        // setting tx_hash here 
+        let mut tx_info: TxInfoMock = Default::default();
+        tx_info.transaction_hash = Option::Some(1234);
+        snforge_std::start_spoof(CheatTarget::One(memecoin.contract_address), tx_info);
 
         // Transfer 1 token from owner to alice.
         start_prank(CheatTarget::One(memecoin.contract_address), initial_holder_1);
@@ -783,6 +836,7 @@ mod memecoin_internals {
     use openzeppelin::token::erc20::interface::IERC20;
     use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
     use starknet::{ContractAddress, contract_address_const};
+    use super::{TxInfoMock, DefaultTxInfoMock};
     use super::{deploy_contract, instantiate_params};
     use unruggable::tokens::interface::{
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -825,6 +879,11 @@ mod memecoin_internals {
 
             // create a unique address
             let unique_recipient: ContractAddress = (index.into() + 9999).try_into().unwrap();
+
+            // creating and setting unique tx_hash here 
+            let mut tx_info: TxInfoMock = Default::default();
+            tx_info.transaction_hash = Option::Some(index.into() + 9999);
+            snforge_std::start_spoof(CheatTarget::One(memecoin.contract_address), tx_info);
 
             // Transfer 1 token to the unique recipient
             memecoin.transfer(unique_recipient, 1);
@@ -873,6 +932,11 @@ mod memecoin_internals {
 
             // create a unique address
             let unique_recipient: ContractAddress = (index.into() + 9999).try_into().unwrap();
+
+            // creating and setting unique tx_hash here 
+            let mut tx_info: TxInfoMock = Default::default();
+            tx_info.transaction_hash = Option::Some(index.into() + 9999);
+            snforge_std::start_spoof(CheatTarget::One(memecoin.contract_address), tx_info);
 
             // Transfer 1 token to the unique recipient
             memecoin.transfer(unique_recipient, 1);
@@ -933,6 +997,11 @@ mod memecoin_internals {
                 break;
             }
 
+            // creating and setting unique tx_hash here 
+            let mut tx_info: TxInfoMock = Default::default();
+            tx_info.transaction_hash = Option::Some(index.into() + 9999);
+            snforge_std::start_spoof(CheatTarget::One(memecoin.contract_address), tx_info);
+
             // Self transfer tokens
             memecoin.transfer(initial_holder_2, 1);
 
@@ -978,6 +1047,10 @@ mod memecoin_internals {
             // create a unique address
             let unique_recipient: ContractAddress = (index.into() + 9999).try_into().unwrap();
 
+            // creating and setting unique tx_hash here 
+            let mut tx_info: TxInfoMock = Default::default();
+            tx_info.transaction_hash = Option::Some(index.into() + 9999);
+            snforge_std::start_spoof(CheatTarget::One(memecoin.contract_address), tx_info);
             // Transfer 1 token to the unique recipient
             memecoin.transfer(unique_recipient, 1);
 
@@ -1042,6 +1115,11 @@ mod memecoin_internals {
 
             // create a unique address
             let unique_recipient: ContractAddress = (index.into() + 9999).try_into().unwrap();
+
+            // creating and setting unique tx_hash here 
+            let mut tx_info: TxInfoMock = Default::default();
+            tx_info.transaction_hash = Option::Some(index.into() + 9999);
+            snforge_std::start_spoof(CheatTarget::One(memecoin.contract_address), tx_info);
 
             // Transfer 1 token to the unique recipient
             memecoin.transfer(unique_recipient, 1);
