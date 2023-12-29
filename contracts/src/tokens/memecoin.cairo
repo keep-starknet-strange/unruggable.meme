@@ -28,9 +28,7 @@ mod UnruggableMemecoin {
         MAX_HOLDERS_REACHED, ARRAYS_LEN_DIF, MAX_TEAM_ALLOCATION_REACHED, AMM_NOT_SUPPORTED
     };
     use unruggable::token_locker::{ITokenLockerDispatcher, ITokenLockerDispatcherTrait};
-    use unruggable::tokens::factory::{
-        IUnruggableMemecoinFactoryDispatcher, IUnruggableMemecoinFactoryDispatcherTrait
-    };
+    use unruggable::factory::{IFactory, IFactoryDispatcher, IFactoryDispatcherTrait};
     use unruggable::tokens::interface::{
         IUnruggableMemecoinSnake, IUnruggableMemecoinCamel, IUnruggableAdditional
     };
@@ -169,9 +167,7 @@ mod UnruggableMemecoin {
             let memecoin_address = starknet::get_contract_address();
             let caller_address = get_caller_address();
             let factory_address = self.factory_contract.read();
-            let router_address = IUnruggableMemecoinFactoryDispatcher {
-                contract_address: factory_address
-            }
+            let router_address = IFactoryDispatcher { contract_address: factory_address }
                 .amm_router_address(amm_name: amm_v2.to_string());
 
             // [Create Pool]
