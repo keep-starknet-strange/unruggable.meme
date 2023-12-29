@@ -1,5 +1,7 @@
+use openzeppelin::token::erc20::interface::{IERC20, IERC20Dispatcher, IERC20DispatcherTrait};
 use starknet::ContractAddress;
 use unruggable::amm::amm::AMM;
+
 
 #[starknet::interface]
 trait IUnruggableMemecoinFactory<TContractState> {
@@ -14,6 +16,7 @@ trait IUnruggableMemecoinFactory<TContractState> {
         initial_supply: u256,
         initial_holders: Span<ContractAddress>,
         initial_holders_amounts: Span<u256>,
+        eth_contract: IERC20Dispatcher,
         contract_address_salt: felt252
     ) -> ContractAddress;
 }
@@ -25,6 +28,7 @@ mod UnruggableMemecoinFactory {
 
     // External dependencies.
     use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait;
+    use openzeppelin::token::erc20::interface::{IERC20, IERC20Dispatcher, IERC20DispatcherTrait};
 
     // Core dependencies.
     use poseidon::poseidon_hash_span;
@@ -34,6 +38,7 @@ mod UnruggableMemecoinFactory {
         ContractAddress, ClassHash, get_caller_address, get_contract_address, contract_address_const
     };
     use super::IUnruggableMemecoinFactory;
+
 
     use unruggable::amm::amm::AMM;
 
@@ -57,6 +62,8 @@ mod UnruggableMemecoinFactory {
         initial_supply: u256,
         memecoin_address: ContractAddress
     }
+
+    const ETH_UNIT_DECIMALS: u256 = 1000000000000000000;
 
     #[storage]
     struct Storage {
@@ -115,6 +122,7 @@ mod UnruggableMemecoinFactory {
             initial_supply: u256,
             initial_holders: Span<ContractAddress>,
             initial_holders_amounts: Span<u256>,
+            eth_contract: IERC20Dispatcher,
             contract_address_salt: felt252
         ) -> ContractAddress {
             // General calldata
@@ -132,7 +140,24 @@ mod UnruggableMemecoinFactory {
             // save memecoin address
             self.memcoins.write(memecoin_address, true);
 
+            let caller = get_caller_address();
+            let eth_amount: u256 = 1 * ETH_UNIT_DECIMALS;
+            assert(
+                eth_contract.allowance(caller, get_contract_address()) == eth_amount,
+                'ETH allowance not enough'
+            );
+            assert(eth_contract.balance_of(caller) >= eth_amount, 'ETH balance is not enough');
+            assert(
+                eth_contract
+                    .transfer_from(sender: caller, recipient: memecoin_address, amount: eth_amount),
+                'ETH transfer failed'
+            );
+            assert(
+                eth_contract.balance_of(memecoin_address) == eth_amount, 'memecoin should have 1ETH'
+            );
+
             self.emit(MemeCoinCreated { owner, name, symbol, initial_supply, memecoin_address });
+
             memecoin_address
         }
 

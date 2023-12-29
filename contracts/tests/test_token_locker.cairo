@@ -41,7 +41,6 @@ fn test_lock() {
     let locker_dispatcher = ITokenLockerDispatcher { contract_address: locker };
 
     let balance = token_dispatcher.balanceOf(owner);
-    balance.print();
 
     start_prank(CheatTarget::One(token), owner);
     token_dispatcher.approve(locker, 1000);

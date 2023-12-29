@@ -54,7 +54,9 @@ mod RouterC1 {
 
     use debug::PrintTrait;
     use integer::u256_from_felt252;
-    use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
+    use openzeppelin::token::erc20::interface::{
+        IERC20CamelDispatcher, IERC20CamelDispatcherTrait, IERC20Dispatcher, IERC20DispatcherTrait
+    };
     use result::ResultTrait;
     use starknet::syscalls::{replace_class_syscall, call_contract_syscall};
     use starknet::{
@@ -230,24 +232,9 @@ mod RouterC1 {
     fn _transfer_token(
         token: ContractAddress, sender: ContractAddress, recipient: ContractAddress, amount: u256
     ) {
-        // let tokenDispatcher = IERC20Dispatcher { contract_address: token };
-        // tokenDispatcher.transfer_from(sender, recipient, amount) // TODO dispatcher with error handling
-
-        let mut calldata = Default::default();
-        Serde::serialize(@sender, ref calldata);
-        Serde::serialize(@recipient, ref calldata);
-        Serde::serialize(@amount, ref calldata);
-
-        let selector_for_transfer_from =
-            1555377517929037318987687899825758707538299441176447799544473656894800517992;
-        let selector_for_transferFrom =
-            116061167288211781254449158074459916871457383008289084697957612485591092000;
-
-        let mut result = call_contract_syscall(token, selector_for_transfer_from, calldata.span());
-        if (result.is_err()) {
-            result = call_contract_syscall(token, selector_for_transferFrom, calldata.span());
-        }
-        result.unwrap_syscall(); // Additional error handling
+        let tokenDispatcher = IERC20CamelDispatcher { contract_address: token };
+        tokenDispatcher
+            .transferFrom(sender, recipient, amount); // TODO dispatcher with error handling
     }
 
     fn _sort_tokens(
