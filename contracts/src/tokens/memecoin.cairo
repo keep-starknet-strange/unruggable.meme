@@ -113,7 +113,7 @@ mod UnruggableMemecoin {
 
         // Initialize the owner.
         self.ownable.initializer(owner);
-        
+
         // Initialize the token / internal logic
         let factory_address = get_caller_address();
 
