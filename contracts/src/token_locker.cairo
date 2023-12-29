@@ -59,7 +59,7 @@ mod TokenLocker {
     /// # Arguments
     /// * `lock_time` - Locking period as timestamp.
     #[constructor]
-    fn constructor(ref self: ContractState, lock_time: u64,) {
+    fn constructor(ref self: ContractState, lock_time: u64) {
         self.lock_time.write(lock_time);
     }
 
@@ -79,15 +79,10 @@ mod TokenLocker {
             self.locks.write((token_contract, caller, current_time), amount);
 
             let this_address = get_contract_address();
-            let initial_balance = ERC20ABIDispatcher { contract_address: token_contract }
-                .balanceOf(this_address);
-            ERC20ABIDispatcher { contract_address: token_contract }
-                .transferFrom(caller, this_address, amount);
-            assert(
-                ERC20ABIDispatcher { contract_address: token_contract }.balanceOf(this_address)
-                    - initial_balance == amount,
-                TRANSFER_FAIL
-            );
+            let erc20_dispatcher = ERC20ABIDispatcher { contract_address: token_contract };
+            let initial_balance = erc20_dispatcher.balanceOf(this_address);
+            erc20_dispatcher.transferFrom(caller, this_address, amount);
+            assert(erc20_dispatcher.balanceOf(this_address) - initial_balance == amount, TRANSFER_FAIL);
 
             self
                 .emit(
@@ -118,7 +113,10 @@ mod TokenLocker {
 
             self.locks.write((token_contract, caller, lock_timestamp), 0);
 
-            ERC20ABIDispatcher { contract_address: token_contract }.transfer(caller, locked_amount);
+            let erc20_dispatcher = ERC20ABIDispatcher { contract_address: token_contract };
+            let initial_balance = erc20_dispatcher.balanceOf(caller);
+            erc20_dispatcher.transfer(caller, locked_amount);
+            assert(erc20_dispatcher.balanceOf(caller) - initial_balance == locked_amount, TRANSFER_FAIL);
 
             self
                 .emit(
@@ -134,7 +132,7 @@ mod TokenLocker {
         /// View method for locked amount
         /// # Arguments
         /// * `token_contract` - Address of token contract
-        /// * `owner` - Initial lock timestamp
+        /// * `owner` - Address of the owner of the token
         /// * `lock_timestamp` - Initial lock timestamp
         /// # Returns
         /// Locked amount
@@ -150,7 +148,7 @@ mod TokenLocker {
         /// View method for time left to unlock
         /// # Arguments
         /// * `token_contract` - Address of token contract
-        /// * `owner` - Initial lock timestamp
+        /// * `owner` - Address of the owner of the token
         /// * `lock_timestamp` - Initial lock timestamp
         /// # Returns
         /// Time left to unlock
