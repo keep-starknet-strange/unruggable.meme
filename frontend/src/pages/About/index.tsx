@@ -26,7 +26,7 @@ export default function AboutPage() {
           </Text.Body>
           <ul>
             <li>Maximum percentage of team allocation not more than 10%.</li>
-            <li>Maximum percentage of supply than can be bought at once at 2%.</li>
+            <li>Maximum percentage of supply that can be bought at once is equal to 2%.</li>
             <li>
               Pre-Launch safeguards: This prevents too many addresses from holding the token before launch. Maximum
               holders before launch is set to 10.
