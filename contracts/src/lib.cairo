@@ -1,7 +1,10 @@
 mod errors;
-mod locker;
-mod tokens;
 mod factory;
+mod locker;
+
+#[cfg(test)]
+mod tests;
+mod tokens;
 
 mod mocks {
     mod erc20;
@@ -16,6 +19,3 @@ mod amm {
     mod amm;
     mod jediswap_interface;
 }
-
-#[cfg(test)]
-mod tests;
