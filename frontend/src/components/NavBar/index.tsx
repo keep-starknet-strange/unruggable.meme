@@ -18,12 +18,12 @@ export const links = [
     path: '/launch',
   },
   {
-    name: 'About',
-    path: '/about',
-  },
-  {
     name: 'Screen',
     path: '/screen',
+  },
+  {
+    name: 'About',
+    path: '/about',
   },
 ]
 

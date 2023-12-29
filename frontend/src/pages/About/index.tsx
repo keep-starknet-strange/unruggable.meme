@@ -46,8 +46,8 @@ export default function AboutPage() {
             . And never hesitate to review the code and verify things for yourself on{' '}
             <a href="https://voyager.online/" target="_blank" rel="noreferrer">
               Voyager
-            </a>
-            . or{' '}
+            </a>{' '}
+            or{' '}
             <a href="https://starkscan.co/" target="_blank" rel="noreferrer">
               StarkScan
             </a>
