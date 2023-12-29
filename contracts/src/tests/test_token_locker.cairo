@@ -9,9 +9,7 @@ use snforge_std::{
 use starknet::{ContractAddress, contract_address_const};
 use unruggable::amm::amm::AMM;
 use unruggable::tests::utils::{OWNER, deploy_eth, deploy_locker, DEFAULT_MIN_LOCKTIME};
-use unruggable::token_locker::{
-    errors, TokenLocker, ITokenLockerDispatcher, ITokenLockerDispatcherTrait
-};
+use unruggable::locker::{errors, TokenLocker, ITokenLockerDispatcher, ITokenLockerDispatcherTrait};
 use unruggable::tokens::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
 };
@@ -412,7 +410,7 @@ mod test_withdrawal {
         TokenLocker,
     };
     use unruggable::tests::utils::ETH_INITIAL_SUPPLY;
-    use unruggable::token_locker::TokenLock;
+    use unruggable::locker::TokenLock;
 
     #[test]
     fn test_withdraw() {
@@ -615,7 +613,7 @@ mod test_transfer_lock {
         DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, spy_events, SpyOn, EventSpy, EventAssertions,
         TokenLocker
     };
-    use unruggable::token_locker::TokenLock;
+    use unruggable::locker::TokenLock;
 
     #[test]
     fn test_transfer_lock() {

@@ -44,6 +44,9 @@ fn SALT() -> felt252 {
     'salty'.try_into().unwrap()
 }
 
+// NOT THE ACTUAL ETH ADDRESS
+// It's set to a the maximum possible value for a contract address
+// This ensures that in Jediswap pairs, the ETH side is always token1
 fn ETH_ADDRESS() -> ContractAddress {
     0x7fff6570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7.try_into().unwrap()
 }

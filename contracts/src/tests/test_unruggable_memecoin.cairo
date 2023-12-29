@@ -642,10 +642,10 @@ mod memecoin_entrypoints {
         stop_prank(CheatTarget::One(memecoin_factory_address));
         let pool_dispatcher = IPairDispatcher { contract_address: pool_address };
         let (token_0_reserves, token_1_reserves, _) = pool_dispatcher.get_reserves();
-        assert(pool_dispatcher.token0() == eth.contract_address, 'wrong token 0 address');
-        assert(pool_dispatcher.token1() == memecoin_address, 'wrong token 1 address');
-        assert(token_1_reserves == memecoin_bal_meme, 'wrong pool token reserves');
-        assert(token_0_reserves == memecoin_bal_eth, 'wrong pool memecoin reserves');
+        assert(pool_dispatcher.token0() == memecoin_address, 'wrong token 1 address');
+        assert(pool_dispatcher.token1() == eth.contract_address, 'wrong token 0 address');
+        assert(token_0_reserves == memecoin_bal_meme, 'wrong pool token reserves');
+        assert(token_1_reserves == memecoin_bal_eth, 'wrong pool memecoin reserves');
     }
     #[test]
     #[should_panic(expected: ('insufficient memecoin funds',))]
