@@ -2,6 +2,11 @@
 version = 1
 
 [[package]]
+name = "alexandria_storage"
+version = "0.3.0"
+source = "git+https://github.com/keep-starknet-strange/alexandria.git?rev=e3af7edb130aa376fb2435820788c7bba2e4593a#e3af7edb130aa376fb2435820788c7bba2e4593a"
+
+[[package]]
 name = "openzeppelin"
 version = "0.8.0"
 source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v0.8.0#c23e8e96de60e6e3159b1ff8591a1187269c0eb7"
@@ -15,6 +20,7 @@ source = "git+https://github.com/foundry-rs/starknet-foundry?tag=v0.12.0#0c3d2fe
 name = "unruggable"
 version = "0.1.0"
 dependencies = [
+ "alexandria_storage",
  "openzeppelin",
  "snforge_std",
 ]

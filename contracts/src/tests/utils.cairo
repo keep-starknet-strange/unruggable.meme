@@ -48,6 +48,10 @@ fn ETH_ADDRESS() -> ContractAddress {
     0x7fff6570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7.try_into().unwrap()
 }
 
+fn DEFAULT_MIN_LOCKTIME() -> u64 {
+    200
+}
+
 // Deployments
 
 // AMM
@@ -118,9 +122,10 @@ fn deploy_meme_factory_with_owner(
 // Locker
 
 fn deploy_locker() -> ContractAddress {
-    let locker_calldata = array![200];
+    let mut calldata = Default::default();
+    Serde::serialize(@DEFAULT_MIN_LOCKTIME(), ref calldata);
     let locker_contract = declare('TokenLocker');
-    locker_contract.deploy(@locker_calldata).expect('Locker deployment failed')
+    locker_contract.deploy(@calldata).expect('Locker deployment failed')
 }
 
 // ETH Token
