@@ -2,13 +2,10 @@ use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatch
 use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
 use starknet::{ContractAddress, contract_address_const};
 use unruggable::amm::amm::{AMM, AMMV2, AMMTrait};
+use unruggable::factory::{IFactory, IFactoryDispatcher, IFactoryDispatcherTrait};
 use unruggable::tests::utils::{
     deploy_amm_factory_and_router, deploy_meme_factory, deploy_locker, deploy_eth, OWNER, NAME,
     SYMBOL, ETH_INITIAL_SUPPLY, INITIAL_HOLDERS, INITIAL_HOLDERS_AMOUNTS, SALT
-};
-use unruggable::tokens::factory::{
-    IUnruggableMemecoinFactory, IUnruggableMemecoinFactoryDispatcher,
-    IUnruggableMemecoinFactoryDispatcherTrait
 };
 use unruggable::tokens::interface::{
     IUnruggableMemecoin, IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -18,9 +15,7 @@ use unruggable::tokens::interface::{
 fn test_amm_router_address() {
     let (_, router_address) = deploy_amm_factory_and_router();
     let memecoin_factory_address = deploy_meme_factory(router_address);
-    let memecoin_factory = IUnruggableMemecoinFactoryDispatcher {
-        contract_address: memecoin_factory_address
-    };
+    let memecoin_factory = IFactoryDispatcher { contract_address: memecoin_factory_address };
 
     let amm_router_address = memecoin_factory
         .amm_router_address(amm_name: AMMV2::JediSwap.to_string());
@@ -32,9 +27,7 @@ fn test_is_memecoin() {
     // Required contracts
     let (_, router_address) = deploy_amm_factory_and_router();
     let memecoin_factory_address = deploy_meme_factory(router_address);
-    let memecoin_factory = IUnruggableMemecoinFactoryDispatcher {
-        contract_address: memecoin_factory_address
-    };
+    let memecoin_factory = IFactoryDispatcher { contract_address: memecoin_factory_address };
     let locker_address = deploy_locker();
     let (eth, eth_address) = deploy_eth();
 
@@ -72,9 +65,7 @@ fn test_create_memecoin() {
     // Required contracts
     let (_, router_address) = deploy_amm_factory_and_router();
     let memecoin_factory_address = deploy_meme_factory(router_address);
-    let memecoin_factory = IUnruggableMemecoinFactoryDispatcher {
-        contract_address: memecoin_factory_address
-    };
+    let memecoin_factory = IFactoryDispatcher { contract_address: memecoin_factory_address };
     let locker_address = deploy_locker();
     let (eth, eth_address) = deploy_eth();
 

@@ -187,7 +187,7 @@ mod erc20_entrypoints {
     };
     use starknet::{ContractAddress, contract_address_const};
     use super::{deploy_contract, instantiate_params};
-    use unruggable::tests_utils::deployer_helper::DeployerHelper::{
+    use unruggable::tests::utils::DeployerHelper::{
         deploy_contracts, deploy_unruggable_memecoin_contract, deploy_memecoin_factory, create_eth
     };
     use unruggable::tokens::interface::{
@@ -513,18 +513,15 @@ mod memecoin_entrypoints {
         IFactoryC1, IFactoryC1Dispatcher, IFactoryC1DispatcherTrait, IRouterC1, IRouterC1Dispatcher,
         IRouterC1DispatcherTrait, IPairDispatcher, IPairDispatcherTrait
     };
+
+    use unruggable::factory::{IFactory, IFactoryDispatcher, IFactoryDispatcherTrait};
+    use unruggable::tests::utils::DeployerHelper::{
+        deploy_contracts, deploy_unruggable_memecoin_contract, deploy_memecoin_factory, create_eth
+    };
     use unruggable::tests::utils::{
         deploy_amm_factory_and_router, deploy_meme_factory_with_owner, deploy_locker,
         deploy_eth_with_owner, OWNER, NAME, SYMBOL, ETH_INITIAL_SUPPLY, INITIAL_HOLDERS,
         INITIAL_HOLDERS_AMOUNTS, SALT
-    };
-    use unruggable::tests_utils::deployer_helper::DeployerHelper::{
-        deploy_contracts, deploy_unruggable_memecoin_contract, deploy_memecoin_factory, create_eth
-    };
-
-    use unruggable::tokens::factory::{
-        IUnruggableMemecoinFactory, IUnruggableMemecoinFactoryDispatcher,
-        IUnruggableMemecoinFactoryDispatcherTrait
     };
     use unruggable::tokens::interface::{
         IUnruggableMemecoin, IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -551,7 +548,7 @@ mod memecoin_entrypoints {
         let memecoin_factory_address = deploy_memecoin_factory(
             owner, declare_memecoin.class_hash, amms
         );
-        let unruggable_meme_factory = IUnruggableMemecoinFactoryDispatcher {
+        let unruggable_meme_factory = IFactoryDispatcher {
             contract_address: memecoin_factory_address
         };
 
@@ -608,9 +605,7 @@ mod memecoin_entrypoints {
         let owner = starknet::get_contract_address();
 
         let memecoin_factory_address = deploy_meme_factory_with_owner(owner, router_address);
-        let memecoin_factory = IUnruggableMemecoinFactoryDispatcher {
-            contract_address: memecoin_factory_address
-        };
+        let memecoin_factory = IFactoryDispatcher { contract_address: memecoin_factory_address };
 
         let locker = deploy_locker();
 
@@ -686,8 +681,8 @@ mod memecoin_entrypoints {
             owner, declare_memecoin.class_hash, amms
         );
 
-        // Deploy UnruggableMemecoinFactory
-        let unruggable_meme_factory = IUnruggableMemecoinFactoryDispatcher {
+        // Deploy Factory
+        let unruggable_meme_factory = IFactoryDispatcher {
             contract_address: memecoin_factory_address
         };
 
@@ -749,8 +744,8 @@ mod memecoin_entrypoints {
             OWNER(), declare_memecoin.class_hash, amms
         );
 
-        // Deploy UnruggableMemecoinFactory
-        let unruggable_meme_factory = IUnruggableMemecoinFactoryDispatcher {
+        // Deploy Factory
+        let unruggable_meme_factory = IFactoryDispatcher {
             contract_address: memecoin_factory_address
         };
 
@@ -813,8 +808,8 @@ mod memecoin_entrypoints {
             owner, declare_memecoin.class_hash, amms
         );
 
-        // Deploy UnruggableMemecoinFactory
-        let unruggable_meme_factory = IUnruggableMemecoinFactoryDispatcher {
+        // Deploy Factory
+        let unruggable_meme_factory = IFactoryDispatcher {
             contract_address: memecoin_factory_address
         };
 
@@ -901,8 +896,8 @@ mod memecoin_entrypoints {
             owner, declare_memecoin.class_hash, amms
         );
 
-        // Deploy UnruggableMemecoinFactory
-        let unruggable_meme_factory = IUnruggableMemecoinFactoryDispatcher {
+        // Deploy Factory
+        let unruggable_meme_factory = IFactoryDispatcher {
             contract_address: memecoin_factory_address
         };
 
