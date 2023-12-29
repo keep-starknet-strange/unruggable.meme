@@ -185,7 +185,8 @@ mod TokenLocker {
                             unlock_time: 0
                         }
                     );
-                self.remove_user_lock(lock_id, owner);
+                let mut list = self.user_locks.read(owner);
+                self.remove_user_lock(lock_id, list);
                 self.emit(TokenUnlocked { lock_id });
             }
             self.emit(TokenWithdrawn { lock_id, amount });
@@ -198,7 +199,8 @@ mod TokenLocker {
             let mut token_lock = self.locks.read(lock_id);
 
             // Update user locks
-            self.remove_user_lock(lock_id, token_lock.owner);
+            let mut list = self.user_locks.read(token_lock.owner);
+            self.remove_user_lock(lock_id, list);
             let mut new_owner_locks: List<u128> = self.user_locks.read(new_owner);
             new_owner_locks.append(lock_id);
 
