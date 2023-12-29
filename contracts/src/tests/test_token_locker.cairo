@@ -405,13 +405,13 @@ mod test_withdrawal {
     use core::traits::TryInto;
     use snforge_std::{start_warp, stop_warp};
     use starknet::contract_address_const;
-    use unruggable::tests::utils::ETH_INITIAL_SUPPLY;
     use super::{
         setup, setup_and_lock, ITokenLockerDispatcher, ITokenLockerDispatcherTrait, OWNER,
         deploy_locker, start_prank, stop_prank, CheatTarget, ERC20ABIDispatcherTrait,
         DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, spy_events, SpyOn, EventSpy, EventAssertions,
         TokenLocker,
     };
+    use unruggable::tests::utils::ETH_INITIAL_SUPPLY;
     use unruggable::token_locker::TokenLock;
 
     #[test]
