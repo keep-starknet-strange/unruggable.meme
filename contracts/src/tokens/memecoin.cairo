@@ -27,13 +27,13 @@ mod UnruggableMemecoin {
     use unruggable::errors::{
         MAX_HOLDERS_REACHED, ARRAYS_LEN_DIF, MAX_TEAM_ALLOCATION_REACHED, AMM_NOT_SUPPORTED
     };
+    use unruggable::token_locker::{ITokenLockerDispatcher, ITokenLockerDispatcherTrait};
     use unruggable::tokens::factory::{
         IUnruggableMemecoinFactoryDispatcher, IUnruggableMemecoinFactoryDispatcherTrait
     };
     use unruggable::tokens::interface::{
         IUnruggableMemecoinSnake, IUnruggableMemecoinCamel, IUnruggableAdditional
     };
-    use unruggable::token_locker::{ITokenLockerDispatcher, ITokenLockerDispatcherTrait};
 
 
     // Components.
