@@ -12,12 +12,12 @@ mod UnruggableMemecoin {
     use openzeppelin::token::erc20::ERC20Component;
     use openzeppelin::token::erc20::interface::IERC20;
     use openzeppelin::token::erc20::interface::IERC20Metadata;
-    use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
+    use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
     use starknet::{
         ContractAddress, contract_address_const, get_contract_address, get_caller_address,
         get_tx_info, get_block_timestamp
     };
-    use unruggable::amm::amm::{AMM, AMMV2};
+    use unruggable::amm::amm::{AMM, AMMV2, AMMTrait};
     use unruggable::amm::jediswap_interface::{
         IFactoryC1Dispatcher, IFactoryC1DispatcherTrait, IRouterC1Dispatcher,
         IRouterC1DispatcherTrait
@@ -171,7 +171,7 @@ mod UnruggableMemecoin {
             let router_address = IUnruggableMemecoinFactoryDispatcher {
                 contract_address: factory_address
             }
-                .amm_router_address(amm_name: amm_v2.into());
+                .amm_router_address(amm_name: amm_v2.to_string());
 
             // [Create Pool]
             let amm_router = IRouterC1Dispatcher { contract_address: router_address };
@@ -183,11 +183,11 @@ mod UnruggableMemecoin {
 
             // [Check Balance]
             let memecoin_balance = self.balanceOf(memecoin_address);
-            let counterparty_token_dispatcher = IERC20Dispatcher {
+            let counterparty_token_dispatcher = ERC20ABIDispatcher {
                 contract_address: counterparty_token_address,
             };
             let counterparty_token_balance = counterparty_token_dispatcher
-                .balance_of(memecoin_address);
+                .balanceOf(memecoin_address);
 
             assert(memecoin_balance >= liquidity_memecoin_amount, 'insufficient memecoin funds');
             assert(
@@ -325,7 +325,7 @@ mod UnruggableMemecoin {
         ) {
             if !self.launched.read() {
                 // if the sender will no longer hold tokens
-                if sender.is_non_zero() && self.balance_of(sender) == amount {
+                if sender.is_non_zero() && self.balanceOf(sender) == amount {
                     let current_holders_count = self.pre_launch_holders_count.read();
 
                     // decrease holders count
@@ -333,7 +333,7 @@ mod UnruggableMemecoin {
                 }
 
                 // if the recipient doesn't hold tokens yet
-                if self.balance_of(recipient).is_zero() {
+                if self.balanceOf(recipient).is_zero() {
                     let current_holders_count = self.pre_launch_holders_count.read();
 
                     // assert max holders limit is not reached
