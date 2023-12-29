@@ -1,11 +1,9 @@
 mod errors;
-
 mod factory;
+mod locker;
 
 #[cfg(test)]
 mod tests;
-mod token_locker;
-
 mod tokens;
 
 mod mocks {

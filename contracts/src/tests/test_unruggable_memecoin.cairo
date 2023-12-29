@@ -222,7 +222,10 @@ mod memecoin_entrypoints {
         assert(pool_dispatcher.token1() == eth.contract_address, 'wrong token 1 address');
         assert(token_0_reserves == memecoin_bal_meme, 'wrong pool token reserves');
         assert(token_1_reserves == memecoin_bal_eth, 'wrong pool memecoin reserves');
+        let lp_token = ERC20ABIDispatcher { contract_address: pool_address };
+        assert(lp_token.balanceOf(memecoin_address) == 0, 'shouldnt have lp tokens');
     }
+
     #[test]
     #[should_panic(expected: ('ETH balance is not enough',))]
     #[ignore]

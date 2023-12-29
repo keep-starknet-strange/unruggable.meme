@@ -28,7 +28,7 @@ mod UnruggableMemecoin {
         MAX_HOLDERS_REACHED, ARRAYS_LEN_DIF, MAX_TEAM_ALLOCATION_REACHED, AMM_NOT_SUPPORTED
     };
     use unruggable::factory::{IFactory, IFactoryDispatcher, IFactoryDispatcherTrait};
-    use unruggable::token_locker::{ITokenLockerDispatcher, ITokenLockerDispatcherTrait};
+    use unruggable::locker::{ITokenLockerDispatcher, ITokenLockerDispatcherTrait};
     use unruggable::tokens::interface::{
         IUnruggableMemecoinSnake, IUnruggableMemecoinCamel, IUnruggableAdditional
     };
@@ -113,7 +113,7 @@ mod UnruggableMemecoin {
 
         // Initialize the owner.
         self.ownable.initializer(owner);
-
+        
         // Initialize the token / internal logic
         let factory_address = get_caller_address();
 
@@ -216,7 +216,15 @@ mod UnruggableMemecoin {
             let locker_address = self.locker_contract.read();
             let locker_dispatcher = ITokenLockerDispatcher { contract_address: locker_address };
             pair.approve(locker_address, liquidity_received);
-            locker_dispatcher.lock(pair_address, liquidity_received);
+            // unlock_time: u64,
+            // withdrawer: ContractAddress
+            locker_dispatcher
+                .lock_tokens(
+                    token: pair_address,
+                    amount: liquidity_received,
+                    unlock_time: 15780000, // 6 months in seconds
+                    withdrawer: self.ownable.Ownable_owner.read(),
+                );
             assert(pair.balanceOf(locker_address) == liquidity_received, 'lock failed');
 
             // Launch the coin
