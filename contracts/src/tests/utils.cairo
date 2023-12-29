@@ -4,9 +4,7 @@ use openzeppelin::token::erc20::interface::ERC20ABIDispatcherTrait;
 use snforge_std::{ContractClass, ContractClassTrait, CheatTarget, declare, start_prank, stop_prank};
 use starknet::ContractAddress;
 use unruggable::amm::amm::{AMM, AMMV2, AMMTrait};
-use unruggable::tokens::factory::{
-    IUnruggableMemecoinFactoryDispatcher, IUnruggableMemecoinFactoryDispatcherTrait
-};
+use unruggable::factory::{IFactoryDispatcher, IFactoryDispatcherTrait};
 
 // Constants
 fn OWNER() -> ContractAddress {
@@ -47,7 +45,7 @@ fn SALT() -> felt252 {
 }
 
 fn ETH_ADDRESS() -> ContractAddress {
-    0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7.try_into().unwrap()
+    0x7fff6570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7.try_into().unwrap()
 }
 
 // Deployments
@@ -93,7 +91,7 @@ fn deploy_meme_factory(router_address: ContractAddress) -> ContractAddress {
     // Declare availables AMMs for this factory
     let mut amms = array![AMM { name: AMMV2::JediSwap.to_string(), router_address }];
 
-    let contract = declare('UnruggableMemecoinFactory');
+    let contract = declare('Factory');
     let mut calldata = array![];
     Serde::serialize(@OWNER(), ref calldata);
     Serde::serialize(@memecoin_class_hash, ref calldata);
@@ -109,7 +107,7 @@ fn deploy_meme_factory_with_owner(
     // Declare availables AMMs for this factory
     let mut amms = array![AMM { name: AMMV2::JediSwap.to_string(), router_address }];
 
-    let contract = declare('UnruggableMemecoinFactory');
+    let contract = declare('Factory');
     let mut calldata = array![];
     Serde::serialize(@owner, ref calldata);
     Serde::serialize(@memecoin_class_hash, ref calldata);
@@ -154,9 +152,7 @@ fn deploy_memecoin() -> ContractAddress {
     // Required contracts
     let (_, router_address) = deploy_amm_factory_and_router();
     let memecoin_factory_address = deploy_meme_factory(router_address);
-    let memecoin_factory = IUnruggableMemecoinFactoryDispatcher {
-        contract_address: memecoin_factory_address
-    };
+    let memecoin_factory = IFactoryDispatcher { contract_address: memecoin_factory_address };
     let locker_address = deploy_locker();
     let (eth, eth_address) = deploy_eth();
 
@@ -205,3 +201,96 @@ fn pow_256(self: u256, mut exponent: u8) -> u256 {
     }
 }
 
+//TODO: legacy, remove later
+mod DeployerHelper {
+    use openzeppelin::token::erc20::interface::{
+        IERC20, ERC20ABIDispatcher, ERC20ABIDispatcherTrait
+    };
+    use snforge_std::{
+        ContractClass, ContractClassTrait, CheatTarget, declare, start_prank, stop_prank
+    };
+    use starknet::{ContractAddress, ClassHash, contract_address_const};
+    use unruggable::amm::amm::AMM;
+
+    const ETH_UNIT_DECIMALS: u256 = 1000000000000000000;
+
+    fn deploy_contracts() -> (ContractAddress, ContractAddress) {
+        let deployer = contract_address_const::<'DEPLOYER'>();
+        let pair_class = declare('PairC1');
+
+        let mut factory_constructor_calldata = Default::default();
+
+        Serde::serialize(@pair_class.class_hash, ref factory_constructor_calldata);
+        Serde::serialize(@deployer, ref factory_constructor_calldata);
+        let factory_class = declare('FactoryC1');
+
+        let factory_address = factory_class.deploy(@factory_constructor_calldata).unwrap();
+
+        let mut router_constructor_calldata = Default::default();
+        Serde::serialize(@factory_address, ref router_constructor_calldata);
+        let router_class = declare('RouterC1');
+
+        let router_address = router_class.deploy(@router_constructor_calldata).unwrap();
+
+        (factory_address, router_address)
+    }
+
+    fn deploy_unruggable_memecoin_contract(
+        owner: ContractAddress,
+        recipient: ContractAddress,
+        name: felt252,
+        symbol: felt252,
+        initial_supply: u256,
+        amms: Array<AMM>
+    ) -> ContractAddress {
+        let contract = declare('UnruggableMemecoin');
+        let mut constructor_calldata = array![
+            owner.into(),
+            recipient.into(),
+            name,
+            symbol,
+            initial_supply.low.into(),
+            initial_supply.high.into(),
+        ];
+        contract.deploy(@constructor_calldata).unwrap()
+    }
+
+    fn deploy_memecoin_factory(
+        owner: ContractAddress, memecoin_class_hash: ClassHash, amms: Array<AMM>
+    ) -> ContractAddress {
+        let contract = declare('Factory');
+        let mut calldata = array![];
+        calldata.append(owner.into());
+        calldata.append(memecoin_class_hash.into());
+        Serde::serialize(@amms.into(), ref calldata);
+
+        contract.deploy(@calldata).unwrap()
+    }
+
+    fn create_eth(
+        initial_supply: u256, owner: ContractAddress, factory: ContractAddress
+    ) -> ERC20ABIDispatcher {
+        let erc20_token = declare('ERC20Token');
+        let eth_amount: u256 = initial_supply;
+        let erc20_calldata: Array<felt252> = array![
+            eth_amount.low.into(), eth_amount.high.into(), owner.into()
+        ];
+        let eth_address = erc20_token
+            .deploy_at(
+                @erc20_calldata,
+                contract_address_const::<
+                    0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7
+                >()
+            )
+            .unwrap();
+        let eth = ERC20ABIDispatcher { contract_address: eth_address };
+        assert(eth.balanceOf(owner) == initial_supply, 'wrong eth balance');
+        start_prank(CheatTarget::One(eth.contract_address), owner);
+        eth.approve(spender: factory, amount: 1 * ETH_UNIT_DECIMALS);
+        stop_prank(CheatTarget::One(eth.contract_address));
+        assert(
+            eth.allowance(:owner, spender: factory) == 1 * ETH_UNIT_DECIMALS, 'wrong eth allowance'
+        );
+        eth
+    }
+}
