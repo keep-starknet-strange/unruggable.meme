@@ -41,7 +41,10 @@ trait IUnruggableMemecoin<TState> {
     ///     bool: whether token has launched
     fn launched(self: @TState) -> bool;
     fn launch_memecoin(
-        ref self: TState, amm_v2: AMMV2, counterparty_token_address: ContractAddress, deadline: u64
+        ref self: TState,
+        amm_v2: AMMV2,
+        counterparty_token_address: ContractAddress,
+        deadline: u64
     ) -> ContractAddress;
     fn get_team_allocation(self: @TState) -> u256;
 }
@@ -75,10 +78,7 @@ trait IUnruggableAdditional<TState> {
     ///     bool: whether token has launched
     fn launched(self: @TState) -> bool;
     fn launch_memecoin(
-        ref self: TState,
-        amm_v2: AMMV2,
-        counterparty_token_address: ContractAddress,
-        deadline: u64
+        ref self: TState, amm_v2: AMMV2, counterparty_token_address: ContractAddress, deadline: u64
     ) -> ContractAddress;
     fn get_team_allocation(self: @TState) -> u256;
 }
