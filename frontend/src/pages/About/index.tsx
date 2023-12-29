@@ -25,8 +25,8 @@ export default function AboutPage() {
             key properties like:
           </Text.Body>
           <ul>
-            <li>Ownership renounced automatically on deployment</li>
-            <li>Liquidity pool lock</li>
+            <li>Maximum percentage of team allocation not more than 10%</li>
+            <li>Maximum percentage of supply than can be bought at once at 2%</li>
             <li>No hidden backdoors or admin privileges</li>
           </ul>
           <Text.Body>
