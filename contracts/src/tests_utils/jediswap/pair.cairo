@@ -56,7 +56,7 @@ mod PairC1 {
     use integer::{u128_try_from_felt252, u256_sqrt, u256_from_felt252};
     use openzeppelin::token::erc20::ERC20Component;
 
-    use openzeppelin::token::erc20::interface::{IERC20Dispatcher, IERC20DispatcherTrait};
+    use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
     use starknet::syscalls::{replace_class_syscall, call_contract_syscall};
     use starknet::{
         ContractAddress, ClassHash, SyscallResult, SyscallResultTrait, get_caller_address,
@@ -71,9 +71,12 @@ mod PairC1 {
     component!(path: ERC20Component, storage: erc20, event: ERC20Event);
 
     // Impl
+    #[abi(embed_v0)]
     impl ERC20Impl = ERC20Component::ERC20Impl<ContractState>;
-
-    // Internals
+    #[abi(embed_v0)]
+    impl ERC20MetadataImpl = ERC20Component::ERC20MetadataImpl<ContractState>;
+    #[abi(embed_v0)]
+    impl ERC20CamelOnly = ERC20Component::ERC20CamelOnlyImpl<ContractState>;
     impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
 
     //
@@ -286,9 +289,9 @@ mod PairC1 {
 
             self.erc20._burn(self_address, liquidity);
 
-            let token0Dispatcher = IERC20Dispatcher { contract_address: token0 };
+            let token0Dispatcher = ERC20ABIDispatcher { contract_address: token0 };
             token0Dispatcher.transfer(to, amount0);
-            let token1Dispatcher = IERC20Dispatcher { contract_address: token1 };
+            let token1Dispatcher = ERC20ABIDispatcher { contract_address: token1 };
             token1Dispatcher.transfer(to, amount1);
 
             balance0 = _balance_of_token(token0, self_address);
@@ -334,8 +337,8 @@ mod PairC1 {
             let token1 = self._token1.read();
             assert(to != token0 && to != token1, 'invalid to');
 
-            let token0Dispatcher = IERC20Dispatcher { contract_address: token0 };
-            let token1Dispatcher = IERC20Dispatcher { contract_address: token1 };
+            let token0Dispatcher = ERC20ABIDispatcher { contract_address: token0 };
+            let token1Dispatcher = ERC20ABIDispatcher { contract_address: token1 };
 
             if (amount0Out > 0.into()) {
                 token0Dispatcher.transfer(to, amount0Out);
@@ -406,9 +409,9 @@ mod PairC1 {
             let token1 = self._token1.read();
             let balance1 = _balance_of_token(token1, self_address);
 
-            let token0Dispatcher = IERC20Dispatcher { contract_address: token0 };
+            let token0Dispatcher = ERC20ABIDispatcher { contract_address: token0 };
             token0Dispatcher.transfer(to, balance0 - reserve0);
-            let token1Dispatcher = IERC20Dispatcher { contract_address: token1 };
+            let token1Dispatcher = ERC20ABIDispatcher { contract_address: token1 };
             token1Dispatcher.transfer(to, balance1 - reserve1);
 
             InternalImpl::_unlock(ref self);
@@ -536,7 +539,7 @@ mod PairC1 {
     //
 
     fn _balance_of_token(token: ContractAddress, account: ContractAddress) -> u256 {
-        // let tokenDispatcher = IERC20Dispatcher { contract_address: token };
+        // let tokenDispatcher = ERC20ABIDispatcher { contract_address: token };
         // tokenDispatcher.balance_of(account)
 
         let mut calldata = Default::default();
@@ -544,12 +547,12 @@ mod PairC1 {
 
         let selector_for_balance_of =
             1516754014369808875012295842270199525215452866521012470027807093200784961331;
-        let selector_for_balanceOf =
+        let selector_for_balance_of =
             1307730684388977109649524593492043083703013045633289330664425380824804018030;
 
         let mut result = call_contract_syscall(token, selector_for_balance_of, calldata.span());
         if (result.is_err()) {
-            result = call_contract_syscall(token, selector_for_balanceOf, calldata.span());
+            result = call_contract_syscall(token, selector_for_balance_of, calldata.span());
         }
         u256_from_felt252(*result.unwrap_syscall().at(0))
     }

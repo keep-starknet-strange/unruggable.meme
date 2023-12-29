@@ -207,13 +207,21 @@ mod UnruggableMemecoin {
                     memecoin_address,
                     deadline, // deadline
                 );
+            assert(self.balanceOf(pair_address) == memecoin_balance, 'add liquidity meme failed');
+            assert(
+                counterparty_token_dispatcher.balanceOf(pair_address) == counterparty_token_balance,
+                'add liquidity eth failed'
+            );
+            let pair = ERC20ABIDispatcher { contract_address: pair_address, };
+
+            assert(pair.balanceOf(memecoin_address) == liquidity_received, 'wrong LP tkns amount');
 
             // [Lock LP tokens]
             let locker_address = self.locker_contract.read();
             let locker_dispatcher = ITokenLockerDispatcher { contract_address: locker_address };
-            let pair = ERC20ABIDispatcher { contract_address: pair_address, };
+            pair.approve(locker_address, liquidity_received);
             locker_dispatcher.lock(pair_address, liquidity_received);
-            assert(pair.balanceOf(pair_address) == liquidity_received, 'lock failed');
+            assert(pair.balanceOf(locker_address) == liquidity_received, 'lock failed');
 
             // Launch the coin
             self.launched.write(true);
@@ -327,7 +335,7 @@ mod UnruggableMemecoin {
         ) {
             if !self.launched.read() {
                 // if the sender will no longer hold tokens
-                if sender.is_non_zero() && self.balance_of(sender) == amount {
+                if sender.is_non_zero() && self.balanceOf(sender) == amount {
                     let current_holders_count = self.pre_launch_holders_count.read();
 
                     // decrease holders count
@@ -335,7 +343,7 @@ mod UnruggableMemecoin {
                 }
 
                 // if the recipient doesn't hold tokens yet
-                if self.balance_of(recipient).is_zero() {
+                if self.balanceOf(recipient).is_zero() {
                     let current_holders_count = self.pre_launch_holders_count.read();
 
                     // assert max holders limit is not reached
