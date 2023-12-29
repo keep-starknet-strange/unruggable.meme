@@ -513,6 +513,11 @@ mod memecoin_entrypoints {
         IFactoryC1, IFactoryC1Dispatcher, IFactoryC1DispatcherTrait, IRouterC1, IRouterC1Dispatcher,
         IRouterC1DispatcherTrait, IPairDispatcher, IPairDispatcherTrait
     };
+    use unruggable::tests::utils::{
+        deploy_amm_factory_and_router, deploy_meme_factory_with_owner, deploy_locker,
+        deploy_eth_with_owner, OWNER, NAME, SYMBOL, ETH_INITIAL_SUPPLY, INITIAL_HOLDERS,
+        INITIAL_HOLDERS_AMOUNTS, SALT
+    };
     use unruggable::tests_utils::deployer_helper::DeployerHelper::{
         deploy_contracts, deploy_unruggable_memecoin_contract, deploy_memecoin_factory, create_eth
     };
@@ -525,11 +530,6 @@ mod memecoin_entrypoints {
         IUnruggableMemecoin, IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
     use unruggable::tokens::memecoin::UnruggableMemecoin;
-    use unruggable::tests::utils::{
-        deploy_amm_factory_and_router, deploy_meme_factory_with_owner, deploy_locker,
-        deploy_eth_with_owner, OWNER, NAME, SYMBOL, ETH_INITIAL_SUPPLY, INITIAL_HOLDERS,
-        INITIAL_HOLDERS_AMOUNTS, SALT
-    };
 
     #[test]
     #[should_panic(expected: ('Caller is not the owner',))]
