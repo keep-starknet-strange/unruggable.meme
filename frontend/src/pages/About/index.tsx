@@ -25,9 +25,13 @@ export default function AboutPage() {
             key properties like:
           </Text.Body>
           <ul>
-            <li>Maximum percentage of team allocation not more than 10%</li>
-            <li>Maximum percentage of supply than can be bought at once at 2%</li>
-            <li>No hidden backdoors or admin privileges</li>
+            <li>Maximum percentage of team allocation not more than 10%.</li>
+            <li>Maximum percentage of supply than can be bought at once at 2%.</li>
+            <li>
+              Pre-Launch safeguards: This prevents too many addresses from holding the token before launch. Maximum
+              holders before launch is set to 10.
+            </li>
+            <li>No hidden backdoors.</li>
           </ul>
           <Text.Body>
             In short, we turn &ldquo;wen rug&rdquo; into &ldquo;never rug&rdquo; with the power of Cairo and highly
