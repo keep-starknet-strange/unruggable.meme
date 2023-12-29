@@ -100,8 +100,7 @@ mod test_internals {
         lock_list.append(2);
         lock_list.append(3);
         assert(lock_list.len() == 3, 'should have 3 elements');
-        let mut list: List<u128> = state.token_locks.read(user);
-        state.remove_user_lock(2, list);
+        state.remove_user_lock(2, lock_list);
         lock_list = state.user_locks.read(user);
         assert(lock_list.len() == 2, 'should have 2 elements');
         assert(lock_list.array().unwrap_syscall() == array![1_u128, 3_u128], 'should have 1 and 3');
