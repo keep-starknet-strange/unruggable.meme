@@ -46,6 +46,10 @@ fn SALT() -> felt252 {
     'salty'.try_into().unwrap()
 }
 
+fn ETH_ADDRESS() -> ContractAddress {
+    0x49d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7.try_into().unwrap()
+}
+
 // Deployments
 
 // AMM
@@ -97,6 +101,22 @@ fn deploy_meme_factory(router_address: ContractAddress) -> ContractAddress {
     contract.deploy(@calldata).expect('UnrugFactory deployment failed')
 }
 
+fn deploy_meme_factory_with_owner(
+    owner: ContractAddress, router_address: ContractAddress
+) -> ContractAddress {
+    let memecoin_class_hash = declare('UnruggableMemecoin').class_hash;
+
+    // Declare availables AMMs for this factory
+    let mut amms = array![AMM { name: AMMV2::JediSwap.to_string(), router_address }];
+
+    let contract = declare('UnruggableMemecoinFactory');
+    let mut calldata = array![];
+    Serde::serialize(@owner, ref calldata);
+    Serde::serialize(@memecoin_class_hash, ref calldata);
+    Serde::serialize(@amms.into(), ref calldata);
+    contract.deploy(@calldata).expect('UnrugFactory deployment failed')
+}
+
 // Locker
 
 fn deploy_locker() -> ContractAddress {
@@ -114,12 +134,16 @@ fn ETH_INITIAL_SUPPLY() -> u256 {
 }
 
 fn deploy_eth() -> (ERC20ABIDispatcher, ContractAddress) {
+    deploy_eth_with_owner(OWNER())
+}
+
+fn deploy_eth_with_owner(owner: ContractAddress) -> (ERC20ABIDispatcher, ContractAddress) {
     let token = declare('ERC20Token');
     let mut calldata = Default::default();
     Serde::serialize(@ETH_INITIAL_SUPPLY(), ref calldata);
-    Serde::serialize(@OWNER(), ref calldata);
+    Serde::serialize(@owner, ref calldata);
 
-    let address = token.deploy(@calldata).expect('Eth deployment failed');
+    let address = token.deploy_at(@calldata, ETH_ADDRESS()).unwrap();
     let dispatcher = ERC20ABIDispatcher { contract_address: address, };
     (dispatcher, address)
 }
