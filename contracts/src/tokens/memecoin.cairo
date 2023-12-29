@@ -172,7 +172,7 @@ mod UnruggableMemecoin {
                 contract_address: factory_address
             }
                 .amm_router_address(amm_name: amm_v2.into());
-            let counterparty_token_address = _get_eth_address();
+
             // [Create Pool]
             let amm_router = IRouterC1Dispatcher { contract_address: router_address };
             assert(amm_router.contract_address.is_non_zero(), AMM_NOT_SUPPORTED);
