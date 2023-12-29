@@ -541,6 +541,7 @@ mod memecoin_entrypoints {
         ) =
             instantiate_params();
         let alice = contract_address_const::<53>();
+        let bob = contract_address_const::<54>();
 
         let contract_address =
             match deploy_contract(
@@ -556,7 +557,7 @@ mod memecoin_entrypoints {
         let mut tx_info: TxInfoMock = Default::default();
         tx_info.transaction_hash = Option::Some(1234);
 
-        // Transfer 21 token from owner to alice.
+        // Transfer token from owner to alice twice - should fail
         start_prank(CheatTarget::One(memecoin.contract_address), initial_holder_1);
         let send_amount = memecoin.transfer_from(initial_holder_1, alice, 0);
         let send_amount = memecoin.transfer_from(initial_holder_1, alice, 0);
