@@ -6,7 +6,7 @@ use snforge_std::{
     TxInfoMock,
 };
 use starknet::{ContractAddress, contract_address_const};
-use unruggable::amm::amm::{AMM, AMMV2, AMMTrait};
+use unruggable::exchanges::{Exchange, SupportedExchanges, ExchangeTrait};
 use unruggable::tests::utils::{
     OWNER, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, RECIPIENT, SPENDER, deploy_locker, INITIAL_HOLDERS,
     INITIAL_HOLDERS_AMOUNTS, TRANSFER_LIMIT_DELAY, DefaultTxInfoMock,
@@ -76,7 +76,7 @@ mod test_constructor {
     }
 
     #[test]
-    #[should_panic(expected: ('Unruggable: arrays len dif',))]
+    #[should_panic(expected: ('Holders len dont match amounts',))]
     fn test_constructor_initial_holders_arrays_len_mismatch() {
         let initial_holders: Array<ContractAddress> = array![
             INITIAL_HOLDER_1(),
@@ -100,7 +100,7 @@ mod test_constructor {
     }
 
     #[test]
-    #[should_panic(expected: ('Unruggable: max holders reached',))]
+    #[should_panic(expected: ('Max number of holders reached',))]
     fn test_constructor_max_holders_reached() {
         // 11 holders > 10 holders max
         let initial_holders = array![
@@ -132,7 +132,7 @@ mod test_constructor {
     }
 
     #[test]
-    #[should_panic(expected: ('Unruggable: max team allocation',))]
+    #[should_panic(expected: ('Max team allocation reached',))]
     fn test_constructor_too_much_team_alloc_should_fail() {
         let mut calldata = array![
             OWNER().into(), 'locker', TRANSFER_LIMIT_DELAY.into(), NAME().into(), SYMBOL().into()
@@ -164,11 +164,12 @@ mod memecoin_entrypoints {
         declare, ContractClassTrait, start_prank, stop_prank, CheatTarget, start_warp, TxInfoMock
     };
     use starknet::{ContractAddress, contract_address_const};
-    use unruggable::amm::amm::{AMM, AMMV2, AMMTrait};
-    use unruggable::amm::jediswap_interface::{
-        IFactoryC1, IFactoryC1Dispatcher, IFactoryC1DispatcherTrait, IRouterC1, IRouterC1Dispatcher,
-        IRouterC1DispatcherTrait, IPairDispatcher, IPairDispatcherTrait
+    use unruggable::exchanges::jediswap_adapter::{
+        IJediswapFactory, IJediswapFactoryDispatcher, IJediswapFactoryDispatcherTrait,
+        IJediswapRouter, IJediswapRouterDispatcher, IJediswapRouterDispatcherTrait,
+        IJediswapPairDispatcher, IJediswapPairDispatcherTrait
     };
+    use unruggable::exchanges::{Exchange, SupportedExchanges, ExchangeTrait};
     use unruggable::factory::{IFactory, IFactoryDispatcher, IFactoryDispatcherTrait};
     use unruggable::tests::utils::{
         deploy_amm_factory_and_router, deploy_meme_factory_with_owner, deploy_locker,
@@ -194,11 +195,12 @@ mod memecoin_entrypoints {
         let memecoin_bal_eth = eth.balanceOf(memecoin_address);
 
         start_prank(CheatTarget::One(JEDI_ROUTER_ADDRESS()), memecoin_address);
-        let pool_address = memecoin.launch_memecoin(AMMV2::JediSwap, eth.contract_address);
+        let pool_address = memecoin
+            .launch_memecoin(SupportedExchanges::JediSwap, eth.contract_address);
         stop_prank(CheatTarget::One(MEMEFACTORY_ADDRESS()));
 
         assert(memecoin.launched(), 'should be launched');
-        let pool_dispatcher = IPairDispatcher { contract_address: pool_address };
+        let pool_dispatcher = IJediswapPairDispatcher { contract_address: pool_address };
         let (token_0_reserves, token_1_reserves, _) = pool_dispatcher.get_reserves();
         assert(pool_dispatcher.token0() == memecoin_address, 'wrong token 0 address');
         assert(pool_dispatcher.token1() == eth.contract_address, 'wrong token 1 address');
@@ -212,11 +214,11 @@ mod memecoin_entrypoints {
     #[should_panic(expected: ('Caller is not the owner',))]
     fn test_launch_memecoin_not_owner() {
         let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
-        memecoin.launch_memecoin(AMMV2::JediSwap, ETH_ADDRESS(),);
+        memecoin.launch_memecoin(SupportedExchanges::JediSwap, ETH_ADDRESS(),);
     }
 
     #[test]
-    #[should_panic(expected: ('Unruggable: AMM not supported',))]
+    #[should_panic(expected: ('Exchange not supported',))]
     fn test_launch_memecoin_amm_not_supported() {
         let owner = starknet::get_contract_address();
         let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
@@ -228,7 +230,8 @@ mod memecoin_entrypoints {
         let memecoin_bal_eth = eth.balanceOf(memecoin_address);
 
         start_prank(CheatTarget::One(JEDI_ROUTER_ADDRESS()), memecoin_address);
-        let pool_address = memecoin.launch_memecoin(AMMV2::Ekubo, eth.contract_address);
+        let pool_address = memecoin
+            .launch_memecoin(SupportedExchanges::Ekubo, eth.contract_address);
     }
 
     #[test]
@@ -388,7 +391,7 @@ mod memecoin_internals {
     }
 
     #[test]
-    #[should_panic(expected: ('Unruggable: max holders reached',))]
+    #[should_panic(expected: ('Max number of holders reached',))]
     fn test__transfer_above_holder_cap() {
         let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
 
@@ -449,7 +452,7 @@ mod memecoin_internals {
         // start_prank(CheatTarget::One(router_address), memecoin_address);
         // memecoin
         //     .launch_memecoin(
-        //         AMMV2::JediSwap, counterparty_token_address, 20000000000000000, 1 * ETH_UNIT_DECIMALS
+        //         SupportedExchanges::JediSwap, counterparty_token_address, 20000000000000000, 1 * ETH_UNIT_DECIMALS
         //     );
         // TODO: call launch_memecoin() with params
         // memecoin.launch_memecoin();

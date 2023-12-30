@@ -1,4 +1,5 @@
 mod errors;
+mod exchanges;
 mod factory;
 mod locker;
 
@@ -17,9 +18,4 @@ mod mocks {
         mod pair;
         mod router;
     }
-}
-
-mod amm {
-    mod amm;
-    mod jediswap_interface;
 }

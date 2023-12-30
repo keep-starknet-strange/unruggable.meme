@@ -9,7 +9,7 @@ use starknet::ContractAddress;
 
 
 #[starknet::interface]
-trait IPair<T> {
+trait IJediswapPair<T> {
     fn get_reserves(self: @T) -> (u256, u256, u64);
     fn mint(ref self: T, to: ContractAddress) -> u256;
     fn burn(ref self: T, to: ContractAddress) -> (u256, u256);
@@ -30,7 +30,7 @@ trait IFactory<T> {
 // Contract Interface
 //
 #[starknet::interface]
-trait IRouterC1<TContractState> {
+trait IJediswapRouter<TContractState> {
     fn factory(self: @TContractState) -> ContractAddress;
     fn sort_tokens(
         self: @TContractState, tokenA: ContractAddress, tokenB: ContractAddress
@@ -65,7 +65,10 @@ mod RouterC1 {
         get_block_timestamp, contract_address_const, contract_address_to_felt252
     };
 
-    use super::{IPairDispatcher, IPairDispatcherTrait, IFactoryDispatcher, IFactoryDispatcherTrait};
+    use super::{
+        IJediswapPairDispatcher, IJediswapPairDispatcherTrait, IFactoryDispatcher,
+        IFactoryDispatcherTrait
+    };
 
     //
     // Storage
@@ -89,7 +92,7 @@ mod RouterC1 {
     }
 
     #[external(v0)]
-    impl RouterC1 of super::IRouterC1<ContractState> {
+    impl RouterC1 of super::IJediswapRouter<ContractState> {
         // @notice factory address
         // @return address
         fn factory(self: @ContractState) -> ContractAddress {
@@ -140,7 +143,7 @@ mod RouterC1 {
             let sender = get_caller_address();
             _transfer_token(tokenA, sender, pair, amountA);
             _transfer_token(tokenB, sender, pair, amountB);
-            let pairDispatcher = IPairDispatcher { contract_address: pair };
+            let pairDispatcher = IJediswapPairDispatcher { contract_address: pair };
             let liquidity = pairDispatcher.mint(to);
             (amountA, amountB, liquidity)
         }
@@ -213,7 +216,7 @@ mod RouterC1 {
             }
             let pair = _pair_for(factory, *path[current_index], *path[current_index + 1]);
             let data = ArrayTrait::<felt252>::new();
-            let pairDispatcher = IPairDispatcher { contract_address: pair };
+            let pairDispatcher = IJediswapPairDispatcher { contract_address: pair };
             pairDispatcher.swap(amount0Out, amount1Out, to, data);
             return InternalImpl::_swap(
                 ref self, current_index + 1, amounts_len, ref amounts, path, _to
@@ -274,7 +277,7 @@ mod RouterC1 {
     ) -> (u256, u256) {
         let (token0, _) = _sort_tokens(tokenA, tokenB);
         let pair = _pair_for(factory, tokenA, tokenB);
-        let pairDispatcher = IPairDispatcher { contract_address: pair };
+        let pairDispatcher = IJediswapPairDispatcher { contract_address: pair };
         let (reserve0, reserve1, _) = pairDispatcher.get_reserves();
         if (tokenA == token0) {
             return (reserve0, reserve1);

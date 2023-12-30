@@ -1,7 +1,7 @@
 use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
 use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
 use starknet::{ContractAddress, contract_address_const};
-use unruggable::amm::amm::{AMM, AMMV2, AMMTrait};
+use unruggable::exchanges::{Exchange, SupportedExchanges, ExchangeTrait};
 use unruggable::factory::{IFactory, IFactoryDispatcher, IFactoryDispatcherTrait};
 use unruggable::tests::utils::{
     deploy_amm_factory_and_router, deploy_meme_factory, deploy_locker, deploy_eth, OWNER, NAME,
@@ -18,7 +18,7 @@ fn test_amm_router_address() {
     let memecoin_factory = IFactoryDispatcher { contract_address: memecoin_factory_address };
 
     let amm_router_address = memecoin_factory
-        .amm_router_address(amm_name: AMMV2::JediSwap.to_string());
+        .amm_router_address(amm_name: SupportedExchanges::JediSwap.to_string());
     assert(amm_router_address == router_address, 'wrong amm router_address');
 }
 

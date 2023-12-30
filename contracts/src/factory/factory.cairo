@@ -1,6 +1,6 @@
 use openzeppelin::token::erc20::interface::{IERC20, ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
 use starknet::ContractAddress;
-use unruggable::amm::amm::AMM;
+use unruggable::exchanges::Exchange;
 
 
 #[starknet::contract]
@@ -17,7 +17,7 @@ mod Factory {
     use starknet::{
         ContractAddress, ClassHash, get_caller_address, get_contract_address, contract_address_const
     };
-    use unruggable::amm::amm::AMM;
+    use unruggable::exchanges::Exchange;
     use unruggable::factory::IFactory;
 
     // Components.
@@ -58,16 +58,16 @@ mod Factory {
         ref self: ContractState,
         owner: ContractAddress,
         memecoin_class_hash: ClassHash,
-        mut amms: Span<AMM>
+        mut amms: Span<Exchange>
     ) {
         // Initialize the owner.
         self.ownable.initializer(owner);
         self.memecoin_class_hash.write(memecoin_class_hash);
 
-        // Add AMMs configurations
+        // Add Exchanges configurations
         loop {
             match amms.pop_front() {
-                Option::Some(amm) => self.amm_configs.write(*amm.name, *amm.router_address),
+                Option::Some(amm) => self.amm_configs.write(*amm.name, *amm.contract_address),
                 Option::None => { break; }
             }
         };

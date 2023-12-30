@@ -6,7 +6,7 @@ use snforge_std::{
     TxInfoMock
 };
 use starknet::{ContractAddress, contract_address_const};
-use unruggable::amm::amm::{AMM, AMMV2};
+use unruggable::exchanges::{Exchange, SupportedExchanges};
 use unruggable::tests::utils::{
     OWNER, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, RECIPIENT, SPENDER, deploy_locker, INITIAL_HOLDERS,
     INITIAL_HOLDERS_AMOUNTS, TRANSFER_LIMIT_DELAY, DefaultTxInfoMock, deploy_standalone_memecoin
