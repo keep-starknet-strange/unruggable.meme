@@ -252,7 +252,7 @@ mod UnruggableMemecoin {
             // which performs a transferFrom() to send the tokens to the pool.
             // Therefore, we need to bypass this validation if the sender is the memecoin contract.
             if sender != get_contract_address() {
-                self.ensure_not_multicall(sender);
+                self.ensure_not_multicall(recipient);
                 self.enforce_max_transfer_percentage(sender, recipient, amount);
                 self.enforce_prelaunch_holders_limit(sender, recipient, amount);
             }
@@ -341,9 +341,15 @@ mod UnruggableMemecoin {
         // do multiple transfers when using complex routes.
         #[inline(always)]
         fn ensure_not_multicall(ref self: ContractState, recipient: ContractAddress) {
-            let tx_hash: felt252 = get_tx_info().unbox().transaction_hash;
-            assert(self.tx_hash_tracker.read(recipient) != tx_hash, 'Multi calls not allowed');
-            self.tx_hash_tracker.write(recipient, tx_hash);
+            let launch_time = self.launch_time.read();
+            let transfer_delay = self.transfer_limit_delay.read();
+            let current_time = get_block_timestamp();
+
+            if (current_time < (launch_time + transfer_delay) || launch_time == 0_u64) {
+                let tx_hash: felt252 = get_tx_info().unbox().transaction_hash;
+                assert(self.tx_hash_tracker.read(recipient) != tx_hash, 'Multi calls not allowed');
+                self.tx_hash_tracker.write(recipient, tx_hash);
+            }
         }
 
         /// Checks and allocates the team supply of the memecoin.

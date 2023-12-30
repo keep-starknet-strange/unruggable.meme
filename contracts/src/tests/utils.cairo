@@ -2,7 +2,8 @@ use core::traits::TryInto;
 use openzeppelin::token::erc20::interface::ERC20ABIDispatcher;
 use openzeppelin::token::erc20::interface::ERC20ABIDispatcherTrait;
 use snforge_std::{
-    ContractClass, ContractClassTrait, CheatTarget, declare, start_prank, stop_prank, TxInfoMock
+    ContractClass, ContractClassTrait, CheatTarget, declare, start_prank, stop_prank, TxInfoMock,
+    start_warp, stop_warp
 };
 use starknet::ContractAddress;
 use unruggable::exchanges::{Exchange, SupportedExchanges, ExchangeTrait};
@@ -285,6 +286,26 @@ fn deploy_memecoin_through_factory_with_owner(
 
 fn deploy_memecoin_through_factory() -> (IUnruggableMemecoinDispatcher, ContractAddress) {
     deploy_memecoin_through_factory_with_owner(OWNER())
+}
+
+// Sets the env block timestamp to 1 and launchs the memecoin - so that launched_at is 1
+// In this context, the owner of the factory is the address of the snforge test
+fn deploy_and_launch_memecoin() -> (IUnruggableMemecoinDispatcher, ContractAddress) {
+    let owner = starknet::get_contract_address();
+    let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
+    let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
+
+    // The amount supplied as liquidity are the amount
+    // held by the memecoin contract pre-launch
+    let memecoin_bal_meme = memecoin.balanceOf(memecoin_address);
+    let memecoin_bal_eth = eth.balanceOf(memecoin_address);
+
+    start_prank(CheatTarget::One(JEDI_ROUTER_ADDRESS()), memecoin_address);
+    start_warp(CheatTarget::One(memecoin_address), 1);
+    let pool_address = memecoin.launch_memecoin(SupportedExchanges::JediSwap, eth.contract_address);
+    stop_prank(CheatTarget::One(MEMEFACTORY_ADDRESS()));
+    stop_warp(CheatTarget::One(memecoin_address));
+    (memecoin, memecoin_address)
 }
 
 

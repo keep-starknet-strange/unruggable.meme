@@ -161,7 +161,8 @@ mod memecoin_entrypoints {
         IERC20, ERC20ABIDispatcher, ERC20ABIDispatcherTrait
     };
     use snforge_std::{
-        declare, ContractClassTrait, start_prank, stop_prank, CheatTarget, start_warp, TxInfoMock
+        declare, ContractClassTrait, start_prank, stop_prank, CheatTarget, start_warp, stop_warp,
+        TxInfoMock
     };
     use starknet::{ContractAddress, contract_address_const};
     use unruggable::exchanges::jediswap_adapter::{
@@ -176,7 +177,8 @@ mod memecoin_entrypoints {
         deploy_eth_with_owner, OWNER, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS,
         INITIAL_HOLDER_1, INITIAL_HOLDER_2, INITIAL_HOLDERS_AMOUNTS, SALT, DefaultTxInfoMock,
         deploy_memecoin_through_factory, ETH_ADDRESS, deploy_memecoin_through_factory_with_owner,
-        JEDI_ROUTER_ADDRESS, MEMEFACTORY_ADDRESS, ALICE, BOB, pow_256, LOCKER_ADDRESS
+        JEDI_ROUTER_ADDRESS, MEMEFACTORY_ADDRESS, ALICE, BOB, pow_256, LOCKER_ADDRESS,
+        deploy_and_launch_memecoin, TRANSFER_LIMIT_DELAY
     };
     use unruggable::tokens::interface::{
         IUnruggableMemecoin, IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -283,13 +285,31 @@ mod memecoin_entrypoints {
     #[test]
     #[should_panic(expected: ('Multi calls not allowed',))]
     fn test_transfer_from_multi_call() {
-        let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
+        let (memecoin, memecoin_address) = deploy_and_launch_memecoin();
 
         // Transfer token from owner to ALICE() twice - should fail because
         // the tx_hash is the same for both calls
         start_prank(CheatTarget::One(memecoin.contract_address), INITIAL_HOLDER_1());
         let send_amount = memecoin.transfer_from(INITIAL_HOLDER_1(), ALICE(), 0);
+        start_prank(CheatTarget::One(memecoin.contract_address), INITIAL_HOLDER_2());
+        let send_amount = memecoin.transfer_from(INITIAL_HOLDER_2(), ALICE(), 0);
+    }
+
+    #[test]
+    fn test_multi_call_prevention_disallowed_after_delay() {
+        let (memecoin, memecoin_address) = deploy_and_launch_memecoin();
+
+        let launch_timestamp = 1;
+
+        // setting block timestamp >= launch_time + transfer_delay. Transfer should succeed
+        // as multi calls to the same recipient are allowed after the delay
+        start_warp(
+            CheatTarget::One(memecoin.contract_address), launch_timestamp + TRANSFER_LIMIT_DELAY + 1
+        );
+        start_prank(CheatTarget::One(memecoin.contract_address), INITIAL_HOLDER_1());
         let send_amount = memecoin.transfer_from(INITIAL_HOLDER_1(), ALICE(), 0);
+        start_prank(CheatTarget::One(memecoin.contract_address), INITIAL_HOLDER_2());
+        let send_amount = memecoin.transfer_from(INITIAL_HOLDER_2(), ALICE(), 0);
     }
 
     #[test]
