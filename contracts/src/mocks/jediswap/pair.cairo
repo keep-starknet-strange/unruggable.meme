@@ -71,9 +71,12 @@ mod PairC1 {
     component!(path: ERC20Component, storage: erc20, event: ERC20Event);
 
     // Impl
+    #[abi(embed_v0)]
     impl ERC20Impl = ERC20Component::ERC20Impl<ContractState>;
-
-    // Internals
+    #[abi(embed_v0)]
+    impl ERC20MetadataImpl = ERC20Component::ERC20MetadataImpl<ContractState>;
+    #[abi(embed_v0)]
+    impl ERC20CamelOnly = ERC20Component::ERC20CamelOnlyImpl<ContractState>;
     impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
 
     //

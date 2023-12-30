@@ -1,26 +1,21 @@
 mod errors;
+mod factory;
+mod locker;
 
 #[cfg(test)]
 mod tests;
-mod token_locker;
+mod tokens;
 
-mod tokens {
+mod mocks {
     mod erc20;
-    mod factory;
-    mod interface;
-    mod memecoin;
-}
-
-mod amm {
-    mod amm;
-    mod jediswap_interface;
-}
-
-mod tests_utils {
-    mod deployer_helper;
     mod jediswap {
         mod factory;
         mod pair;
         mod router;
     }
+}
+
+mod amm {
+    mod amm;
+    mod jediswap_interface;
 }
