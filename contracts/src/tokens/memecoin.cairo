@@ -3,10 +3,10 @@ use starknet::ContractAddress;
 
 #[starknet::contract]
 mod UnruggableMemecoin {
-    use openzeppelin::access::ownable::interface::IOwnable;
     use debug::PrintTrait;
     use integer::BoundedInt;
     use openzeppelin::access::ownable::OwnableComponent;
+    use openzeppelin::access::ownable::interface::IOwnable;
     use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait as OwnableInternalTrait;
     use openzeppelin::token::erc20::ERC20Component;
 

@@ -5,8 +5,8 @@ use snforge_std::{
     declare, ContractClassTrait, start_prank, stop_prank, RevertedTransaction, CheatTarget,
     TxInfoMock,
 };
-use starknet::{ContractAddress, contract_address_const};
 use starknet::contract_address::ContractAddressZeroable;
+use starknet::{ContractAddress, contract_address_const};
 use unruggable::exchanges::{Exchange, SupportedExchanges, ExchangeTrait};
 use unruggable::tests::utils::{
     OWNER, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, RECIPIENT, SPENDER, deploy_locker, INITIAL_HOLDERS,
