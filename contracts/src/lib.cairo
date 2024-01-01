@@ -6,6 +6,10 @@ mod locker;
 mod tests;
 mod tokens;
 
+mod utils {
+    mod math;
+}
+
 mod mocks {
     mod erc20;
     mod jediswap {

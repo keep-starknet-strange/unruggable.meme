@@ -18,6 +18,8 @@ use unruggable::tokens::interface::{
 const DEFAULT_LOCK_DEADLINE: u64 = 300;
 const DEFAULT_LOCK_AMOUNT: u256 = 100;
 
+/// Sets up the locker contract and deploys a token contract.
+/// For simplicity, the token deployed is the default "ETH" token.
 fn setup() -> (ERC20ABIDispatcher, ITokenLockerDispatcher) {
     let (token, token_address) = deploy_eth();
     let locker = deploy_locker();

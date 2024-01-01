@@ -3,7 +3,7 @@ use starknet::ContractAddress;
 
 #[starknet::interface]
 trait IFactory<TContractState> {
-    /// Creates a new memecoin.
+    /// Deploys a new memecoin, using the class hash that was registered in the factory upon initialization.
     ///
     /// This function deploys a new memecoin contract with the given parameters,
     /// transfers 1 ETH from the caller to the new memecoin, and emits a `MemeCoinCreated` event.
@@ -15,6 +15,8 @@ trait IFactory<TContractState> {
     /// * `initial_supply` - The initial supply of the Memecoin.
     /// * `initial_holders` - An array containing the initial holders' addresses.
     /// * `initial_holders_amounts` - An array containing the initial amounts held by each corresponding initial holder.
+    /// * `transfer_limit_delay` - The delay in seconds during which transfers will be limited to a % of max supply after launch.
+    /// * `counterparty_token` - The address of the counterparty token
     /// * `contract_address_salt` - A unique salt value for contract deployment
     ///
     /// # Returns
@@ -29,7 +31,8 @@ trait IFactory<TContractState> {
         initial_supply: u256,
         initial_holders: Span<ContractAddress>,
         initial_holders_amounts: Span<u256>,
-        eth_contract: ERC20ABIDispatcher,
+        transfer_limit_delay: u64,
+        counterparty_token: ERC20ABIDispatcher,
         contract_address_salt: felt252
     ) -> ContractAddress;
 

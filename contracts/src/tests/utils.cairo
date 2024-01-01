@@ -46,6 +46,10 @@ fn SALT() -> felt252 {
     'salty'.try_into().unwrap()
 }
 
+fn DEFAULT_INITIAL_SUPPLY() -> u256 {
+    21_000_000 * pow_256(10, 18)
+}
+
 
 trait TxInfoMockTrait {
     fn default() -> TxInfoMock;
@@ -199,10 +203,11 @@ fn deploy_memecoin() -> ContractAddress {
             :locker_address,
             name: NAME(),
             symbol: SYMBOL(),
-            initial_supply: ETH_INITIAL_SUPPLY(),
+            initial_supply: DEFAULT_INITIAL_SUPPLY(),
             initial_holders: INITIAL_HOLDERS(),
             initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
-            eth_contract: eth,
+            transfer_limit_delay: 1000,
+            counterparty_token: eth,
             contract_address_salt: SALT(),
         );
     stop_prank(CheatTarget::One(memecoin_factory.contract_address));
