@@ -32,15 +32,14 @@ mod UnruggableMemecoin {
 
     // Components.
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
+    #[abi(embed_v0)]
+    impl OwnableImpl = OwnableComponent::OwnableImpl<ContractState>;
     impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
 
     component!(path: ERC20Component, storage: erc20, event: ERC20Event);
-    // Internals
-    impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
-
-    // ERC20 entrypoints.
     #[abi(embed_v0)]
     impl ERC20MetadataImpl = ERC20Component::ERC20MetadataImpl<ContractState>;
+    impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
 
     // Constants.
     /// The maximum number of holders allowed before launch.
@@ -179,7 +178,7 @@ mod UnruggableMemecoin {
             };
             let counterparty_token_balance = counterparty_token.balanceOf(memecoin_address);
 
-            // [Approve]
+            // Approval is done with the internal _approve as the owner must be `address(this)`, not `caller`.
             self.erc20._approve(memecoin_address, amm_router.contract_address, memecoin_balance);
             counterparty_token.approve(amm_router.contract_address, counterparty_token_balance);
 
@@ -199,7 +198,7 @@ mod UnruggableMemecoin {
             assert(self.balanceOf(pair_address) == memecoin_balance, 'add liquidity meme failed');
             assert(
                 counterparty_token.balanceOf(pair_address) == counterparty_token_balance,
-                'add liquidity eth failed'
+                'add liq counterparty failed'
             );
             let pair = ERC20ABIDispatcher { contract_address: pair_address, };
 
@@ -209,8 +208,6 @@ mod UnruggableMemecoin {
             let locker_address = self.locker_contract.read();
             let locker_dispatcher = ITokenLockerDispatcher { contract_address: locker_address };
             pair.approve(locker_address, liquidity_received);
-            // unlock_time: u64,
-            // withdrawer: ContractAddress
             locker_dispatcher
                 .lock_tokens(
                     token: pair_address,
@@ -234,6 +231,14 @@ mod UnruggableMemecoin {
         /// Returns the team allocation in tokens.
         fn get_team_allocation(self: @ContractState) -> u256 {
             self.team_allocation.read()
+        }
+
+        fn memecoin_factory_address(self: @ContractState) -> ContractAddress {
+            self.factory_contract.read()
+        }
+
+        fn locker_address(self: @ContractState) -> ContractAddress {
+            self.locker_contract.read()
         }
     }
 
@@ -490,6 +495,8 @@ mod UnruggableMemecoin {
         ///
         /// * If the transfer amount exceeds the maximum allowed percentage of the total supply during the launch phase.
         ///
+        //TODO: verify compatibility with LP pool. If lp calls `transferFrom` this might fail.
+        // Not sure why the pool is whitelisted
         #[inline(always)]
         fn enforce_max_transfer_percentage(
             self: @ContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256

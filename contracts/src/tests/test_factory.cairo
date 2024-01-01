@@ -97,11 +97,18 @@ fn test_create_memecoin() {
     assert(memecoin.name() == NAME(), 'wrong memecoin name');
     assert(memecoin.symbol() == SYMBOL(), 'wrong memecoin symbol');
     // initial supply - initial holder balance
+    let holders_sum = *INITIAL_HOLDERS_AMOUNTS()[0] + *INITIAL_HOLDERS_AMOUNTS()[1];
     assert(
-        memecoin.balanceOf(memecoin_address) == DEFAULT_INITIAL_SUPPLY() - 100,
+        memecoin.balanceOf(memecoin_address) == DEFAULT_INITIAL_SUPPLY() - holders_sum,
         'wrong initial supply'
     );
-    assert(memecoin.balanceOf(*INITIAL_HOLDERS()[0]) == 50, 'wrong initial_holder_1 balance');
-    assert(memecoin.balanceOf(*INITIAL_HOLDERS()[1]) == 50, 'wrong initial_holder_2 balance');
+    assert(
+        memecoin.balanceOf(*INITIAL_HOLDERS()[0]) == *INITIAL_HOLDERS_AMOUNTS()[0],
+        'wrong initial_holder_1 balance'
+    );
+    assert(
+        memecoin.balanceOf(*INITIAL_HOLDERS()[1]) == *INITIAL_HOLDERS_AMOUNTS()[1],
+        'wrong initial_holder_2 balance'
+    );
 }
 

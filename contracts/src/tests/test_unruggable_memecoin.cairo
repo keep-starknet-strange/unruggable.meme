@@ -7,86 +7,156 @@ use snforge_std::{
 };
 use starknet::{ContractAddress, contract_address_const};
 use unruggable::amm::amm::{AMM, AMMV2, AMMTrait};
-use unruggable::tests::utils::DefaultTxInfoMock;
+use unruggable::tests::utils::{
+    OWNER, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, RECIPIENT, SPENDER, deploy_locker, INITIAL_HOLDERS,
+    INITIAL_HOLDERS_AMOUNTS, TRANSFER_LIMIT_DELAY, DefaultTxInfoMock,
+    deploy_memecoin_through_factory
+};
 use unruggable::tokens::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
 };
 
+mod test_constructor {
+    use UnruggableMemecoin::{
+        pre_launch_holders_countContractMemberStateTrait,
+        transfer_limit_delayContractMemberStateTrait, team_allocationContractMemberStateTrait,
+        IUnruggableAdditional, IUnruggableMemecoinCamel, IUnruggableMemecoinSnake
+    };
+    use core::debug::PrintTrait;
+    use core::traits::TryInto;
+    use openzeppelin::token::erc20::interface::IERC20;
+    use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
+    use starknet::{ContractAddress, contract_address_const};
+    use unruggable::tests::utils::{
+        deploy_amm_factory_and_router, deploy_meme_factory_with_owner, deploy_locker,
+        deploy_eth_with_owner, OWNER, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS,
+        INITIAL_HOLDER_1, INITIAL_HOLDER_2, INITIAL_HOLDERS_AMOUNTS, SALT, DefaultTxInfoMock,
+        deploy_memecoin_through_factory, ETH_ADDRESS, deploy_memecoin_through_factory_with_owner,
+        JEDI_ROUTER_ADDRESS, MEMEFACTORY_ADDRESS, ALICE, BOB, TRANSFER_LIMIT_DELAY, pow_256,
+        LOCKER_ADDRESS, JEDI_FACTORY_ADDRESS
+    };
+    use unruggable::tokens::UnruggableMemecoin;
+    use unruggable::tokens::interface::{
+        IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
+    };
 
-//
-// Constants
-//
-fn RECIPIENT() -> ContractAddress {
-    return contract_address_const::<'RECIPIENT'>();
-}
 
-fn SPENDER() -> ContractAddress {
-    return contract_address_const::<'RECIPIENT'>();
-}
+    #[test]
+    fn test_constructor_happy_path() {
+        let mut memecoin = UnruggableMemecoin::contract_state_for_testing();
 
-const ETH_UNIT_DECIMALS: u256 = 1000000000000000000;
+        // Deployer must be the meme factory
+        start_prank(CheatTarget::One(snforge_std::test_address()), MEMEFACTORY_ADDRESS());
+        UnruggableMemecoin::constructor(
+            ref memecoin,
+            OWNER(),
+            LOCKER_ADDRESS(),
+            TRANSFER_LIMIT_DELAY,
+            NAME(),
+            SYMBOL(),
+            DEFAULT_INITIAL_SUPPLY(),
+            INITIAL_HOLDERS(),
+            INITIAL_HOLDERS_AMOUNTS()
+        );
 
-//
-// Setup
-//
+        // External entrypoints
+        assert(memecoin.locker_address() == LOCKER_ADDRESS(), 'wrong locker');
+        assert(
+            memecoin.memecoin_factory_address() == MEMEFACTORY_ADDRESS(), 'wrong factory address'
+        );
 
-fn deploy_contract(
-    owner: ContractAddress,
-    name: felt252,
-    symbol: felt252,
-    initial_supply: u256,
-    initial_holders: Span<ContractAddress>,
-    initial_holders_amounts: Span<u256>,
-) -> Result<ContractAddress, RevertedTransaction> {
-    let contract = declare('UnruggableMemecoin');
-    let mut constructor_calldata = array![
-        owner.into(),
-        'locker',
-        1000.into(),
-        name,
-        symbol,
-        initial_supply.low.into(),
-        initial_supply.high.into()
-    ];
+        // Check internals that must be set upon deployment
+        assert(
+            memecoin.transfer_limit_delay.read() == TRANSFER_LIMIT_DELAY,
+            'wrong transfer limit delay'
+        );
+        assert(
+            memecoin.team_allocation.read() == 2_100_000 * pow_256(10, 18), 'wrong team allocation'
+        ); // 10% of supply
+    }
 
-    Serde::serialize(@initial_holders.into(), ref constructor_calldata);
-    Serde::serialize(@initial_holders_amounts.into(), ref constructor_calldata);
-    contract.deploy(@constructor_calldata)
-}
+    #[test]
+    #[should_panic(expected: ('Unruggable: arrays len dif',))]
+    fn test_constructor_initial_holders_arrays_len_mismatch() {
+        let initial_holders: Array<ContractAddress> = array![
+            INITIAL_HOLDER_1(),
+            INITIAL_HOLDER_2(),
+            contract_address_const::<'holder 3'>(),
+            contract_address_const::<'holder 4'>()
+        ];
+        let initial_holders_amounts: Array<u256> = array![50, 40, 10];
+        let mut state = UnruggableMemecoin::contract_state_for_testing();
+        UnruggableMemecoin::constructor(
+            ref state,
+            OWNER(),
+            LOCKER_ADDRESS(),
+            TRANSFER_LIMIT_DELAY,
+            NAME(),
+            SYMBOL(),
+            DEFAULT_INITIAL_SUPPLY(),
+            initial_holders.span(),
+            initial_holders_amounts.span()
+        );
+    }
 
-fn instantiate_params() -> (
-    ContractAddress,
-    felt252,
-    felt252,
-    u256,
-    ContractAddress,
-    ContractAddress,
-    Span<ContractAddress>,
-    Span<u256>,
-) {
-    let owner = contract_address_const::<42>();
-    let name = 'UnruggableMemecoin';
-    let symbol = 'UM';
-    let initial_supply = 1000;
-    let initial_holder_1 = contract_address_const::<44>();
-    let initial_holder_2 = contract_address_const::<45>();
-    let initial_holders = array![initial_holder_1, initial_holder_2].span();
-    let initial_holders_amounts = array![50, 50].span();
-    (
-        owner,
-        name,
-        symbol,
-        initial_supply,
-        initial_holder_1,
-        initial_holder_2,
-        initial_holders,
-        initial_holders_amounts
-    )
+    #[test]
+    #[should_panic(expected: ('Unruggable: max holders reached',))]
+    fn test_constructor_max_holders_reached() {
+        // 11 holders > 10 holders max
+        let initial_holders = array![
+            INITIAL_HOLDER_1(),
+            INITIAL_HOLDER_2(),
+            contract_address_const::<52>(),
+            contract_address_const::<53>(),
+            contract_address_const::<54>(),
+            contract_address_const::<55>(),
+            contract_address_const::<56>(),
+            contract_address_const::<57>(),
+            contract_address_const::<58>(),
+            contract_address_const::<59>(),
+            contract_address_const::<60>(),
+        ];
+        let initial_holders_amounts: Array<u256> = array![1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+        let mut state = UnruggableMemecoin::contract_state_for_testing();
+        UnruggableMemecoin::constructor(
+            ref state,
+            OWNER(),
+            LOCKER_ADDRESS(),
+            TRANSFER_LIMIT_DELAY,
+            NAME(),
+            SYMBOL(),
+            DEFAULT_INITIAL_SUPPLY(),
+            initial_holders.span(),
+            initial_holders_amounts.span()
+        );
+    }
+
+    #[test]
+    #[should_panic(expected: ('Unruggable: max team allocation',))]
+    fn test_constructor_too_much_team_alloc_should_fail() {
+        let mut calldata = array![
+            OWNER().into(), 'locker', TRANSFER_LIMIT_DELAY.into(), NAME().into(), SYMBOL().into()
+        ];
+        // Allocation over 10% (over 2.1M)
+        let alloc_holder_1 = 1_050_000 * pow_256(10, 18);
+        let alloc_holder_2 = 1_050_001 * pow_256(10, 18);
+        let mut state = UnruggableMemecoin::contract_state_for_testing();
+        UnruggableMemecoin::constructor(
+            ref state,
+            OWNER(),
+            LOCKER_ADDRESS(),
+            TRANSFER_LIMIT_DELAY,
+            NAME(),
+            SYMBOL(),
+            DEFAULT_INITIAL_SUPPLY(),
+            INITIAL_HOLDERS(),
+            array![alloc_holder_1, alloc_holder_2].span()
+        );
+    }
 }
 
 mod memecoin_entrypoints {
     use debug::PrintTrait;
-
     use openzeppelin::token::erc20::interface::{
         IERC20, ERC20ABIDispatcher, ERC20ABIDispatcherTrait
     };
@@ -94,21 +164,18 @@ mod memecoin_entrypoints {
         declare, ContractClassTrait, start_prank, stop_prank, CheatTarget, start_warp, TxInfoMock
     };
     use starknet::{ContractAddress, contract_address_const};
-    use super::{deploy_contract, instantiate_params, ETH_UNIT_DECIMALS};
     use unruggable::amm::amm::{AMM, AMMV2, AMMTrait};
     use unruggable::amm::jediswap_interface::{
         IFactoryC1, IFactoryC1Dispatcher, IFactoryC1DispatcherTrait, IRouterC1, IRouterC1Dispatcher,
         IRouterC1DispatcherTrait, IPairDispatcher, IPairDispatcherTrait
     };
-
     use unruggable::factory::{IFactory, IFactoryDispatcher, IFactoryDispatcherTrait};
-    use unruggable::tests::utils::DeployerHelper::{
-        deploy_contracts, deploy_unruggable_memecoin_contract, deploy_memecoin_factory, create_eth,
-    };
     use unruggable::tests::utils::{
         deploy_amm_factory_and_router, deploy_meme_factory_with_owner, deploy_locker,
         deploy_eth_with_owner, OWNER, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS,
-        INITIAL_HOLDERS_AMOUNTS, SALT, DefaultTxInfoMock
+        INITIAL_HOLDER_1, INITIAL_HOLDER_2, INITIAL_HOLDERS_AMOUNTS, SALT, DefaultTxInfoMock,
+        deploy_memecoin_through_factory, ETH_ADDRESS, deploy_memecoin_through_factory_with_owner,
+        JEDI_ROUTER_ADDRESS, MEMEFACTORY_ADDRESS, ALICE, BOB, pow_256, LOCKER_ADDRESS
     };
     use unruggable::tokens::interface::{
         IUnruggableMemecoin, IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -116,109 +183,21 @@ mod memecoin_entrypoints {
     use unruggable::tokens::memecoin::UnruggableMemecoin;
 
     #[test]
-    #[should_panic(expected: ('Caller is not the owner',))]
-    fn test_launch_memecoin_not_owner() {
-        // Setup
-        let (_, router_address) = deploy_contracts();
-        let router_dispatcher = IRouterC1Dispatcher { contract_address: router_address };
-
-        let (owner, name, symbol, _, _, initial_holder_2, _, _) = instantiate_params();
-        let contract_address_salt = 'salty';
-        let initial_holders = array![owner].span();
-        let initial_holders_amounts = array![1 * ETH_UNIT_DECIMALS].span();
-
-        // Declare availables AMMs for this factory
-        let mut amms = array![AMM { name: AMMV2::JediSwap.to_string(), router_address }];
-
-        // Declare UnruggableMemecoin and use ClassHash for the Factory
-        let declare_memecoin = declare('UnruggableMemecoin');
-        let memecoin_factory_address = deploy_memecoin_factory(
-            owner, declare_memecoin.class_hash, amms
-        );
-        let unruggable_meme_factory = IFactoryDispatcher {
-            contract_address: memecoin_factory_address
-        };
-
-        let locker_calldata = array![200];
-        let locker_contract = declare('TokenLocker');
-        let locker_address = locker_contract.deploy(@locker_calldata).unwrap();
-
-        let initial_supply: u256 = 100 * ETH_UNIT_DECIMALS;
-
-        let eth = create_eth(initial_supply, owner, unruggable_meme_factory.contract_address);
-
-        start_prank(CheatTarget::One(unruggable_meme_factory.contract_address), owner);
-        // Create a MemeCoin
-        let memecoin_address = unruggable_meme_factory
-            .create_memecoin(
-                owner,
-                locker_address,
-                name,
-                symbol,
-                initial_supply,
-                initial_holders,
-                initial_holders_amounts,
-                1000,
-                eth,
-                contract_address_salt
-            );
-        stop_prank(CheatTarget::One(unruggable_meme_factory.contract_address));
-        let unruggable_memecoin = IUnruggableMemecoinDispatcher {
-            contract_address: memecoin_address
-        };
-        unruggable_memecoin.launch_memecoin(AMMV2::JediSwap, eth.contract_address,);
-    }
-    #[test]
     fn test_launch_memecoin_happy_path() {
-        // Setup
-        let (_, router_address) = deploy_amm_factory_and_router();
-        let router_dispatcher = IRouterC1Dispatcher { contract_address: router_address };
-
-        // NOTE:
-        // 1. The initial call to `memecoin_address` should be made by the owner.
-        // 2. Subsequently, the router needs to call memecoin to transfer tokens to the pool.
-        // 3. The second call to `memecoin_address` should be made by the router.
-        //    However, note that the prank still designates owner as the caller.
-        // Since we can't switch the mock caller target inside a function call, we cannot rely on
-        // starknet foundry's `start_prank` to test this.
-        // However, if we make the test contract the owner of the memecoin,
-        // then we can simply call `launch_memecoin` and all caller contexts will be correct.
         let owner = starknet::get_contract_address();
+        let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
+        let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
 
-        let memecoin_factory_address = deploy_meme_factory_with_owner(owner, router_address);
-        let memecoin_factory = IFactoryDispatcher { contract_address: memecoin_factory_address };
-
-        let locker = deploy_locker();
-
-        let (eth, eth_address) = deploy_eth_with_owner(owner);
-        start_prank(CheatTarget::One(eth.contract_address), owner);
-        eth.approve(spender: memecoin_factory_address, amount: 1 * ETH_UNIT_DECIMALS);
-        stop_prank(CheatTarget::One(eth.contract_address));
-
-        start_prank(CheatTarget::One(memecoin_factory_address), owner);
-        // Create a MemeCoin
-        let memecoin_address = memecoin_factory
-            .create_memecoin(
-                owner: owner,
-                locker_address: locker,
-                name: NAME(),
-                symbol: SYMBOL(),
-                initial_supply: DEFAULT_INITIAL_SUPPLY(),
-                initial_holders: INITIAL_HOLDERS(),
-                initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
-                transfer_limit_delay: 1000,
-                counterparty_token: eth,
-                contract_address_salt: SALT(),
-            );
-        stop_prank(CheatTarget::One(memecoin_factory_address));
-        let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
-
+        // The amount supplied as liquidity are the amount
+        // held by the memecoin contract pre-launch
         let memecoin_bal_meme = memecoin.balanceOf(memecoin_address);
         let memecoin_bal_eth = eth.balanceOf(memecoin_address);
 
-        start_prank(CheatTarget::One(router_address), memecoin_address);
+        start_prank(CheatTarget::One(JEDI_ROUTER_ADDRESS()), memecoin_address);
         let pool_address = memecoin.launch_memecoin(AMMV2::JediSwap, eth.contract_address);
-        stop_prank(CheatTarget::One(memecoin_factory_address));
+        stop_prank(CheatTarget::One(MEMEFACTORY_ADDRESS()));
+
+        assert(memecoin.launched(), 'should be launched');
         let pool_dispatcher = IPairDispatcher { contract_address: pool_address };
         let (token_0_reserves, token_1_reserves, _) = pool_dispatcher.get_reserves();
         assert(pool_dispatcher.token0() == memecoin_address, 'wrong token 0 address');
@@ -230,406 +209,97 @@ mod memecoin_entrypoints {
     }
 
     #[test]
-    fn test_get_team_allocation() {
-        let (
-            owner,
-            name,
-            symbol,
-            initial_supply,
-            initial_holder_1,
-            initial_holder_2,
-            initial_holders,
-            initial_holders_amounts
-        ) =
-            instantiate_params();
-        let contract_address =
-            match deploy_contract(
-                owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-            ) {
-            Result::Ok(address) => address,
-            Result::Err(msg) => panic(msg.panic_data),
-        };
+    #[should_panic(expected: ('Caller is not the owner',))]
+    fn test_launch_memecoin_not_owner() {
+        let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
+        memecoin.launch_memecoin(AMMV2::JediSwap, ETH_ADDRESS(),);
+    }
 
-        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
+    #[test]
+    #[should_panic(expected: ('Unruggable: AMM not supported',))]
+    fn test_launch_memecoin_amm_not_supported() {
+        let owner = starknet::get_contract_address();
+        let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
+        let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
+
+        // The amount supplied as liquidity are the amount
+        // held by the memecoin contract pre-launch
+        let memecoin_bal_meme = memecoin.balanceOf(memecoin_address);
+        let memecoin_bal_eth = eth.balanceOf(memecoin_address);
+
+        start_prank(CheatTarget::One(JEDI_ROUTER_ADDRESS()), memecoin_address);
+        let pool_address = memecoin.launch_memecoin(AMMV2::Ekubo, eth.contract_address);
+    }
+
+    #[test]
+    fn test_get_team_allocation() {
+        let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
 
         let team_alloc = memecoin.get_team_allocation();
-        // theorical team allocation is 10%, so initial_supply * MAX_TEAM_ALLOC / 100
-        // 1000 * 100 / 100 = 100
-        assert(team_alloc == 100, 'Invalid team allocation');
+        // Team alloc is set to 10% in test utils
+        assert(team_alloc == 2_100_000 * pow_256(10, 18), 'Invalid team allocation');
+    }
+
+    #[test]
+    fn test_memecoin_factory_address() {
+        let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
+
+        assert(
+            memecoin.memecoin_factory_address() == MEMEFACTORY_ADDRESS(), 'wrong factory address'
+        );
+    }
+
+    #[test]
+    fn test_locker_address() {
+        let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
+
+        assert(memecoin.locker_address() == LOCKER_ADDRESS(), 'wrong locker address');
     }
 
     #[test]
     #[should_panic(expected: ('Max buy cap reached',))]
     fn test_transfer_max_percentage() {
-        let (
-            owner,
-            name,
-            symbol,
-            initial_supply,
-            initial_holder_1,
-            initial_holder_2,
-            initial_holders,
-            initial_holders_amounts
-        ) =
-            instantiate_params();
-        let alice = contract_address_const::<53>();
+        let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
 
-        let contract_address =
-            match deploy_contract(
-                owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-            ) {
-            Result::Ok(address) => address,
-            Result::Err(msg) => panic(msg.panic_data),
-        };
-
-        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
-
-        // setting tx_hash here 
-        let mut tx_info: TxInfoMock = Default::default();
-        tx_info.transaction_hash = Option::Some(1234);
-        snforge_std::start_spoof(CheatTarget::One(memecoin.contract_address), tx_info);
-
-        // Transfer 21 token from owner to alice.
-        start_prank(CheatTarget::One(memecoin.contract_address), initial_holder_1);
-        let send_amount = memecoin.transfer(alice, 21);
+        // Transfer slightly more than 2% of 21M stokens from owner to ALICE().
+        let amount = 420_001 * pow_256(10, 18);
+        start_prank(CheatTarget::One(memecoin.contract_address), INITIAL_HOLDER_1());
+        let send_amount = memecoin.transfer(ALICE(), amount);
     }
 
     #[test]
     #[should_panic(expected: ('Max buy cap reached',))]
     fn test_transfer_from_max_percentage() {
-        let (
-            owner,
-            name,
-            symbol,
-            initial_supply,
-            initial_holder_1,
-            initial_holder_2,
-            initial_holders,
-            initial_holders_amounts
-        ) =
-            instantiate_params();
-        let alice = contract_address_const::<53>();
+        let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
 
-        let contract_address =
-            match deploy_contract(
-                owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-            ) {
-            Result::Ok(address) => address,
-            Result::Err(msg) => panic(msg.panic_data),
-        };
-
-        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
-
-        // setting tx_hash here 
-        let mut tx_info: TxInfoMock = Default::default();
-        tx_info.transaction_hash = Option::Some(1234);
-        snforge_std::start_spoof(CheatTarget::One(memecoin.contract_address), tx_info);
-
-        // Transfer 21 token from owner to alice.
-        start_prank(CheatTarget::One(memecoin.contract_address), initial_holder_1);
-        let send_amount = memecoin.transfer_from(initial_holder_1, alice, 500);
+        let amount = 420_001 * pow_256(10, 18);
+        start_prank(CheatTarget::One(memecoin.contract_address), OWNER());
+        let send_amount = memecoin.transfer_from(OWNER(), ALICE(), amount);
     }
 
     #[test]
     #[should_panic(expected: ('Multi calls not allowed',))]
     fn test_transfer_from_multi_call() {
-        let (
-            owner,
-            name,
-            symbol,
-            initial_supply,
-            initial_holder_1,
-            initial_holder_2,
-            initial_holders,
-            initial_holders_amounts
-        ) =
-            instantiate_params();
-        let alice = contract_address_const::<53>();
-        let bob = contract_address_const::<54>();
+        let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
 
-        let contract_address =
-            match deploy_contract(
-                owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-            ) {
-            Result::Ok(address) => address,
-            Result::Err(msg) => panic(msg.panic_data),
-        };
-
-        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
-
-        // setting tx_hash here 
-        let mut tx_info: TxInfoMock = Default::default();
-        tx_info.transaction_hash = Option::Some(1234);
-
-        // Transfer token from owner to alice twice - should fail
-        start_prank(CheatTarget::One(memecoin.contract_address), initial_holder_1);
-        let send_amount = memecoin.transfer_from(initial_holder_1, alice, 0);
-        let send_amount = memecoin.transfer_from(initial_holder_1, alice, 0);
+        // Transfer token from owner to ALICE() twice - should fail because
+        // the tx_hash is the same for both calls
+        start_prank(CheatTarget::One(memecoin.contract_address), INITIAL_HOLDER_1());
+        let send_amount = memecoin.transfer_from(INITIAL_HOLDER_1(), ALICE(), 0);
+        let send_amount = memecoin.transfer_from(INITIAL_HOLDER_1(), ALICE(), 0);
     }
 
     #[test]
     fn test_classic_max_percentage() {
-        let (
-            owner,
-            name,
-            symbol,
-            initial_supply,
-            initial_holder_1,
-            initial_holder_2,
-            initial_holders,
-            initial_holders_amounts
-        ) =
-            instantiate_params();
-        let alice = contract_address_const::<53>();
+        let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
 
-        let contract_address =
-            match deploy_contract(
-                owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-            ) {
-            Result::Ok(address) => address,
-            Result::Err(msg) => panic(msg.panic_data),
-        };
-
-        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
-
-        // setting tx_hash here 
-        let mut tx_info: TxInfoMock = Default::default();
-        tx_info.transaction_hash = Option::Some(1234);
-        snforge_std::start_spoof(CheatTarget::One(memecoin.contract_address), tx_info);
-
-        // Transfer 1 token from owner to alice.
-        start_prank(CheatTarget::One(memecoin.contract_address), initial_holder_1);
-        let send_amount = memecoin.transfer(alice, 20);
-        assert(memecoin.balanceOf(alice) == 20, 'Invalid balance');
+        // Transfer 1 token from owner to ALICE().
+        start_prank(CheatTarget::One(memecoin_address), INITIAL_HOLDER_1());
+        let send_amount = memecoin.transfer(ALICE(), 20);
+        assert(memecoin.balanceOf(ALICE()) == 20, 'Invalid balance');
     }
 }
-mod custom_constructor {
-    use core::debug::PrintTrait;
-    use openzeppelin::token::erc20::interface::IERC20;
-    use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
-    use starknet::{ContractAddress, contract_address_const};
-    use super::{deploy_contract, instantiate_params};
-    use unruggable::tokens::interface::{
-        IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
-    };
 
-    #[test]
-    #[should_panic(expected: ('Unruggable: arrays len dif',))]
-    fn test_constructor_initial_holders_arrays_len_mismatch() {
-        let (owner, name, symbol, initial_supply, initial_holder_1, initial_holder_2, _, _) =
-            instantiate_params();
-        let initial_holder_3 = contract_address_const::<52>();
-        let initial_holder_4 = contract_address_const::<53>();
-        let initial_holders = array![
-            initial_holder_1, initial_holder_2, initial_holder_3, initial_holder_4
-        ]
-            .span();
-        let initial_holders_amounts = array![50, 40, 10].span();
-        match deploy_contract(
-            owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-        ) {
-            Result::Ok(address) => address.print(),
-            Result::Err(msg) => panic(msg.panic_data),
-        }
-    }
-
-    #[test]
-    fn test_constructor_initial_holders_arrays_len_is_equal() {
-        let (owner, name, symbol, initial_supply, initial_holder_1, initial_holder_2, _, _) =
-            instantiate_params();
-        let initial_holder_3 = contract_address_const::<52>();
-        // array_len is 4
-        let initial_holders = array![initial_holder_1, initial_holder_2, initial_holder_3].span();
-        // array_len is 4
-        let initial_holders_amounts = array![50, 40, 10].span();
-        match deploy_contract(
-            owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-        ) {
-            Result::Ok(address) => {},
-            Result::Err(msg) => panic(msg.panic_data),
-        }
-    }
-
-    #[test]
-    #[should_panic(expected: ('Unruggable: max holders reached',))]
-    fn test_max_holders_reached() {
-        let (owner, name, symbol, initial_supply, initial_holder_1, initial_holder_2, _, _) =
-            instantiate_params();
-        let initial_holder_3 = contract_address_const::<52>();
-        let initial_holder_4 = contract_address_const::<53>();
-        let initial_holder_5 = contract_address_const::<54>();
-        let initial_holder_6 = contract_address_const::<55>();
-        let initial_holder_7 = contract_address_const::<56>();
-        let initial_holder_8 = contract_address_const::<57>();
-        let initial_holder_9 = contract_address_const::<58>();
-        let initial_holder_10 = contract_address_const::<59>();
-        let initial_holder_11 = contract_address_const::<60>();
-        // 11 holders
-        let initial_holders = array![
-            initial_holder_1,
-            initial_holder_2,
-            initial_holder_3,
-            initial_holder_4,
-            initial_holder_5,
-            initial_holder_6,
-            initial_holder_7,
-            initial_holder_8,
-            initial_holder_9,
-            initial_holder_10,
-            initial_holder_11,
-        ]
-            .span();
-        let initial_holders_amounts = array![1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,].span();
-
-        match deploy_contract(
-            owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-        ) {
-            Result::Ok(address) => address.print(),
-            Result::Err(msg) => panic(msg.panic_data),
-        }
-    }
-
-    #[test]
-    fn test_max_holders_not_reached() {
-        let (owner, name, symbol, initial_supply, initial_holder_1, initial_holder_2, _, _) =
-            instantiate_params();
-        let initial_holder_3 = contract_address_const::<52>();
-        let initial_holder_4 = contract_address_const::<53>();
-        let initial_holder_5 = contract_address_const::<54>();
-        // 6 holders
-        let initial_holders = array![
-            initial_holder_1,
-            initial_holder_2,
-            initial_holder_3,
-            initial_holder_4,
-            initial_holder_5,
-        ]
-            .span();
-        let initial_holders_amounts = array![50, 47, 1, 1, 1,].span();
-
-        match deploy_contract(
-            owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-        ) {
-            Result::Ok(address) => {},
-            Result::Err(msg) => panic(msg.panic_data),
-        }
-    }
-
-    #[test]
-    fn test_initial_recipient_ok() {
-        let (
-            owner,
-            name,
-            symbol,
-            initial_supply,
-            initial_holder_1,
-            initial_holder_2,
-            initial_holders,
-            initial_holders_amounts
-        ) =
-            instantiate_params();
-
-        match deploy_contract(
-            owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-        ) {
-            Result::Ok(address) => {},
-            Result::Err(msg) => panic(msg.panic_data),
-        }
-    }
-
-    #[test]
-    #[should_panic(expected: ('Unruggable: max team allocation',))]
-    fn test_max_team_allocation_fail() {
-        let (
-            owner,
-            name,
-            symbol,
-            initial_supply,
-            initial_holder_1,
-            initial_holder_2,
-            initial_holders,
-            _
-        ) =
-            instantiate_params();
-        // team should have less than 100 tokens
-        let initial_holders_amounts = array![100, 50,].span();
-        match deploy_contract(
-            owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-        ) {
-            Result::Ok(address) => address.print(),
-            Result::Err(msg) => panic(msg.panic_data),
-        }
-    }
-
-    #[test]
-    fn test_max_team_allocation_ok() {
-        let (
-            owner,
-            name,
-            symbol,
-            initial_supply,
-            initial_holder_1,
-            initial_holder_2,
-            initial_holders,
-            _
-        ) =
-            instantiate_params();
-        // team should have less than 100 tokens
-        let initial_holders_amounts = array![50, 50,].span();
-        match deploy_contract(
-            owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-        ) {
-            Result::Ok(address) => {},
-            Result::Err(msg) => panic(msg.panic_data),
-        }
-    }
-
-    #[test]
-    fn test_max_team_allocation_ok2() {
-        let (
-            owner,
-            name,
-            symbol,
-            initial_supply,
-            initial_holder_1,
-            initial_holder_2,
-            initial_holders,
-            _
-        ) =
-            instantiate_params();
-        // team should have less than 100 tokens
-        let initial_holders_amounts = array![50, 40,].span();
-        match deploy_contract(
-            owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-        ) {
-            Result::Ok(address) => {},
-            Result::Err(msg) => panic(msg.panic_data),
-        }
-    }
-
-    #[test]
-    fn test_max_supply_reached_ok() {
-        let (
-            owner,
-            name,
-            symbol,
-            initial_supply,
-            initial_holder_1,
-            initial_holder_2,
-            initial_holders,
-            _
-        ) =
-            instantiate_params();
-        // team should have less than 101 tokens
-        let initial_holders_amounts = array![50, 50].span();
-        match deploy_contract(
-            owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-        ) {
-            Result::Ok(address) => {},
-            Result::Err(msg) => panic(msg.panic_data),
-        }
-    }
-}
 
 mod memecoin_internals {
     use UnruggableMemecoin::{
@@ -640,8 +310,14 @@ mod memecoin_internals {
     use openzeppelin::token::erc20::interface::IERC20;
     use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
     use starknet::{ContractAddress, contract_address_const};
-    use super::{TxInfoMock, DefaultTxInfoMock};
-    use super::{deploy_contract, instantiate_params};
+    use super::{TxInfoMock};
+    use unruggable::tests::utils::{
+        deploy_amm_factory_and_router, deploy_meme_factory_with_owner, deploy_locker,
+        deploy_eth_with_owner, OWNER, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS,
+        INITIAL_HOLDER_1, INITIAL_HOLDER_2, INITIAL_HOLDERS_AMOUNTS, SALT, DefaultTxInfoMock,
+        deploy_memecoin_through_factory, ETH_ADDRESS, deploy_memecoin_through_factory_with_owner,
+        JEDI_ROUTER_ADDRESS, MEMEFACTORY_ADDRESS, ALICE, BOB
+    };
     use unruggable::tokens::interface::{
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
@@ -649,30 +325,10 @@ mod memecoin_internals {
 
     #[test]
     fn test__transfer_recipients_equal_holder_cap() {
-        let (
-            owner,
-            name,
-            symbol,
-            initial_supply,
-            initial_holder_1,
-            initial_holder_2,
-            initial_holders,
-            initial_holders_amounts,
-        ) =
-            instantiate_params();
+        let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
 
-        let contract_address =
-            match deploy_contract(
-                owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-            ) {
-            Result::Ok(address) => address,
-            Result::Err(msg) => panic(msg.panic_data),
-        };
-
-        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
-
-        // set initial_holder_1 as caller to distribute tokens
-        start_prank(CheatTarget::One(memecoin.contract_address), initial_holder_1);
+        // set INITIAL_HOLDER_1() as caller to distribute tokens
+        start_prank(CheatTarget::One(memecoin.contract_address), INITIAL_HOLDER_1());
 
         let mut index = 0;
         loop {
@@ -698,69 +354,6 @@ mod memecoin_internals {
 
             index += 1;
         };
-    }
-
-    #[test]
-    fn test__transfer_initial_holder_whole_balance() {
-        let (
-            owner,
-            name,
-            symbol,
-            initial_supply,
-            initial_holder_1,
-            initial_holder_2,
-            initial_holders,
-            _,
-        ) =
-            instantiate_params();
-        let initial_holders_amounts = array![50, 20].span();
-        let contract_address =
-            match deploy_contract(
-                owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-            ) {
-            Result::Ok(address) => address,
-            Result::Err(msg) => panic(msg.panic_data),
-        };
-
-        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
-
-        // set initial_holder_1 as caller to distribute tokens
-        start_prank(CheatTarget::One(memecoin.contract_address), initial_holder_1);
-
-        let mut index = 0;
-        loop {
-            // MAX_HOLDERS_BEFORE_LAUNCH - 2 because there are 2 initial holders
-            if index == MAX_HOLDERS_BEFORE_LAUNCH - 2 {
-                break;
-            }
-
-            // create a unique address
-            let unique_recipient: ContractAddress = (index.into() + 9999).try_into().unwrap();
-
-            // creating and setting unique tx_hash here 
-            let mut tx_info: TxInfoMock = Default::default();
-            tx_info.transaction_hash = Option::Some(index.into() + 9999);
-            snforge_std::start_spoof(CheatTarget::One(memecoin.contract_address), tx_info);
-
-            // Transfer 1 token to the unique recipient
-            memecoin.transfer(unique_recipient, 1);
-
-            // Check recipient balance. Should be equal to 1.
-            let recipient_balance = memecoin.balanceOf(unique_recipient);
-            assert(recipient_balance == 1, 'Invalid balance recipient');
-
-            index += 1;
-        };
-
-        let unique_recipient: ContractAddress = (index.into() + 9999).try_into().unwrap();
-
-        // Send initial_holder_2 whole balance to the unique recipient
-        start_prank(CheatTarget::One(memecoin.contract_address), initial_holder_2);
-        memecoin.transfer(unique_recipient, 20);
-
-        // Check recipient balance. Should be equal to 0.
-        let initial_holder_2_balance = memecoin.balanceOf(initial_holder_2);
-        assert(initial_holder_2_balance.is_zero(), 'Invalid balance holder 2');
     }
 
     #[test]
@@ -771,29 +364,10 @@ mod memecoin_internals {
         /// to test this, we are going to continously self transfer tokens
         /// and ensure that we can transfer more than `MAX_HOLDERS_BEFORE_LAUNCH` times
 
-        let (
-            owner,
-            name,
-            symbol,
-            initial_supply,
-            initial_holder_1,
-            initial_holder_2,
-            initial_holders,
-            initial_holders_amounts,
-        ) =
-            instantiate_params();
-        let contract_address =
-            match deploy_contract(
-                owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-            ) {
-            Result::Ok(address) => address,
-            Result::Err(msg) => panic(msg.panic_data),
-        };
+        let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
 
-        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
-
-        // set initial_holder_1 as caller to distribute tokens
-        start_prank(CheatTarget::One(memecoin.contract_address), initial_holder_1);
+        // set INITIAL_HOLDER_1() as caller to distribute tokens
+        start_prank(CheatTarget::One(memecoin.contract_address), INITIAL_HOLDER_1());
 
         let mut index = 0;
         loop {
@@ -807,7 +381,7 @@ mod memecoin_internals {
             snforge_std::start_spoof(CheatTarget::One(memecoin.contract_address), tx_info);
 
             // Self transfer tokens
-            memecoin.transfer(initial_holder_2, 1);
+            memecoin.transfer(INITIAL_HOLDER_2(), 1);
 
             index += 1;
         };
@@ -816,31 +390,10 @@ mod memecoin_internals {
     #[test]
     #[should_panic(expected: ('Unruggable: max holders reached',))]
     fn test__transfer_above_holder_cap() {
-        let (
-            owner,
-            name,
-            symbol,
-            initial_supply,
-            initial_holder_1,
-            initial_holder_2,
-            initial_holders,
-            _
-        ) =
-            instantiate_params();
-        let initial_holders_amounts = array![50, 30].span();
+        let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
 
-        let contract_address =
-            match deploy_contract(
-                owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-            ) {
-            Result::Ok(address) => address,
-            Result::Err(msg) => panic(msg.panic_data),
-        };
-
-        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
-
-        // set initial_holder_1 as caller to distribute tokens
-        start_prank(CheatTarget::One(memecoin.contract_address), initial_holder_1);
+        // set INITIAL_HOLDER_1() as caller to distribute tokens
+        start_prank(CheatTarget::One(memecoin.contract_address), INITIAL_HOLDER_1());
 
         let mut index = 0;
         loop {
@@ -862,30 +415,23 @@ mod memecoin_internals {
         };
     }
 
-    // TODO: Uncomment test when foundry solves issue (read comment)
-    // #[test]
+    #[test]
+    #[ignore]
+    //TODO: implement this test
     fn test__transfer_no_holder_cap_after_launch() {
-        let (
-            owner,
-            name,
-            symbol,
-            initial_supply,
-            initial_holder_1,
-            initial_holder_2,
-            initial_holders,
-            _
-        ) =
-            instantiate_params();
+        // The initial call to launch the memecoin should be made by the owner.
+        // However the subsequent calls should be made by the router - as such,
+        // we can't mock the owner using starknet-foundry.
+        // We simply set the test contract as the owner of the memecoin.
+        let owner = starknet::get_contract_address();
         let initial_holders_amounts = array![50, 30,].span();
 
-        let contract_address =
-            match deploy_contract(
-                owner, name, symbol, initial_supply, initial_holders, initial_holders_amounts
-            ) {
-            Result::Ok(address) => address,
-            Result::Err(msg) => panic(msg.panic_data),
-        };
-
+        let mut calldata = array![owner.into(), NAME().into(), SYMBOL().into()];
+        Serde::serialize(@DEFAULT_INITIAL_SUPPLY(), ref calldata);
+        Serde::serialize(@INITIAL_HOLDERS(), ref calldata);
+        Serde::serialize(@initial_holders_amounts, ref calldata);
+        let contract = declare('UnruggableMemecoin');
+        let contract_address = contract.deploy(@calldata).expect('failed to deploy memecoin');
         let memecoin = IUnruggableMemecoinDispatcher { contract_address };
 
         // set owner as caller to launch the token
@@ -901,15 +447,15 @@ mod memecoin_internals {
 
         // start_prank(CheatTarget::One(memecoin_address), router_address);
         // start_prank(CheatTarget::One(router_address), memecoin_address);
-        // unruggable_memecoin
+        // memecoin
         //     .launch_memecoin(
         //         AMMV2::JediSwap, counterparty_token_address, 20000000000000000, 1 * ETH_UNIT_DECIMALS
         //     );
         // TODO: call launch_memecoin() with params
         // memecoin.launch_memecoin();
 
-        // set initial_holder_1 as caller to distribute tokens
-        start_prank(CheatTarget::All, initial_holder_1);
+        // set INITIAL_HOLDER_1() as caller to distribute tokens
+        start_prank(CheatTarget::All, INITIAL_HOLDER_1());
 
         let mut index = 0;
         loop {

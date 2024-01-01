@@ -5,6 +5,13 @@ use unruggable::amm::amm::AMMV2;
 #[starknet::interface]
 trait IUnruggableMemecoin<TState> {
     // ************************************
+    // * Ownership
+    // ************************************
+    fn owner(self: @TState) -> ContractAddress;
+    fn transfer_ownership(ref self: TState, new_owner: ContractAddress);
+    fn renounce_ownership(ref self: TState);
+
+    // ************************************
     // * Metadata
     // ************************************
     fn name(self: @TState) -> felt252;
@@ -44,6 +51,8 @@ trait IUnruggableMemecoin<TState> {
         ref self: TState, amm_v2: AMMV2, counterparty_token_address: ContractAddress,
     ) -> ContractAddress;
     fn get_team_allocation(self: @TState) -> u256;
+    fn memecoin_factory_address(self: @TState) -> ContractAddress;
+    fn locker_address(self: @TState) -> ContractAddress;
 }
 
 #[starknet::interface]
@@ -78,4 +87,6 @@ trait IUnruggableAdditional<TState> {
         ref self: TState, amm_v2: AMMV2, counterparty_token_address: ContractAddress,
     ) -> ContractAddress;
     fn get_team_allocation(self: @TState) -> u256;
+    fn memecoin_factory_address(self: @TState) -> ContractAddress;
+    fn locker_address(self: @TState) -> ContractAddress;
 }
