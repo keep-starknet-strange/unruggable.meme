@@ -3,6 +3,7 @@ use starknet::ContractAddress;
 
 #[starknet::contract]
 mod UnruggableMemecoin {
+    use openzeppelin::access::ownable::interface::IOwnable;
     use debug::PrintTrait;
     use integer::BoundedInt;
     use openzeppelin::access::ownable::OwnableComponent;
@@ -191,6 +192,9 @@ mod UnruggableMemecoin {
             // Launch the coin
             self.launched.write(true);
             self.launch_time.write(get_block_timestamp());
+
+            // Renounce ownership of the memecoin
+            self.ownable.renounce_ownership();
 
             pair_address
         }
