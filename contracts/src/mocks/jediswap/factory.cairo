@@ -7,7 +7,7 @@ use starknet::ClassHash;
 use starknet::ContractAddress;
 
 #[starknet::interface]
-trait IFactoryC1<TContractState> {
+trait IJediswapFactory<TContractState> {
     // view functions
     fn get_pair(
         self: @TContractState, token0: ContractAddress, token1: ContractAddress
@@ -93,7 +93,7 @@ mod FactoryC1 {
     }
 
     #[external(v0)]
-    impl FactoryC1 of super::IFactoryC1<ContractState> {
+    impl FactoryC1 of super::IJediswapFactory<ContractState> {
         //
         // Getters
         //

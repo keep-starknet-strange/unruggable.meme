@@ -16,13 +16,14 @@ mod UnruggableMemecoin {
         ContractAddress, contract_address_const, get_contract_address, get_caller_address,
         get_tx_info, get_block_timestamp
     };
-    use unruggable::amm::amm::{AMM, AMMV2, AMMTrait};
-    use unruggable::amm::jediswap_interface::{
-        IFactoryC1Dispatcher, IFactoryC1DispatcherTrait, IRouterC1Dispatcher,
-        IRouterC1DispatcherTrait
-    };
 
     use unruggable::errors;
+    use unruggable::exchanges::jediswap_adapter::JediswapComponent;
+    use unruggable::exchanges::jediswap_adapter::{
+        IJediswapFactoryDispatcher, IJediswapFactoryDispatcherTrait, IJediswapRouterDispatcher,
+        IJediswapRouterDispatcherTrait
+    };
+    use unruggable::exchanges::{Exchange, SupportedExchanges, ExchangeTrait};
     use unruggable::factory::{IFactory, IFactoryDispatcher, IFactoryDispatcherTrait};
     use unruggable::locker::{ITokenLockerDispatcher, ITokenLockerDispatcherTrait};
     use unruggable::tokens::interface::{
@@ -40,6 +41,9 @@ mod UnruggableMemecoin {
     #[abi(embed_v0)]
     impl ERC20MetadataImpl = ERC20Component::ERC20MetadataImpl<ContractState>;
     impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
+
+    component!(path: JediswapComponent, storage: jediswap, event: JediswapEvent);
+    impl JediswapAdapterImpl = JediswapComponent::JediswapAdapterImpl<ContractState>;
 
     // Constants.
     /// The maximum number of holders allowed before launch.
@@ -71,6 +75,8 @@ mod UnruggableMemecoin {
         ownable: OwnableComponent::Storage,
         #[substorage(v0)]
         erc20: ERC20Component::Storage,
+        #[substorage(v0)]
+        jediswap: JediswapComponent::Storage,
     }
 
     #[event]
@@ -79,7 +85,9 @@ mod UnruggableMemecoin {
         #[flat]
         OwnableEvent: OwnableComponent::Event,
         #[flat]
-        ERC20Event: ERC20Component::Event
+        ERC20Event: ERC20Component::Event,
+        #[flat]
+        JediswapEvent: JediswapComponent::Event
     }
 
     /// Constructor called once when the contract is deployed.
@@ -133,12 +141,12 @@ mod UnruggableMemecoin {
         // * UnruggableMemecoin functions
         // ************************************
 
-        /// Launches Memecoin by creating a liquidity pool with the specified counterparty token using the AMMv2 protocol.
+        /// Launches Memecoin by creating a liquidity pool with the specified counterparty token using the Exchangev2 protocol.
         ///
         /// The owner must send tokens of the chosen counterparty (e.g., USDC) to launch Memecoin.
         ///
         /// # Arguments
-        /// * `amm_v2`: AMMV2 to create a pair and send liquidity.
+        /// * `amm_v2`: SupportedExchanges to create a pair and send liquidity.
         /// * `liquidity_memecoin_amount`: The amount of Memecoin tokens to be provided as liquidity.
         /// * `liquidity_counterparty_token`: The amount of counterparty tokens to be provided as liquidity.
         /// * `deadline`: The deadline beyond which the operation will revert.
@@ -152,7 +160,9 @@ mod UnruggableMemecoin {
         /// # Returns
         /// * `ContractAddress` - The contract address of the created liquidity pool.
         fn launch_memecoin(
-            ref self: ContractState, amm_v2: AMMV2, counterparty_token_address: ContractAddress,
+            ref self: ContractState,
+            amm_v2: SupportedExchanges,
+            counterparty_token_address: ContractAddress,
         ) -> ContractAddress {
             // [Check Owner] Only the owner can launch the Memecoin
             self.ownable.assert_only_owner();
@@ -160,62 +170,23 @@ mod UnruggableMemecoin {
             let memecoin_address = starknet::get_contract_address();
             let caller_address = get_caller_address();
             let factory_address = self.factory_contract.read();
-            let router_address = IFactoryDispatcher { contract_address: factory_address }
-                .amm_router_address(amm_name: amm_v2.to_string());
 
-            // [Create Pool]
-            let amm_router = IRouterC1Dispatcher { contract_address: router_address };
-            assert(amm_router.contract_address.is_non_zero(), errors::AMM_NOT_SUPPORTED);
-
-            let amm_factory = IFactoryC1Dispatcher { contract_address: amm_router.factory(), };
-            let pair_address = amm_factory
-                .create_pair(counterparty_token_address, memecoin_address);
-
-            // [Check Balance]
-            let memecoin_balance = self.balanceOf(memecoin_address);
-            let counterparty_token = ERC20ABIDispatcher {
-                contract_address: counterparty_token_address,
+            let pair_address = match amm_v2 {
+                SupportedExchanges::JediSwap => {
+                    let router_address = IFactoryDispatcher { contract_address: factory_address }
+                        .amm_router_address(amm_name: amm_v2.to_string());
+                    let pair_address = self
+                        .jediswap
+                        .create_and_add_liquidity(
+                            exchange_address: router_address,
+                            token_address: memecoin_address,
+                            counterparty_address: counterparty_token_address,
+                            additional_parameters: array![].span(),
+                        );
+                    pair_address
+                },
+                SupportedExchanges::Ekubo => panic_with_felt252(errors::EXCHANGE_NOT_SUPPORTED)
             };
-            let counterparty_token_balance = counterparty_token.balanceOf(memecoin_address);
-
-            // Approval is done with the internal _approve as the owner must be `address(this)`, not `caller`.
-            self.erc20._approve(memecoin_address, amm_router.contract_address, memecoin_balance);
-            counterparty_token.approve(amm_router.contract_address, counterparty_token_balance);
-
-            // As we're supplying the first liquidity for this pool,
-            // The expected minimum amounts for each tokens are the amounts we're supplying.
-            let (amount_memecoin, amount_eth, liquidity_received) = amm_router
-                .add_liquidity(
-                    memecoin_address,
-                    counterparty_token_address,
-                    memecoin_balance,
-                    counterparty_token_balance,
-                    memecoin_balance,
-                    counterparty_token_balance,
-                    memecoin_address,
-                    deadline: get_block_timestamp() + 10, // deadline should be in this same block
-                );
-            assert(self.balanceOf(pair_address) == memecoin_balance, 'add liquidity meme failed');
-            assert(
-                counterparty_token.balanceOf(pair_address) == counterparty_token_balance,
-                'add liq counterparty failed'
-            );
-            let pair = ERC20ABIDispatcher { contract_address: pair_address, };
-
-            assert(pair.balanceOf(memecoin_address) == liquidity_received, 'wrong LP tkns amount');
-
-            // [Lock LP tokens]
-            let locker_address = self.locker_contract.read();
-            let locker_dispatcher = ITokenLockerDispatcher { contract_address: locker_address };
-            pair.approve(locker_address, liquidity_received);
-            locker_dispatcher
-                .lock_tokens(
-                    token: pair_address,
-                    amount: liquidity_received,
-                    unlock_time: 15780000, // 6 months in seconds
-                    withdrawer: self.ownable.Ownable_owner.read(),
-                );
-            assert(pair.balanceOf(locker_address) == liquidity_received, 'lock failed');
 
             // Launch the coin
             self.launched.write(true);

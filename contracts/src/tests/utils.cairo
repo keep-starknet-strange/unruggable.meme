@@ -5,7 +5,7 @@ use snforge_std::{
     ContractClass, ContractClassTrait, CheatTarget, declare, start_prank, stop_prank, TxInfoMock
 };
 use starknet::ContractAddress;
-use unruggable::amm::amm::{AMM, AMMV2, AMMTrait};
+use unruggable::exchanges::{Exchange, SupportedExchanges, ExchangeTrait};
 use unruggable::factory::{IFactoryDispatcher, IFactoryDispatcherTrait};
 use unruggable::tokens::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -135,7 +135,7 @@ fn deploy_standalone_memecoin() -> (IUnruggableMemecoinDispatcher, ContractAddre
 }
 
 
-// AMM
+// Exchange
 
 fn deploy_amm_factory() -> ContractAddress {
     let pair_class = declare('PairC1');
@@ -177,8 +177,12 @@ fn deploy_amm_factory_and_router() -> (ContractAddress, ContractAddress) {
 fn deploy_meme_factory(router_address: ContractAddress) -> ContractAddress {
     let memecoin_class_hash = declare('UnruggableMemecoin').class_hash;
 
-    // Declare availables AMMs for this factory
-    let mut amms = array![AMM { name: AMMV2::JediSwap.to_string(), router_address }];
+    // Declare availables Exchanges for this factory
+    let mut amms = array![
+        Exchange {
+            name: SupportedExchanges::JediSwap.to_string(), contract_address: router_address
+        }
+    ];
 
     let contract = declare('Factory');
     let mut calldata = array![];
@@ -193,8 +197,12 @@ fn deploy_meme_factory_with_owner(
 ) -> ContractAddress {
     let memecoin_class_hash = declare('UnruggableMemecoin').class_hash;
 
-    // Declare availables AMMs for this factory
-    let mut amms = array![AMM { name: AMMV2::JediSwap.to_string(), router_address }];
+    // Declare availables Exchanges for this factory
+    let mut amms = array![
+        Exchange {
+            name: SupportedExchanges::JediSwap.to_string(), contract_address: router_address
+        }
+    ];
 
     let contract = declare('Factory');
     let mut calldata = array![];

@@ -36,16 +36,16 @@ trait IFactory<TContractState> {
         contract_address_salt: felt252
     ) -> ContractAddress;
 
-    /// Returns the router address for a given AMM, provided that this AMM
+    /// Returns the router address for a given Exchange, provided that this Exchange
     /// was registered in the factory upon initialization.
     ///
     /// # Arguments
     ///
-    /// * `amm_name` - The name of the AMM for which to retrieve the contract address.
+    /// * `amm_name` - The name of the Exchange for which to retrieve the contract address.
     ///
     /// # Returns
     ///
-    /// * `ContractAddress` - The contract address associated with the given AMM name.
+    /// * `ContractAddress` - The contract address associated with the given Exchange name.
     fn amm_router_address(self: @TContractState, amm_name: felt252) -> ContractAddress;
 
     /// Checks if a given address is a memecoin.
