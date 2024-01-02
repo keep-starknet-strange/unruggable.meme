@@ -53,15 +53,15 @@ fn test_constructor_sets_min_locktime() {
 }
 
 mod test_internals {
-    use unruggable::locker::token_locker::TokenLocker::token_locks::InternalContractMemberStateTrait;
     use TokenLocker::{
         contract_state_for_testing, InternalLockerTrait, TokenLock, locksContractMemberStateTrait,
         user_locksContractMemberStateTrait
     };
-    use starknet::contract_address_const;
     use alexandria_storage::list::{List, ListTrait};
     use core::starknet::SyscallResultTrait;
+    use starknet::contract_address_const;
     use super::{TokenLocker, OWNER, start_prank, CheatTarget, stop_prank};
+    use unruggable::locker::token_locker::TokenLocker::token_locks::InternalContractMemberStateTrait;
     #[test]
     fn test_assert_only_owner() {
         let mut state = contract_state_for_testing();
@@ -111,7 +111,6 @@ mod test_internals {
         // Check that the last element is no longer accessible
         assert(lock_list.get(2).unwrap_syscall().is_none(), 'prev len should be none');
     }
-
 }
 
 mod test_lock {
@@ -180,8 +179,6 @@ mod test_lock {
         assert(user_locks_length == 1, 'user locks length is incorrect');
         let user_lock = locker.user_lock_at(OWNER(), 0);
         assert(user_lock == lock_id, 'user lock is incorrect');
-
-
     }
 
     #[test]
@@ -805,7 +802,7 @@ mod test_getters {
     }
 
 
-     #[test]
+    #[test]
     fn test_token_locks_length() {
         let (token, locker, lock_id) = setup_and_lock(
             DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()

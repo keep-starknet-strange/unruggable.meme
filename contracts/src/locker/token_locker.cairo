@@ -185,13 +185,12 @@ mod TokenLocker {
                         }
                     );
                 let mut user_locks = self.user_locks.read(owner);
-                let mut token_locks =  self.token_locks.read(token_lock.token);
+                let mut token_locks = self.token_locks.read(token_lock.token);
 
-                // Removing user lock
+                // Remove lock from user and token lists
                 self.remove_lock_from_list(lock_id, user_locks);
-                // Removing token lock
-                self.remove_lock_from_list(lock_id,token_locks);
-                
+                self.remove_lock_from_list(lock_id, token_locks);
+
                 self.emit(TokenUnlocked { lock_id });
             }
             self.emit(TokenWithdrawn { lock_id, amount });
@@ -203,13 +202,9 @@ mod TokenLocker {
             assert(new_owner.into() != 0_felt252, errors::ZERO_WITHDRAWER);
             let mut token_lock = self.locks.read(lock_id);
 
-            // Update user locks
+            // Update owner's lock lists
             let mut user_locks = self.user_locks.read(token_lock.owner);
-            // Update token locks
-            let mut token_locks = self.token_locks.read(token_lock.token);
-            // Removing user lock
             self.remove_lock_from_list(lock_id, user_locks);
-
             let mut new_owner_locks: List<u128> = self.user_locks.read(new_owner);
             new_owner_locks.append(lock_id);
 
@@ -321,7 +316,7 @@ mod TokenLocker {
             let mut user_locks: List<u128> = self.user_locks.read(withdrawer);
             user_locks.append(lock_id).unwrap_syscall();
 
-            let mut token_locks : List<u128> = self.token_locks.read(token);
+            let mut token_locks: List<u128> = self.token_locks.read(token);
             token_locks.append(lock_id).unwrap_syscall();
 
             ERC20ABIDispatcher { contract_address: token }
