@@ -3,7 +3,7 @@
 ## TODO
 
 - [ ] `launch_memecoin` function
-  - [ ] Create pair on selected AMM
+  - [ ] Create pair on selected Exchange
   - [ ] Add liquidity to pair
   - [ ] Enable trading
 - [ ] Initial holders distribution safeguards

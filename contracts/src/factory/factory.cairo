@@ -1,6 +1,6 @@
 use openzeppelin::token::erc20::interface::{IERC20, ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
 use starknet::ContractAddress;
-use unruggable::amm::amm::AMM;
+use unruggable::exchanges::Exchange;
 
 
 #[starknet::contract]
@@ -17,7 +17,7 @@ mod Factory {
     use starknet::{
         ContractAddress, ClassHash, get_caller_address, get_contract_address, contract_address_const
     };
-    use unruggable::amm::amm::AMM;
+    use unruggable::exchanges::Exchange;
     use unruggable::factory::IFactory;
 
     // Components.
@@ -58,23 +58,23 @@ mod Factory {
         ref self: ContractState,
         owner: ContractAddress,
         memecoin_class_hash: ClassHash,
-        mut amms: Span<AMM>
+        mut amms: Span<Exchange>
     ) {
         // Initialize the owner.
         self.ownable.initializer(owner);
         self.memecoin_class_hash.write(memecoin_class_hash);
 
-        // Add AMMs configurations
+        // Add Exchanges configurations
         loop {
             match amms.pop_front() {
-                Option::Some(amm) => self.amm_configs.write(*amm.name, *amm.router_address),
+                Option::Some(amm) => self.amm_configs.write(*amm.name, *amm.contract_address),
                 Option::None => { break; }
             }
         };
     }
 
     #[abi(embed_v0)]
-    impl UnruggableMemeCoinFactoryImpl of IFactory<ContractState> {
+    impl FactoryImpl of IFactory<ContractState> {
         fn create_memecoin(
             ref self: ContractState,
             owner: ContractAddress,
@@ -84,13 +84,18 @@ mod Factory {
             initial_supply: u256,
             initial_holders: Span<ContractAddress>,
             initial_holders_amounts: Span<u256>,
-            eth_contract: ERC20ABIDispatcher,
-            contract_address_salt: felt252
+            transfer_limit_delay: u64,
+            counterparty_token: ERC20ABIDispatcher,
+            contract_address_salt: felt252,
         ) -> ContractAddress {
-            // General calldata
-            let mut calldata = serialize_calldata(
-                owner, locker_address, name, symbol, initial_supply
-            );
+            let mut calldata = array![
+                owner.into(),
+                locker_address.into(),
+                transfer_limit_delay.into(),
+                name.into(),
+                symbol.into()
+            ];
+            Serde::serialize(@initial_supply, ref calldata);
             Serde::serialize(@initial_holders.into(), ref calldata);
             Serde::serialize(@initial_holders_amounts.into(), ref calldata);
 
@@ -105,18 +110,9 @@ mod Factory {
             let caller = get_caller_address();
             //TODO(make the initial liquidity a parameter)
             let eth_amount: u256 = 1 * ETH_UNIT_DECIMALS;
-            assert(
-                eth_contract.allowance(caller, get_contract_address()) == eth_amount,
-                'ETH allowance not enough'
-            );
-            eth_contract
+
+            counterparty_token
                 .transferFrom(sender: caller, recipient: memecoin_address, amount: eth_amount);
-
-            //TODO(audit): why does it matter if the coin has _more_ than 1 ETH?
-            assert(
-                eth_contract.balanceOf(memecoin_address) == eth_amount, 'memecoin should have 1ETH'
-            );
-
             self.emit(MemeCoinCreated { owner, name, symbol, initial_supply, memecoin_address });
 
             memecoin_address
@@ -129,33 +125,5 @@ mod Factory {
         fn is_memecoin(self: @ContractState, address: ContractAddress) -> bool {
             self.deployed_memecoins.read(address)
         }
-    }
-
-    /// Serializes input parameters into calldata.
-    ///
-    /// # Arguments
-    ///
-    /// * `owner` - The address of the contract owner.
-    /// * `locker_address` - The address of the locker contract associated with the contract.
-    /// * `name` - The name of the contract.
-    /// * `symbol` - The symbol of the contract.
-    /// * `initial_supply` - The initial supply of the contract.
-    ///
-    /// # Returns
-    ///
-    /// An array containing the serialized calldata.
-    fn serialize_calldata(
-        owner: ContractAddress,
-        locker_address: ContractAddress,
-        name: felt252,
-        symbol: felt252,
-        initial_supply: u256
-    ) -> Array<felt252> {
-        //TODO(fix): serialize_calldata shouldn't have a hardcoded value here. - or at least, it should be named.
-        let mut calldata = array![
-            owner.into(), locker_address.into(), 1000.into(), name.into(), symbol.into()
-        ]; // Third param should be lock delay.
-        Serde::serialize(@initial_supply, ref calldata);
-        calldata
     }
 }

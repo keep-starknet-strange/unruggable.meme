@@ -29,7 +29,7 @@ trait IJediSwapCallee<T> {
 // Contract Interface
 //
 #[starknet::interface]
-trait IPairC1<TContractState> {
+trait IJediswapPairC1<TContractState> {
     // view functions
     fn token0(self: @TContractState) -> ContractAddress;
     fn token1(self: @TContractState) -> ContractAddress;
@@ -166,7 +166,7 @@ mod PairC1 {
     }
 
     #[external(v0)]
-    impl PairC1 of super::IPairC1<ContractState> {
+    impl PairC1 of super::IJediswapPairC1<ContractState> {
         //
         // Getters Pair
         //
