@@ -212,7 +212,7 @@ trait ITokenLocker<TContractState> {
     ///
     /// This function returns the lock ID for a specific token based on the provided index.
     /// It reads the list of lock IDs from the `token_locks` mapping and returns the lock ID at the specified index.
-    /// If the index is out of bounds, the function should handle this appropriately, possibly by returning an error or a special value.
+    /// If the index is out of bounds, the function panics.
     ///
     /// # Arguments
     ///
@@ -222,7 +222,7 @@ trait ITokenLocker<TContractState> {
     /// # Returns
     ///
     /// * `u128` - The ID of the lock at the given index for the specified token.
-    ///   Returns an error or a special value if the index is out of bounds.
+    /// If the index is out of bounds, the function panics.
     ///
     fn token_locked_at(self: @TContractState, token: ContractAddress, index: u32) -> u128;
 }

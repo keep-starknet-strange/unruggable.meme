@@ -184,8 +184,14 @@ mod TokenLocker {
                             unlock_time: 0
                         }
                     );
-                let mut list = self.user_locks.read(owner);
-                self.remove_user_lock(lock_id, list);
+                let mut user_locks = self.user_locks.read(owner);
+                let mut token_locks =  self.token_locks.read(token_lock.token);
+
+                // Removing user lock
+                self.remove_lock_from_list(lock_id, user_locks);
+                // Removing token lock
+                self.remove_lock_from_list(lock_id,token_locks);
+                
                 self.emit(TokenUnlocked { lock_id });
             }
             self.emit(TokenWithdrawn { lock_id, amount });
@@ -198,10 +204,18 @@ mod TokenLocker {
             let mut token_lock = self.locks.read(lock_id);
 
             // Update user locks
-            let mut list = self.user_locks.read(token_lock.owner);
-            self.remove_user_lock(lock_id, list);
+            let mut user_locks = self.user_locks.read(token_lock.owner);
+            // Update token locks
+            let mut token_locks = self.token_locks.read(token_lock.token);
+            // Removing user lock
+            self.remove_lock_from_list(lock_id, user_locks);
+            // Removing token lock
+            self.remove_lock_from_list(lock_id, token_locks);
+
             let mut new_owner_locks: List<u128> = self.user_locks.read(new_owner);
             new_owner_locks.append(lock_id);
+            let mut new_token_locks : List<u128> =  self.token_locks.read(token_lock.token);
+            new_token_locks.append(lock_id);
 
             // Update lock details
             token_lock.owner = new_owner;
@@ -311,6 +325,9 @@ mod TokenLocker {
             let mut user_locks: List<u128> = self.user_locks.read(withdrawer);
             user_locks.append(lock_id).unwrap_syscall();
 
+            let mut token_locks : List<u128> = self.token_locks.read(token);
+            token_locks.append(lock_id).unwrap_syscall();
+
             ERC20ABIDispatcher { contract_address: token }
                 .transferFrom(get_caller_address(), get_contract_address(), amount);
 
@@ -321,10 +338,10 @@ mod TokenLocker {
 
         /// Removes the id of a lock from the list of locks of a user.
         ///
-        /// Internally, this function reads the list of locks of the specified `owner` from the `user_locks` mapping.
+        /// Internally, this function reads the list of locks of the specified `owner` or `tokens` from the `user_locks` and `token_locks` mapping.
         /// It then iterates over the list and replaces the specified `lock_id` with the last element of the list.
         /// The length of the list is then decremented by one, and the last element of the list is set to zero.
-        fn remove_user_lock(self: @ContractState, lock_id: u128, mut list: List<u128>) {
+        fn remove_lock_from_list(self: @ContractState, lock_id: u128, mut list: List<u128>) {
             let list_len = list.len();
             let mut i = 0;
             loop {

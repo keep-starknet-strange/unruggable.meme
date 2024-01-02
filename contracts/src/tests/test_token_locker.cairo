@@ -58,6 +58,7 @@ mod test_internals {
         contract_state_for_testing, InternalLockerTrait, TokenLock, locksContractMemberStateTrait,
         user_locksContractMemberStateTrait
     };
+    use starknet::contract_address_const;
     use alexandria_storage::list::{List, ListTrait};
     use core::starknet::SyscallResultTrait;
     use super::{TokenLocker, OWNER, start_prank, CheatTarget, stop_prank};
@@ -102,13 +103,34 @@ mod test_internals {
         lock_list.append(2);
         lock_list.append(3);
         assert(lock_list.len() == 3, 'should have 3 elements');
-        state.remove_user_lock(2, lock_list);
+        state.remove_lock_from_list(2, lock_list);
         lock_list = state.user_locks.read(user);
         assert(lock_list.len() == 2, 'should have 2 elements');
         assert(lock_list.array().unwrap_syscall() == array![1_u128, 3_u128], 'should have 1 and 3');
 
         // Check that the last element is no longer accessible
         assert(lock_list.get(2).unwrap_syscall().is_none(), 'prev len should be none');
+    }
+
+    #[test]
+    fn test_remove_token_lock() {
+        let mut state = contract_state_for_testing();
+        let token = contract_address_const::<0>();
+
+        let mut token_locks_list = state.token_locks.read(token);
+        assert(token_locks_list.is_empty(), 'lock list should be empty');
+
+        token_locks_list.append(1);
+        token_locks_list.append(2);
+        token_locks_list.append(3);
+        assert(token_locks_list.len() == 3, 'should have 3 elements');
+        state.remove_lock_from_list(2, token_locks_list);
+        token_locks_list = state.token_locks.read(token);
+        assert(token_locks_list.len() == 2, 'should have 2 elements');
+        assert(token_locks_list.array().unwrap_syscall() == array![1_u128, 3_u128], 'should have 1 and 3');
+
+        // Check that the last element is no longer accessible
+        assert(token_locks_list.get(2).unwrap_syscall().is_none(), 'prev len should be none');
     }
 }
 
@@ -178,6 +200,8 @@ mod test_lock {
         assert(user_locks_length == 1, 'user locks length is incorrect');
         let user_lock = locker.user_lock_at(OWNER(), 0);
         assert(user_lock == lock_id, 'user lock is incorrect');
+
+
     }
 
     #[test]
@@ -558,6 +582,12 @@ mod test_withdrawal {
         assert(user_locks_length == 1, 'user locks length is incorrect');
         let user_lock = locker.user_lock_at(OWNER(), 0);
         assert(user_lock == lock_id, 'user lock is incorrect');
+
+        // Check that token position is still tracked
+        let token_locks_length = locker.token_locks_length(lock.token);
+        assert(token_locks_length == 1, 'token locks length is incorrect');
+        let token_lock = locker.token_locked_at(lock.token, 0);
+        assert(token_lock == lock_id, 'token lock is incorrect');
     }
 
     #[test]
@@ -657,6 +687,12 @@ mod test_transfer_lock {
         assert(new_owner_locks_length == 1, 'new owner length incorrect');
         let new_owner_lock = locker.user_lock_at(new_owner, 0);
         assert(new_owner_lock == lock_id, 'new owner lock is incorrect');
+
+        // Check internal tracking of token locks
+        let new_token_locks_length = locker.token_locks_length(lock.token);
+        assert(new_token_locks_length == 1, 'new token length incorrect');
+        let new_token_lock = locker.token_locked_at(lock.token, 0);
+        assert(new_token_lock == lock_id, 'new owner lock is incorrect');
 
         let old_owner_locks_length = locker.user_locks_length(OWNER());
         assert(old_owner_locks_length == 0, 'old owner length is incorrect');
@@ -786,5 +822,52 @@ mod test_getters {
 
         let user_lock = locker.user_lock_at(OWNER(), 1);
         assert(user_lock == new_lock_id, 'user lock is incorrect');
+    }
+
+
+     #[test]
+    fn test_token_locks_length() {
+        let (token, locker, lock_id) = setup_and_lock(
+            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+        );
+
+        let lock = locker.get_lock_details(lock_id);
+
+        let token_locks_length = locker.token_locks_length(token.contract_address);
+        assert(token_locks_length == 1, 'token locks length is incorrect');
+
+        // approve and lock another time
+        start_prank(CheatTarget::One(token.contract_address), OWNER());
+        token.approve(locker.contract_address, 200);
+        stop_prank(CheatTarget::One(token.contract_address));
+
+        start_prank(CheatTarget::One(locker.contract_address), OWNER());
+        locker.lock_tokens(token.contract_address, 200, 500, OWNER());
+        stop_prank(CheatTarget::One(locker.contract_address));
+
+        let new_token_locks_length = locker.token_locks_length(token.contract_address);
+        assert(new_token_locks_length == 2, 'new token locks len incorrect');
+    }
+
+    #[test]
+    fn test_token_lock_at() {
+        let (token, locker, lock_id) = setup_and_lock(
+            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+        );
+
+        let token_lock = locker.token_locked_at(token.contract_address, 0);
+        assert(token_lock == lock_id, 'user lock is incorrect');
+
+        // approve and lock another time
+        start_prank(CheatTarget::One(token.contract_address), OWNER());
+        token.approve(locker.contract_address, 200);
+        stop_prank(CheatTarget::One(token.contract_address));
+
+        start_prank(CheatTarget::One(locker.contract_address), OWNER());
+        let new_lock_id = locker.lock_tokens(token.contract_address, 200, 500, OWNER());
+        stop_prank(CheatTarget::One(locker.contract_address));
+
+        let token_lock = locker.token_locked_at(token.contract_address, 1);
+        assert(token_lock == new_lock_id, 'user lock is incorrect');
     }
 }
