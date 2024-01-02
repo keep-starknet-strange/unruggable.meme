@@ -1,7 +1,5 @@
 use openzeppelin::token::erc20::interface::{IERC20, ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
 use starknet::ContractAddress;
-use unruggable::exchanges::Exchange;
-
 
 #[starknet::contract]
 mod Factory {
@@ -17,7 +15,7 @@ mod Factory {
     use starknet::{
         ContractAddress, ClassHash, get_caller_address, get_contract_address, contract_address_const
     };
-    use unruggable::exchanges::Exchange;
+    use unruggable::exchanges::{SupportedExchanges};
     use unruggable::factory::IFactory;
 
     // Components.
@@ -46,7 +44,7 @@ mod Factory {
     #[storage]
     struct Storage {
         memecoin_class_hash: ClassHash,
-        amm_configs: LegacyMap<felt252, ContractAddress>,
+        amm_configs: LegacyMap<SupportedExchanges, ContractAddress>,
         deployed_memecoins: LegacyMap<ContractAddress, bool>,
         // Components.
         #[substorage(v0)]
@@ -58,7 +56,7 @@ mod Factory {
         ref self: ContractState,
         owner: ContractAddress,
         memecoin_class_hash: ClassHash,
-        mut amms: Span<Exchange>
+        mut amms: Span<(SupportedExchanges, ContractAddress)>
     ) {
         // Initialize the owner.
         self.ownable.initializer(owner);
@@ -67,7 +65,7 @@ mod Factory {
         // Add Exchanges configurations
         loop {
             match amms.pop_front() {
-                Option::Some(amm) => self.amm_configs.write(*amm.name, *amm.contract_address),
+                Option::Some((amm, address)) => self.amm_configs.write(*amm, *address),
                 Option::None => { break; }
             }
         };
@@ -118,8 +116,8 @@ mod Factory {
             memecoin_address
         }
 
-        fn amm_router_address(self: @ContractState, amm_name: felt252) -> ContractAddress {
-            self.amm_configs.read(amm_name)
+        fn amm_router_address(self: @ContractState, amm: SupportedExchanges) -> ContractAddress {
+            self.amm_configs.read(amm)
         }
 
         fn is_memecoin(self: @ContractState, address: ContractAddress) -> bool {

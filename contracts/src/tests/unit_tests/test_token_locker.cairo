@@ -7,16 +7,14 @@ use snforge_std::{
 };
 
 use starknet::{ContractAddress, contract_address_const};
-use unruggable::exchanges::Exchange;
 use unruggable::locker::{errors, TokenLocker, ITokenLockerDispatcher, ITokenLockerDispatcherTrait};
-use unruggable::tests::utils::{OWNER, deploy_eth, deploy_locker, DEFAULT_MIN_LOCKTIME};
+use unruggable::tests::unit_tests::utils::{
+    OWNER, deploy_eth, deploy_locker, DEFAULT_MIN_LOCKTIME, DEFAULT_LOCK_AMOUNT
+};
 use unruggable::tokens::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
 };
 
-
-const DEFAULT_LOCK_DEADLINE: u64 = 300;
-const DEFAULT_LOCK_AMOUNT: u256 = 100;
 
 /// Sets up the locker contract and deploys a token contract.
 /// For simplicity, the token deployed is the default "ETH" token.
@@ -49,7 +47,7 @@ fn test_constructor_sets_min_locktime() {
     let (token, locker) = setup();
 
     let min_locktime = locker.get_min_lock_time();
-    assert(min_locktime == DEFAULT_MIN_LOCKTIME(), 'min_locktime is incorrect');
+    assert(min_locktime == DEFAULT_MIN_LOCKTIME, 'min_locktime is incorrect');
 }
 
 mod test_internals {
@@ -115,10 +113,10 @@ mod test_lock {
     use super::{
         setup, setup_and_lock, ITokenLockerDispatcher, ITokenLockerDispatcherTrait, OWNER,
         deploy_locker, start_prank, stop_prank, CheatTarget, ERC20ABIDispatcherTrait,
-        DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, spy_events, SpyOn, EventSpy, EventAssertions,
+        DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, spy_events, SpyOn, EventSpy, EventAssertions,
         TokenLocker
     };
-    use unruggable::tests::utils::ETH_INITIAL_SUPPLY;
+    use unruggable::tests::unit_tests::utils::DEFAULT_INITIAL_SUPPLY;
 
     #[test]
     fn test_lock_tokens() {
@@ -132,7 +130,7 @@ mod test_lock {
         let mut spy = spy_events(SpyOn::One(locker.contract_address));
         let lock_id = locker
             .lock_tokens(
-                token.contract_address, DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+                token.contract_address, DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER()
             );
         stop_prank(CheatTarget::One(locker.contract_address));
 
@@ -140,13 +138,13 @@ mod test_lock {
         let lock = locker.get_lock_details(lock_id);
         assert(lock.token == token.contract_address, 'lock token is incorrect');
         assert(lock.amount == DEFAULT_LOCK_AMOUNT, 'lock amount is incorrect');
-        assert(lock.unlock_time == DEFAULT_LOCK_DEADLINE, 'lock locktime is incorrect');
+        assert(lock.unlock_time == DEFAULT_MIN_LOCKTIME, 'lock locktime is incorrect');
         assert(lock.owner == OWNER(), 'lock owner is incorrect');
 
         // Check token balances
         let owner_balance = token.balanceOf(OWNER());
         assert(
-            owner_balance == ETH_INITIAL_SUPPLY() - DEFAULT_LOCK_AMOUNT,
+            owner_balance == DEFAULT_INITIAL_SUPPLY() - DEFAULT_LOCK_AMOUNT,
             'owner balance is incorrect'
         );
         let locker_balance = token.balanceOf(locker.contract_address);
@@ -163,7 +161,7 @@ mod test_lock {
                                 lock_id: lock_id,
                                 token: token.contract_address,
                                 amount: DEFAULT_LOCK_AMOUNT,
-                                unlock_time: DEFAULT_LOCK_DEADLINE,
+                                unlock_time: DEFAULT_MIN_LOCKTIME,
                                 owner: OWNER()
                             }
                         )
@@ -196,7 +194,7 @@ mod test_lock {
     #[should_panic(expected: ('ZERO WITHDRAWER',))]
     fn test_lock_zero_withdrawer() {
         let (token, locker, lock_id) = setup_and_lock(
-            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, 0.try_into().unwrap()
+            DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, 0.try_into().unwrap()
         );
     }
 
@@ -212,9 +210,7 @@ mod test_lock {
         let locker = deploy_locker();
         start_prank(CheatTarget::One(locker), OWNER());
         let lock_id = ITokenLockerDispatcher { contract_address: locker }
-            .lock_tokens(
-                0.try_into().unwrap(), DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
-            );
+            .lock_tokens(0.try_into().unwrap(), DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER());
         stop_prank(CheatTarget::One(locker));
     }
 }
@@ -225,15 +221,15 @@ mod test_extend_lock {
     use super::{
         setup, setup_and_lock, ITokenLockerDispatcher, ITokenLockerDispatcherTrait, OWNER,
         deploy_locker, start_prank, stop_prank, CheatTarget, DEFAULT_LOCK_AMOUNT,
-        DEFAULT_LOCK_DEADLINE, spy_events, SpyOn, EventSpy, EventAssertions, TokenLocker
+        DEFAULT_MIN_LOCKTIME, spy_events, SpyOn, EventSpy, EventAssertions, TokenLocker
     };
 
     #[test]
     fn test_extend_lock() {
         let (token, locker, lock_id) = setup_and_lock(
-            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+            DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER()
         );
-        let new_locktime = 600;
+        let new_locktime = DEFAULT_MIN_LOCKTIME + 600;
 
         let mut expected_lock = locker.get_lock_details(lock_id);
         expected_lock.unlock_time = new_locktime;
@@ -267,7 +263,7 @@ mod test_extend_lock {
     #[should_panic(expected: ('NO ACTIVE LOCK OR NOT OWNER',))]
     fn test_extend_lock_not_owner() {
         let (token, locker, lock_id) = setup_and_lock(
-            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+            DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER()
         );
 
         let new_locktime = 600;
@@ -283,7 +279,7 @@ mod test_extend_lock {
     #[should_panic(expected: ('LOCKTIME NOT INCREASED',))]
     fn test_extend_lock_locktime_not_increased() {
         let (token, locker, lock_id) = setup_and_lock(
-            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+            DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER()
         );
 
         let new_locktime = 200;
@@ -296,7 +292,7 @@ mod test_extend_lock {
     #[should_panic(expected: ('LOCK NOT UNIX SECONDS',))]
     fn test_extend_lock_locktime_not_seconds() {
         let (token, locker, lock_id) = setup_and_lock(
-            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+            DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER()
         );
 
         let new_locktime = 10000000001;
@@ -309,7 +305,7 @@ mod test_extend_lock {
     #[should_panic(expected: ('UNLOCK TIME IN PAST',))]
     fn test_extend_lock_locktime_in_past() {
         let (token, locker, lock_id) = setup_and_lock(
-            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+            DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER()
         );
         start_warp(CheatTarget::One(locker.contract_address), 1000);
         let new_locktime = 400;
@@ -326,14 +322,14 @@ mod test_increase_lock_amount {
     use super::{
         setup, setup_and_lock, ITokenLockerDispatcher, ITokenLockerDispatcherTrait, OWNER,
         deploy_locker, start_prank, stop_prank, CheatTarget, ERC20ABIDispatcherTrait,
-        DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, spy_events, SpyOn, EventSpy, EventAssertions,
+        DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, spy_events, SpyOn, EventSpy, EventAssertions,
         TokenLocker
     };
 
     #[test]
     fn test_increase_lock_amount() {
         let (token, locker, lock_id) = setup_and_lock(
-            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+            DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER()
         );
         let increased_amount = 200;
 
@@ -375,7 +371,7 @@ mod test_increase_lock_amount {
     #[should_panic(expected: ('NO ACTIVE LOCK OR NOT OWNER',))]
     fn test_increase_lock_amount_not_owner() {
         let (token, locker, lock_id) = setup_and_lock(
-            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+            DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER()
         );
 
         let new_amount = 200;
@@ -391,7 +387,7 @@ mod test_increase_lock_amount {
     #[should_panic(expected: ('ZERO AMOUNT',))]
     fn test_increase_lock_amount_zero_amount() {
         let (token, locker, lock_id) = setup_and_lock(
-            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+            DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER()
         );
 
         let new_amount = 0;
@@ -408,16 +404,16 @@ mod test_withdrawal {
     use super::{
         setup, setup_and_lock, ITokenLockerDispatcher, ITokenLockerDispatcherTrait, OWNER,
         deploy_locker, start_prank, stop_prank, CheatTarget, ERC20ABIDispatcherTrait,
-        DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, spy_events, SpyOn, EventSpy, EventAssertions,
+        DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, spy_events, SpyOn, EventSpy, EventAssertions,
         TokenLocker,
     };
     use unruggable::locker::TokenLock;
-    use unruggable::tests::utils::ETH_INITIAL_SUPPLY;
+    use unruggable::tests::unit_tests::utils::DEFAULT_INITIAL_SUPPLY;
 
     #[test]
     fn test_withdraw() {
         let (token, locker, lock_id) = setup_and_lock(
-            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+            DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER()
         );
 
         let mut expected_lock = TokenLock {
@@ -428,7 +424,7 @@ mod test_withdrawal {
         };
 
         start_prank(CheatTarget::One(locker.contract_address), OWNER());
-        start_warp(CheatTarget::One(locker.contract_address), DEFAULT_LOCK_DEADLINE + 1);
+        start_warp(CheatTarget::One(locker.contract_address), DEFAULT_MIN_LOCKTIME + 1);
         let mut spy = spy_events(SpyOn::One(locker.contract_address));
         locker.withdraw(lock_id);
         stop_prank(CheatTarget::One(locker.contract_address));
@@ -464,7 +460,7 @@ mod test_withdrawal {
     #[test]
     fn test_withdraw_one_of_many_locks() {
         let (token, locker, lock_id) = setup_and_lock(
-            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+            DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER()
         );
 
         // approve and lock another time
@@ -473,7 +469,8 @@ mod test_withdrawal {
         stop_prank(CheatTarget::One(token.contract_address));
 
         start_prank(CheatTarget::One(locker.contract_address), OWNER());
-        let new_lock_id = locker.lock_tokens(token.contract_address, 200, 500, OWNER());
+        let new_lock_id = locker
+            .lock_tokens(token.contract_address, 200, DEFAULT_MIN_LOCKTIME, OWNER());
         stop_prank(CheatTarget::One(locker.contract_address));
 
         // Withdraw the first lock
@@ -485,7 +482,7 @@ mod test_withdrawal {
         };
 
         start_prank(CheatTarget::One(locker.contract_address), OWNER());
-        start_warp(CheatTarget::One(locker.contract_address), DEFAULT_LOCK_DEADLINE + 1);
+        start_warp(CheatTarget::One(locker.contract_address), DEFAULT_MIN_LOCKTIME + 1);
         let mut spy = spy_events(SpyOn::One(locker.contract_address));
         locker.withdraw(lock_id);
         stop_prank(CheatTarget::One(locker.contract_address));
@@ -495,7 +492,10 @@ mod test_withdrawal {
 
         // Check remaining lock is correctly tracked.
         let mut expected_remaining_lock = TokenLock {
-            token: token.contract_address, owner: OWNER(), amount: 200, unlock_time: 500
+            token: token.contract_address,
+            owner: OWNER(),
+            amount: 200,
+            unlock_time: DEFAULT_MIN_LOCKTIME
         };
         let user_locks_length = locker.user_locks_length(OWNER());
         let user_lock_id = locker.user_lock_at(OWNER(), 0);
@@ -509,7 +509,7 @@ mod test_withdrawal {
     #[test]
     fn test_partial_withdraw() {
         let (token, locker, lock_id) = setup_and_lock(
-            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+            DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER()
         );
 
         let partial_amount = 50;
@@ -517,7 +517,7 @@ mod test_withdrawal {
         expected_lock.amount -= partial_amount;
 
         start_prank(CheatTarget::One(locker.contract_address), OWNER());
-        start_warp(CheatTarget::One(locker.contract_address), DEFAULT_LOCK_DEADLINE + 1);
+        start_warp(CheatTarget::One(locker.contract_address), DEFAULT_MIN_LOCKTIME + 1);
         let mut spy = spy_events(SpyOn::One(locker.contract_address));
         locker.partial_withdraw(lock_id, partial_amount);
         stop_prank(CheatTarget::One(locker.contract_address));
@@ -546,7 +546,7 @@ mod test_withdrawal {
         // Check token balances
         let owner_balance = token.balanceOf(OWNER());
         assert(
-            owner_balance == ETH_INITIAL_SUPPLY() - DEFAULT_LOCK_AMOUNT + partial_amount,
+            owner_balance == DEFAULT_INITIAL_SUPPLY() - DEFAULT_LOCK_AMOUNT + partial_amount,
             'owner balance is incorrect'
         );
         let locker_balance = token.balanceOf(locker.contract_address);
@@ -563,11 +563,11 @@ mod test_withdrawal {
     #[should_panic(expected: ('NO ACTIVE LOCK OR NOT OWNER',))]
     fn test_withdraw_not_owner() {
         let (token, locker, lock_id) = setup_and_lock(
-            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+            DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER()
         );
 
         start_prank(CheatTarget::One(locker.contract_address), 'not_owner'.try_into().unwrap());
-        start_warp(CheatTarget::One(locker.contract_address), DEFAULT_LOCK_DEADLINE + 1);
+        start_warp(CheatTarget::One(locker.contract_address), DEFAULT_MIN_LOCKTIME + 1);
         locker.withdraw(lock_id);
         stop_prank(CheatTarget::One(locker.contract_address));
         stop_warp(CheatTarget::One(locker.contract_address));
@@ -577,7 +577,7 @@ mod test_withdrawal {
     #[should_panic(expected: ('NOT UNLOCKED YET',))]
     fn test_withdraw_lock_not_expired() {
         let (token, locker, lock_id) = setup_and_lock(
-            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+            DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER()
         );
 
         start_warp(CheatTarget::One(locker.contract_address), 200);
@@ -594,10 +594,10 @@ mod test_withdrawal {
     #[should_panic(expected: ('AMOUNT EXCEEDS LOCKED',))]
     fn test_partial_withdraw_amount_too_high() {
         let (token, locker, lock_id) = setup_and_lock(
-            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+            DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER()
         );
 
-        start_warp(CheatTarget::One(locker.contract_address), DEFAULT_LOCK_DEADLINE + 1);
+        start_warp(CheatTarget::One(locker.contract_address), DEFAULT_MIN_LOCKTIME + 1);
         start_prank(CheatTarget::One(locker.contract_address), OWNER());
         locker.partial_withdraw(lock_id, DEFAULT_LOCK_AMOUNT + 1);
         stop_prank(CheatTarget::One(locker.contract_address));
@@ -612,7 +612,7 @@ mod test_transfer_lock {
     use super::{
         setup, setup_and_lock, ITokenLockerDispatcher, ITokenLockerDispatcherTrait, OWNER,
         deploy_locker, start_prank, stop_prank, CheatTarget, ERC20ABIDispatcherTrait,
-        DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, spy_events, SpyOn, EventSpy, EventAssertions,
+        DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, spy_events, SpyOn, EventSpy, EventAssertions,
         TokenLocker
     };
     use unruggable::locker::TokenLock;
@@ -620,7 +620,7 @@ mod test_transfer_lock {
     #[test]
     fn test_transfer_lock() {
         let (token, locker, lock_id) = setup_and_lock(
-            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+            DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER()
         );
 
         let new_owner = 'new_owner'.try_into().unwrap();
@@ -665,7 +665,7 @@ mod test_transfer_lock {
     #[should_panic(expected: ('List index out of bounds',))]
     fn test_transfer_lock_old_lock_erased_from_prev_owner_list() {
         let (token, locker, lock_id) = setup_and_lock(
-            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+            DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER()
         );
 
         let new_owner = 'new_owner'.try_into().unwrap();
@@ -686,7 +686,7 @@ mod test_transfer_lock {
     #[should_panic(expected: ('NO ACTIVE LOCK OR NOT OWNER',))]
     fn test_transfer_lock_not_owner() {
         let (token, locker, lock_id) = setup_and_lock(
-            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+            DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER()
         );
 
         let new_owner = 'new_owner'.try_into().unwrap();
@@ -702,7 +702,7 @@ mod test_transfer_lock {
     #[should_panic(expected: ('ZERO WITHDRAWER',))]
     fn test_transfer_lock_zero_new_owner() {
         let (token, locker, lock_id) = setup_and_lock(
-            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+            DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER()
         );
 
         start_prank(CheatTarget::One(locker.contract_address), OWNER());
@@ -715,30 +715,30 @@ mod test_getters {
     use super::{
         setup, setup_and_lock, ITokenLockerDispatcher, ITokenLockerDispatcherTrait, OWNER,
         deploy_locker, start_prank, stop_prank, CheatTarget, ERC20ABIDispatcherTrait,
-        DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, start_warp, stop_warp, deploy_eth
+        DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, start_warp, stop_warp, deploy_eth
     };
 
     #[test]
     fn test_get_remaining_time() {
         let (token, locker, lock_id) = setup_and_lock(
-            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+            DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER()
         );
 
         let remaining_locktime = locker.get_remaining_time(lock_id);
-        assert(remaining_locktime == DEFAULT_LOCK_DEADLINE, 'remaining locktime is incorrect');
+        assert(remaining_locktime == DEFAULT_MIN_LOCKTIME, 'remaining locktime is incorrect');
     }
 
     #[test]
     fn test_get_remaining_time_time_elapsed() {
         let (token, locker, lock_id) = setup_and_lock(
-            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+            DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER()
         );
         let elapsed = 200;
 
         start_warp(CheatTarget::One(locker.contract_address), 200);
         let remaining_locktime = locker.get_remaining_time(lock_id);
         assert(
-            remaining_locktime == DEFAULT_LOCK_DEADLINE - elapsed, 'remaining locktime is incorrect'
+            remaining_locktime == DEFAULT_MIN_LOCKTIME - elapsed, 'remaining locktime is incorrect'
         );
         stop_warp(CheatTarget::One(locker.contract_address));
     }
@@ -746,7 +746,7 @@ mod test_getters {
     #[test]
     fn test_user_locks_length() {
         let (token, locker, lock_id) = setup_and_lock(
-            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+            DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER()
         );
 
         let user_locks_length = locker.user_locks_length(OWNER());
@@ -758,7 +758,7 @@ mod test_getters {
         stop_prank(CheatTarget::One(token.contract_address));
 
         start_prank(CheatTarget::One(locker.contract_address), OWNER());
-        locker.lock_tokens(token.contract_address, 200, 500, OWNER());
+        locker.lock_tokens(token.contract_address, 200, DEFAULT_MIN_LOCKTIME, OWNER());
         stop_prank(CheatTarget::One(locker.contract_address));
 
         let new_user_locks_length = locker.user_locks_length(OWNER());
@@ -768,7 +768,7 @@ mod test_getters {
     #[test]
     fn test_user_lock_at() {
         let (token, locker, lock_id) = setup_and_lock(
-            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+            DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER()
         );
 
         let user_lock = locker.user_lock_at(OWNER(), 0);
@@ -780,7 +780,8 @@ mod test_getters {
         stop_prank(CheatTarget::One(token.contract_address));
 
         start_prank(CheatTarget::One(locker.contract_address), OWNER());
-        let new_lock_id = locker.lock_tokens(token.contract_address, 200, 500, OWNER());
+        let new_lock_id = locker
+            .lock_tokens(token.contract_address, 200, DEFAULT_MIN_LOCKTIME, OWNER());
         stop_prank(CheatTarget::One(locker.contract_address));
 
         let user_lock = locker.user_lock_at(OWNER(), 1);

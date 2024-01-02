@@ -17,6 +17,14 @@ trait IJediswapRouter<T> {
         to: ContractAddress,
         deadline: u64
     ) -> (u256, u256, u256);
+    fn swap_exact_tokens_for_tokens(
+        ref self: T,
+        amountIn: u256,
+        amountOutMin: u256,
+        path: Array::<ContractAddress>,
+        to: ContractAddress,
+        deadline: u64
+    ) -> Array<u256>;
 }
 
 #[starknet::interface]
@@ -27,6 +35,14 @@ trait IJediswapFactory<TContractState> {
     fn create_pair(
         ref self: TContractState, tokenA: ContractAddress, tokenB: ContractAddress
     ) -> ContractAddress;
+    fn swap_exact_tokens_for_tokens(
+        ref self: TContractState,
+        amountIn: u256,
+        amountOutMin: u256,
+        path: Array::<ContractAddress>,
+        to: ContractAddress,
+        deadline: u64
+    ) -> Array::<u256>;
 }
 
 #[starknet::interface]
@@ -77,6 +93,7 @@ mod JediswapComponent {
             exchange_address: ContractAddress,
             token_address: ContractAddress,
             counterparty_address: ContractAddress,
+            unlock_time: u64,
             additional_parameters: Span<felt252>,
         ) -> ContractAddress {
             assert(additional_parameters.len() == 0, 'Invalid add liq params');
@@ -143,7 +160,7 @@ mod JediswapComponent {
                 .lock_tokens(
                     token: pair_address,
                     amount: liquidity_received,
-                    unlock_time: 15780000, // 6 months in seconds
+                    :unlock_time,
                     withdrawer: memecoin_ownable.owner(),
                 );
             assert(pair.balanceOf(locker_address) == liquidity_received, 'lock failed');
