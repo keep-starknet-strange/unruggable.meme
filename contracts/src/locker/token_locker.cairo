@@ -1,6 +1,5 @@
 //TODO(low prio): implement fallback mechanism for snake_case entrypoints
 //TODO(low prio): implement a recover functions for tokens wrongly sent to the contract
-//TODO(high prio): keep a list of all active locks per users.
 #[starknet::contract]
 mod TokenLocker {
     use alexandria_storage::list::{List, ListTrait};

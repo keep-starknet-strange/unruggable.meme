@@ -1,11 +1,11 @@
 use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
 use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
 use starknet::{ContractAddress, contract_address_const};
-use unruggable::amm::amm::{AMM, AMMV2, AMMTrait};
+use unruggable::exchanges::{Exchange, SupportedExchanges, ExchangeTrait};
 use unruggable::factory::{IFactory, IFactoryDispatcher, IFactoryDispatcherTrait};
 use unruggable::tests::utils::{
     deploy_amm_factory_and_router, deploy_meme_factory, deploy_locker, deploy_eth, OWNER, NAME,
-    SYMBOL, ETH_INITIAL_SUPPLY, INITIAL_HOLDERS, INITIAL_HOLDERS_AMOUNTS, SALT
+    SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS, INITIAL_HOLDERS_AMOUNTS, SALT
 };
 use unruggable::tokens::interface::{
     IUnruggableMemecoin, IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -18,7 +18,7 @@ fn test_amm_router_address() {
     let memecoin_factory = IFactoryDispatcher { contract_address: memecoin_factory_address };
 
     let amm_router_address = memecoin_factory
-        .amm_router_address(amm_name: AMMV2::JediSwap.to_string());
+        .amm_router_address(amm_name: SupportedExchanges::JediSwap.to_string());
     assert(amm_router_address == router_address, 'wrong amm router_address');
 }
 
@@ -44,10 +44,11 @@ fn test_is_memecoin() {
             :locker_address,
             name: NAME(),
             symbol: SYMBOL(),
-            initial_supply: ETH_INITIAL_SUPPLY(),
+            initial_supply: DEFAULT_INITIAL_SUPPLY(),
             initial_holders: INITIAL_HOLDERS(),
             initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
-            eth_contract: eth,
+            transfer_limit_delay: 1000,
+            counterparty_token: eth,
             contract_address_salt: SALT(),
         );
     stop_prank(CheatTarget::One(memecoin_factory.contract_address));
@@ -82,10 +83,11 @@ fn test_create_memecoin() {
             :locker_address,
             name: NAME(),
             symbol: SYMBOL(),
-            initial_supply: ETH_INITIAL_SUPPLY(),
+            initial_supply: DEFAULT_INITIAL_SUPPLY(),
             initial_holders: INITIAL_HOLDERS(),
             initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
-            eth_contract: eth,
+            transfer_limit_delay: 1000,
+            counterparty_token: eth,
             contract_address_salt: SALT(),
         );
     stop_prank(CheatTarget::One(memecoin_factory.contract_address));
@@ -95,10 +97,18 @@ fn test_create_memecoin() {
     assert(memecoin.name() == NAME(), 'wrong memecoin name');
     assert(memecoin.symbol() == SYMBOL(), 'wrong memecoin symbol');
     // initial supply - initial holder balance
+    let holders_sum = *INITIAL_HOLDERS_AMOUNTS()[0] + *INITIAL_HOLDERS_AMOUNTS()[1];
     assert(
-        memecoin.balanceOf(memecoin_address) == ETH_INITIAL_SUPPLY() - 100, 'wrong initial supply'
+        memecoin.balanceOf(memecoin_address) == DEFAULT_INITIAL_SUPPLY() - holders_sum,
+        'wrong initial supply'
     );
-    assert(memecoin.balanceOf(*INITIAL_HOLDERS()[0]) == 50, 'wrong initial_holder_1 balance');
-    assert(memecoin.balanceOf(*INITIAL_HOLDERS()[1]) == 50, 'wrong initial_holder_2 balance');
+    assert(
+        memecoin.balanceOf(*INITIAL_HOLDERS()[0]) == *INITIAL_HOLDERS_AMOUNTS()[0],
+        'wrong initial_holder_1 balance'
+    );
+    assert(
+        memecoin.balanceOf(*INITIAL_HOLDERS()[1]) == *INITIAL_HOLDERS_AMOUNTS()[1],
+        'wrong initial_holder_2 balance'
+    );
 }
 

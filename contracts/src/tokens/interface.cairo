@@ -1,9 +1,16 @@
 use openzeppelin::token::erc20::interface::{IERC20Metadata, IERC20, IERC20Camel};
 use starknet::ContractAddress;
-use unruggable::amm::amm::AMMV2;
+use unruggable::exchanges::SupportedExchanges;
 
 #[starknet::interface]
 trait IUnruggableMemecoin<TState> {
+    // ************************************
+    // * Ownership
+    // ************************************
+    fn owner(self: @TState) -> ContractAddress;
+    fn transfer_ownership(ref self: TState, new_owner: ContractAddress);
+    fn renounce_ownership(ref self: TState);
+
     // ************************************
     // * Metadata
     // ************************************
@@ -41,9 +48,11 @@ trait IUnruggableMemecoin<TState> {
     ///     bool: whether token has launched
     fn launched(self: @TState) -> bool;
     fn launch_memecoin(
-        ref self: TState, amm_v2: AMMV2, counterparty_token_address: ContractAddress, deadline: u64
+        ref self: TState, amm_v2: SupportedExchanges, counterparty_token_address: ContractAddress,
     ) -> ContractAddress;
     fn get_team_allocation(self: @TState) -> u256;
+    fn memecoin_factory_address(self: @TState) -> ContractAddress;
+    fn locker_address(self: @TState) -> ContractAddress;
 }
 
 #[starknet::interface]
@@ -75,7 +84,9 @@ trait IUnruggableAdditional<TState> {
     ///     bool: whether token has launched
     fn launched(self: @TState) -> bool;
     fn launch_memecoin(
-        ref self: TState, amm_v2: AMMV2, counterparty_token_address: ContractAddress, deadline: u64
+        ref self: TState, amm_v2: SupportedExchanges, counterparty_token_address: ContractAddress,
     ) -> ContractAddress;
     fn get_team_allocation(self: @TState) -> u256;
+    fn memecoin_factory_address(self: @TState) -> ContractAddress;
+    fn locker_address(self: @TState) -> ContractAddress;
 }
