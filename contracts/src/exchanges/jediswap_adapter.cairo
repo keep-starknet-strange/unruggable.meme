@@ -35,14 +35,6 @@ trait IJediswapFactory<TContractState> {
     fn create_pair(
         ref self: TContractState, tokenA: ContractAddress, tokenB: ContractAddress
     ) -> ContractAddress;
-    fn swap_exact_tokens_for_tokens(
-        ref self: TContractState,
-        amountIn: u256,
-        amountOutMin: u256,
-        path: Array::<ContractAddress>,
-        to: ContractAddress,
-        deadline: u64
-    ) -> Array::<u256>;
 }
 
 #[starknet::interface]
