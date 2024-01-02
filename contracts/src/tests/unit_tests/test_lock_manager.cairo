@@ -16,6 +16,10 @@ use unruggable::tokens::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
 };
 
+#[starknet::interface]
+trait ERC20Mintable<T> {
+    fn mint(ref self: T, recipient: ContractAddress, amount: u256);
+}
 
 /// Sets up the locker contract and deploys a token contract.
 /// For simplicity, the token deployed is the default "ETH" token.
@@ -867,5 +871,43 @@ mod test_getters {
 
         let token_lock = locker.token_locked_at(token.contract_address, 1);
         assert(token_lock == new_lock_address, 'user lock is incorrect');
+    }
+}
+
+mod test_external_impacts {
+    use core::zeroable::Zeroable;
+    use super::{
+        setup, setup_and_lock, ILockManagerDispatcher, ILockManagerDispatcherTrait, OWNER,
+        deploy_locker, start_prank, stop_prank, CheatTarget, ERC20ABIDispatcherTrait,
+        DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, spy_events, SpyOn, EventSpy, EventAssertions,
+        LockManager, ERC20MintableDispatcher, ERC20MintableDispatcherTrait
+    };
+
+    #[test]
+    fn test_balance_increase_of_locked_token() {
+        let (token, locker, lock_address) = setup_and_lock(
+            DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER()
+        );
+
+        let lock_balance_before = token.balanceOf(lock_address);
+        assert(lock_balance_before == DEFAULT_LOCK_AMOUNT, 'locked balance is incorrect');
+        assert(
+            locker.get_lock_details(lock_address).amount == DEFAULT_LOCK_AMOUNT,
+            'lock amount is incorrect'
+        );
+
+        // Mock an increase in the balance of tokens
+        let minted_amount = 200;
+        ERC20MintableDispatcher { contract_address: token.contract_address }
+            .mint(lock_address, minted_amount);
+
+        let lock_balance_after = token.balanceOf(lock_address);
+        assert(
+            lock_balance_after == DEFAULT_LOCK_AMOUNT + minted_amount, 'locked balance is incorrect'
+        );
+        assert(
+            locker.get_lock_details(lock_address).amount == DEFAULT_LOCK_AMOUNT + minted_amount,
+            'lock amount is incorrect'
+        );
     }
 }
