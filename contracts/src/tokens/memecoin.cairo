@@ -367,7 +367,10 @@ mod UnruggableMemecoin {
                 return;
             }
 
-            self.enforce_max_transfer_percentage(sender, recipient, amount);
+            assert(
+                amount <= self.total_supply().percent_mul(MAX_PERCENTAGE_BUY_LAUNCH.into()),
+                'Max buy cap reached'
+            );
 
             if !self.is_launched() {
                 self.enforce_prelaunch_holders_limit(sender, recipient, amount);
@@ -506,45 +509,6 @@ mod UnruggableMemecoin {
 
                 self.pre_launch_holders_count.write(current_holders_count + 1);
             }
-        }
-
-
-        /// Enforces the maximum transfer percentage during the launch phase.
-        ///
-        /// Checks if the coin has is_launched and if the transfer limit delay has passed.
-        /// If not, it checks if the sender or recipient is the locker contract.
-        /// If neither is the locker contract, it asserts that the transfer amount does not exceed a certain percentage of the total supply.
-        ///
-        /// # Arguments
-        ///
-        /// * `sender` - The address of the sender.
-        /// * `recipient` - The address of the recipient.
-        /// * `amount` - The amount to be transferred.
-        ///
-        /// # Panics
-        ///
-        /// * If the transfer amount exceeds the maximum allowed percentage of the total supply during the launch phase.
-        ///
-        //TODO: verify compatibility with LP pool. If lp calls `transferFrom` this might fail.
-        // Not sure why the pool is whitelisted
-        #[inline(always)]
-        fn enforce_max_transfer_percentage(
-            self: @ContractState, sender: ContractAddress, recipient: ContractAddress, amount: u256
-        ) {
-            let launch_time = self.launch_time.read();
-            let transfer_restriction_delay = self.transfer_restriction_delay.read();
-            let current_time = get_block_timestamp();
-            let locker_address = self.locker_contract.read();
-
-            // Skip if the sender or recipient is the locker contract
-            if (sender == locker_address || recipient == locker_address) {
-                return;
-            }
-
-            assert(
-                amount <= self.total_supply().percent_mul(MAX_PERCENTAGE_BUY_LAUNCH.into()),
-                'Max buy cap reached'
-            )
         }
     }
 }
