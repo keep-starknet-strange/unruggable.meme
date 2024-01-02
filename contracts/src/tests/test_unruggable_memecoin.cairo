@@ -157,6 +157,7 @@ mod test_constructor {
 }
 
 mod memecoin_entrypoints {
+    use core::zeroable::Zeroable;
     use debug::PrintTrait;
     use openzeppelin::token::erc20::interface::{
         IERC20, ERC20ABIDispatcher, ERC20ABIDispatcherTrait
@@ -233,7 +234,7 @@ mod memecoin_entrypoints {
     fn test_renounce_ownership_upon_memecoin_launch() {
         let (memecoin, memecoin_address) = deploy_and_launch_memecoin();
 
-        assert(memecoin.owner() == Zeroable::zero(), 'Still an owner');
+        assert(memecoin.owner().is_zero(), 'Still an owner');
     }
 
     #[test]
