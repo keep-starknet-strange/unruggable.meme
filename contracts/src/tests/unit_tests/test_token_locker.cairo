@@ -760,9 +760,9 @@ mod test_getters {
     #[test]
     fn test_get_remaining_time_time_exceeded() {
         let (token, locker, lock_id) = setup_and_lock(
-            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+            DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER()
         );
-        let elapsed = DEFAULT_LOCK_DEADLINE + 1;
+        let elapsed = DEFAULT_MIN_LOCKTIME + 1;
 
         start_warp(CheatTarget::One(locker.contract_address), elapsed);
         let remaining_locktime = locker.get_remaining_time(lock_id);
@@ -819,7 +819,7 @@ mod test_getters {
     #[test]
     fn test_token_locks_length() {
         let (token, locker, lock_id) = setup_and_lock(
-            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+            DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER()
         );
 
         let lock = locker.get_lock_details(lock_id);
@@ -833,7 +833,7 @@ mod test_getters {
         stop_prank(CheatTarget::One(token.contract_address));
 
         start_prank(CheatTarget::One(locker.contract_address), OWNER());
-        locker.lock_tokens(token.contract_address, 200, 500, OWNER());
+        locker.lock_tokens(token.contract_address, 200, DEFAULT_MIN_LOCKTIME, OWNER());
         stop_prank(CheatTarget::One(locker.contract_address));
 
         let new_token_locks_length = locker.token_locks_length(token.contract_address);
@@ -843,7 +843,7 @@ mod test_getters {
     #[test]
     fn test_token_lock_at() {
         let (token, locker, lock_id) = setup_and_lock(
-            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+            DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, OWNER()
         );
 
         let token_lock = locker.token_locked_at(token.contract_address, 0);
@@ -855,7 +855,8 @@ mod test_getters {
         stop_prank(CheatTarget::One(token.contract_address));
 
         start_prank(CheatTarget::One(locker.contract_address), OWNER());
-        let new_lock_id = locker.lock_tokens(token.contract_address, 200, 500, OWNER());
+        let new_lock_id = locker
+            .lock_tokens(token.contract_address, 200, DEFAULT_MIN_LOCKTIME, OWNER());
         stop_prank(CheatTarget::One(locker.contract_address));
 
         let token_lock = locker.token_locked_at(token.contract_address, 1);
