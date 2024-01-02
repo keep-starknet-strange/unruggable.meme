@@ -112,26 +112,6 @@ mod test_internals {
         assert(lock_list.get(2).unwrap_syscall().is_none(), 'prev len should be none');
     }
 
-    #[test]
-    fn test_remove_token_lock() {
-        let mut state = contract_state_for_testing();
-        let token = contract_address_const::<0>();
-
-        let mut token_locks_list = state.token_locks.read(token);
-        assert(token_locks_list.is_empty(), 'lock list should be empty');
-
-        token_locks_list.append(1);
-        token_locks_list.append(2);
-        token_locks_list.append(3);
-        assert(token_locks_list.len() == 3, 'should have 3 elements');
-        state.remove_lock_from_list(2, token_locks_list);
-        token_locks_list = state.token_locks.read(token);
-        assert(token_locks_list.len() == 2, 'should have 2 elements');
-        assert(token_locks_list.array().unwrap_syscall() == array![1_u128, 3_u128], 'should have 1 and 3');
-
-        // Check that the last element is no longer accessible
-        assert(token_locks_list.get(2).unwrap_syscall().is_none(), 'prev len should be none');
-    }
 }
 
 mod test_lock {

@@ -209,13 +209,9 @@ mod TokenLocker {
             let mut token_locks = self.token_locks.read(token_lock.token);
             // Removing user lock
             self.remove_lock_from_list(lock_id, user_locks);
-            // Removing token lock
-            self.remove_lock_from_list(lock_id, token_locks);
 
             let mut new_owner_locks: List<u128> = self.user_locks.read(new_owner);
             new_owner_locks.append(lock_id);
-            let mut new_token_locks : List<u128> =  self.token_locks.read(token_lock.token);
-            new_token_locks.append(lock_id);
 
             // Update lock details
             token_lock.owner = new_owner;
