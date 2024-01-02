@@ -214,12 +214,11 @@ mod TokenLocker {
 
         fn get_remaining_time(self: @ContractState, lock_id: u128) -> u64 {
             let token_lock = self.locks.read(lock_id);
-            let remaining_time = token_lock.unlock_time - get_block_timestamp();
-            if remaining_time > 0 {
-                return remaining_time;
-            } else {
-                return 0;
+            let time = get_block_timestamp();
+            if time < token_lock.unlock_time {
+                return token_lock.unlock_time - time;
             }
+            return 0;
         }
 
         fn get_min_lock_time(self: @ContractState) -> u64 {
