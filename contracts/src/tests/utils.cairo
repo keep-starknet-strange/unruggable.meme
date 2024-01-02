@@ -295,11 +295,6 @@ fn deploy_and_launch_memecoin() -> (IUnruggableMemecoinDispatcher, ContractAddre
     let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
     let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
 
-    // The amount supplied as liquidity are the amount
-    // held by the memecoin contract pre-launch
-    let memecoin_bal_meme = memecoin.balanceOf(memecoin_address);
-    let memecoin_bal_eth = eth.balanceOf(memecoin_address);
-
     start_prank(CheatTarget::One(JEDI_ROUTER_ADDRESS()), memecoin_address);
     start_warp(CheatTarget::One(memecoin_address), 1);
     let pool_address = memecoin.launch_memecoin(SupportedExchanges::JediSwap, eth.contract_address);

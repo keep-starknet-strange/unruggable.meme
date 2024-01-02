@@ -6,6 +6,7 @@ mod UnruggableMemecoin {
     use debug::PrintTrait;
     use integer::BoundedInt;
     use openzeppelin::access::ownable::OwnableComponent;
+    use openzeppelin::access::ownable::interface::IOwnable;
     use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait as OwnableInternalTrait;
     use openzeppelin::token::erc20::ERC20Component;
 
@@ -191,6 +192,9 @@ mod UnruggableMemecoin {
             // Launch the coin
             self.launched.write(true);
             self.launch_time.write(get_block_timestamp());
+
+            // Renounce ownership of the memecoin
+            self.ownable.renounce_ownership();
 
             pair_address
         }

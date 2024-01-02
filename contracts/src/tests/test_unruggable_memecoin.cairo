@@ -5,6 +5,7 @@ use snforge_std::{
     declare, ContractClassTrait, start_prank, stop_prank, RevertedTransaction, CheatTarget,
     TxInfoMock,
 };
+use starknet::contract_address::ContractAddressZeroable;
 use starknet::{ContractAddress, contract_address_const};
 use unruggable::exchanges::{Exchange, SupportedExchanges, ExchangeTrait};
 use unruggable::tests::utils::{
@@ -156,6 +157,7 @@ mod test_constructor {
 }
 
 mod memecoin_entrypoints {
+    use core::zeroable::Zeroable;
     use debug::PrintTrait;
     use openzeppelin::token::erc20::interface::{
         IERC20, ERC20ABIDispatcher, ERC20ABIDispatcherTrait
@@ -196,10 +198,8 @@ mod memecoin_entrypoints {
         let memecoin_bal_meme = memecoin.balanceOf(memecoin_address);
         let memecoin_bal_eth = eth.balanceOf(memecoin_address);
 
-        start_prank(CheatTarget::One(JEDI_ROUTER_ADDRESS()), memecoin_address);
         let pool_address = memecoin
             .launch_memecoin(SupportedExchanges::JediSwap, eth.contract_address);
-        stop_prank(CheatTarget::One(MEMEFACTORY_ADDRESS()));
 
         assert(memecoin.launched(), 'should be launched');
         let pool_dispatcher = IJediswapPairDispatcher { contract_address: pool_address };
@@ -226,14 +226,15 @@ mod memecoin_entrypoints {
         let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
         let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
 
-        // The amount supplied as liquidity are the amount
-        // held by the memecoin contract pre-launch
-        let memecoin_bal_meme = memecoin.balanceOf(memecoin_address);
-        let memecoin_bal_eth = eth.balanceOf(memecoin_address);
-
-        start_prank(CheatTarget::One(JEDI_ROUTER_ADDRESS()), memecoin_address);
         let pool_address = memecoin
             .launch_memecoin(SupportedExchanges::Ekubo, eth.contract_address);
+    }
+
+    #[test]
+    fn test_renounce_ownership_upon_memecoin_launch() {
+        let (memecoin, memecoin_address) = deploy_and_launch_memecoin();
+
+        assert(memecoin.owner().is_zero(), 'Still an owner');
     }
 
     #[test]
@@ -304,7 +305,7 @@ mod memecoin_entrypoints {
         // setting block timestamp >= launch_time + transfer_delay. Transfer should succeed
         // as multi calls to the same recipient are allowed after the delay
         start_warp(
-            CheatTarget::One(memecoin.contract_address), launch_timestamp + TRANSFER_LIMIT_DELAY + 1
+            CheatTarget::One(memecoin.contract_address), launch_timestamp + TRANSFER_LIMIT_DELAY
         );
         start_prank(CheatTarget::One(memecoin.contract_address), INITIAL_HOLDER_1());
         let send_amount = memecoin.transfer_from(INITIAL_HOLDER_1(), ALICE(), 0);
