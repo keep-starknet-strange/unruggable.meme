@@ -5,7 +5,8 @@ use unruggable::exchanges::{Exchange, SupportedExchanges, ExchangeTrait};
 use unruggable::factory::{IFactory, IFactoryDispatcher, IFactoryDispatcherTrait};
 use unruggable::tests::utils::{
     deploy_amm_factory_and_router, deploy_meme_factory, deploy_locker, deploy_eth, OWNER, NAME,
-    SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS, INITIAL_HOLDERS_AMOUNTS, SALT
+    SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS, INITIAL_HOLDERS_AMOUNTS, SALT,
+    deploy_memecoin_through_factory, MEMEFACTORY_ADDRESS
 };
 use unruggable::tokens::interface::{
     IUnruggableMemecoin, IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -24,38 +25,12 @@ fn test_amm_router_address() {
 
 #[test]
 fn test_is_memecoin() {
-    // Required contracts
-    let (_, router_address) = deploy_amm_factory_and_router();
-    let memecoin_factory_address = deploy_meme_factory(router_address);
-    let memecoin_factory = IFactoryDispatcher { contract_address: memecoin_factory_address };
-    let locker_address = deploy_locker();
-    let (eth, eth_address) = deploy_eth();
+    let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
+    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
 
-    let eth_amount: u256 = eth.total_supply() / 2; // 50% of supply
-
-    start_prank(CheatTarget::One(eth.contract_address), OWNER());
-    eth.approve(memecoin_factory_address, eth_amount);
-    stop_prank(CheatTarget::One(eth.contract_address));
-
-    start_prank(CheatTarget::One(memecoin_factory.contract_address), OWNER());
-    let memecoin_address = memecoin_factory
-        .create_memecoin(
-            owner: OWNER(),
-            :locker_address,
-            name: NAME(),
-            symbol: SYMBOL(),
-            initial_supply: DEFAULT_INITIAL_SUPPLY(),
-            initial_holders: INITIAL_HOLDERS(),
-            initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
-            transfer_limit_delay: 1000,
-            counterparty_token: eth,
-            contract_address_salt: SALT(),
-        );
-    stop_prank(CheatTarget::One(memecoin_factory.contract_address));
-
-    assert(memecoin_factory.is_memecoin(address: memecoin_address), 'should be memecoin');
+    assert(factory.is_memecoin(address: memecoin_address), 'should be memecoin');
     assert(
-        !memecoin_factory.is_memecoin(address: 'random address'.try_into().unwrap()),
+        !factory.is_memecoin(address: 'random address'.try_into().unwrap()),
         'should not be memecoin'
     );
 }

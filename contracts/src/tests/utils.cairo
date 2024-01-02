@@ -291,7 +291,7 @@ fn deploy_memecoin_through_factory() -> (IUnruggableMemecoinDispatcher, Contract
 // Sets the env block timestamp to 1 and launchs the memecoin - so that launched_at is 1
 // In this context, the owner of the factory is the address of the snforge test
 fn deploy_and_launch_memecoin() -> (IUnruggableMemecoinDispatcher, ContractAddress) {
-    let owner = starknet::get_contract_address();
+    let owner = snforge_std::test_address();
     let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
     let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
 
