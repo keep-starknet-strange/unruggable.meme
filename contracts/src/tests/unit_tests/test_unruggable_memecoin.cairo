@@ -61,7 +61,7 @@ mod test_constructor {
         );
 
         // External entrypoints
-        assert(memecoin.LOCK_MANAGER_ADDRESS() == LOCK_MANAGER_ADDRESS(), 'wrong locker');
+        assert(memecoin.lock_manager_address() == LOCK_MANAGER_ADDRESS(), 'wrong locker');
         assert(
             memecoin.memecoin_factory_address() == MEMEFACTORY_ADDRESS(), 'wrong factory address'
         );
@@ -283,7 +283,7 @@ mod memecoin_entrypoints {
     fn test_LOCK_MANAGER_ADDRESS() {
         let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
 
-        assert(memecoin.LOCK_MANAGER_ADDRESS() == LOCK_MANAGER_ADDRESS(), 'wrong locker address');
+        assert(memecoin.lock_manager_address() == LOCK_MANAGER_ADDRESS(), 'wrong locker address');
     }
 
     #[test]

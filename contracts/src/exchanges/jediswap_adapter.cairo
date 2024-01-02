@@ -144,7 +144,7 @@ mod JediswapComponent {
             assert(pair.balanceOf(memecoin_address) == liquidity_received, 'wrong LP tkns amount');
 
             // Lock LP tokens
-            let lock_manager_address = memecoin.LOCK_MANAGER_ADDRESS();
+            let lock_manager_address = memecoin.lock_manager_address();
             let lock_manager = ILockManagerDispatcher { contract_address: lock_manager_address };
             pair.approve(lock_manager_address, liquidity_received);
             let locked_address = lock_manager

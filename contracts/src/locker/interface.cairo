@@ -232,18 +232,3 @@ trait ILockManager<TContractState> {
         self: @TContractState, token: ContractAddress, index: u32
     ) -> ContractAddress;
 }
-
-#[starknet::interface]
-trait ILockPosition<TContractState> {
-    /// Retrieves the details of the locked position
-    ///
-    /// # Arguments
-    ///
-    /// * `user` - The address of the user.
-    ///
-    /// # Returns
-    ///
-    /// * `TokenLock` - The details of the lock, including the `token` address, the `owner` address, the `amount` of tokens locked, and the `unlock_time`.
-    ///
-    fn get_lock_position(self: @TContractState, user: ContractAddress) -> TokenLock;
-}

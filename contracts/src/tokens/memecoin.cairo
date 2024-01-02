@@ -204,7 +204,7 @@ mod UnruggableMemecoin {
             self.factory_contract.read()
         }
 
-        fn LOCK_MANAGER_ADDRESS(self: @ContractState) -> ContractAddress {
+        fn lock_manager_address(self: @ContractState) -> ContractAddress {
             self.locker_contract.read()
         }
     }
