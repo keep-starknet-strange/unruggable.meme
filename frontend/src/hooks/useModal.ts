@@ -24,3 +24,5 @@ function useModal(modal: ModalType): [boolean, () => void] {
 export const useWalletConnectModal = () => useModal(ModalType.WALLET_CONNECT)
 
 export const useL2WalletOverviewModal = () => useModal(ModalType.L2_WALLET_OVERVIEW)
+
+export const useImportTokenModal = () => useModal(ModalType.IMPORT_TOKEN)

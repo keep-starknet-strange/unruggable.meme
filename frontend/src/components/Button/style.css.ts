@@ -1,6 +1,6 @@
 import { style } from '@vanilla-extract/css'
 import { recipe } from '@vanilla-extract/recipes'
-import { sprinkles } from 'src/theme/css/sprinkles.css'
+import { sprinkles, vars } from 'src/theme/css/sprinkles.css'
 
 export const Base = style([
   {
@@ -30,35 +30,16 @@ export const primaryButton = style([
   sprinkles({
     paddingX: '16',
     border: 'none',
-    background: 'accentGradient',
-    opacity: {
-      hover: 'hover',
-      focus: 'focus',
-      active: 'focus',
-    },
+    background: 'accent',
     color: 'text1',
     position: 'relative',
-  }),
-])
-
-export const primaryButtonSpan = style([
-  {
-    selectors: {
-      [`${primaryButton}:hover &`]: {
-        opacity: 1,
-      },
+    outlineColor: 'accent',
+    outlineStyle: 'solid',
+    outlineWidth: {
+      default: '0px',
+      hover: '1px',
+      active: '1px',
     },
-  },
-  sprinkles({
-    background: 'accent',
-    transition: '125',
-    position: 'absolute',
-    opacity: '0',
-    top: '0',
-    right: '0',
-    bottom: '0',
-    left: '0',
-    borderRadius: '10',
   }),
 ])
 
@@ -121,6 +102,8 @@ export const thirdDimension = style([
     overflow: 'hidden',
     boxShadow: '0 6px 10px #00000040',
     position: 'relative',
+    background: vars.color.accentGradient,
+    outline: 'none',
 
     '::before': {
       content: '""',
@@ -134,4 +117,28 @@ export const thirdDimension = style([
       background: 'linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0))',
     },
   },
+])
+
+export const thirdDimensionSpan = style([
+  {
+    selectors: {
+      [`${thirdDimension}:hover &`]: {
+        opacity: 1,
+      },
+    },
+    top: '-1px',
+    right: '-1px',
+    bottom: '-1px',
+    left: '-1px',
+    borderRadius: '11px',
+  },
+  sprinkles({
+    background: 'accent',
+    transition: '125',
+    position: 'absolute',
+    opacity: '0',
+    borderRadius: '10',
+    transitionDuration: '250',
+    zIndex: '1',
+  }),
 ])

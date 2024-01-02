@@ -11,7 +11,7 @@ interface PrimaryButtonProps extends ButtonProps {
 
 export const PrimaryButton = ({ className, major = false, children, ...props }: PrimaryButtonProps) => (
   <Box as="button" className={clsx(className, major ? styles.thirdDimension : styles.primaryButton)} {...props}>
-    <Box as="span" className={styles.primaryButtonSpan} />
+    {major && <Box as="span" className={styles.thirdDimensionSpan} />}
     <Box zIndex="1" position="relative">
       {children}
     </Box>

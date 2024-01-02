@@ -11,14 +11,15 @@ interface OptionProps {
 }
 
 function Option({ connection, activate }: OptionProps) {
-  const icon = connection.icon.light
+  const icon = connection.icon.dark
   const isSvg = icon?.startsWith('<svg')
+
   return (
     <Row gap="12" className={styles.option} onClick={activate}>
       {isSvg ? (
         <Box width="32" height="32" dangerouslySetInnerHTML={{ __html: icon ?? '' }} /> /* display svg */
       ) : (
-        <Box as="img" width="32" height="32" src={connection.icon.light} />
+        <Box as="img" width="32" height="32" src={connection.icon.dark} />
       )}
       <Text.Body>{connection.name}</Text.Body>
     </Row>
@@ -33,8 +34,6 @@ export function L2Option({ connection }: L2OptionProps) {
   // wallet activation
   const { connect } = useConnect()
   const activate = () => connect({ connector: connection })
-
-  console.log(connection.icon.light)
 
   return <Option connection={connection} activate={activate} />
 }

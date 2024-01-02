@@ -31,7 +31,11 @@ function Web3StatusContent() {
       </Row>
     )
   } else {
-    return <PrimaryButton onClick={toggleWalletConnectModal}>Connect wallet</PrimaryButton>
+    return (
+      <PrimaryButton onClick={toggleWalletConnectModal} minWidth="180">
+        Connect wallet
+      </PrimaryButton>
+    )
   }
 }
 

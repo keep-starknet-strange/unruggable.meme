@@ -27,7 +27,7 @@ function WalletConnectContent() {
 
   return (
     <Content title="Connect wallet" close={toggle}>
-      <Column gap="8">
+      <Column gap="12">
         {connectors
           .filter((connection) => connection.available())
           .map((connection) => (

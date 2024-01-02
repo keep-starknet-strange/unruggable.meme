@@ -131,8 +131,7 @@ export const vars = createGlobalTheme(':root', {
     text2: '#5D6775',
 
     appGradient: `radial-gradient(50% 50% at 50% 30%, ${transparentize(0.9, '#6E44FF')}, transparent)`,
-    accentGradient: 'linear-gradient(120deg, #ff003e, #6E44FF)',
-    disabledGradient: 'linear-gradient(120deg, #86797c, #9d9aa7)',
+    accentGradient: 'linear-gradient(215deg, #cc0033, #6E44FF)',
 
     accent: '#6E44FF',
 

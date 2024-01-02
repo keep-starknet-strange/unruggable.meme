@@ -4,8 +4,8 @@ import { StoreState } from './index'
 
 export enum ModalType {
   WALLET_CONNECT,
-  L1_WALLET_OVERVIEW,
   L2_WALLET_OVERVIEW,
+  IMPORT_TOKEN,
 }
 
 export type ApplicationSlice = State & Actions

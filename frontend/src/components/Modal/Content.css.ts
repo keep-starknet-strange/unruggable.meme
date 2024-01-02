@@ -13,7 +13,7 @@ export const content = style([
     position: 'fixed',
     left: '1/2',
     top: '1/2',
-    width: '386',
+    width: '480',
   }),
   {
     transform: 'translate(-50%, -50%)',

@@ -5,7 +5,8 @@ export const option = sprinkles({
     hover: 'bg2',
   },
   borderRadius: '10',
-  padding: '8',
+  padding: '12',
   cursor: 'pointer',
   transitionDuration: '125',
+  color: 'text1',
 })

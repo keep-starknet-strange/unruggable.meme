@@ -6,7 +6,7 @@ import { sprinkles, vars } from 'src/theme/css/sprinkles.css'
 export const tokenContractContainer = style([
   {
     backgroundImage: `
-      linear-gradient(to top, ${transparentize(0.6, '#12181c')} 0%, ${transparentize(0.5, '#12181c')} 70%),
+      linear-gradient(to top, ${transparentize(0.4, '#12181c')} 0%, ${transparentize(0.3, '#12181c')} 70%),
       url("src/assets/forest.png")
     `,
     backgroundSize: '150%',
