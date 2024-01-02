@@ -1,7 +1,7 @@
 //TODO(low prio): implement fallback mechanism for snake_case entrypoints
 //TODO(low prio): implement a recover functions for tokens wrongly sent to the contract
 #[starknet::contract]
-mod TokenLocker {
+mod LockManager {
     use alexandria_storage::list::{List, ListTrait};
     use core::starknet::SyscallResultTrait;
     use core::starknet::event::EventEmitter;
@@ -10,7 +10,7 @@ mod TokenLocker {
     use openzeppelin::token::erc20::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
     use starknet::{
         ContractAddress, contract_address_const, get_caller_address, get_contract_address,
-        get_block_timestamp, Store
+        get_block_timestamp, Store, ClassHash
     };
     use unruggable::locker::errors;
 
@@ -19,9 +19,10 @@ mod TokenLocker {
     struct Storage {
         min_lock_time: u64,
         lock_nonce: u128,
-        locks: LegacyMap<u128, TokenLock>,
-        user_locks: LegacyMap<ContractAddress, List<u128>>,
-        token_locks: LegacyMap<ContractAddress, List<u128>>,
+        locks: LegacyMap<ContractAddress, TokenLock>,
+        lock_position_class_hash: ClassHash,
+        user_locks: LegacyMap<ContractAddress, List<ContractAddress>>,
+        token_locks: LegacyMap<ContractAddress, List<ContractAddress>>,
     }
 
 
@@ -41,7 +42,7 @@ mod TokenLocker {
     #[derive(Drop, starknet::Event)]
     struct TokenLocked {
         #[key]
-        lock_id: u128,
+        lock_address: ContractAddress,
         token: ContractAddress,
         owner: ContractAddress,
         amount: u256,
@@ -51,33 +52,33 @@ mod TokenLocker {
     #[derive(Drop, starknet::Event)]
     struct TokenUnlocked {
         #[key]
-        lock_id: u128,
+        lock_address: ContractAddress,
     }
 
     #[derive(Drop, starknet::Event)]
     struct TokenWithdrawn {
         #[key]
-        lock_id: u128,
+        lock_address: ContractAddress,
         amount: u256
     }
 
     #[derive(Drop, starknet::Event)]
     struct LockOwnershipTransferred {
         #[key]
-        lock_id: u128,
+        lock_address: ContractAddress,
         new_owner: ContractAddress,
     }
 
     #[derive(Drop, starknet::Event)]
     struct LockDurationIncreased {
         #[key]
-        lock_id: u128,
+        lock_address: ContractAddress,
         new_unlock_time: u64,
     }
 
     #[derive(Drop, starknet::Event)]
     struct LockAmountIncreased {
-        lock_id: u128,
+        lock_address: ContractAddress,
         amount_to_increase: u256
     }
 
@@ -85,11 +86,18 @@ mod TokenLocker {
     struct TokenLock {
         token: ContractAddress,
         owner: ContractAddress,
-        amount: u256,
         unlock_time: u64,
     }
 
-    /// Initializes a new instance of a TokenLocker contract.  The constructor
+    #[derive(Drop, Copy, PartialEq, starknet::Store, Serde)]
+    struct LockPosition {
+        token: ContractAddress,
+        amount: u256,
+        owner: ContractAddress,
+        unlock_time: u64
+    }
+
+    /// Initializes a new instance of a LockManager contract.  The constructor
     /// sets the minimum lock time for all locks created by this contract.
     ///
     /// # Arguments
@@ -97,19 +105,22 @@ mod TokenLocker {
     /// * `min_lock_time` - The minimum lock time applicable to all locks
     ///  created by this contract.
     #[constructor]
-    fn constructor(ref self: ContractState, min_lock_time: u64,) {
+    fn constructor(
+        ref self: ContractState, min_lock_time: u64, lock_position_class_hash: ClassHash
+    ) {
         self.min_lock_time.write(min_lock_time);
+        self.lock_position_class_hash.write(lock_position_class_hash);
     }
 
     #[abi(embed_v0)]
-    impl TokenLocker of unruggable::locker::ITokenLocker<ContractState> {
+    impl LockManager of unruggable::locker::ILockManager<ContractState> {
         fn lock_tokens(
             ref self: ContractState,
             token: ContractAddress,
             amount: u256,
             unlock_time: u64,
             withdrawer: ContractAddress
-        ) -> u128 {
+        ) -> ContractAddress {
             //TODO(safety): Add a check to verify that the token locked is an LP pair - to avoid people locking tokens
             // unintentionally
 
@@ -125,62 +136,68 @@ mod TokenLocker {
             self._proceed_lock(token, withdrawer, amount, unlock_time)
         }
 
-        fn extend_lock(ref self: ContractState, lock_id: u128, new_unlock_time: u64) {
-            self.assert_only_lock_owner(lock_id);
+        fn extend_lock(
+            ref self: ContractState, lock_address: ContractAddress, new_unlock_time: u64
+        ) {
+            self.assert_only_lock_owner(lock_address);
 
             assert(new_unlock_time >= get_block_timestamp(), errors::UNLOCK_IN_PAST);
             assert(new_unlock_time < 10000000000, errors::LOCK_NOT_IN_SECONDS);
 
-            let mut token_lock = self.locks.read(lock_id);
+            let mut token_lock = self.locks.read(lock_address);
             assert(new_unlock_time > token_lock.unlock_time, errors::LOCKTIME_NOT_INCREASED);
             token_lock.unlock_time = new_unlock_time;
-            self.locks.write(lock_id, token_lock);
+            self.locks.write(lock_address, token_lock);
 
-            self.emit(LockDurationIncreased { lock_id, new_unlock_time });
+            self.emit(LockDurationIncreased { lock_address, new_unlock_time });
         }
 
-        fn increase_lock_amount(ref self: ContractState, lock_id: u128, amount_to_increase: u256) {
-            self.assert_only_lock_owner(lock_id);
+        fn increase_lock_amount(
+            ref self: ContractState, lock_address: ContractAddress, amount_to_increase: u256
+        ) {
+            self.assert_only_lock_owner(lock_address);
 
             assert(amount_to_increase != 0, errors::ZERO_AMOUNT);
-            let mut token_lock = self.locks.read(lock_id);
-            token_lock.amount += amount_to_increase;
-            self.locks.write(lock_id, token_lock);
+            let mut token_lock = self.locks.read(lock_address);
+            self.locks.write(lock_address, token_lock);
 
             ERC20ABIDispatcher { contract_address: token_lock.token }
-                .transferFrom(get_caller_address(), get_contract_address(), amount_to_increase);
-            self.emit(LockAmountIncreased { lock_id, amount_to_increase });
+                .transferFrom(get_caller_address(), lock_address, amount_to_increase);
+            self.emit(LockAmountIncreased { lock_address, amount_to_increase });
         }
 
-        fn withdraw(ref self: ContractState, lock_id: u128) {
-            let token_lock = self.locks.read(lock_id);
-            self.partial_withdraw(lock_id, token_lock.amount);
+        fn withdraw(ref self: ContractState, lock_address: ContractAddress) {
+            let token_lock = self.locks.read(lock_address);
+            let actual_balance = ERC20ABIDispatcher { contract_address: token_lock.token }
+                .balanceOf(lock_address);
+            self.partial_withdraw(lock_address, actual_balance);
         }
 
-        fn partial_withdraw(ref self: ContractState, lock_id: u128, amount: u256) {
-            self.assert_only_lock_owner(lock_id);
+        fn partial_withdraw(ref self: ContractState, lock_address: ContractAddress, amount: u256) {
+            self.assert_only_lock_owner(lock_address);
 
-            let mut token_lock = self.locks.read(lock_id);
-            assert(amount <= token_lock.amount, errors::WITHDRAW_AMOUNT_TOO_HIGH);
+            let token_lock = self.locks.read(lock_address);
+            let actual_balance = ERC20ABIDispatcher { contract_address: token_lock.token }
+                .balanceOf(lock_address);
+            assert(amount <= actual_balance, errors::WITHDRAW_AMOUNT_TOO_HIGH);
             assert(get_block_timestamp() >= token_lock.unlock_time, errors::STILL_LOCKED);
 
             // Effects
             let owner = token_lock.owner;
-            token_lock.amount -= amount;
-            self.locks.write(lock_id, token_lock);
 
             // Interactions
-            ERC20ABIDispatcher { contract_address: token_lock.token }.transfer(owner, amount);
+            ERC20ABIDispatcher { contract_address: token_lock.token }
+                .transferFrom(lock_address, owner, amount);
 
-            if token_lock.amount == 0 {
+            if actual_balance == amount {
+                // Position has been fully withdrawn
                 self
                     .locks
                     .write(
-                        lock_id,
+                        lock_address,
                         TokenLock {
                             token: contract_address_const::<0>(),
                             owner: contract_address_const::<0>(),
-                            amount: 0,
                             unlock_time: 0
                         }
                     );
@@ -188,40 +205,57 @@ mod TokenLocker {
                 let mut token_locks = self.token_locks.read(token_lock.token);
 
                 // Remove lock from user and token lists
-                self.remove_lock_from_list(lock_id, user_locks);
-                self.remove_lock_from_list(lock_id, token_locks);
+                self.remove_lock_from_list(lock_address, user_locks);
+                self.remove_lock_from_list(lock_address, token_locks);
 
-                self.emit(TokenUnlocked { lock_id });
+                self.emit(TokenUnlocked { lock_address });
             }
-            self.emit(TokenWithdrawn { lock_id, amount });
+            self.emit(TokenWithdrawn { lock_address, amount });
         }
 
-        fn transfer_lock(ref self: ContractState, lock_id: u128, new_owner: ContractAddress) {
-            self.assert_only_lock_owner(lock_id);
+        fn transfer_lock(
+            ref self: ContractState, lock_address: ContractAddress, new_owner: ContractAddress
+        ) {
+            self.assert_only_lock_owner(lock_address);
 
             assert(new_owner.into() != 0_felt252, errors::ZERO_WITHDRAWER);
-            let mut token_lock = self.locks.read(lock_id);
+            let mut token_lock = self.locks.read(lock_address);
 
             // Update owner's lock lists
             let mut user_locks = self.user_locks.read(token_lock.owner);
-            self.remove_lock_from_list(lock_id, user_locks);
-            let mut new_owner_locks: List<u128> = self.user_locks.read(new_owner);
-            new_owner_locks.append(lock_id);
+            self.remove_lock_from_list(lock_address, user_locks);
+            let mut new_owner_locks: List<ContractAddress> = self.user_locks.read(new_owner);
+            new_owner_locks.append(lock_address);
 
             // Update lock details
             token_lock.owner = new_owner;
-            self.locks.write(lock_id, token_lock);
+            self.locks.write(lock_address, token_lock);
 
-            self.emit(LockOwnershipTransferred { lock_id: lock_id, new_owner });
+            self.emit(LockOwnershipTransferred { lock_address: lock_address, new_owner });
         }
 
-        fn get_lock_details(self: @ContractState, lock_id: u128) -> TokenLock {
-            let token_lock = self.locks.read(lock_id);
-            token_lock
+        fn get_lock_details(self: @ContractState, lock_address: ContractAddress) -> LockPosition {
+            let token_lock = self.locks.read(lock_address);
+            if token_lock.token.is_zero() {
+                return LockPosition {
+                    token: contract_address_const::<0>(),
+                    amount: 0,
+                    owner: contract_address_const::<0>(),
+                    unlock_time: 0
+                };
+            }
+            let actual_balance = ERC20ABIDispatcher { contract_address: token_lock.token }
+                .balanceOf(lock_address);
+            LockPosition {
+                token: token_lock.token,
+                amount: actual_balance,
+                owner: token_lock.owner,
+                unlock_time: token_lock.unlock_time
+            }
         }
 
-        fn get_remaining_time(self: @ContractState, lock_id: u128) -> u64 {
-            let token_lock = self.locks.read(lock_id);
+        fn get_remaining_time(self: @ContractState, lock_address: ContractAddress) -> u64 {
+            let token_lock = self.locks.read(lock_address);
             let time = get_block_timestamp();
             if time < token_lock.unlock_time {
                 return token_lock.unlock_time - time;
@@ -234,22 +268,26 @@ mod TokenLocker {
         }
 
         fn user_locks_length(self: @ContractState, user: ContractAddress) -> u32 {
-            let user_locks: List<u128> = self.user_locks.read(user);
+            let user_locks: List<ContractAddress> = self.user_locks.read(user);
             user_locks.len
         }
 
-        fn user_lock_at(self: @ContractState, user: ContractAddress, index: u32) -> u128 {
-            let user_locks: List<u128> = self.user_locks.read(user);
+        fn user_lock_at(
+            self: @ContractState, user: ContractAddress, index: u32
+        ) -> ContractAddress {
+            let user_locks: List<ContractAddress> = self.user_locks.read(user);
             user_locks[index]
         }
 
         fn token_locks_length(self: @ContractState, token: ContractAddress) -> u32 {
-            let list: List<u128> = self.token_locks.read(token);
+            let list: List<ContractAddress> = self.token_locks.read(token);
             list.len()
         }
 
-        fn token_locked_at(self: @ContractState, token: ContractAddress, index: u32) -> u128 {
-            let token_locks: List<u128> = self.token_locks.read(token);
+        fn token_locked_at(
+            self: @ContractState, token: ContractAddress, index: u32
+        ) -> ContractAddress {
+            let token_locks: List<ContractAddress> = self.token_locks.read(token);
             token_locks[index]
         }
     }
@@ -260,7 +298,7 @@ mod TokenLocker {
         ///
         /// # Arguments
         ///
-        /// * `lock_id` - The ID of the lock.
+        /// * `lock_address` - The ID of the lock.
         ///
         /// # Panics
         ///
@@ -268,8 +306,8 @@ mod TokenLocker {
         ///
         /// * The caller's address is not the same as the `owner` of the `TokenLock` (error code: `errors::NOT_LOCK_OWNER`).
         ///
-        fn assert_only_lock_owner(self: @ContractState, lock_id: u128) {
-            let token_lock = self.locks.read(lock_id);
+        fn assert_only_lock_owner(self: @ContractState, lock_address: ContractAddress) {
+            let token_lock = self.locks.read(lock_address);
             assert(get_caller_address() == token_lock.owner, errors::NOT_LOCK_OWNER);
         }
 
@@ -289,7 +327,7 @@ mod TokenLocker {
         ///
         /// # Returns
         ///
-        /// * `u128` - The ID of the new lock.
+        /// * `ContractAddress` - The address of the new lock.
         ///
         /// # Panics
         ///
@@ -303,46 +341,58 @@ mod TokenLocker {
             withdrawer: ContractAddress,
             amount: u256,
             unlock_time: u64
-        ) -> u128 {
-            let token_lock = TokenLock {
-                token, owner: withdrawer, amount: amount, unlock_time: unlock_time
-            };
+        ) -> ContractAddress {
+            let token_lock = TokenLock { token, owner: withdrawer, unlock_time: unlock_time };
 
-            let lock_id = self.lock_nonce.read() + 1;
-            self.lock_nonce.write(lock_id);
-            self.locks.write(lock_id, token_lock);
+            let lock_nonce = self.lock_nonce.read() + 1;
+            self.lock_nonce.write(lock_nonce);
 
-            let mut user_locks: List<u128> = self.user_locks.read(withdrawer);
-            user_locks.append(lock_id).unwrap_syscall();
+            // Deploy a lock position contract that will receive the tokens.
+            // This makes accountability for fee accrual easier,
+            // as the tokens are not stored all together in the lock manager contract.
+            let (lock_address, _) = starknet::deploy_syscall(
+                self.lock_position_class_hash.read(),
+                lock_nonce.into(),
+                array![token.into()].span(),
+                false
+            )
+                .unwrap_syscall();
 
-            let mut token_locks: List<u128> = self.token_locks.read(token);
-            token_locks.append(lock_id).unwrap_syscall();
+            let mut user_locks: List<ContractAddress> = self.user_locks.read(withdrawer);
+            user_locks.append(lock_address).unwrap_syscall();
+
+            let mut token_locks: List<ContractAddress> = self.token_locks.read(token);
+            token_locks.append(lock_address).unwrap_syscall();
+
+            self.locks.write(lock_address, token_lock);
 
             ERC20ABIDispatcher { contract_address: token }
-                .transferFrom(get_caller_address(), get_contract_address(), amount);
+                .transferFrom(get_caller_address(), lock_address, amount);
 
-            self.emit(TokenLocked { lock_id, token, owner: withdrawer, amount, unlock_time });
+            self.emit(TokenLocked { lock_address, token, owner: withdrawer, amount, unlock_time });
 
-            return lock_id;
+            return lock_address;
         }
 
         /// Removes the id of a lock from the list of locks of a user.
         ///
         /// Internally, this function reads the list of locks of the specified `owner` or `tokens` from the `user_locks` and `token_locks` mapping.
-        /// It then iterates over the list and replaces the specified `lock_id` with the last element of the list.
+        /// It then iterates over the list and replaces the specified `lock_address` with the last element of the list.
         /// The length of the list is then decremented by one, and the last element of the list is set to zero.
-        fn remove_lock_from_list(self: @ContractState, lock_id: u128, mut list: List<u128>) {
+        fn remove_lock_from_list(
+            self: @ContractState, lock_address: ContractAddress, mut list: List<ContractAddress>
+        ) {
             let list_len = list.len();
             let mut i = 0;
             loop {
                 if i == list_len {
                     break;
                 }
-                let current_lock_id = list[i];
-                if current_lock_id == lock_id {
+                let current_lock_address = list[i];
+                if current_lock_address == lock_address {
                     let last_element = list[list_len - 1];
                     list.set(i, last_element);
-                    list.set(list_len - 1, 0);
+                    list.set(list_len - 1, 0.try_into().unwrap());
                     list.len -= 1;
                     Store::write(list.address_domain, list.base, list.len).unwrap_syscall();
                     break;

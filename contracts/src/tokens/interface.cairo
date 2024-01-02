@@ -55,7 +55,7 @@ trait IUnruggableMemecoin<TState> {
     ) -> ContractAddress;
     fn get_team_allocation(self: @TState) -> u256;
     fn memecoin_factory_address(self: @TState) -> ContractAddress;
-    fn locker_address(self: @TState) -> ContractAddress;
+    fn lock_manager_address(self: @TState) -> ContractAddress;
 }
 
 #[starknet::interface]
@@ -113,5 +113,5 @@ trait IUnruggableAdditional<TState> {
     ) -> ContractAddress;
     fn get_team_allocation(self: @TState) -> u256;
     fn memecoin_factory_address(self: @TState) -> ContractAddress;
-    fn locker_address(self: @TState) -> ContractAddress;
+    fn lock_manager_address(self: @TState) -> ContractAddress;
 }

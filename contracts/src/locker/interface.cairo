@@ -1,8 +1,8 @@
 use starknet::ContractAddress;
-use super::TokenLocker::TokenLock;
+use super::LockManager::{TokenLock, LockPosition};
 
 #[starknet::interface]
-trait ITokenLocker<TContractState> {
+trait ILockManager<TContractState> {
     // External
 
     /// Locks a specified amount of tokens until a specified unlock time.
@@ -19,7 +19,7 @@ trait ITokenLocker<TContractState> {
     ///
     /// # Returns
     ///
-    /// * `u128` - The internal id of the lock.
+    /// * `ContractAddress` - The internal id of the lock.
     ///
     /// # Panics
     ///
@@ -37,11 +37,11 @@ trait ITokenLocker<TContractState> {
         amount: u256,
         unlock_time: u64,
         withdrawer: ContractAddress
-    ) -> u128;
+    ) -> ContractAddress;
 
     /// Extends the unlock time of a specified lock.
     ///
-    /// This function extends the `unlock_time` of the `TokenLock` instance with the specified `lock_id`.
+    /// This function extends the `unlock_time` of the `TokenLock` instance with the specified `lock_address`.
     /// It first ensures that the caller is the owner of the lock.
     /// It then asserts that the `new_unlock_time` is not in the past and is less than 10000000000.
     /// The function then reads the `TokenLock` from the `locks` mapping, asserts that the `new_unlock_time` is greater than the current `unlock_time`, and updates the `unlock_time`.
@@ -49,7 +49,7 @@ trait ITokenLocker<TContractState> {
     ///
     /// # Arguments
     ///
-    /// * `lock_id` - The ID of the lock.
+    /// * `lock_address` - The address of the lock.
     /// * `new_unlock_time` - The new unlock time.
     ///
     /// # Panics
@@ -61,11 +61,11 @@ trait ITokenLocker<TContractState> {
     /// * `new_unlock_time` is greater than or equal to 10000000000 (error code: `errors::LOCK_NOT_IN_SECONDS`).
     /// * `new_unlock_time` is less than or equal to the current `unlock_time` of the `TokenLock` (error code: `errors::LOCKTIME_NOT_INCREASED`).
     ///
-    fn extend_lock(ref self: TContractState, lock_id: u128, new_unlock_time: u64);
+    fn extend_lock(ref self: TContractState, lock_address: ContractAddress, new_unlock_time: u64);
 
     /// Increases the amount of tokens in a specified lock.
     ///
-    /// This function increases the `amount` of the `TokenLock` instance with the specified `lock_id`.
+    /// This function increases the `amount` of the `TokenLock` instance with the specified `lock_address`.
     /// It first ensures that the caller is the owner of the lock.
     /// It then asserts that the `amount_to_increase` is not zero.
     /// The function then reads the `TokenLock` from the `locks` mapping, increases the `amount`, and writes the updated `TokenLock` back to the `locks` mapping.
@@ -74,7 +74,7 @@ trait ITokenLocker<TContractState> {
     ///
     /// # Arguments
     ///
-    /// * `lock_id` - The ID of the lock.
+    /// * `lock_address` - The address of the lock.
     /// * `amount_to_increase` - The amount by which to increase the lock.
     ///
     /// # Panics
@@ -85,12 +85,14 @@ trait ITokenLocker<TContractState> {
     /// * `amount_to_increase` is zero (error code: `errors::ZERO_AMOUNT`).
     /// * The `transferFrom` call to the ERC20 token contract fails.
     ///
-    fn increase_lock_amount(ref self: TContractState, lock_id: u128, amount_to_increase: u256,);
+    fn increase_lock_amount(
+        ref self: TContractState, lock_address: ContractAddress, amount_to_increase: u256,
+    );
 
     /// Withdraws all tokens from a specified lock.
     ///
     /// Equivalent to calling `partial_withdraw` with the `amount` equal to the `amount` of the `TokenLock`.
-    fn withdraw(ref self: TContractState, lock_id: u128);
+    fn withdraw(ref self: TContractState, lock_address: ContractAddress);
 
     /// Withdraws tokens from a specified lock.
     ///
@@ -104,7 +106,7 @@ trait ITokenLocker<TContractState> {
     ///
     /// # Arguments
     ///
-    /// * `lock_id` - The ID of the lock.
+    /// * `lock_address` - The address of the lock.
     /// * `amount` - The amount of tokens to withdraw.
     ///
     /// # Panics
@@ -116,7 +118,7 @@ trait ITokenLocker<TContractState> {
     /// * The current block timestamp is less than the `unlock_time` of the `TokenLock` (error code: `errors::STILL_LOCKED`).
     /// * The `transfer` call to the ERC20 token contract fails.
     ///
-    fn partial_withdraw(ref self: TContractState, lock_id: u128, amount: u256);
+    fn partial_withdraw(ref self: TContractState, lock_address: ContractAddress, amount: u256);
 
     /// Transfers the ownership of a specified lock to a new owner.
     ///
@@ -128,7 +130,7 @@ trait ITokenLocker<TContractState> {
     ///
     /// # Arguments
     ///
-    /// * `lock_id` - The ID of the lock.
+    /// * `lock_address` - The address of the lock.
     /// * `new_owner` - The address of the new owner.
     ///
     /// # Panics
@@ -138,7 +140,9 @@ trait ITokenLocker<TContractState> {
     /// * The caller's address is not the same as the `owner` of the `TokenLock` (error code: `errors::NOT_LOCK_OWNER`).
     /// * `new_owner` is zero (error code: `errors::ZERO_WITHDRAWER`).
     ///
-    fn transfer_lock(ref self: TContractState, lock_id: u128, new_owner: ContractAddress);
+    fn transfer_lock(
+        ref self: TContractState, lock_address: ContractAddress, new_owner: ContractAddress
+    );
 
     // View
 
@@ -147,25 +151,25 @@ trait ITokenLocker<TContractState> {
     /// # Arguments
     ///
     /// * `self` - A reference to the `ContractState` instance.
-    /// * `lock_id` - The ID of the lock.
+    /// * `lock_address` - The address of the lock.
     ///
     /// # Returns
     ///
     /// * `TokenLock` - The details of the lock, including the `token` address, the `owner` address, the `amount` of tokens locked, and the `unlock_time`.
     ///
-    fn get_lock_details(self: @TContractState, lock_id: u128) -> TokenLock;
+    fn get_lock_details(self: @TContractState, lock_address: ContractAddress) -> LockPosition;
 
     /// Retrieves the remaining time until a specified lock can be unlocked.
     ///
     /// # Arguments
     ///
-    /// * `lock_id` - The ID of the lock.
+    /// * `lock_address` - The address of the lock.
     ///
     /// # Returns
     ///
     /// * `u64` - The remaining time until the lock can be unlocked, or 0 if the unlock time has passed or the lock does not exist.
     ///
-    fn get_remaining_time(self: @TContractState, lock_id: u128) -> u64;
+    fn get_remaining_time(self: @TContractState, lock_address: ContractAddress) -> u64;
 
     /// Retrieves the minimum lock time of the contract.
     fn get_min_lock_time(self: @TContractState) -> u64;
@@ -181,7 +185,7 @@ trait ITokenLocker<TContractState> {
     /// * `u32` - The number of locks owned by the user.
     fn user_locks_length(self: @TContractState, user: ContractAddress) -> u32;
 
-    /// Retrieves the ID of a lock owned by a specified user.
+    /// Retrieves The address of a lock owned by a specified user.
     ///
     /// # Arguments
     ///
@@ -190,8 +194,8 @@ trait ITokenLocker<TContractState> {
     ///
     /// # Returns
     ///
-    /// * `u128` - The ID of the lock.
-    fn user_lock_at(self: @TContractState, user: ContractAddress, index: u32) -> u128;
+    /// * `ContractAddress` - The address of the lock.
+    fn user_lock_at(self: @TContractState, user: ContractAddress, index: u32) -> ContractAddress;
 
     /// Retrieves the number of locks associated with a specified token.
     ///
@@ -208,7 +212,7 @@ trait ITokenLocker<TContractState> {
     ///
     fn token_locks_length(self: @TContractState, token: ContractAddress) -> u32;
 
-    /// Retrieves the ID of a lock associated with a specified token at a given index.
+    /// Retrieves The address of a lock associated with a specified token at a given index.
     ///
     /// This function returns the lock ID for a specific token based on the provided index.
     /// It reads the list of lock IDs from the `token_locks` mapping and returns the lock ID at the specified index.
@@ -221,8 +225,10 @@ trait ITokenLocker<TContractState> {
     ///
     /// # Returns
     ///
-    /// * `u128` - The ID of the lock at the given index for the specified token.
+    /// * `ContractAddress` - The address of the lock at the given index for the specified token.
     /// If the index is out of bounds, the function panics.
     ///
-    fn token_locked_at(self: @TContractState, token: ContractAddress, index: u32) -> u128;
+    fn token_locked_at(
+        self: @TContractState, token: ContractAddress, index: u32
+    ) -> ContractAddress;
 }

@@ -10,7 +10,7 @@ trait IFactory<TContractState> {
     /// transfers 1 ETH from the caller to the new memecoin, and emits a `MemeCoinCreated` event.
     ///
     /// * `owner` - The address of the Memecoin contract owner.
-    /// * `locker_address` - The address of the locker contract associated with the Memecoin.
+    /// * `LOCK_MANAGER_ADDRESS` - The address of the locker contract associated with the Memecoin.
     /// * `name` - The name of the Memecoin.
     /// * `symbol` - The symbol of the Memecoin.
     /// * `initial_supply` - The initial supply of the Memecoin.
@@ -26,7 +26,7 @@ trait IFactory<TContractState> {
     fn create_memecoin(
         ref self: TContractState,
         owner: ContractAddress,
-        locker_address: ContractAddress,
+        lock_manager_address: ContractAddress,
         name: felt252,
         symbol: felt252,
         initial_supply: u256,

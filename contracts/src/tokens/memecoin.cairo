@@ -28,7 +28,7 @@ mod UnruggableMemecoin {
     };
     use unruggable::exchanges::{SupportedExchanges, ExchangeTrait};
     use unruggable::factory::{IFactory, IFactoryDispatcher, IFactoryDispatcherTrait};
-    use unruggable::locker::{ITokenLockerDispatcher, ITokenLockerDispatcherTrait};
+    use unruggable::locker::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
     use unruggable::tokens::interface::{
         IUnruggableMemecoinSnake, IUnruggableMemecoinCamel, IUnruggableAdditional
     };
@@ -97,7 +97,7 @@ mod UnruggableMemecoin {
     /// Constructor called once when the contract is deployed.
     /// # Arguments
     /// * `owner` - The owner of the contract.
-    /// * `locker_address` - Token locker address.
+    /// * `LOCK_MANAGER_ADDRESS` - Token locker address.
     /// * `transfer_restriction_delay` - Delay timestamp to release transfer amount check.
     /// * `name` - The name of the token.
     /// * `symbol` - The symbol of the token.
@@ -108,7 +108,7 @@ mod UnruggableMemecoin {
     fn constructor(
         ref self: ContractState,
         owner: ContractAddress,
-        locker_address: ContractAddress,
+        lock_manager_address: ContractAddress,
         transfer_restriction_delay: u64,
         name: felt252,
         symbol: felt252,
@@ -127,7 +127,7 @@ mod UnruggableMemecoin {
 
         self
             .initializer(
-                :locker_address,
+                :lock_manager_address,
                 :factory_address,
                 :transfer_restriction_delay,
                 :initial_supply,
@@ -204,7 +204,7 @@ mod UnruggableMemecoin {
             self.factory_contract.read()
         }
 
-        fn locker_address(self: @ContractState) -> ContractAddress {
+        fn lock_manager_address(self: @ContractState) -> ContractAddress {
             self.locker_contract.read()
         }
     }
@@ -281,7 +281,7 @@ mod UnruggableMemecoin {
         ///
         /// # Arguments
         ///
-        /// * `locker_address` - The address of the locker contract.
+        /// * `LOCK_MANAGER_ADDRESS` - The address of the locker contract.
         /// * `factory_address` - The address of the factory contract.
         /// * `transfer_restriction_delay` - The delay in seconds before transfers are no longer limited.
         /// * `initial_supply` - The initial supply of the memecoin.
@@ -290,7 +290,7 @@ mod UnruggableMemecoin {
         ///
         fn initializer(
             ref self: ContractState,
-            locker_address: ContractAddress,
+            lock_manager_address: ContractAddress,
             factory_address: ContractAddress,
             transfer_restriction_delay: u64,
             initial_supply: u256,
@@ -298,7 +298,7 @@ mod UnruggableMemecoin {
             initial_holders_amounts: Span<u256>
         ) {
             // Internal Registry
-            self.locker_contract.write(locker_address);
+            self.locker_contract.write(lock_manager_address);
             self.factory_contract.write(factory_address);
 
             // Enable a transfer limit - until this time has passed,

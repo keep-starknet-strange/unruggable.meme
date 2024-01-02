@@ -76,7 +76,7 @@ mod Factory {
         fn create_memecoin(
             ref self: ContractState,
             owner: ContractAddress,
-            locker_address: ContractAddress,
+            lock_manager_address: ContractAddress,
             name: felt252,
             symbol: felt252,
             initial_supply: u256,
@@ -88,7 +88,7 @@ mod Factory {
         ) -> ContractAddress {
             let mut calldata = array![
                 owner.into(),
-                locker_address.into(),
+                lock_manager_address.into(),
                 transfer_limit_delay.into(),
                 name.into(),
                 symbol.into()

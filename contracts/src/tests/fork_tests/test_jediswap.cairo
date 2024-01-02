@@ -6,11 +6,13 @@ use unruggable::exchanges::jediswap_adapter::{
     IJediswapFactoryDispatcher, IJediswapFactoryDispatcherTrait, IJediswapRouterDispatcher,
     IJediswapRouterDispatcherTrait, IJediswapPairDispatcher, IJediswapPairDispatcherTrait,
 };
-use unruggable::locker::interface::{ITokenLockerDispatcher, ITokenLockerDispatcherTrait};
-use unruggable::locker::token_locker::TokenLocker::TokenLock;
+use unruggable::locker::LockPosition;
+use unruggable::locker::interface::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
 use unruggable::tests::addresses::{JEDI_FACTORY_ADDRESS, JEDI_ROUTER_ADDRESS, ETH_ADDRESS};
 use unruggable::tests::fork_tests::utils::{deploy_memecoin_through_factory_with_owner, sort_tokens};
-use unruggable::tests::unit_tests::utils::{OWNER, DEFAULT_MIN_LOCKTIME, pow_256, LOCKER_ADDRESS};
+use unruggable::tests::unit_tests::utils::{
+    OWNER, DEFAULT_MIN_LOCKTIME, pow_256, LOCK_MANAGER_ADDRESS
+};
 use unruggable::tokens::interface::{IUnruggableMemecoinDispatcherTrait};
 use unruggable::utils::math::PercentageMath;
 
@@ -28,21 +30,6 @@ fn test_jediswap_integration() {
         .launch_memecoin(SupportedExchanges::JediSwap, ETH_ADDRESS(), unlock_time);
     stop_prank(CheatTarget::One(memecoin_address));
     let pair = IJediswapPairDispatcher { contract_address: pair_address };
-
-    // Check token lock
-    let locker = ITokenLockerDispatcher { contract_address: LOCKER_ADDRESS() };
-    let token_lock = locker.get_lock_details(1);
-    let expected_lock = TokenLock {
-        token: pair_address,
-        amount: pair.totalSupply(),
-        unlock_time: starknet::get_block_timestamp() + DEFAULT_MIN_LOCKTIME,
-        owner: OWNER(),
-    };
-    assert(token_lock.token == expected_lock.token, 'token not locked');
-    // can't test for the amount locked as the initial liq provided and the total supply
-    // of the pair do not match
-    assert(token_lock.unlock_time == expected_lock.unlock_time, 'wrong unlock time');
-    assert(token_lock.owner == expected_lock.owner, 'wrong owner');
 
     // Test that swaps work correctly
 
@@ -78,4 +65,21 @@ fn test_jediswap_integration() {
             to: OWNER(),
             deadline: starknet::get_block_timestamp()
         );
+
+    // Check token lock
+    let locker = ILockManagerDispatcher { contract_address: LOCK_MANAGER_ADDRESS() };
+    let lock_address = locker.user_lock_at(OWNER(), 0);
+    let token_lock = locker.get_lock_details(lock_address);
+    let expected_lock = LockPosition {
+        token: pair_address,
+        amount: pair.totalSupply(),
+        unlock_time: starknet::get_block_timestamp() + DEFAULT_MIN_LOCKTIME,
+        owner: OWNER(),
+    };
+
+    assert(token_lock.token == expected_lock.token, 'token not locked');
+    // can't test for the amount locked as the initial liq provided and the total supply
+    // of the pair do not match
+    assert(token_lock.unlock_time == expected_lock.unlock_time, 'wrong unlock time');
+    assert(token_lock.owner == expected_lock.owner, 'wrong owner');
 }
