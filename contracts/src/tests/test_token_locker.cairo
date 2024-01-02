@@ -735,11 +735,24 @@ mod test_getters {
         );
         let elapsed = 200;
 
-        start_warp(CheatTarget::One(locker.contract_address), 200);
+        start_warp(CheatTarget::One(locker.contract_address), elapsed);
         let remaining_locktime = locker.get_remaining_time(lock_id);
         assert(
             remaining_locktime == DEFAULT_LOCK_DEADLINE - elapsed, 'remaining locktime is incorrect'
         );
+        stop_warp(CheatTarget::One(locker.contract_address));
+    }
+
+    #[test]
+    fn test_get_remaining_time_time_exceeded() {
+        let (token, locker, lock_id) = setup_and_lock(
+            DEFAULT_LOCK_AMOUNT, DEFAULT_LOCK_DEADLINE, OWNER()
+        );
+        let elapsed = DEFAULT_LOCK_DEADLINE + 1;
+
+        start_warp(CheatTarget::One(locker.contract_address), elapsed);
+        let remaining_locktime = locker.get_remaining_time(lock_id);
+        assert(remaining_locktime == 0, 'remaining locktime is incorrect');
         stop_warp(CheatTarget::One(locker.contract_address));
     }
 
