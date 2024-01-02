@@ -1,6 +1,7 @@
 mod errors;
 mod interface;
-mod token_locker;
-use interface::{ITokenLocker, ITokenLockerDispatcher, ITokenLockerDispatcherTrait};
+mod lock_manager;
+mod lock_position;
+use interface::{ILockManager, ILockManagerDispatcher, ILockManagerDispatcherTrait};
 
-use token_locker::{TokenLocker, TokenLocker::TokenLock};
+use lock_manager::{LockManager, LockManager::TokenLock, LockManager::LockPosition};

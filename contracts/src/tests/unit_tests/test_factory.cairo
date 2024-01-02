@@ -41,7 +41,7 @@ fn test_create_memecoin() {
     let (_, router_address) = deploy_amm_factory_and_router();
     let memecoin_factory_address = deploy_meme_factory(router_address);
     let memecoin_factory = IFactoryDispatcher { contract_address: memecoin_factory_address };
-    let locker_address = deploy_locker();
+    let lock_manager_address = deploy_locker();
     let (eth, eth_address) = deploy_eth();
 
     let eth_amount: u256 = eth.total_supply() / 2; // 50% of supply
@@ -54,7 +54,7 @@ fn test_create_memecoin() {
     let memecoin_address = memecoin_factory
         .create_memecoin(
             owner: OWNER(),
-            :locker_address,
+            :lock_manager_address,
             name: NAME(),
             symbol: SYMBOL(),
             initial_supply: DEFAULT_INITIAL_SUPPLY(),

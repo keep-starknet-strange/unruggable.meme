@@ -62,7 +62,7 @@ mod JediswapComponent {
         IJediswapFactoryDispatcherTrait
     };
     use unruggable::errors;
-    use unruggable::locker::{ITokenLockerDispatcher, ITokenLockerDispatcherTrait};
+    use unruggable::locker::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
     use unruggable::tokens::interface::{IUnruggableAdditional, IUnruggableMemecoinCamel};
 
     #[storage]
@@ -144,18 +144,17 @@ mod JediswapComponent {
             assert(pair.balanceOf(memecoin_address) == liquidity_received, 'wrong LP tkns amount');
 
             // Lock LP tokens
-            let locker_address = memecoin.locker_address();
-            let locker_dispatcher = ITokenLockerDispatcher { contract_address: locker_address };
-            pair.approve(locker_address, liquidity_received);
-            //TODO(locker): make locktime dynamic
-            locker_dispatcher
+            let lock_manager_address = memecoin.LOCK_MANAGER_ADDRESS();
+            let lock_manager = ILockManagerDispatcher { contract_address: lock_manager_address };
+            pair.approve(lock_manager_address, liquidity_received);
+            let locked_address = lock_manager
                 .lock_tokens(
                     token: pair_address,
                     amount: liquidity_received,
                     :unlock_time,
                     withdrawer: memecoin_ownable.owner(),
                 );
-            assert(pair.balanceOf(locker_address) == liquidity_received, 'lock failed');
+            assert(pair.balanceOf(locked_address) == liquidity_received, 'lock failed');
 
             pair.contract_address
         }

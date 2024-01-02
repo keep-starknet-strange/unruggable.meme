@@ -22,7 +22,7 @@ fn deploy_memecoin_through_factory_with_owner(
 ) -> (IUnruggableMemecoinDispatcher, ContractAddress) {
     let memecoin_factory_address = deploy_meme_factory(JEDI_ROUTER_ADDRESS());
     let memecoin_factory = IFactoryDispatcher { contract_address: memecoin_factory_address };
-    let locker_address = deploy_locker();
+    let lock_manager_address = deploy_locker();
 
     // We have to deploy our own "ETH" as we cannot modify the balances of the real ETH.
     let (eth, eth_address) = deploy_eth_with_owner(owner);
@@ -37,7 +37,7 @@ fn deploy_memecoin_through_factory_with_owner(
     let memecoin_address = memecoin_factory
         .create_memecoin(
             owner: owner,
-            :locker_address,
+            :lock_manager_address,
             name: NAME(),
             symbol: SYMBOL(),
             initial_supply: DEFAULT_INITIAL_SUPPLY(),

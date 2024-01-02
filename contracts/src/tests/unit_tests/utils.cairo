@@ -71,8 +71,8 @@ fn DEFAULT_INITIAL_SUPPLY() -> u256 {
     21_000_000 * pow_256(10, 18)
 }
 
-fn LOCKER_ADDRESS() -> ContractAddress {
-    'locker'.try_into().unwrap()
+fn LOCK_MANAGER_ADDRESS() -> ContractAddress {
+    'lock_manager'.try_into().unwrap()
 }
 
 fn UNLOCK_TIME() -> u64 {
@@ -89,6 +89,11 @@ fn MEMEFACTORY_ADDRESS() -> ContractAddress {
 
 const DEFAULT_MIN_LOCKTIME: u64 = 15_721_200; // 6 months
 const DEFAULT_LOCK_AMOUNT: u256 = 100;
+
+fn LOCK_POSITION_ADDRESS() -> ContractAddress {
+    'lock_position_address'.try_into().unwrap()
+}
+
 // Deployments
 
 // Deploys a simple instance of the memcoin to test ERC20 basic entrypoints.
@@ -194,9 +199,11 @@ fn deploy_meme_factory_with_owner(
 
 fn deploy_locker() -> ContractAddress {
     let mut calldata = Default::default();
+    let locker_contract = declare('LockManager');
+    let lock_position_class_hash = declare('LockPosition').class_hash;
     Serde::serialize(@DEFAULT_MIN_LOCKTIME, ref calldata);
-    let locker_contract = declare('TokenLocker');
-    locker_contract.deploy_at(@calldata, LOCKER_ADDRESS()).expect('Locker deployment failed')
+    Serde::serialize(@lock_position_class_hash, ref calldata);
+    locker_contract.deploy_at(@calldata, LOCK_MANAGER_ADDRESS()).expect('Locker deployment failed')
 }
 
 // ETH Token
@@ -225,7 +232,7 @@ fn deploy_memecoin_through_factory_with_owner(
     let (_, router_address) = deploy_amm_factory_and_router();
     let memecoin_factory_address = deploy_meme_factory(router_address);
     let memecoin_factory = IFactoryDispatcher { contract_address: memecoin_factory_address };
-    let locker_address = deploy_locker();
+    let lock_manager_address = deploy_locker();
     let (eth, eth_address) = deploy_eth_with_owner(owner);
 
     let eth_amount: u256 = eth.total_supply() / 2; // 50% of supply
@@ -238,7 +245,7 @@ fn deploy_memecoin_through_factory_with_owner(
     let memecoin_address = memecoin_factory
         .create_memecoin(
             owner: owner,
-            :locker_address,
+            :lock_manager_address,
             name: NAME(),
             symbol: SYMBOL(),
             initial_supply: DEFAULT_INITIAL_SUPPLY(),

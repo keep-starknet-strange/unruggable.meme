@@ -28,14 +28,13 @@ mod test_constructor {
     use openzeppelin::token::erc20::interface::IERC20;
     use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
     use starknet::{ContractAddress, contract_address_const};
-    use unruggable::locker::interface::{ITokenLockerDispatcher, ITokenLockerDispatcherTrait};
     use unruggable::tests::unit_tests::utils::{
         deploy_amm_factory_and_router, deploy_meme_factory_with_owner, deploy_locker,
         deploy_eth_with_owner, OWNER, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS,
         INITIAL_HOLDER_1, INITIAL_HOLDER_2, INITIAL_HOLDERS_AMOUNTS, SALT, DefaultTxInfoMock,
         deploy_memecoin_through_factory, ETH_ADDRESS, deploy_memecoin_through_factory_with_owner,
         JEDI_ROUTER_ADDRESS, MEMEFACTORY_ADDRESS, ALICE, BOB, TRANSFER_LIMIT_DELAY, pow_256,
-        LOCKER_ADDRESS, JEDI_FACTORY_ADDRESS
+        LOCK_MANAGER_ADDRESS, JEDI_FACTORY_ADDRESS
     };
     use unruggable::tokens::UnruggableMemecoin;
     use unruggable::tokens::interface::{
@@ -52,7 +51,7 @@ mod test_constructor {
         UnruggableMemecoin::constructor(
             ref memecoin,
             OWNER(),
-            LOCKER_ADDRESS(),
+            LOCK_MANAGER_ADDRESS(),
             TRANSFER_LIMIT_DELAY,
             NAME(),
             SYMBOL(),
@@ -62,7 +61,7 @@ mod test_constructor {
         );
 
         // External entrypoints
-        assert(memecoin.locker_address() == LOCKER_ADDRESS(), 'wrong locker');
+        assert(memecoin.LOCK_MANAGER_ADDRESS() == LOCK_MANAGER_ADDRESS(), 'wrong locker');
         assert(
             memecoin.memecoin_factory_address() == MEMEFACTORY_ADDRESS(), 'wrong factory address'
         );
@@ -91,7 +90,7 @@ mod test_constructor {
         UnruggableMemecoin::constructor(
             ref state,
             OWNER(),
-            LOCKER_ADDRESS(),
+            LOCK_MANAGER_ADDRESS(),
             TRANSFER_LIMIT_DELAY,
             NAME(),
             SYMBOL(),
@@ -123,7 +122,7 @@ mod test_constructor {
         UnruggableMemecoin::constructor(
             ref state,
             OWNER(),
-            LOCKER_ADDRESS(),
+            LOCK_MANAGER_ADDRESS(),
             TRANSFER_LIMIT_DELAY,
             NAME(),
             SYMBOL(),
@@ -146,7 +145,7 @@ mod test_constructor {
         UnruggableMemecoin::constructor(
             ref state,
             OWNER(),
-            LOCKER_ADDRESS(),
+            LOCK_MANAGER_ADDRESS(),
             TRANSFER_LIMIT_DELAY,
             NAME(),
             SYMBOL(),
@@ -176,14 +175,14 @@ mod memecoin_entrypoints {
     };
     use unruggable::exchanges::{SupportedExchanges, ExchangeTrait};
     use unruggable::factory::{IFactory, IFactoryDispatcher, IFactoryDispatcherTrait};
-    use unruggable::locker::TokenLocker::TokenLock;
-    use unruggable::locker::interface::{ITokenLockerDispatcher, ITokenLockerDispatcherTrait};
+    use unruggable::locker::interface::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
+    use unruggable::locker::{LockPosition};
     use unruggable::tests::unit_tests::utils::{
         deploy_amm_factory_and_router, deploy_meme_factory_with_owner, deploy_locker,
         deploy_eth_with_owner, OWNER, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS,
         INITIAL_HOLDER_1, INITIAL_HOLDER_2, INITIAL_HOLDERS_AMOUNTS, SALT, DefaultTxInfoMock,
         deploy_memecoin_through_factory, ETH_ADDRESS, deploy_memecoin_through_factory_with_owner,
-        JEDI_ROUTER_ADDRESS, MEMEFACTORY_ADDRESS, ALICE, BOB, pow_256, LOCKER_ADDRESS,
+        JEDI_ROUTER_ADDRESS, MEMEFACTORY_ADDRESS, ALICE, BOB, pow_256, LOCK_MANAGER_ADDRESS,
         deploy_and_launch_memecoin, TRANSFER_LIMIT_DELAY, UNLOCK_TIME, DEFAULT_MIN_LOCKTIME
     };
     use unruggable::tokens::interface::{
@@ -221,15 +220,17 @@ mod memecoin_entrypoints {
         assert(lp_token.balanceOf(memecoin_address) == 0, 'shouldnt have lp tokens');
 
         // Check token lock
-        let locker = ITokenLockerDispatcher { contract_address: LOCKER_ADDRESS() };
-        let details = locker.get_lock_details(1);
-        let token_lock = locker.get_lock_details(1);
-        let expected_lock = TokenLock {
+        let locker = ILockManagerDispatcher { contract_address: LOCK_MANAGER_ADDRESS() };
+        let lock_address = locker.user_lock_at(owner, 0);
+        let token_lock = locker.get_lock_details(lock_address);
+        let expected_lock = LockPosition {
             token: pair_address,
             amount: pair.totalSupply(),
             unlock_time: starknet::get_block_timestamp() + DEFAULT_MIN_LOCKTIME,
-            owner: OWNER(),
+            owner: owner,
         };
+        //TODO: check correct lock supply
+        // assert(token_lock == expected_lock, 'wrong lock');
 
         // Check ownership renounced
         assert(memecoin.owner().is_zero(), 'Still an owner');
@@ -279,10 +280,10 @@ mod memecoin_entrypoints {
     }
 
     #[test]
-    fn test_locker_address() {
+    fn test_LOCK_MANAGER_ADDRESS() {
         let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
 
-        assert(memecoin.locker_address() == LOCKER_ADDRESS(), 'wrong locker address');
+        assert(memecoin.LOCK_MANAGER_ADDRESS() == LOCK_MANAGER_ADDRESS(), 'wrong locker address');
     }
 
     #[test]
