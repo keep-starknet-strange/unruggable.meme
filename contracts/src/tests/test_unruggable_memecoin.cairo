@@ -20,7 +20,7 @@ use unruggable::tokens::interface::{
 mod test_constructor {
     use UnruggableMemecoin::{
         pre_launch_holders_countContractMemberStateTrait,
-        transfer_limit_delayContractMemberStateTrait, team_allocationContractMemberStateTrait,
+        transfer_restriction_delayContractMemberStateTrait, team_allocationContractMemberStateTrait,
         IUnruggableAdditional, IUnruggableMemecoinCamel, IUnruggableMemecoinSnake
     };
     use core::debug::PrintTrait;
@@ -68,7 +68,7 @@ mod test_constructor {
 
         // Check internals that must be set upon deployment
         assert(
-            memecoin.transfer_limit_delay.read() == TRANSFER_LIMIT_DELAY,
+            memecoin.transfer_restriction_delay.read() == TRANSFER_LIMIT_DELAY,
             'wrong transfer limit delay'
         );
         assert(
@@ -198,10 +198,13 @@ mod memecoin_entrypoints {
         let memecoin_bal_meme = memecoin.balanceOf(memecoin_address);
         let memecoin_bal_eth = eth.balanceOf(memecoin_address);
 
+        // Set a non-zero timestamp, as the default "0" time conflicts with the `is_launched` function
+        start_warp(CheatTarget::One(memecoin.contract_address), 1);
         let pool_address = memecoin
             .launch_memecoin(SupportedExchanges::JediSwap, eth.contract_address);
+        stop_warp(CheatTarget::One(memecoin.contract_address));
 
-        assert(memecoin.launched(), 'should be launched');
+        assert(memecoin.is_launched(), 'should be launched');
         let pool_dispatcher = IJediswapPairDispatcher { contract_address: pool_address };
         let (token_0_reserves, token_1_reserves, _) = pool_dispatcher.get_reserves();
         assert(pool_dispatcher.token0() == memecoin_address, 'wrong token 0 address');
@@ -279,8 +282,12 @@ mod memecoin_entrypoints {
         let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
 
         let amount = 420_001 * pow_256(10, 18);
+
         start_prank(CheatTarget::One(memecoin.contract_address), OWNER());
-        let send_amount = memecoin.transfer_from(OWNER(), ALICE(), amount);
+        memecoin.approve(snforge_std::test_address(), amount);
+        stop_prank(CheatTarget::One(memecoin.contract_address));
+
+        memecoin.transfer_from(OWNER(), ALICE(), amount);
     }
 
     #[test]
@@ -288,12 +295,20 @@ mod memecoin_entrypoints {
     fn test_transfer_from_multi_call() {
         let (memecoin, memecoin_address) = deploy_and_launch_memecoin();
 
+        let this_address = snforge_std::test_address();
+
+        // Approvals required for transferFrom
+        start_prank(CheatTarget::One(memecoin_address), INITIAL_HOLDER_1());
+        memecoin.approve(this_address, 1);
+        stop_prank(CheatTarget::One(memecoin_address));
+        start_prank(CheatTarget::One(memecoin_address), INITIAL_HOLDER_2());
+        memecoin.approve(this_address, 1);
+        stop_prank(CheatTarget::One(memecoin_address));
+
         // Transfer token from owner to ALICE() twice - should fail because
         // the tx_hash is the same for both calls
-        start_prank(CheatTarget::One(memecoin.contract_address), INITIAL_HOLDER_1());
-        let send_amount = memecoin.transfer_from(INITIAL_HOLDER_1(), ALICE(), 0);
-        start_prank(CheatTarget::One(memecoin.contract_address), INITIAL_HOLDER_2());
-        let send_amount = memecoin.transfer_from(INITIAL_HOLDER_2(), ALICE(), 0);
+        memecoin.transfer_from(INITIAL_HOLDER_1(), ALICE(), 1);
+        memecoin.transfer_from(INITIAL_HOLDER_2(), ALICE(), 1);
     }
 
     #[test]
