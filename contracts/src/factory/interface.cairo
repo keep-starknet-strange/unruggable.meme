@@ -1,5 +1,6 @@
 use openzeppelin::token::erc20::ERC20ABIDispatcher;
 use starknet::ContractAddress;
+use unruggable::exchanges::SupportedExchanges;
 
 #[starknet::interface]
 trait IFactory<TContractState> {
@@ -46,7 +47,7 @@ trait IFactory<TContractState> {
     /// # Returns
     ///
     /// * `ContractAddress` - The contract address associated with the given Exchange name.
-    fn amm_router_address(self: @TContractState, amm_name: felt252) -> ContractAddress;
+    fn amm_router_address(self: @TContractState, amm: SupportedExchanges) -> ContractAddress;
 
     /// Checks if a given address is a memecoin.
     ///
