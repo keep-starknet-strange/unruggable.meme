@@ -7,7 +7,7 @@ use snforge_std::{
 };
 use starknet::contract_address::ContractAddressZeroable;
 use starknet::{ContractAddress, contract_address_const};
-use unruggable::exchanges::{SupportedExchanges, ExchangeTrait};
+use unruggable::exchanges::{SupportedExchanges};
 use unruggable::tests::unit_tests::utils::{
     OWNER, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, RECIPIENT, SPENDER, deploy_locker, INITIAL_HOLDERS,
     INITIAL_HOLDERS_AMOUNTS, TRANSFER_LIMIT_DELAY, DefaultTxInfoMock,
@@ -29,7 +29,7 @@ mod test_constructor {
     use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
     use starknet::{ContractAddress, contract_address_const};
     use unruggable::tests::unit_tests::utils::{
-        deploy_amm_factory_and_router, deploy_meme_factory_with_owner, deploy_locker,
+        deploy_jedi_amm_factory_and_router, deploy_meme_factory_with_owner, deploy_locker,
         deploy_eth_with_owner, OWNER, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS,
         INITIAL_HOLDER_1, INITIAL_HOLDER_2, INITIAL_HOLDERS_AMOUNTS, SALT, DefaultTxInfoMock,
         deploy_memecoin_through_factory, ETH_ADDRESS, deploy_memecoin_through_factory_with_owner,
@@ -173,12 +173,12 @@ mod memecoin_entrypoints {
         IJediswapRouter, IJediswapRouterDispatcher, IJediswapRouterDispatcherTrait,
         IJediswapPairDispatcher, IJediswapPairDispatcherTrait
     };
-    use unruggable::exchanges::{SupportedExchanges, ExchangeTrait};
+    use unruggable::exchanges::{SupportedExchanges};
     use unruggable::factory::{IFactory, IFactoryDispatcher, IFactoryDispatcherTrait};
     use unruggable::locker::interface::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
     use unruggable::locker::{LockPosition};
     use unruggable::tests::unit_tests::utils::{
-        deploy_amm_factory_and_router, deploy_meme_factory_with_owner, deploy_locker,
+        deploy_jedi_amm_factory_and_router, deploy_meme_factory_with_owner, deploy_locker,
         deploy_eth_with_owner, OWNER, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS,
         INITIAL_HOLDER_1, INITIAL_HOLDER_2, INITIAL_HOLDERS_AMOUNTS, SALT, DefaultTxInfoMock,
         deploy_memecoin_through_factory, ETH_ADDRESS, deploy_memecoin_through_factory_with_owner,
@@ -188,7 +188,7 @@ mod memecoin_entrypoints {
     use unruggable::tokens::interface::{
         IUnruggableMemecoin, IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
-    use unruggable::tokens::memecoin::UnruggableMemecoin;
+    use unruggable::tokens::memecoin::{LiquidityPosition, UnruggableMemecoin};
 
     #[test]
     fn test_launch_memecoin_happy_path() {
@@ -203,8 +203,13 @@ mod memecoin_entrypoints {
 
         // Set a non-zero timestamp, as the default "0" time conflicts with the `is_launched` function
         start_warp(CheatTarget::One(memecoin.contract_address), 1);
-        let pair_address = memecoin
+        let liquidity_position = memecoin
             .launch_memecoin(SupportedExchanges::JediSwap, eth.contract_address, UNLOCK_TIME());
+        let pair_address = match liquidity_position {
+            LiquidityPosition::ERC20(pair_address) => pair_address,
+            LiquidityPosition::NFT(_) => panic_with_felt252('Expected ERC20Pair'),
+        };
+
         stop_warp(CheatTarget::One(memecoin.contract_address));
 
         assert(memecoin.is_launched(), 'should be launched');
@@ -289,7 +294,7 @@ mod memecoin_entrypoints {
     #[test]
     #[should_panic(expected: ('Max buy cap reached',))]
     fn test_transfer_max_percentage() {
-        let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
+        let (memecoin, memecoin_address) = deploy_and_launch_memecoin();
 
         // Transfer slightly more than 2% of 21M stokens from owner to ALICE().
         let amount = 420_001 * pow_256(10, 18);
@@ -300,7 +305,7 @@ mod memecoin_entrypoints {
     #[test]
     #[should_panic(expected: ('Max buy cap reached',))]
     fn test_transfer_from_max_percentage() {
-        let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
+        let (memecoin, memecoin_address) = deploy_and_launch_memecoin();
 
         let amount = 420_001 * pow_256(10, 18);
 
@@ -372,7 +377,7 @@ mod memecoin_internals {
     use starknet::{ContractAddress, contract_address_const};
     use super::{TxInfoMock};
     use unruggable::tests::unit_tests::utils::{
-        deploy_amm_factory_and_router, deploy_meme_factory_with_owner, deploy_locker,
+        deploy_jedi_amm_factory_and_router, deploy_meme_factory_with_owner, deploy_locker,
         deploy_eth_with_owner, OWNER, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS,
         INITIAL_HOLDER_1, INITIAL_HOLDER_2, INITIAL_HOLDERS_AMOUNTS, SALT, DefaultTxInfoMock,
         deploy_memecoin_through_factory, ETH_ADDRESS, deploy_memecoin_through_factory_with_owner,

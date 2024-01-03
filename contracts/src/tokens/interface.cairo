@@ -1,5 +1,6 @@
 use openzeppelin::token::erc20::interface::{IERC20Metadata, IERC20, IERC20Camel};
 use starknet::ContractAddress;
+use super::memecoin::LiquidityPosition;
 use unruggable::exchanges::SupportedExchanges;
 
 #[starknet::interface]
@@ -52,7 +53,7 @@ trait IUnruggableMemecoin<TState> {
         exchange: SupportedExchanges,
         counterparty_token_address: ContractAddress,
         lp_unlock_time: u64,
-    ) -> ContractAddress;
+    ) -> LiquidityPosition;
     fn get_team_allocation(self: @TState) -> u256;
     fn memecoin_factory_address(self: @TState) -> ContractAddress;
     fn lock_manager_address(self: @TState) -> ContractAddress;
@@ -110,7 +111,7 @@ trait IUnruggableAdditional<TState> {
         exchange: SupportedExchanges,
         counterparty_token_address: ContractAddress,
         lp_unlock_time: u64,
-    ) -> ContractAddress;
+    ) -> LiquidityPosition;
     fn get_team_allocation(self: @TState) -> u256;
     fn memecoin_factory_address(self: @TState) -> ContractAddress;
     fn lock_manager_address(self: @TState) -> ContractAddress;

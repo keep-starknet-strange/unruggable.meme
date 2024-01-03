@@ -1,6 +1,13 @@
 //! `UnruggableMemecoin` is an ERC20 token has additional features to prevent rug pulls.
 use starknet::ContractAddress;
 
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+enum LiquidityPosition {
+    ERC20: ContractAddress,
+    NFT: u64
+}
+
 #[starknet::contract]
 mod UnruggableMemecoin {
     use core::zeroable::Zeroable;
@@ -19,14 +26,16 @@ mod UnruggableMemecoin {
         ContractAddress, contract_address_const, get_contract_address, get_caller_address,
         get_tx_info, get_block_timestamp
     };
+    use super::LiquidityPosition;
 
     use unruggable::errors;
+    use unruggable::exchanges::ekubo_adapter::{EkuboLaunchParameters, EkuboComponent};
     use unruggable::exchanges::jediswap_adapter::JediswapComponent;
     use unruggable::exchanges::jediswap_adapter::{
         IJediswapFactoryDispatcher, IJediswapFactoryDispatcherTrait, IJediswapRouterDispatcher,
         IJediswapRouterDispatcherTrait
     };
-    use unruggable::exchanges::{SupportedExchanges, ExchangeTrait};
+    use unruggable::exchanges::{SupportedExchanges};
     use unruggable::factory::{IFactory, IFactoryDispatcher, IFactoryDispatcherTrait};
     use unruggable::locker::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
     use unruggable::tokens::interface::{
@@ -48,6 +57,9 @@ mod UnruggableMemecoin {
     component!(path: JediswapComponent, storage: jediswap, event: JediswapEvent);
     impl JediswapAdapterImpl = JediswapComponent::JediswapAdapterImpl<ContractState>;
 
+    component!(path: EkuboComponent, storage: ekubo, event: EkuboEvent);
+    impl EkuboAdapterImpl = EkuboComponent::EkuboAdapterImpl<ContractState>;
+
     // Constants.
     /// The maximum number of holders allowed before launch.
     /// This is to prevent the contract from being is_launched with a large number of holders.
@@ -62,7 +74,6 @@ mod UnruggableMemecoin {
 
     const ETH_UNIT_DECIMALS: u256 = 1000000000000000000;
 
-
     #[storage]
     struct Storage {
         marker_v_0: (),
@@ -73,7 +84,7 @@ mod UnruggableMemecoin {
         transfer_restriction_delay: u64,
         launch_time: u64,
         factory_contract: ContractAddress,
-        pair_address: ContractAddress,
+        liquidity_position: LiquidityPosition,
         // Components.
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
@@ -81,6 +92,8 @@ mod UnruggableMemecoin {
         erc20: ERC20Component::Storage,
         #[substorage(v0)]
         jediswap: JediswapComponent::Storage,
+        #[substorage(v0)]
+        ekubo: EkuboComponent::Storage,
     }
 
     #[event]
@@ -91,7 +104,9 @@ mod UnruggableMemecoin {
         #[flat]
         ERC20Event: ERC20Component::Event,
         #[flat]
-        JediswapEvent: JediswapComponent::Event
+        JediswapEvent: JediswapComponent::Event,
+        #[flat]
+        EkuboEvent: EkuboComponent::Event
     }
 
     /// Constructor called once when the contract is deployed.
@@ -150,7 +165,7 @@ mod UnruggableMemecoin {
             exchange: SupportedExchanges,
             counterparty_token_address: ContractAddress,
             lp_unlock_time: u64,
-        ) -> ContractAddress {
+        ) -> LiquidityPosition {
             // [Check Owner] Only the owner can launch the Memecoin
             self.ownable.assert_only_owner();
 
@@ -161,8 +176,8 @@ mod UnruggableMemecoin {
             let pair_address = match exchange {
                 SupportedExchanges::JediSwap => {
                     let router_address = IFactoryDispatcher { contract_address: factory_address }
-                        .amm_router_address(SupportedExchanges::JediSwap);
-                    let pair_address = self
+                        .exchange_address(SupportedExchanges::JediSwap);
+                    let mut return_data = self
                         .jediswap
                         .create_and_add_liquidity(
                             exchange_address: router_address,
@@ -171,10 +186,48 @@ mod UnruggableMemecoin {
                             unlock_time: lp_unlock_time,
                             additional_parameters: array![].span(),
                         );
-                    self.pair_address.write(pair_address);
-                    pair_address
+                    let pair_address = Serde::<ContractAddress>::deserialize(ref return_data)
+                        .expect('jedi adapter return data');
+                    let liquidity_position = LiquidityPosition::ERC20(pair_address);
+                    self.liquidity_position.write(liquidity_position);
+                    liquidity_position
                 },
-                SupportedExchanges::Ekubo => panic_with_felt252(errors::EXCHANGE_NOT_SUPPORTED)
+                SupportedExchanges::Ekubo => {
+                    let launchpad_address = IFactoryDispatcher { contract_address: factory_address }
+                        .exchange_address(SupportedExchanges::Ekubo);
+
+                    //TODO: dynamic additional launch parameters
+                    // for now: 0.3% fee, 0.6% tick spacing, starting tick is 0
+                    // the starting tick should be computed base on wanted initial price liquidity
+                    let parameters = EkuboLaunchParameters {
+                        token_address: memecoin_address,
+                        counterparty_address: counterparty_token_address,
+                        fee: 0xc49ba5e353f7d00000000000000000, //0.3%
+                        tick_spacing: 5982, // 0.6%
+                        starting_tick: 0,
+                        lower_bound: 88719042, // lowest value for a 0.6% tick spacing
+                        upper_bound: 88719042,
+                    };
+
+                    let mut additional_parameters = Default::default();
+                    Serde::serialize(@parameters, ref additional_parameters);
+
+                    let mut return_data = self
+                        .ekubo
+                        .create_and_add_liquidity(
+                            exchange_address: launchpad_address,
+                            token_address: memecoin_address,
+                            counterparty_address: counterparty_token_address,
+                            unlock_time: lp_unlock_time,
+                            additional_parameters: additional_parameters.span()
+                        );
+
+                    let nft_id = Serde::<u64>::deserialize(ref return_data)
+                        .expect('ekubo adapter return data');
+                    let liquidity_position = LiquidityPosition::NFT(nft_id);
+                    self.liquidity_position.write(liquidity_position);
+                    liquidity_position
+                }
             };
 
             // Launch the coin
@@ -353,18 +406,25 @@ mod UnruggableMemecoin {
                 return;
             }
 
-            assert(
-                amount <= self.total_supply().percent_mul(MAX_PERCENTAGE_BUY_LAUNCH.into()),
-                'Max buy cap reached'
-            );
-
             if !self.is_launched() {
                 self.enforce_prelaunch_holders_limit(sender, recipient, amount);
             } else {
-                if (get_caller_address() == self.pair_address.read()
-                    || recipient == self.pair_address.read()) {
-                    return;
+                //TODO: make sure restrictions are compatible with ekubo and aggregators
+                let liquidity_position = self.liquidity_position.read();
+                match liquidity_position {
+                    LiquidityPosition::ERC20(pair) => {
+                        if (get_caller_address() == pair || recipient == pair) {
+                            return;
+                        }
+                    },
+                    LiquidityPosition::NFT(_) => {}
                 }
+
+                //TODO: verify compatibility with ekubo
+                assert(
+                    amount <= self.total_supply().percent_mul(MAX_PERCENTAGE_BUY_LAUNCH.into()),
+                    'Max buy cap reached'
+                );
 
                 self.ensure_not_multicall(recipient);
             }

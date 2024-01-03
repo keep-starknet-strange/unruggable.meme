@@ -106,7 +106,7 @@ mod Factory {
             self.deployed_memecoins.write(memecoin_address, true);
 
             let caller = get_caller_address();
-            //TODO(make the initial liquidity a parameter)
+            //TODO!(make the initial liquidity a parameter)
             let eth_amount: u256 = 1 * ETH_UNIT_DECIMALS;
 
             counterparty_token
@@ -116,7 +116,7 @@ mod Factory {
             memecoin_address
         }
 
-        fn amm_router_address(self: @ContractState, amm: SupportedExchanges) -> ContractAddress {
+        fn exchange_address(self: @ContractState, amm: SupportedExchanges) -> ContractAddress {
             self.amm_configs.read(amm)
         }
 

@@ -87,7 +87,7 @@ mod JediswapComponent {
             counterparty_address: ContractAddress,
             unlock_time: u64,
             additional_parameters: Span<felt252>,
-        ) -> ContractAddress {
+        ) -> Span<felt252> {
             assert(additional_parameters.len() == 0, 'Invalid add liq params');
 
             // This component is made to be embedded inside the memecoin contract. In order to access
@@ -156,7 +156,9 @@ mod JediswapComponent {
                 );
             assert(pair.balanceOf(locked_address) == liquidity_received, 'lock failed');
 
-            pair.contract_address
+            let mut return_data = Default::default();
+            Serde::serialize(@pair.contract_address, ref return_data);
+            return_data.span()
         }
     }
 }

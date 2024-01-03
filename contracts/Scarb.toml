@@ -10,7 +10,8 @@ starknet = "2.3.1"
 
 # External dependencies
 openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.8.0" }
-alexandria_storage = { git = "https://github.com/keep-starknet-strange/alexandria.git", rev="e3af7edb130aa376fb2435820788c7bba2e4593a" }
+alexandria_storage = { git = "https://github.com/keep-starknet-strange/alexandria.git", rev = "e3af7edb130aa376fb2435820788c7bba2e4593a" }
+ekubo = { git = "https://github.com/EkuboProtocol/abis" }
 
 [[target.starknet-contract]]
 sierra = true

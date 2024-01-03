@@ -47,7 +47,7 @@ trait IFactory<TContractState> {
     /// # Returns
     ///
     /// * `ContractAddress` - The contract address associated with the given Exchange name.
-    fn amm_router_address(self: @TContractState, amm: SupportedExchanges) -> ContractAddress;
+    fn exchange_address(self: @TContractState, amm: SupportedExchanges) -> ContractAddress;
 
     /// Checks if a given address is a memecoin.
     ///

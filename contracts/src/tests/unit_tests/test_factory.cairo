@@ -1,10 +1,10 @@
 use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
 use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
 use starknet::{ContractAddress, contract_address_const};
-use unruggable::exchanges::{SupportedExchanges, ExchangeTrait};
+use unruggable::exchanges::{SupportedExchanges};
 use unruggable::factory::{IFactory, IFactoryDispatcher, IFactoryDispatcherTrait};
 use unruggable::tests::unit_tests::utils::{
-    deploy_amm_factory_and_router, deploy_meme_factory, deploy_locker, deploy_eth, OWNER, NAME,
+    deploy_jedi_amm_factory_and_router, deploy_meme_factory, deploy_locker, deploy_eth, OWNER, NAME,
     SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS, INITIAL_HOLDERS_AMOUNTS, SALT,
     deploy_memecoin_through_factory, MEMEFACTORY_ADDRESS
 };
@@ -13,13 +13,13 @@ use unruggable::tokens::interface::{
 };
 
 #[test]
-fn test_amm_router_address() {
-    let (_, router_address) = deploy_amm_factory_and_router();
+fn test_exchange_address() {
+    let (_, router_address) = deploy_jedi_amm_factory_and_router();
     let memecoin_factory_address = deploy_meme_factory(router_address);
     let memecoin_factory = IFactoryDispatcher { contract_address: memecoin_factory_address };
 
-    let amm_router_address = memecoin_factory.amm_router_address(SupportedExchanges::JediSwap);
-    assert(amm_router_address == router_address, 'wrong amm router_address');
+    let exchange_address = memecoin_factory.exchange_address(SupportedExchanges::JediSwap);
+    assert(exchange_address == router_address, 'wrong amm router_address');
 }
 
 #[test]
@@ -38,7 +38,7 @@ fn test_is_memecoin() {
 #[test]
 fn test_create_memecoin() {
     // Required contracts
-    let (_, router_address) = deploy_amm_factory_and_router();
+    let (_, router_address) = deploy_jedi_amm_factory_and_router();
     let memecoin_factory_address = deploy_meme_factory(router_address);
     let memecoin_factory = IFactoryDispatcher { contract_address: memecoin_factory_address };
     let lock_manager_address = deploy_locker();

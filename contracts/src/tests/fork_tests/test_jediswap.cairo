@@ -14,6 +14,7 @@ use unruggable::tests::unit_tests::utils::{
     OWNER, DEFAULT_MIN_LOCKTIME, pow_256, LOCK_MANAGER_ADDRESS
 };
 use unruggable::tokens::interface::{IUnruggableMemecoinDispatcherTrait};
+use unruggable::tokens::memecoin::LiquidityPosition;
 use unruggable::utils::math::PercentageMath;
 
 #[test]
@@ -26,8 +27,13 @@ fn test_jediswap_integration() {
     let unlock_time = starknet::get_block_timestamp() + DEFAULT_MIN_LOCKTIME;
 
     start_prank(CheatTarget::One(memecoin_address), OWNER());
-    let pair_address = memecoin
+    let liquidity_position = memecoin
         .launch_memecoin(SupportedExchanges::JediSwap, ETH_ADDRESS(), unlock_time);
+    let pair_address = match liquidity_position {
+        LiquidityPosition::ERC20(pair_address) => pair_address,
+        LiquidityPosition::NFT(_) => panic_with_felt252('Expected ERC20Pair'),
+    };
+
     stop_prank(CheatTarget::One(memecoin_address));
     let pair = IJediswapPairDispatcher { contract_address: pair_address };
 

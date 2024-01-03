@@ -5,9 +5,12 @@ use snforge_std::{
     start_warp, stop_warp
 };
 use starknet::ContractAddress;
-use unruggable::exchanges::{SupportedExchanges, ExchangeTrait};
+use unruggable::exchanges::{SupportedExchanges};
 use unruggable::factory::{IFactoryDispatcher, IFactoryDispatcherTrait};
-use unruggable::tests::addresses::{JEDI_ROUTER_ADDRESS, JEDI_FACTORY_ADDRESS, ETH_ADDRESS};
+use unruggable::tests::addresses::{
+    JEDI_ROUTER_ADDRESS, JEDI_FACTORY_ADDRESS, ETH_ADDRESS, EKUBO_CORE, EKUBO_POSITIONS,
+    EKUBO_REGISTRY, EKUBO_NFT_CLASS_HASH
+};
 use unruggable::tokens::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
 };
@@ -124,7 +127,8 @@ fn deploy_standalone_memecoin() -> (IUnruggableMemecoinDispatcher, ContractAddre
 
 // Exchange
 
-fn deploy_amm_factory() -> ContractAddress {
+// Jediswap
+fn deploy_jedi_amm_factory() -> ContractAddress {
     let pair_class = declare('PairC1');
 
     let mut constructor_calldata = Default::default();
@@ -140,41 +144,30 @@ fn deploy_amm_factory() -> ContractAddress {
     factory_address
 }
 
-fn deploy_router(factory_address: ContractAddress) -> ContractAddress {
+fn deploy_jedi_router(factory_address: ContractAddress) -> ContractAddress {
     let amm_router_class = declare('RouterC1');
 
     let mut router_constructor_calldata = Default::default();
     Serde::serialize(@factory_address, ref router_constructor_calldata);
 
-    let amm_router_address = amm_router_class
+    let exchange_address = amm_router_class
         .deploy_at(@router_constructor_calldata, JEDI_ROUTER_ADDRESS())
         .unwrap();
 
-    amm_router_address
+    exchange_address
 }
 
-fn deploy_amm_factory_and_router() -> (ContractAddress, ContractAddress) {
-    let amm_factory_address = deploy_amm_factory();
-    let amm_router_address = deploy_router(amm_factory_address);
+fn deploy_jedi_amm_factory_and_router() -> (ContractAddress, ContractAddress) {
+    let amm_factory_address = deploy_jedi_amm_factory();
+    let exchange_address = deploy_jedi_router(amm_factory_address);
 
-    (amm_factory_address, amm_router_address)
+    (amm_factory_address, exchange_address)
 }
+
 
 // MemeFactory
 fn deploy_meme_factory(router_address: ContractAddress) -> ContractAddress {
-    let memecoin_class_hash = declare('UnruggableMemecoin').class_hash;
-
-    // Declare availables Exchanges for this factory
-    let mut amms: Array<(SupportedExchanges, ContractAddress)> = array![
-        (SupportedExchanges::JediSwap, router_address)
-    ];
-
-    let contract = declare('Factory');
-    let mut calldata = array![];
-    Serde::serialize(@OWNER(), ref calldata);
-    Serde::serialize(@memecoin_class_hash, ref calldata);
-    Serde::serialize(@amms.into(), ref calldata);
-    contract.deploy_at(@calldata, MEMEFACTORY_ADDRESS()).expect('UnrugFactory deployment failed')
+    deploy_meme_factory_with_owner(OWNER(), router_address)
 }
 
 fn deploy_meme_factory_with_owner(
@@ -184,7 +177,7 @@ fn deploy_meme_factory_with_owner(
 
     // Declare availables Exchanges for this factory
     let mut amms: Array<(SupportedExchanges, ContractAddress)> = array![
-        (SupportedExchanges::JediSwap, router_address)
+        (SupportedExchanges::JediSwap, router_address),
     ];
 
     let contract = declare('Factory');
@@ -192,7 +185,7 @@ fn deploy_meme_factory_with_owner(
     Serde::serialize(@owner, ref calldata);
     Serde::serialize(@memecoin_class_hash, ref calldata);
     Serde::serialize(@amms.into(), ref calldata);
-    contract.deploy(@calldata).expect('UnrugFactory deployment failed')
+    contract.deploy_at(@calldata, MEMEFACTORY_ADDRESS()).expect('UnrugFactory deployment failed')
 }
 
 // Locker
@@ -229,7 +222,7 @@ fn deploy_memecoin_through_factory_with_owner(
     owner: ContractAddress
 ) -> (IUnruggableMemecoinDispatcher, ContractAddress) {
     // Required contracts
-    let (_, router_address) = deploy_amm_factory_and_router();
+    let (_, router_address) = deploy_jedi_amm_factory_and_router();
     let memecoin_factory_address = deploy_meme_factory(router_address);
     let memecoin_factory = IFactoryDispatcher { contract_address: memecoin_factory_address };
     let lock_manager_address = deploy_locker();
