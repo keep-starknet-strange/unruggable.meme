@@ -26,5 +26,5 @@ sort-module-level-items = true
 
 [[tool.snforge.fork]]
 name = "Mainnet"
-url = "your-rpc-url"
+url = "https://starknet-mainnet.g.alchemy.com/v2"
 block_id.tag = "Latest"

@@ -4,12 +4,13 @@ use ekubo::types::keys::PoolKey;
 use openzeppelin::token::erc20::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
 use snforge_std::{start_prank, stop_prank, CheatTarget};
 use unruggable::exchanges::SupportedExchanges;
-use unruggable::exchanges::ekubo_adapter::{ILaunchpadDispatcher, ILaunchpadDispatcherTrait};
+use unruggable::exchanges::ekubo::launchpad::{ILaunchpadDispatcher, ILaunchpadDispatcherTrait};
 use unruggable::locker::LockPosition;
 use unruggable::locker::interface::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
 use unruggable::tests::addresses::{ETH_ADDRESS, EKUBO_CORE};
 use unruggable::tests::fork_tests::utils::{
-    deploy_memecoin_through_factory_with_owner, sort_tokens, LAUNCHPAD_ADDRESS
+    deploy_memecoin_through_factory_with_owner, sort_tokens, LAUNCHPAD_ADDRESS,
+    EKUBO_SWAPPER_ADDRESS, deploy_ekubo_swapper
 };
 use unruggable::tests::unit_tests::utils::{
     OWNER, DEFAULT_MIN_LOCKTIME, pow_256, LOCK_MANAGER_ADDRESS
@@ -17,10 +18,14 @@ use unruggable::tests::unit_tests::utils::{
 use unruggable::tokens::interface::{IUnruggableMemecoinDispatcherTrait};
 use unruggable::tokens::memecoin::LiquidityPosition;
 use unruggable::utils::math::PercentageMath;
+use unruggable::mocks::ekubo::swapper::{
+    SwapParameters, ISimpleSwapperDispatcher, ISimpleSwapperDispatcherTrait
+};
+use ekubo::types::i129::i129;
 
 #[test]
 #[fork("Mainnet")]
-fn test_ekubo_integration() {
+fn test_ekubo_launch_meme_token0() {
     let owner = snforge_std::test_address();
     let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
     let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
@@ -52,6 +57,30 @@ fn test_ekubo_integration() {
     let price = core.get_pool_price(pool_key);
     let reserve_memecoin = core.get_reserves(memecoin_address);
     let reserve_fake_eth = core.get_reserves(ETH_ADDRESS());
+    assert(reserve_fake_eth == 0, 'reserve counterparty not 0');
+
+    let team_alloc = memecoin.get_team_allocation();
+    assert(
+        reserve_memecoin == memecoin.totalSupply() - team_alloc, 'reserves dont have all supply'
+    );
+
+    // Check that swaps work correctly
+    let swapper_address = deploy_ekubo_swapper();
+    let ekubo_swapper = ISimpleSwapperDispatcher { contract_address: swapper_address };
+    let amount_in = 2 * pow_256(10, 16); // The initial price was fixed
+    // let swap_params = SwapParameters {
+    //     amount: i129 {
+    //         mag: amount_in.low,
+    //         sign: false // positive sign is exact input
+    //     },
+    // is_token1: false,
+    // sqrt_ratio_limit: u256,
+    // skip_ahead: u32,
+    // }
+    // ekubo_swapper.swap(
+    //     pool_key: pool_key,
+    //     swap_params: SwapParameters {}
+    // )
 
     // Approve required token amounts
     start_prank(CheatTarget::One(eth.contract_address), owner);
@@ -61,7 +90,7 @@ fn test_ekubo_integration() {
 // Max buy cap is 2% of total supply
 // Initial rate is roughly 1 ETH for 21M meme,
 // so max buy is ~ 2% of 1 ETH = 0.02 ETH
-// let amount_in = 2 * pow_256(10, 16);
+
 // start_prank(CheatTarget::One(router.contract_address), OWNER());
 // let first_swap = router
 //     .swap_exact_tokens_for_tokens(
@@ -72,7 +101,6 @@ fn test_ekubo_integration() {
 //         deadline: starknet::get_block_timestamp()
 //     );
 // let first_out = *first_swap[0];
-
 // start_prank(CheatTarget::One(memecoin_address), OWNER());
 // memecoin.approve(JEDI_ROUTER_ADDRESS(), first_out);
 // stop_prank(CheatTarget::One(eth.contract_address));

@@ -1,3 +1,7 @@
+//! Ekubo's Owned NFT source code
+//! token_uri has been modified
+//TODO! fix token_uri
+
 use unruggable::exchanges::ekubo::interfaces::IOwnedNFTDispatcher;
 
 #[starknet::contract]

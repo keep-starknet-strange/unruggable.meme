@@ -249,8 +249,10 @@ mod memecoin_entrypoints {
     }
 
     #[test]
-    #[should_panic(expected: ('Exchange not supported',))]
-    fn test_launch_memecoin_amm_not_supported() {
+    #[should_panic(expected: ('Exchange address is zero',))]
+    fn test_launch_memecoin_amm_not_whitelisted() {
+        //INFO: Ekubo is not supported in unit tests, as we don't have a way
+        // to deploy their contracts. Thus, it's not possible to use it in unit tests.
         let owner = starknet::get_contract_address();
         let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
         let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };

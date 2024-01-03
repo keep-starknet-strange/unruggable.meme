@@ -160,6 +160,8 @@ mod UnruggableMemecoin {
         // * UnruggableMemecoin functions
         // ************************************
 
+        //TODO(ekubo): provide extra parameters for wanted initial price
+        // of ekubo pools
         fn launch_memecoin(
             ref self: ContractState,
             exchange: SupportedExchanges,
@@ -196,17 +198,19 @@ mod UnruggableMemecoin {
                     let launchpad_address = IFactoryDispatcher { contract_address: factory_address }
                         .exchange_address(SupportedExchanges::Ekubo);
 
-                    //TODO: dynamic additional launch parameters
+                    //TODO(ekubo): dynamic additional launch parameters
                     // for now: 0.3% fee, 0.6% tick spacing, starting tick is 0
                     // the starting tick should be computed base on wanted initial price liquidity
+                    // initial price set at 100MEME/ETH -> 0.01ETH/MEME
+                    // exact tick = math.log(initial_price,1.000001)
+                    // initial_tick = (exact_tick // tick_spacing)*tick_spacing
                     let parameters = EkuboLaunchParameters {
                         token_address: memecoin_address,
                         counterparty_address: counterparty_token_address,
                         fee: 0xc49ba5e353f7d00000000000000000, //0.3%
                         tick_spacing: 5982, // 0.6%
-                        starting_tick: 0,
-                        lower_bound: 88719042, // lowest value for a 0.6% tick spacing
-                        upper_bound: 88719042,
+                        starting_tick: 4600158,
+                        bound: 88719042,
                     };
 
                     let mut additional_parameters = Default::default();
@@ -341,6 +345,8 @@ mod UnruggableMemecoin {
         /// * `initial_holders` - A span of addresses that will hold the memecoin initially.
         /// * `initial_holders_amounts` - A span of amounts corresponding to the initial holders.
         ///
+        /// # Returns
+        /// * `u256` - The total amount of memecoin allocated to the team.
         fn initializer(
             ref self: ContractState,
             lock_manager_address: ContractAddress,

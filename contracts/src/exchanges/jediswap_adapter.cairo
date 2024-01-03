@@ -105,7 +105,7 @@ mod JediswapComponent {
 
             // Create liquidity pool
             let jedi_router = IJediswapRouterDispatcher { contract_address: exchange_address };
-            assert(jedi_router.contract_address.is_non_zero(), errors::EXCHANGE_NOT_SUPPORTED);
+            assert(jedi_router.contract_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
             let jedi_factory = IJediswapFactoryDispatcher {
                 contract_address: jedi_router.factory(),
             };

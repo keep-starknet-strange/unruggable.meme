@@ -7,7 +7,7 @@ use starknet::ContractAddress;
 #[derive(Drop, Copy, Serde, Hash)]
 enum SupportedExchanges {
     JediSwap,
-    Ekubo, //TODO: Not yet implemented
+    Ekubo
 }
 
 trait IAmmAdapter<TContractState> {

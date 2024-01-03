@@ -22,6 +22,10 @@ fn LAUNCHPAD_ADDRESS() -> ContractAddress {
     'ekubo_launchpad'.try_into().unwrap()
 }
 
+fn EKUBO_SWAPPER_ADDRESS() -> ContractAddress {
+    'ekubo_swapper'.try_into().unwrap()
+}
+
 
 fn deploy_ekubo_launchpad() -> ContractAddress {
     let launchpad = declare('Launchpad');
@@ -30,9 +34,17 @@ fn deploy_ekubo_launchpad() -> ContractAddress {
     Serde::serialize(@EKUBO_REGISTRY(), ref calldata);
     Serde::serialize(@EKUBO_POSITIONS(), ref calldata);
     Serde::serialize(@EKUBO_NFT_CLASS_HASH(), ref calldata);
+    //TODO(ekubo): fix launchpad uri
     Serde::serialize(@'launchpad-uri', ref calldata);
 
     launchpad.deploy_at(@calldata, LAUNCHPAD_ADDRESS()).expect('Launchpad deployment failed')
+}
+
+fn deploy_ekubo_swapper() -> ContractAddress {
+    let swapper = declare('SimpleSwapper');
+    let mut calldata = Default::default();
+    Serde::serialize(@EKUBO_CORE(), ref calldata);
+    swapper.deploy_at(@calldata, EKUBO_SWAPPER_ADDRESS()).expect('Swapper deployment failed')
 }
 
 // MemeFactory

@@ -1,3 +1,4 @@
+use core::traits::TryInto;
 //! A registry of onchain addresses used for tests. These address match the ones deployed on
 //! Starknet mainnet unless indicated otherwise.
 
@@ -17,6 +18,11 @@ fn JEDI_FACTORY_ADDRESS() -> ContractAddress {
 // This ensures that in Jediswap pairs, the ETH side is always token1
 fn ETH_ADDRESS() -> ContractAddress {
     0x7fff6570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7.try_into().unwrap()
+}
+
+// A helper that returns a very small address, ensuring that this token is always token0 in a pair
+fn TOKEN0_ADDRESS() -> ContractAddress {
+    0x000000000000000000000000000000000000000000000000000000f9e004dc7.try_into().unwrap()
 }
 
 fn EKUBO_CORE() -> ContractAddress {
