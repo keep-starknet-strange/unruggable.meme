@@ -26,9 +26,9 @@ mod UnruggableMemecoin {
         IJediswapFactoryDispatcher, IJediswapFactoryDispatcherTrait, IJediswapRouterDispatcher,
         IJediswapRouterDispatcherTrait
     };
-    use unruggable::exchanges::{Exchange, SupportedExchanges, ExchangeTrait};
+    use unruggable::exchanges::{SupportedExchanges, ExchangeTrait};
     use unruggable::factory::{IFactory, IFactoryDispatcher, IFactoryDispatcherTrait};
-    use unruggable::locker::{ITokenLockerDispatcher, ITokenLockerDispatcherTrait};
+    use unruggable::locker::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
     use unruggable::tokens::interface::{
         IUnruggableMemecoinSnake, IUnruggableMemecoinCamel, IUnruggableAdditional
     };
@@ -73,6 +73,7 @@ mod UnruggableMemecoin {
         transfer_restriction_delay: u64,
         launch_time: u64,
         factory_contract: ContractAddress,
+        pair_address: ContractAddress,
         // Components.
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
@@ -96,7 +97,7 @@ mod UnruggableMemecoin {
     /// Constructor called once when the contract is deployed.
     /// # Arguments
     /// * `owner` - The owner of the contract.
-    /// * `locker_address` - Token locker address.
+    /// * `LOCK_MANAGER_ADDRESS` - Token locker address.
     /// * `transfer_restriction_delay` - Delay timestamp to release transfer amount check.
     /// * `name` - The name of the token.
     /// * `symbol` - The symbol of the token.
@@ -107,7 +108,7 @@ mod UnruggableMemecoin {
     fn constructor(
         ref self: ContractState,
         owner: ContractAddress,
-        locker_address: ContractAddress,
+        lock_manager_address: ContractAddress,
         transfer_restriction_delay: u64,
         name: felt252,
         symbol: felt252,
@@ -126,7 +127,7 @@ mod UnruggableMemecoin {
 
         self
             .initializer(
-                :locker_address,
+                :lock_manager_address,
                 :factory_address,
                 :transfer_restriction_delay,
                 :initial_supply,
@@ -144,28 +145,11 @@ mod UnruggableMemecoin {
         // * UnruggableMemecoin functions
         // ************************************
 
-        /// Launches Memecoin by creating a liquidity pool with the specified counterparty token using the Exchangev2 protocol.
-        ///
-        /// The owner must send tokens of the chosen counterparty (e.g., USDC) to launch Memecoin.
-        ///
-        /// # Arguments
-        /// * `amm_v2`: SupportedExchanges to create a pair and send liquidity.
-        /// * `liquidity_memecoin_amount`: The amount of Memecoin tokens to be provided as liquidity.
-        /// * `liquidity_counterparty_token`: The amount of counterparty tokens to be provided as liquidity.
-        /// * `deadline`: The deadline beyond which the operation will revert.
-        ///
-        /// # Panics
-        /// This method will panic if:
-        /// * The caller is not the owner of the contract.
-        /// * Insufficient Memecoin funds are available for liquidity.
-        /// * Insufficient counterparty token funds are available for liquidity.
-        ///
-        /// # Returns
-        /// * `ContractAddress` - The contract address of the created liquidity pool.
         fn launch_memecoin(
             ref self: ContractState,
-            amm_v2: SupportedExchanges,
+            exchange: SupportedExchanges,
             counterparty_token_address: ContractAddress,
+            lp_unlock_time: u64,
         ) -> ContractAddress {
             // [Check Owner] Only the owner can launch the Memecoin
             self.ownable.assert_only_owner();
@@ -174,18 +158,20 @@ mod UnruggableMemecoin {
             let caller_address = get_caller_address();
             let factory_address = self.factory_contract.read();
 
-            let pair_address = match amm_v2 {
+            let pair_address = match exchange {
                 SupportedExchanges::JediSwap => {
                     let router_address = IFactoryDispatcher { contract_address: factory_address }
-                        .amm_router_address(amm_name: amm_v2.to_string());
+                        .amm_router_address(SupportedExchanges::JediSwap);
                     let pair_address = self
                         .jediswap
                         .create_and_add_liquidity(
                             exchange_address: router_address,
                             token_address: memecoin_address,
                             counterparty_address: counterparty_token_address,
+                            unlock_time: lp_unlock_time,
                             additional_parameters: array![].span(),
                         );
+                    self.pair_address.write(pair_address);
                     pair_address
                 },
                 SupportedExchanges::Ekubo => panic_with_felt252(errors::EXCHANGE_NOT_SUPPORTED)
@@ -218,7 +204,7 @@ mod UnruggableMemecoin {
             self.factory_contract.read()
         }
 
-        fn locker_address(self: @ContractState) -> ContractAddress {
+        fn lock_manager_address(self: @ContractState) -> ContractAddress {
             self.locker_contract.read()
         }
     }
@@ -295,7 +281,7 @@ mod UnruggableMemecoin {
         ///
         /// # Arguments
         ///
-        /// * `locker_address` - The address of the locker contract.
+        /// * `LOCK_MANAGER_ADDRESS` - The address of the locker contract.
         /// * `factory_address` - The address of the factory contract.
         /// * `transfer_restriction_delay` - The delay in seconds before transfers are no longer limited.
         /// * `initial_supply` - The initial supply of the memecoin.
@@ -304,7 +290,7 @@ mod UnruggableMemecoin {
         ///
         fn initializer(
             ref self: ContractState,
-            locker_address: ContractAddress,
+            lock_manager_address: ContractAddress,
             factory_address: ContractAddress,
             transfer_restriction_delay: u64,
             initial_supply: u256,
@@ -312,7 +298,7 @@ mod UnruggableMemecoin {
             initial_holders_amounts: Span<u256>
         ) {
             // Internal Registry
-            self.locker_contract.write(locker_address);
+            self.locker_contract.write(lock_manager_address);
             self.factory_contract.write(factory_address);
 
             // Enable a transfer limit - until this time has passed,
@@ -375,6 +361,11 @@ mod UnruggableMemecoin {
             if !self.is_launched() {
                 self.enforce_prelaunch_holders_limit(sender, recipient, amount);
             } else {
+                if (get_caller_address() == self.pair_address.read()
+                    || recipient == self.pair_address.read()) {
+                    return;
+                }
+
                 self.ensure_not_multicall(recipient);
             }
         }

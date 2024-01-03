@@ -1,5 +1,6 @@
 use openzeppelin::token::erc20::ERC20ABIDispatcher;
 use starknet::ContractAddress;
+use unruggable::exchanges::SupportedExchanges;
 
 #[starknet::interface]
 trait IFactory<TContractState> {
@@ -9,7 +10,7 @@ trait IFactory<TContractState> {
     /// transfers 1 ETH from the caller to the new memecoin, and emits a `MemeCoinCreated` event.
     ///
     /// * `owner` - The address of the Memecoin contract owner.
-    /// * `locker_address` - The address of the locker contract associated with the Memecoin.
+    /// * `LOCK_MANAGER_ADDRESS` - The address of the locker contract associated with the Memecoin.
     /// * `name` - The name of the Memecoin.
     /// * `symbol` - The symbol of the Memecoin.
     /// * `initial_supply` - The initial supply of the Memecoin.
@@ -25,7 +26,7 @@ trait IFactory<TContractState> {
     fn create_memecoin(
         ref self: TContractState,
         owner: ContractAddress,
-        locker_address: ContractAddress,
+        lock_manager_address: ContractAddress,
         name: felt252,
         symbol: felt252,
         initial_supply: u256,
@@ -46,7 +47,7 @@ trait IFactory<TContractState> {
     /// # Returns
     ///
     /// * `ContractAddress` - The contract address associated with the given Exchange name.
-    fn amm_router_address(self: @TContractState, amm_name: felt252) -> ContractAddress;
+    fn amm_router_address(self: @TContractState, amm: SupportedExchanges) -> ContractAddress;
 
     /// Checks if a given address is a memecoin.
     ///
