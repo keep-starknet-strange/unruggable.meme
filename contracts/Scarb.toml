@@ -22,3 +22,8 @@ sierra-replace-ids = true
 
 [tool.fmt]
 sort-module-level-items = true
+
+[[tool.snforge.fork]]
+name = "Mainnet"
+url = "your-rpc-url"
+block_id.tag = "Latest"

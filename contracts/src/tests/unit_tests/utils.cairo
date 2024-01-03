@@ -1,13 +1,13 @@
 use core::traits::TryInto;
-use openzeppelin::token::erc20::interface::ERC20ABIDispatcher;
-use openzeppelin::token::erc20::interface::ERC20ABIDispatcherTrait;
+use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
 use snforge_std::{
     ContractClass, ContractClassTrait, CheatTarget, declare, start_prank, stop_prank, TxInfoMock,
     start_warp, stop_warp
 };
 use starknet::ContractAddress;
-use unruggable::exchanges::{Exchange, SupportedExchanges, ExchangeTrait};
+use unruggable::exchanges::{SupportedExchanges, ExchangeTrait};
 use unruggable::factory::{IFactoryDispatcher, IFactoryDispatcherTrait};
+use unruggable::tests::addresses::{JEDI_ROUTER_ADDRESS, JEDI_FACTORY_ADDRESS, ETH_ADDRESS};
 use unruggable::tokens::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
 };
@@ -71,41 +71,27 @@ fn DEFAULT_INITIAL_SUPPLY() -> u256 {
     21_000_000 * pow_256(10, 18)
 }
 
-fn ETH_INITIAL_SUPPLY() -> u256 {
-    2 * pow_256(10, ETH_DECIMALS)
+fn LOCK_MANAGER_ADDRESS() -> ContractAddress {
+    'lock_manager'.try_into().unwrap()
 }
 
-fn LOCKER_ADDRESS() -> ContractAddress {
-    'locker'.try_into().unwrap()
+fn UNLOCK_TIME() -> u64 {
+    starknet::get_block_timestamp() + DEFAULT_MIN_LOCKTIME
 }
-
 
 const ETH_DECIMALS: u8 = 18;
 const TRANSFER_LIMIT_DELAY: u64 = 1000;
-
-
-// NOT THE ACTUAL ETH ADDRESS
-// It's set to a the maximum possible value for a contract address
-// This ensures that in Jediswap pairs, the ETH side is always token1
-fn ETH_ADDRESS() -> ContractAddress {
-    0x7fff6570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7.try_into().unwrap()
-}
-
-fn JEDI_ROUTER_ADDRESS() -> ContractAddress {
-    'router_address'.try_into().unwrap()
-}
-
-fn JEDI_FACTORY_ADDRESS() -> ContractAddress {
-    'jediswap factory'.try_into().unwrap()
-}
 
 
 fn MEMEFACTORY_ADDRESS() -> ContractAddress {
     'memefactory_address'.try_into().unwrap()
 }
 
-fn DEFAULT_MIN_LOCKTIME() -> u64 {
-    200
+const DEFAULT_MIN_LOCKTIME: u64 = 15_721_200; // 6 months
+const DEFAULT_LOCK_AMOUNT: u256 = 100;
+
+fn LOCK_POSITION_ADDRESS() -> ContractAddress {
+    'lock_position_address'.try_into().unwrap()
 }
 
 // Deployments
@@ -179,10 +165,8 @@ fn deploy_meme_factory(router_address: ContractAddress) -> ContractAddress {
     let memecoin_class_hash = declare('UnruggableMemecoin').class_hash;
 
     // Declare availables Exchanges for this factory
-    let mut amms = array![
-        Exchange {
-            name: SupportedExchanges::JediSwap.to_string(), contract_address: router_address
-        }
+    let mut amms: Array<(SupportedExchanges, ContractAddress)> = array![
+        (SupportedExchanges::JediSwap, router_address)
     ];
 
     let contract = declare('Factory');
@@ -199,10 +183,8 @@ fn deploy_meme_factory_with_owner(
     let memecoin_class_hash = declare('UnruggableMemecoin').class_hash;
 
     // Declare availables Exchanges for this factory
-    let mut amms = array![
-        Exchange {
-            name: SupportedExchanges::JediSwap.to_string(), contract_address: router_address
-        }
+    let mut amms: Array<(SupportedExchanges, ContractAddress)> = array![
+        (SupportedExchanges::JediSwap, router_address)
     ];
 
     let contract = declare('Factory');
@@ -217,9 +199,11 @@ fn deploy_meme_factory_with_owner(
 
 fn deploy_locker() -> ContractAddress {
     let mut calldata = Default::default();
-    Serde::serialize(@DEFAULT_MIN_LOCKTIME(), ref calldata);
-    let locker_contract = declare('TokenLocker');
-    locker_contract.deploy_at(@calldata, LOCKER_ADDRESS()).expect('Locker deployment failed')
+    let locker_contract = declare('LockManager');
+    let lock_position_class_hash = declare('LockPosition').class_hash;
+    Serde::serialize(@DEFAULT_MIN_LOCKTIME, ref calldata);
+    Serde::serialize(@lock_position_class_hash, ref calldata);
+    locker_contract.deploy_at(@calldata, LOCK_MANAGER_ADDRESS()).expect('Locker deployment failed')
 }
 
 // ETH Token
@@ -231,7 +215,7 @@ fn deploy_eth() -> (ERC20ABIDispatcher, ContractAddress) {
 fn deploy_eth_with_owner(owner: ContractAddress) -> (ERC20ABIDispatcher, ContractAddress) {
     let token = declare('ERC20Token');
     let mut calldata = Default::default();
-    Serde::serialize(@ETH_INITIAL_SUPPLY(), ref calldata);
+    Serde::serialize(@DEFAULT_INITIAL_SUPPLY(), ref calldata);
     Serde::serialize(@owner, ref calldata);
 
     let address = token.deploy_at(@calldata, ETH_ADDRESS()).unwrap();
@@ -248,7 +232,7 @@ fn deploy_memecoin_through_factory_with_owner(
     let (_, router_address) = deploy_amm_factory_and_router();
     let memecoin_factory_address = deploy_meme_factory(router_address);
     let memecoin_factory = IFactoryDispatcher { contract_address: memecoin_factory_address };
-    let locker_address = deploy_locker();
+    let lock_manager_address = deploy_locker();
     let (eth, eth_address) = deploy_eth_with_owner(owner);
 
     let eth_amount: u256 = eth.total_supply() / 2; // 50% of supply
@@ -261,7 +245,7 @@ fn deploy_memecoin_through_factory_with_owner(
     let memecoin_address = memecoin_factory
         .create_memecoin(
             owner: owner,
-            :locker_address,
+            :lock_manager_address,
             name: NAME(),
             symbol: SYMBOL(),
             initial_supply: DEFAULT_INITIAL_SUPPLY(),
@@ -291,13 +275,14 @@ fn deploy_memecoin_through_factory() -> (IUnruggableMemecoinDispatcher, Contract
 // Sets the env block timestamp to 1 and launchs the memecoin - so that launched_at is 1
 // In this context, the owner of the factory is the address of the snforge test
 fn deploy_and_launch_memecoin() -> (IUnruggableMemecoinDispatcher, ContractAddress) {
-    let owner = starknet::get_contract_address();
+    let owner = snforge_std::test_address();
     let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
     let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
 
     start_prank(CheatTarget::One(JEDI_ROUTER_ADDRESS()), memecoin_address);
     start_warp(CheatTarget::One(memecoin_address), 1);
-    let pool_address = memecoin.launch_memecoin(SupportedExchanges::JediSwap, eth.contract_address);
+    let pool_address = memecoin
+        .launch_memecoin(SupportedExchanges::JediSwap, eth.contract_address, DEFAULT_MIN_LOCKTIME);
     stop_prank(CheatTarget::One(MEMEFACTORY_ADDRESS()));
     stop_warp(CheatTarget::One(memecoin_address));
     (memecoin, memecoin_address)
