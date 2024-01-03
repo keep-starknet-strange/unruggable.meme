@@ -99,6 +99,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/ermvrs"><img src="https://avatars.githubusercontent.com/u/3417324?v=4?s=100" width="100px;" alt="Erim"/><br /><sub><b>Erim</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=ermvrs" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/mananbordia"><img src="https://avatars.githubusercontent.com/u/45929094?v=4?s=100" width="100px;" alt="mananbordia"/><br /><sub><b>mananbordia</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=mananbordia" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Akashneelesh"><img src="https://avatars.githubusercontent.com/u/66639153?v=4?s=100" width="100px;" alt="Akashneelesh"/><br /><sub><b>Akashneelesh</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=Akashneelesh" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Mohiiit"><img src="https://avatars.githubusercontent.com/u/48082542?v=4?s=100" width="100px;" alt="Mohiiit"/><br /><sub><b>Mohiiit</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=Mohiiit" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
