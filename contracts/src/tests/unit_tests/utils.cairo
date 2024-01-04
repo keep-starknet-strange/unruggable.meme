@@ -102,12 +102,11 @@ fn LOCK_POSITION_ADDRESS() -> ContractAddress {
 // Deploys a simple instance of the memcoin to test ERC20 basic entrypoints.
 fn deploy_standalone_memecoin() -> (IUnruggableMemecoinDispatcher, ContractAddress) {
     // Deploy the locker associated with the memecoin.
-    let locker = deploy_locker();
 
     // Deploy the memecoin with the default parameters.
     let contract = declare('UnruggableMemecoin');
     let mut calldata = array![
-        OWNER().into(), locker.into(), TRANSFER_LIMIT_DELAY.into(), NAME().into(), SYMBOL().into(),
+        OWNER().into(), TRANSFER_LIMIT_DELAY.into(), NAME().into(), SYMBOL().into(),
     ];
     Serde::serialize(@DEFAULT_INITIAL_SUPPLY(), ref calldata);
     Serde::serialize(@INITIAL_HOLDERS(), ref calldata);
@@ -173,6 +172,7 @@ fn deploy_meme_factory(router_address: ContractAddress) -> ContractAddress {
 fn deploy_meme_factory_with_owner(
     owner: ContractAddress, router_address: ContractAddress
 ) -> ContractAddress {
+    let locker_address = deploy_locker();
     let memecoin_class_hash = declare('UnruggableMemecoin').class_hash;
 
     // Declare availables Exchanges for this factory
@@ -184,6 +184,7 @@ fn deploy_meme_factory_with_owner(
     let mut calldata = array![];
     Serde::serialize(@owner, ref calldata);
     Serde::serialize(@memecoin_class_hash, ref calldata);
+    Serde::serialize(@locker_address, ref calldata);
     Serde::serialize(@amms.into(), ref calldata);
     contract.deploy_at(@calldata, MEMEFACTORY_ADDRESS()).expect('UnrugFactory deployment failed')
 }
@@ -225,14 +226,12 @@ fn deploy_memecoin_through_factory_with_owner(
     let (_, router_address) = deploy_jedi_amm_factory_and_router();
     let memecoin_factory_address = deploy_meme_factory(router_address);
     let memecoin_factory = IFactoryDispatcher { contract_address: memecoin_factory_address };
-    let lock_manager_address = deploy_locker();
     let (eth, eth_address) = deploy_eth_with_owner(owner);
 
     start_prank(CheatTarget::One(memecoin_factory.contract_address), owner);
     let memecoin_address = memecoin_factory
         .create_memecoin(
             owner: owner,
-            :lock_manager_address,
             name: NAME(),
             symbol: SYMBOL(),
             initial_supply: DEFAULT_INITIAL_SUPPLY(),
@@ -262,7 +261,7 @@ fn deploy_memecoin_through_factory() -> (IUnruggableMemecoinDispatcher, Contract
 // Sets the env block timestamp to 1 and launchs the memecoin - so that launched_at is 1
 // In this context, the owner of the factory is the address of the snforge test
 fn deploy_and_launch_memecoin() -> (IUnruggableMemecoinDispatcher, ContractAddress) {
-    let owner = snforge_std::test_address();
+    let owner = OWNER();
     let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
     let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
     let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
@@ -277,11 +276,7 @@ fn deploy_and_launch_memecoin() -> (IUnruggableMemecoinDispatcher, ContractAddre
     start_warp(CheatTarget::One(memecoin_address), 1);
     let pool_address = factory
         .launch_on_jediswap(
-            memecoin_address,
-            eth.contract_address,
-            eth_amount,
-            LOCK_MANAGER_ADDRESS(),
-            DEFAULT_MIN_LOCKTIME,
+            memecoin_address, eth.contract_address, eth_amount, DEFAULT_MIN_LOCKTIME,
         );
     stop_prank(CheatTarget::One(factory.contract_address));
     stop_warp(CheatTarget::One(memecoin_address));

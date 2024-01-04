@@ -51,7 +51,6 @@ mod test_constructor {
         UnruggableMemecoin::constructor(
             ref memecoin,
             OWNER(),
-            LOCK_MANAGER_ADDRESS(),
             TRANSFER_LIMIT_DELAY,
             NAME(),
             SYMBOL(),
@@ -61,7 +60,6 @@ mod test_constructor {
         );
 
         // External entrypoints
-        assert(memecoin.lock_manager_address() == LOCK_MANAGER_ADDRESS(), 'wrong locker');
         assert(
             memecoin.memecoin_factory_address() == MEMEFACTORY_ADDRESS(), 'wrong factory address'
         );
@@ -90,7 +88,6 @@ mod test_constructor {
         UnruggableMemecoin::constructor(
             ref state,
             OWNER(),
-            LOCK_MANAGER_ADDRESS(),
             TRANSFER_LIMIT_DELAY,
             NAME(),
             SYMBOL(),
@@ -122,7 +119,6 @@ mod test_constructor {
         UnruggableMemecoin::constructor(
             ref state,
             OWNER(),
-            LOCK_MANAGER_ADDRESS(),
             TRANSFER_LIMIT_DELAY,
             NAME(),
             SYMBOL(),
@@ -145,7 +141,6 @@ mod test_constructor {
         UnruggableMemecoin::constructor(
             ref state,
             OWNER(),
-            LOCK_MANAGER_ADDRESS(),
             TRANSFER_LIMIT_DELAY,
             NAME(),
             SYMBOL(),
@@ -168,15 +163,8 @@ mod memecoin_entrypoints {
         TxInfoMock
     };
     use starknet::{ContractAddress, contract_address_const};
-    use unruggable::exchanges::jediswap_adapter::{
-        IJediswapFactory, IJediswapFactoryDispatcher, IJediswapFactoryDispatcherTrait,
-        IJediswapRouter, IJediswapRouterDispatcher, IJediswapRouterDispatcherTrait,
-        IJediswapPairDispatcher, IJediswapPairDispatcherTrait
-    };
     use unruggable::exchanges::{SupportedExchanges};
     use unruggable::factory::{IFactory, IFactoryDispatcher, IFactoryDispatcherTrait};
-    use unruggable::locker::interface::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
-    use unruggable::locker::{LockPosition};
     use unruggable::tests::unit_tests::utils::{
         deploy_jedi_amm_factory_and_router, deploy_meme_factory_with_owner, deploy_locker,
         deploy_eth_with_owner, OWNER, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS,
@@ -190,87 +178,6 @@ mod memecoin_entrypoints {
     };
     use unruggable::tokens::memecoin::{LiquidityPosition, UnruggableMemecoin};
 
-    #[test]
-    fn test_launch_memecoin_happy_path() {
-        let owner = snforge_std::test_address();
-        let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
-        let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
-        let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
-
-        // approve spending of eth by factory
-        let eth_amount: u256 = 1 * pow_256(10, 18); // 1 ETHER
-        let factory_bal_meme = memecoin.balanceOf(factory.contract_address);
-        start_prank(CheatTarget::One(eth.contract_address), owner);
-        eth.approve(factory.contract_address, eth_amount);
-        stop_prank(CheatTarget::One(eth.contract_address));
-
-        start_prank(CheatTarget::One(factory.contract_address), owner);
-        start_warp(CheatTarget::One(memecoin_address), 1);
-        let pair_address = factory
-            .launch_on_jediswap(
-                memecoin_address,
-                eth.contract_address,
-                eth_amount,
-                LOCK_MANAGER_ADDRESS(),
-                DEFAULT_MIN_LOCKTIME,
-            );
-        stop_prank(CheatTarget::One(factory.contract_address));
-        stop_warp(CheatTarget::One(memecoin_address));
-
-        assert(memecoin.is_launched(), 'should be launched');
-
-        // Check pair creation
-        let pair = IJediswapPairDispatcher { contract_address: pair_address };
-        let (token_0_reserves, token_1_reserves, _) = pair.get_reserves();
-        assert(pair.token0() == memecoin_address, 'wrong token 0 address');
-        assert(pair.token1() == eth.contract_address, 'wrong token 1 address');
-        assert(token_0_reserves == factory_bal_meme, 'wrong pool token reserves');
-        assert(token_1_reserves == eth_amount, 'wrong pool memecoin reserves');
-        let lp_token = ERC20ABIDispatcher { contract_address: pair_address };
-        assert(lp_token.balanceOf(memecoin_address) == 0, 'shouldnt have lp tokens');
-
-        // Check token lock
-        let locker = ILockManagerDispatcher { contract_address: LOCK_MANAGER_ADDRESS() };
-        let lock_address = locker.user_lock_at(owner, 0);
-        let token_lock = locker.get_lock_details(lock_address);
-        let expected_lock = LockPosition {
-            token: pair_address,
-            amount: pair.totalSupply(),
-            unlock_time: starknet::get_block_timestamp() + DEFAULT_MIN_LOCKTIME,
-            owner: owner,
-        };
-        //TODO: check correct lock supply
-        // assert(token_lock == expected_lock, 'wrong lock');
-
-        // Check ownership renounced
-        assert(memecoin.owner().is_zero(), 'Still an owner');
-    }
-
-    #[test]
-    #[should_panic(expected: ('Caller is not the owner',))]
-    fn test_launch_memecoin_not_owner() {
-        let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
-        let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
-        let pair_address = factory
-            .launch_on_jediswap(
-                memecoin_address, ETH_ADDRESS(), 1, LOCK_MANAGER_ADDRESS(), DEFAULT_MIN_LOCKTIME,
-            );
-    }
-
-    #[test]
-    #[should_panic(expected: ('Exchange address is zero',))]
-    //TODO: does this still make sense?
-    fn test_launch_memecoin_amm_not_whitelisted() {
-        //INFO: Ekubo is not supported in unit tests, as we don't have a way
-        // to deploy their contracts. Thus, it's not possible to use it in unit tests.
-        let owner = starknet::get_contract_address();
-        let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
-        let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
-        let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
-
-        let pool_address = factory
-            .launch_on_ekubo(memecoin_address, eth.contract_address, 0, 0, 0, 0);
-    }
 
     #[test]
     fn test_renounce_ownership_upon_memecoin_launch() {
@@ -295,13 +202,6 @@ mod memecoin_entrypoints {
         assert(
             memecoin.memecoin_factory_address() == MEMEFACTORY_ADDRESS(), 'wrong factory address'
         );
-    }
-
-    #[test]
-    fn test_LOCK_MANAGER_ADDRESS() {
-        let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
-
-        assert(memecoin.lock_manager_address() == LOCK_MANAGER_ADDRESS(), 'wrong locker address');
     }
 
     #[test]

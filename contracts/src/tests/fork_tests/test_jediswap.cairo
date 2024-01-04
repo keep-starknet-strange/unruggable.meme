@@ -36,9 +36,7 @@ fn test_jediswap_integration() {
     stop_prank(CheatTarget::One(eth.contract_address));
 
     let pair_address = factory
-        .launch_on_jediswap(
-            memecoin_address, ETH_ADDRESS(), amount, LOCK_MANAGER_ADDRESS(), unlock_time
-        );
+        .launch_on_jediswap(memecoin_address, ETH_ADDRESS(), amount, unlock_time);
 
     let pair = IJediswapPairDispatcher { contract_address: pair_address };
 
@@ -83,14 +81,10 @@ fn test_jediswap_integration() {
     let token_lock = locker.get_lock_details(lock_address);
     let expected_lock = LockPosition {
         token: pair_address,
-        amount: pair.totalSupply(),
+        amount: pair.totalSupply() - 1000,
         unlock_time: starknet::get_block_timestamp() + DEFAULT_MIN_LOCKTIME,
         owner: owner,
     };
 
-    assert(token_lock.token == expected_lock.token, 'token not locked');
-    // can't test for the amount locked as the initial liq provided and the total supply
-    // of the pair do not match
-    assert(token_lock.unlock_time == expected_lock.unlock_time, 'wrong unlock time');
-    assert(token_lock.owner == expected_lock.owner, 'wrong owner');
+    assert(token_lock == expected_lock, 'token lock details wrong');
 }

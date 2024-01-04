@@ -65,15 +65,12 @@ mod UnruggableMemecoin {
     //TODO: discuss whether this should be a constant or a parameter
     const MAX_PERCENTAGE_BUY_LAUNCH: u8 = 200; // 2%
 
-    const ETH_UNIT_DECIMALS: u256 = 1000000000000000000;
-
     #[storage]
     struct Storage {
         marker_v_0: (),
         pre_launch_holders_count: u8,
         team_allocation: u256,
         tx_hash_tracker: LegacyMap<ContractAddress, felt252>,
-        locker_contract: ContractAddress,
         transfer_restriction_delay: u64,
         launch_time: u64,
         factory_contract: ContractAddress,
@@ -97,7 +94,6 @@ mod UnruggableMemecoin {
     /// Constructor called once when the contract is deployed.
     /// # Arguments
     /// * `owner` - The owner of the contract.
-    /// * `LOCK_MANAGER_ADDRESS` - Token locker address.
     /// * `transfer_restriction_delay` - Delay timestamp to release transfer amount check.
     /// * `name` - The name of the token.
     /// * `symbol` - The symbol of the token.
@@ -108,7 +104,6 @@ mod UnruggableMemecoin {
     fn constructor(
         ref self: ContractState,
         owner: ContractAddress,
-        lock_manager_address: ContractAddress,
         transfer_restriction_delay: u64,
         name: felt252,
         symbol: felt252,
@@ -116,19 +111,14 @@ mod UnruggableMemecoin {
         initial_holders: Span<ContractAddress>,
         initial_holders_amounts: Span<u256>,
     ) {
-        // Initialize the ERC20 token.
         self.erc20.initializer(name, symbol);
 
-        // Initialize the owner.
         self.ownable.initializer(owner);
 
         // Initialize the token / internal logic
-        let factory_address = get_caller_address();
-
         self
             .initializer(
-                :lock_manager_address,
-                :factory_address,
+                factory_address: get_caller_address(),
                 :transfer_restriction_delay,
                 :initial_supply,
                 :initial_holders,
@@ -136,20 +126,8 @@ mod UnruggableMemecoin {
             );
     }
 
-    //
-    // External
-    //
     #[abi(embed_v0)]
     impl UnruggableEntrypoints of IUnruggableAdditional<ContractState> {
-        // ************************************
-        // * UnruggableMemecoin functions
-        // ************************************
-
-        /// Returns whether the memecoin has been is_launched.
-        ///
-        /// # Returns
-        ///
-        /// * `bool` - True if the memecoin has been is_launched, false otherwise.
         fn is_launched(self: @ContractState) -> bool {
             self.launch_time.read().is_non_zero()
         }
@@ -163,13 +141,9 @@ mod UnruggableMemecoin {
             self.factory_contract.read()
         }
 
-        fn lock_manager_address(self: @ContractState) -> ContractAddress {
-            self.locker_contract.read()
-        }
-
         fn set_launched(ref self: ContractState, liquidity_position: LiquidityPosition) {
             self.assert_only_factory();
-            assert(!self.is_launched(), 'Already launched');
+            assert(!self.is_launched(), errors::ALREADY_LAUNCHED);
             self.liquidity_position.write(liquidity_position);
             self.launch_time.write(get_block_timestamp());
             self.ownable._transfer_ownership(0.try_into().unwrap());
@@ -178,9 +152,6 @@ mod UnruggableMemecoin {
 
     #[abi(embed_v0)]
     impl SnakeEntrypoints of IUnruggableMemecoinSnake<ContractState> {
-        // ************************************
-        // * snake_case functions
-        // ************************************
         fn total_supply(self: @ContractState) -> u256 {
             self.erc20.total_supply()
         }
@@ -251,7 +222,6 @@ mod UnruggableMemecoin {
         ///
         /// # Arguments
         ///
-        /// * `LOCK_MANAGER_ADDRESS` - The address of the locker contract.
         /// * `factory_address` - The address of the factory contract.
         /// * `transfer_restriction_delay` - The delay in seconds before transfers are no longer limited.
         /// * `initial_supply` - The initial supply of the memecoin.
@@ -262,7 +232,6 @@ mod UnruggableMemecoin {
         /// * `u256` - The total amount of memecoin allocated to the team.
         fn initializer(
             ref self: ContractState,
-            lock_manager_address: ContractAddress,
             factory_address: ContractAddress,
             transfer_restriction_delay: u64,
             initial_supply: u256,
@@ -270,7 +239,6 @@ mod UnruggableMemecoin {
             initial_holders_amounts: Span<u256>
         ) {
             // Internal Registry
-            self.locker_contract.write(lock_manager_address);
             self.factory_contract.write(factory_address);
 
             // Enable a transfer limit - until this time has passed,
@@ -348,10 +316,6 @@ mod UnruggableMemecoin {
         }
 
         /// Checks if the current time is after the launch period.
-        ///
-        /// # Arguments
-        ///
-        /// * `self` - A reference to the `ContractState` instance.
         ///
         /// # Returns
         ///

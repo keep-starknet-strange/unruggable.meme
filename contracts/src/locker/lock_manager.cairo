@@ -104,6 +104,7 @@ mod LockManager {
     ///
     /// * `min_lock_time` - The minimum lock time applicable to all locks
     ///  created by this contract.
+    /// * `lock_position_class_hash` - The class hash of the lock position contract deployed.
     #[constructor]
     fn constructor(
         ref self: ContractState, min_lock_time: u64, lock_position_class_hash: ClassHash

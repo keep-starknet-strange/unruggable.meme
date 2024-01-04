@@ -50,7 +50,6 @@ trait IUnruggableMemecoin<TState> {
     fn is_launched(self: @TState) -> bool;
     fn get_team_allocation(self: @TState) -> u256;
     fn memecoin_factory_address(self: @TState) -> ContractAddress;
-    fn lock_manager_address(self: @TState) -> ContractAddress;
     fn set_launched(ref self: TState, liquidity_position: LiquidityPosition);
 }
 
@@ -77,13 +76,33 @@ trait IUnruggableMemecoinSnake<TState> {
 
 #[starknet::interface]
 trait IUnruggableAdditional<TState> {
-    /// Checks whether token has launched
+    /// Returns whether the memecoin has been launched.
     ///
-    /// # Returns 
-    ///  * bool: whether token has launched
+    /// # Returns
+    ///
+    /// * `bool` - True if the memecoin has been launched, false otherwise.
     fn is_launched(self: @TState) -> bool;
+
+    /// Returns the team allocation.
     fn get_team_allocation(self: @TState) -> u256;
+
+    /// Returns the memecoin factory address.
     fn memecoin_factory_address(self: @TState) -> ContractAddress;
-    fn lock_manager_address(self: @TState) -> ContractAddress;
+
+    /// Sets the memecoin as launched and transfers ownership to the zero address.
+    ///
+    /// This function can only be called by the factory contract. It sets the memecoin as launched, records the liquidity position and the launch time, and transfers ownership of the memecoin to the zero address.
+    ///
+    /// # Arguments
+    ///
+    /// * `liquidity_position` - The liquidity position at the time of launch.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if:
+    ///
+    /// * The caller's address is not the same as the `factory` of the memecoin (error code: `errors::CALLER_NOT_FACTORY`).
+    /// * The memecoin has already been launched (error code: `errors::ALREADY_LAUNCHED`).
+    ///
     fn set_launched(ref self: TState, liquidity_position: LiquidityPosition);
 }

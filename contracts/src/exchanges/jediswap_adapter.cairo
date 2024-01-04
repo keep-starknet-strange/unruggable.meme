@@ -1,18 +1,11 @@
-use ERC20Component::InternalTrait; // required to use internals of ERC20Component
-use OwnableComponent::Ownable; // required to use internals of OwnableComponent
 use array::ArrayTrait;
 use debug::PrintTrait;
-use openzeppelin::access::ownable::OwnableComponent;
-use openzeppelin::token::erc20::ERC20Component;
-use openzeppelin::token::erc20::interface::{
-    IERC20, IERC20Metadata, ERC20ABIDispatcher, ERC20ABIDispatcherTrait
-};
+use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
 use starknet::{get_block_timestamp, ContractAddress, get_contract_address, get_caller_address};
 use unruggable::errors;
 use unruggable::locker::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
 use unruggable::tokens::interface::{
-    IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait, IUnruggableAdditional,
-    IUnruggableMemecoinCamel, IUnruggableMemecoinSnake
+    IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait,
 };
 
 #[starknet::interface]
@@ -77,8 +70,8 @@ impl JediswapAdapterImpl of unruggable::exchanges::IAmmAdapter<
         counterparty_address: ContractAddress,
         additional_parameters: JediswapAdditionalParameters,
     ) -> ContractAddress {
-        // This component is made to be embedded inside the memecoin contract. In order to access
-        // its functions, we need to get a mutable reference to the memecoin contract.
+        let JediswapAdditionalParameters{lock_manager_address, unlock_time, counterparty_amount, } =
+            additional_parameters;
         let memecoin = IUnruggableMemecoinDispatcher { contract_address: token_address, };
         let this = get_contract_address();
         let memecoin_address = memecoin.contract_address;
@@ -94,12 +87,10 @@ impl JediswapAdapterImpl of unruggable::exchanges::IAmmAdapter<
         // Add liquidity - approve the entirety of the memecoin and counterparty token balances
         // to supply as liquidity
         // Transfer from caller to this contract so that jediswap can take the tokens from here
-        counterparty_token
-            .transferFrom(caller_address, this, additional_parameters.counterparty_amount,);
+        counterparty_token.transferFrom(caller_address, this, counterparty_amount,);
         let memecoin_balance = memecoin.balanceOf(this);
         memecoin.approve(jedi_router.contract_address, memecoin_balance);
-        counterparty_token
-            .approve(jedi_router.contract_address, additional_parameters.counterparty_amount);
+        counterparty_token.approve(jedi_router.contract_address, counterparty_amount);
         let counterparty_balance = counterparty_token.balanceOf(this);
 
         // As we're supplying the first liquidity for this pool,
@@ -109,15 +100,15 @@ impl JediswapAdapterImpl of unruggable::exchanges::IAmmAdapter<
                 memecoin_address,
                 counterparty_address,
                 memecoin_balance,
-                additional_parameters.counterparty_amount,
+                counterparty_amount,
                 memecoin_balance,
-                additional_parameters.counterparty_amount,
+                counterparty_amount,
                 this, // receiver of LP tokens is the factory, that instantly locks them
                 deadline: get_block_timestamp()
             );
         assert(memecoin.balanceOf(pair_address) == memecoin_balance, 'add liquidity meme failed');
         assert(
-            counterparty_token.balanceOf(pair_address) == additional_parameters.counterparty_amount,
+            counterparty_token.balanceOf(pair_address) == counterparty_amount,
             'add liq counterparty failed'
         );
         let pair = ERC20ABIDispatcher { contract_address: pair_address, };
@@ -125,15 +116,13 @@ impl JediswapAdapterImpl of unruggable::exchanges::IAmmAdapter<
         assert(pair.balanceOf(this) == liquidity_received, 'wrong LP tkns amount');
 
         // Lock LP tokens
-        let lock_manager = ILockManagerDispatcher {
-            contract_address: additional_parameters.lock_manager_address
-        };
-        pair.approve(additional_parameters.lock_manager_address, liquidity_received);
+        let lock_manager = ILockManagerDispatcher { contract_address: lock_manager_address };
+        pair.approve(lock_manager_address, liquidity_received);
         let locked_address = lock_manager
             .lock_tokens(
                 token: pair_address,
                 amount: liquidity_received,
-                unlock_time: additional_parameters.unlock_time,
+                unlock_time: unlock_time,
                 withdrawer: caller_address,
             );
         assert(pair.balanceOf(locked_address) == liquidity_received, 'lock failed');

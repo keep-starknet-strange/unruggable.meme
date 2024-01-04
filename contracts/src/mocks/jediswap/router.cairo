@@ -141,7 +141,6 @@ mod RouterC1 {
             let factory = self._factory.read();
             let pair = _pair_for(factory, tokenA, tokenB);
             let sender = get_caller_address();
-            'before transfer of tokens'.print();
             _transfer_token(tokenA, sender, pair, amountA);
             _transfer_token(tokenB, sender, pair, amountB);
             let pairDispatcher = IJediswapPairDispatcher { contract_address: pair };

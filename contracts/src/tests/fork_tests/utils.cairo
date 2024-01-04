@@ -78,11 +78,13 @@ fn deploy_meme_factory_with_owner(
     owner: ContractAddress, amms: Span<(SupportedExchanges, ContractAddress)>
 ) -> ContractAddress {
     let memecoin_class_hash = declare('UnruggableMemecoin').class_hash;
+    let lock_manager_address = deploy_locker();
 
     let contract = declare('Factory');
     let mut calldata = array![];
     Serde::serialize(@owner, ref calldata);
     Serde::serialize(@memecoin_class_hash, ref calldata);
+    Serde::serialize(@lock_manager_address, ref calldata);
     Serde::serialize(@amms.into(), ref calldata);
     contract.deploy_at(@calldata, MEMEFACTORY_ADDRESS()).expect('UnrugFactory deployment failed')
 }
@@ -104,7 +106,6 @@ fn deploy_memecoin_through_factory_with_owner(
         .span();
     let memecoin_factory_address = deploy_meme_factory(supported_amms);
     let memecoin_factory = IFactoryDispatcher { contract_address: memecoin_factory_address };
-    let lock_manager_address = deploy_locker();
     // We have to deploy our own "ETH" as we cannot modify the balances of the real ETH.
     let (eth, eth_address) = deploy_eth_with_owner(owner);
 
@@ -112,7 +113,6 @@ fn deploy_memecoin_through_factory_with_owner(
     let memecoin_address = memecoin_factory
         .create_memecoin(
             owner: owner,
-            :lock_manager_address,
             name: NAME(),
             symbol: SYMBOL(),
             initial_supply: DEFAULT_INITIAL_SUPPLY(),
