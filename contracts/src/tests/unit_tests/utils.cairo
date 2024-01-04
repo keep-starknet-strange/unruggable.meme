@@ -177,7 +177,7 @@ fn deploy_meme_factory_with_owner(
 
     // Declare availables Exchanges for this factory
     let mut amms: Array<(SupportedExchanges, ContractAddress)> = array![
-        (SupportedExchanges::JediSwap, router_address),
+        (SupportedExchanges::Jediswap, router_address),
     ];
 
     let contract = declare('Factory');
@@ -275,7 +275,12 @@ fn deploy_and_launch_memecoin() -> (IUnruggableMemecoinDispatcher, ContractAddre
     start_prank(CheatTarget::One(JEDI_ROUTER_ADDRESS()), memecoin_address);
     start_warp(CheatTarget::One(memecoin_address), 1);
     let pool_address = memecoin
-        .launch_memecoin(SupportedExchanges::JediSwap, eth.contract_address, DEFAULT_MIN_LOCKTIME);
+        .launch_memecoin(
+            SupportedExchanges::Jediswap,
+            eth.contract_address,
+            DEFAULT_MIN_LOCKTIME,
+            array![].span()
+        );
     stop_prank(CheatTarget::One(MEMEFACTORY_ADDRESS()));
     stop_warp(CheatTarget::One(memecoin_address));
     (memecoin, memecoin_address)

@@ -1,7 +1,7 @@
-use starknet::{ContractAddress};
 use ekubo::interfaces::core::{SwapParameters};
-use ekubo::types::keys::{PoolKey};
 use ekubo::types::delta::{Delta};
+use ekubo::types::keys::{PoolKey};
+use starknet::{ContractAddress};
 
 #[starknet::interface]
 trait ISimpleSwapper<TStorage> {
@@ -21,18 +21,18 @@ trait ISimpleSwapper<TStorage> {
 #[starknet::contract]
 mod SimpleSwapper {
     use array::{Array, ArrayTrait, SpanTrait};
-    use option::{OptionTrait};
-    use result::{ResultTrait};
-    use zeroable::{Zeroable};
-    use traits::{Into};
 
     use ekubo::interfaces::core::{ICoreDispatcher, ICoreDispatcherTrait, ILocker};
     use ekubo::interfaces::erc20::{IERC20Dispatcher, IERC20DispatcherTrait};
-    use super::{ContractAddress, PoolKey, Delta, ISimpleSwapper, SwapParameters};
     use ekubo::shared_locker::{consume_callback_data, call_core_with_callback};
+    use option::{OptionTrait};
+    use result::{ResultTrait};
+    use starknet::syscalls::{call_contract_syscall};
 
     use starknet::{get_caller_address, get_contract_address};
-    use starknet::syscalls::{call_contract_syscall};
+    use super::{ContractAddress, PoolKey, Delta, ISimpleSwapper, SwapParameters};
+    use traits::{Into};
+    use zeroable::{Zeroable};
 
     #[storage]
     struct Storage {

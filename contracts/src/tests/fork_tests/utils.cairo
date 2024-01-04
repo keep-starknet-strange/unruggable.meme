@@ -98,7 +98,7 @@ fn deploy_memecoin_through_factory_with_owner(
 ) -> (IUnruggableMemecoinDispatcher, ContractAddress) {
     let ekubo_launchpad = deploy_ekubo_launchpad();
     let supported_amms = array![
-        (SupportedExchanges::JediSwap, JEDI_ROUTER_ADDRESS()),
+        (SupportedExchanges::Jediswap, JEDI_ROUTER_ADDRESS()),
         (SupportedExchanges::Ekubo, ekubo_launchpad)
     ]
         .span();

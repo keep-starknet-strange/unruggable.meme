@@ -30,8 +30,8 @@ mod EkuboComponent {
     };
     use starknet::{get_block_timestamp, ContractAddress};
     use super::EkuboLaunchParameters;
-    use unruggable::exchanges::ekubo::launchpad::{ILaunchpadDispatcher, ILaunchpadDispatcherTrait,};
     use unruggable::errors;
+    use unruggable::exchanges::ekubo::launchpad::{ILaunchpadDispatcher, ILaunchpadDispatcherTrait,};
     use unruggable::locker::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
     use unruggable::tokens::interface::{
         IUnruggableAdditional, IUnruggableMemecoinCamel, IUnruggableMemecoinSnake
@@ -53,19 +53,18 @@ mod EkuboComponent {
         +IUnruggableMemecoinSnake<TContractState>,
         +IUnruggableAdditional<TContractState>,
         +Drop<TContractState>
-    > of unruggable::exchanges::IAmmAdapter<ComponentState<TContractState>> {
+    > of unruggable::exchanges::IAmmAdapter<
+        ComponentState<TContractState>, EkuboLaunchParameters, u64
+    > {
         fn create_and_add_liquidity(
             ref self: ComponentState<TContractState>,
             exchange_address: ContractAddress,
             token_address: ContractAddress,
             counterparty_address: ContractAddress,
             unlock_time: u64,
-            mut additional_parameters: Span<felt252>,
-        ) -> Span<felt252> {
-            let ekubo_launch_params: EkuboLaunchParameters = Serde::deserialize(
-                ref additional_parameters
-            )
-                .expect('Invalid ekubo add liq params');
+            mut additional_parameters: EkuboLaunchParameters,
+        ) -> u64 {
+            let ekubo_launch_params: EkuboLaunchParameters = additional_parameters;
 
             // This component is made to be embedded inside the memecoin contract. In order to access
             // its functions, we need to get a mutable reference to the memecoin contract.
@@ -131,9 +130,7 @@ mod EkuboComponent {
             //     );
             // assert(pair.balanceOf(locked_address) == liquidity_received, 'lock failed');
 
-            let mut return_data = Default::default();
-            Serde::serialize(@nft_id, ref return_data);
-            return_data.span()
+            nft_id
         }
     }
 

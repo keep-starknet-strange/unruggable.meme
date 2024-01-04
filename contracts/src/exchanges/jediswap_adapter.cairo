@@ -68,8 +68,7 @@ mod JediswapComponent {
     #[storage]
     struct Storage {}
 
-    #[embeddable_as(JediswapAdapterImpl)]
-    impl JediswapAdapter<
+    impl JediswapAdapterImpl<
         TContractState,
         +HasComponent<TContractState>,
         // The contract embedding this componenet
@@ -79,17 +78,15 @@ mod JediswapComponent {
         +IUnruggableMemecoinCamel<TContractState>,
         +IUnruggableAdditional<TContractState>,
         +Drop<TContractState>
-    > of unruggable::exchanges::IAmmAdapter<ComponentState<TContractState>> {
+    > of unruggable::exchanges::IAmmAdapter<ComponentState<TContractState>, (), ContractAddress> {
         fn create_and_add_liquidity(
             ref self: ComponentState<TContractState>,
             exchange_address: ContractAddress,
             token_address: ContractAddress,
             counterparty_address: ContractAddress,
             unlock_time: u64,
-            additional_parameters: Span<felt252>,
-        ) -> Span<felt252> {
-            assert(additional_parameters.len() == 0, 'Invalid add liq params');
-
+            additional_parameters: (),
+        ) -> ContractAddress {
             // This component is made to be embedded inside the memecoin contract. In order to access
             // its functions, we need to get a mutable reference to the memecoin contract.
             let memecoin = self.get_contract_mut();
@@ -156,9 +153,7 @@ mod JediswapComponent {
                 );
             assert(pair.balanceOf(locked_address) == liquidity_received, 'lock failed');
 
-            let mut return_data = Default::default();
-            Serde::serialize(@pair.contract_address, ref return_data);
-            return_data.span()
+            pair.contract_address
         }
     }
 }

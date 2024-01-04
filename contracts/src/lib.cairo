@@ -18,7 +18,7 @@ mod mocks {
         mod pair;
         mod router;
     }
-    mod ekubo{
+    mod ekubo {
         mod swapper;
     }
 }

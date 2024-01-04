@@ -53,6 +53,7 @@ trait IUnruggableMemecoin<TState> {
         exchange: SupportedExchanges,
         counterparty_token_address: ContractAddress,
         lp_unlock_time: u64,
+        additional_launch_parameters: Span<felt252>
     ) -> LiquidityPosition;
     fn get_team_allocation(self: @TState) -> u256;
     fn memecoin_factory_address(self: @TState) -> ContractAddress;
@@ -111,6 +112,7 @@ trait IUnruggableAdditional<TState> {
         exchange: SupportedExchanges,
         counterparty_token_address: ContractAddress,
         lp_unlock_time: u64,
+        additional_launch_parameters: Span<felt252>
     ) -> LiquidityPosition;
     fn get_team_allocation(self: @TState) -> u256;
     fn memecoin_factory_address(self: @TState) -> ContractAddress;

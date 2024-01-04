@@ -28,7 +28,7 @@ fn test_jediswap_integration() {
 
     start_prank(CheatTarget::One(memecoin_address), OWNER());
     let liquidity_position = memecoin
-        .launch_memecoin(SupportedExchanges::JediSwap, ETH_ADDRESS(), unlock_time);
+        .launch_memecoin(SupportedExchanges::Jediswap, ETH_ADDRESS(), unlock_time, array![].span());
     let pair_address = match liquidity_position {
         LiquidityPosition::ERC20(pair_address) => pair_address,
         LiquidityPosition::NFT(_) => panic_with_felt252('Expected ERC20Pair'),

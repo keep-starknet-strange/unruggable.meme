@@ -204,7 +204,9 @@ mod memecoin_entrypoints {
         // Set a non-zero timestamp, as the default "0" time conflicts with the `is_launched` function
         start_warp(CheatTarget::One(memecoin.contract_address), 1);
         let liquidity_position = memecoin
-            .launch_memecoin(SupportedExchanges::JediSwap, eth.contract_address, UNLOCK_TIME());
+            .launch_memecoin(
+                SupportedExchanges::Jediswap, eth.contract_address, UNLOCK_TIME(), array![].span()
+            );
         let pair_address = match liquidity_position {
             LiquidityPosition::ERC20(pair_address) => pair_address,
             LiquidityPosition::NFT(_) => panic_with_felt252('Expected ERC20Pair'),
@@ -245,7 +247,10 @@ mod memecoin_entrypoints {
     #[should_panic(expected: ('Caller is not the owner',))]
     fn test_launch_memecoin_not_owner() {
         let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
-        memecoin.launch_memecoin(SupportedExchanges::JediSwap, ETH_ADDRESS(), UNLOCK_TIME());
+        memecoin
+            .launch_memecoin(
+                SupportedExchanges::Jediswap, ETH_ADDRESS(), UNLOCK_TIME(), array![].span()
+            );
     }
 
     #[test]
@@ -258,7 +263,12 @@ mod memecoin_entrypoints {
         let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
 
         let pool_address = memecoin
-            .launch_memecoin(SupportedExchanges::Ekubo, eth.contract_address, UNLOCK_TIME());
+            .launch_memecoin(
+                SupportedExchanges::Ekubo,
+                eth.contract_address,
+                UNLOCK_TIME(),
+                array![0, 0, 0, 0].span()
+            );
     }
 
     #[test]
@@ -516,7 +526,7 @@ mod memecoin_internals {
         // start_prank(CheatTarget::One(router_address), memecoin_address);
         // memecoin
         //     .launch_memecoin(
-        //         SupportedExchanges::JediSwap, counterparty_token_address, 20000000000000000, 1 * ETH_UNIT_DECIMALS
+        //         SupportedExchanges::Jediswap, counterparty_token_address, 20000000000000000, 1 * ETH_UNIT_DECIMALS
         //     );
         // TODO: call launch_memecoin() with params
         // memecoin.launch_memecoin();

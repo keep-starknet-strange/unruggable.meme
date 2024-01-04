@@ -10,6 +10,7 @@ enum LiquidityPosition {
 
 #[starknet::contract]
 mod UnruggableMemecoin {
+    use core::traits::TryInto;
     use core::zeroable::Zeroable;
     use debug::PrintTrait;
     use integer::BoundedInt;
@@ -167,6 +168,7 @@ mod UnruggableMemecoin {
             exchange: SupportedExchanges,
             counterparty_token_address: ContractAddress,
             lp_unlock_time: u64,
+            additional_launch_parameters: Span<felt252>
         ) -> LiquidityPosition {
             // [Check Owner] Only the owner can launch the Memecoin
             self.ownable.assert_only_owner();
@@ -176,20 +178,21 @@ mod UnruggableMemecoin {
             let factory_address = self.factory_contract.read();
 
             let pair_address = match exchange {
-                SupportedExchanges::JediSwap => {
+                SupportedExchanges::Jediswap => {
+                    assert(
+                        additional_launch_parameters.len() == 0, 'jediswap doesnt expect params'
+                    );
                     let router_address = IFactoryDispatcher { contract_address: factory_address }
-                        .exchange_address(SupportedExchanges::JediSwap);
-                    let mut return_data = self
+                        .exchange_address(SupportedExchanges::Jediswap);
+                    let mut pair_address = self
                         .jediswap
                         .create_and_add_liquidity(
                             exchange_address: router_address,
                             token_address: memecoin_address,
                             counterparty_address: counterparty_token_address,
                             unlock_time: lp_unlock_time,
-                            additional_parameters: array![].span(),
+                            additional_parameters: ()
                         );
-                    let pair_address = Serde::<ContractAddress>::deserialize(ref return_data)
-                        .expect('jedi adapter return data');
                     let liquidity_position = LiquidityPosition::ERC20(pair_address);
                     self.liquidity_position.write(liquidity_position);
                     liquidity_position
@@ -198,36 +201,27 @@ mod UnruggableMemecoin {
                     let launchpad_address = IFactoryDispatcher { contract_address: factory_address }
                         .exchange_address(SupportedExchanges::Ekubo);
 
-                    //TODO(ekubo): dynamic additional launch parameters
-                    // for now: 0.3% fee, 0.6% tick spacing, starting tick is 0
-                    // the starting tick should be computed base on wanted initial price liquidity
-                    // initial price set at 100MEME/ETH -> 0.01ETH/MEME
-                    // exact tick = math.log(initial_price,1.000001)
-                    // initial_tick = (exact_tick // tick_spacing)*tick_spacing
-                    let parameters = EkuboLaunchParameters {
+                    assert(additional_launch_parameters.len() == 4, 'ekubo expects 4 params');
+
+                    let ekubo_parameters = EkuboLaunchParameters {
                         token_address: memecoin_address,
                         counterparty_address: counterparty_token_address,
-                        fee: 0xc49ba5e353f7d00000000000000000, //0.3%
-                        tick_spacing: 5982, // 0.6%
-                        starting_tick: 4600158,
-                        bound: 88719042,
+                        fee: (*additional_launch_parameters[0]).try_into().unwrap(),
+                        tick_spacing: (*additional_launch_parameters[1]).try_into().unwrap(),
+                        starting_tick: (*additional_launch_parameters[2]).try_into().unwrap(),
+                        bound: (*additional_launch_parameters[3]).try_into().unwrap(),
                     };
 
-                    let mut additional_parameters = Default::default();
-                    Serde::serialize(@parameters, ref additional_parameters);
-
-                    let mut return_data = self
+                    let mut nft_id = self
                         .ekubo
                         .create_and_add_liquidity(
                             exchange_address: launchpad_address,
                             token_address: memecoin_address,
                             counterparty_address: counterparty_token_address,
                             unlock_time: lp_unlock_time,
-                            additional_parameters: additional_parameters.span()
+                            additional_parameters: ekubo_parameters
                         );
 
-                    let nft_id = Serde::<u64>::deserialize(ref return_data)
-                        .expect('ekubo adapter return data');
                     let liquidity_position = LiquidityPosition::NFT(nft_id);
                     self.liquidity_position.write(liquidity_position);
                     liquidity_position

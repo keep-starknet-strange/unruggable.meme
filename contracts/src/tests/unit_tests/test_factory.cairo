@@ -18,7 +18,7 @@ fn test_exchange_address() {
     let memecoin_factory_address = deploy_meme_factory(router_address);
     let memecoin_factory = IFactoryDispatcher { contract_address: memecoin_factory_address };
 
-    let exchange_address = memecoin_factory.exchange_address(SupportedExchanges::JediSwap);
+    let exchange_address = memecoin_factory.exchange_address(SupportedExchanges::Jediswap);
     assert(exchange_address == router_address, 'wrong amm router_address');
 }
 
