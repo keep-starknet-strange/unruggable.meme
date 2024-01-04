@@ -14,7 +14,8 @@ use unruggable::tests::addresses::{
 };
 use unruggable::tests::unit_tests::utils::{
     deploy_locker, deploy_eth_with_owner, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS,
-    INITIAL_HOLDERS_AMOUNTS, TRANSFER_LIMIT_DELAY, SALT, DefaultTxInfoMock, OWNER, TOKEN0_ADDRESS
+    INITIAL_HOLDERS_AMOUNTS, TRANSFER_LIMIT_DELAY, SALT, DefaultTxInfoMock, OWNER, TOKEN0_ADDRESS,
+    MEMEFACTORY_ADDRESS
 };
 use unruggable::tokens::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -83,7 +84,7 @@ fn deploy_meme_factory_with_owner(
     Serde::serialize(@owner, ref calldata);
     Serde::serialize(@memecoin_class_hash, ref calldata);
     Serde::serialize(@amms.into(), ref calldata);
-    contract.deploy(@calldata).expect('UnrugFactory deployment failed')
+    contract.deploy_at(@calldata, MEMEFACTORY_ADDRESS()).expect('UnrugFactory deployment failed')
 }
 
 /// Deploys the factory and the memecoin.
@@ -104,15 +105,8 @@ fn deploy_memecoin_through_factory_with_owner(
     let memecoin_factory_address = deploy_meme_factory(supported_amms);
     let memecoin_factory = IFactoryDispatcher { contract_address: memecoin_factory_address };
     let lock_manager_address = deploy_locker();
-
     // We have to deploy our own "ETH" as we cannot modify the balances of the real ETH.
     let (eth, eth_address) = deploy_eth_with_owner(owner);
-
-    let eth_amount: u256 = eth.total_supply() / 2; // 50% of supply
-
-    start_prank(CheatTarget::One(eth.contract_address), owner);
-    eth.approve(memecoin_factory_address, eth_amount);
-    stop_prank(CheatTarget::One(eth.contract_address));
 
     start_prank(CheatTarget::One(memecoin_factory.contract_address), owner);
     let memecoin_address = memecoin_factory

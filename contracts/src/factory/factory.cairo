@@ -15,8 +15,16 @@ mod Factory {
     use starknet::{
         ContractAddress, ClassHash, get_caller_address, get_contract_address, contract_address_const
     };
-    use unruggable::exchanges::{SupportedExchanges};
+    use unruggable::errors;
+    use unruggable::exchanges::{
+        SupportedExchanges, ekubo_adapter, ekubo_adapter::EkuboAdditionalParameters,
+        jediswap_adapter, jediswap_adapter::JediswapAdditionalParameters
+    };
     use unruggable::factory::IFactory;
+    use unruggable::tokens::UnruggableMemecoin::LiquidityPosition;
+    use unruggable::tokens::interface::{
+        IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
+    };
 
     // Components.
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
@@ -106,15 +114,72 @@ mod Factory {
             self.deployed_memecoins.write(memecoin_address, true);
 
             let caller = get_caller_address();
-            //TODO!(make the initial liquidity a parameter)
-            let eth_amount: u256 = 1 * ETH_UNIT_DECIMALS;
 
-            counterparty_token
-                .transferFrom(sender: caller, recipient: memecoin_address, amount: eth_amount);
             self.emit(MemeCoinCreated { owner, name, symbol, initial_supply, memecoin_address });
 
             memecoin_address
         }
+
+        //TODO: unit test these functions
+        fn launch_on_jediswap(
+            ref self: ContractState,
+            memecoin_address: ContractAddress,
+            counterparty_address: ContractAddress,
+            counterparty_amount: u256,
+            lock_manager_address: ContractAddress,
+            unlock_time: u64,
+        ) -> ContractAddress {
+            let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
+            assert(get_caller_address() == memecoin.owner(), errors::CALLER_NOT_OWNER);
+            assert(!memecoin.is_launched(), 'memecoin already launched');
+            let counterparty_token = ERC20ABIDispatcher { contract_address: counterparty_address };
+            let caller_address = get_caller_address();
+
+            let router_address = self.exchange_address(SupportedExchanges::Jediswap);
+            let mut pair_address = jediswap_adapter::JediswapAdapterImpl::create_and_add_liquidity(
+                exchange_address: router_address,
+                token_address: memecoin_address,
+                counterparty_address: counterparty_address,
+                additional_parameters: JediswapAdditionalParameters {
+                    lock_manager_address, unlock_time, counterparty_amount
+                }
+            );
+
+            memecoin.set_launched(LiquidityPosition::ERC20(pair_address));
+            pair_address
+        }
+
+        fn launch_on_ekubo(
+            ref self: ContractState,
+            memecoin_address: ContractAddress,
+            counterparty_address: ContractAddress,
+            fee: u128,
+            tick_spacing: u128,
+            starting_tick: u128,
+            bound: u128
+        ) -> u64 {
+            let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
+            assert(get_caller_address() == memecoin.owner(), errors::CALLER_NOT_OWNER);
+            assert(!memecoin.is_launched(), 'memecoin already launched');
+            let counterparty_token = ERC20ABIDispatcher { contract_address: counterparty_address };
+            let caller_address = get_caller_address();
+            let launchpad_address = self.exchange_address(SupportedExchanges::Ekubo);
+
+            let ekubo_parameters = EkuboAdditionalParameters {
+                fee, tick_spacing, starting_tick, bound,
+            };
+
+            let mut nft_id = ekubo_adapter::EkuboAdapterImpl::create_and_add_liquidity(
+                exchange_address: launchpad_address,
+                token_address: memecoin_address,
+                counterparty_address: counterparty_address,
+                additional_parameters: ekubo_parameters
+            );
+
+            memecoin.set_launched(LiquidityPosition::NFT(nft_id));
+            nft_id
+        }
+
 
         fn exchange_address(self: @ContractState, amm: SupportedExchanges) -> ContractAddress {
             self.amm_configs.read(amm)

@@ -192,27 +192,30 @@ mod memecoin_entrypoints {
 
     #[test]
     fn test_launch_memecoin_happy_path() {
-        let owner = starknet::get_contract_address();
+        let owner = snforge_std::test_address();
         let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
+        let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
         let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
 
-        // The amount supplied as liquidity are the amount
-        // held by the memecoin contract pre-launch
-        let memecoin_bal_meme = memecoin.balanceOf(memecoin_address);
-        let memecoin_bal_eth = eth.balanceOf(memecoin_address);
+        // approve spending of eth by factory
+        let eth_amount: u256 = 1 * pow_256(10, 18); // 1 ETHER
+        let factory_bal_meme = memecoin.balanceOf(factory.contract_address);
+        start_prank(CheatTarget::One(eth.contract_address), owner);
+        eth.approve(factory.contract_address, eth_amount);
+        stop_prank(CheatTarget::One(eth.contract_address));
 
-        // Set a non-zero timestamp, as the default "0" time conflicts with the `is_launched` function
-        start_warp(CheatTarget::One(memecoin.contract_address), 1);
-        let liquidity_position = memecoin
-            .launch_memecoin(
-                SupportedExchanges::Jediswap, eth.contract_address, UNLOCK_TIME(), array![].span()
+        start_prank(CheatTarget::One(factory.contract_address), owner);
+        start_warp(CheatTarget::One(memecoin_address), 1);
+        let pair_address = factory
+            .launch_on_jediswap(
+                memecoin_address,
+                eth.contract_address,
+                eth_amount,
+                LOCK_MANAGER_ADDRESS(),
+                DEFAULT_MIN_LOCKTIME,
             );
-        let pair_address = match liquidity_position {
-            LiquidityPosition::ERC20(pair_address) => pair_address,
-            LiquidityPosition::NFT(_) => panic_with_felt252('Expected ERC20Pair'),
-        };
-
-        stop_warp(CheatTarget::One(memecoin.contract_address));
+        stop_prank(CheatTarget::One(factory.contract_address));
+        stop_warp(CheatTarget::One(memecoin_address));
 
         assert(memecoin.is_launched(), 'should be launched');
 
@@ -221,8 +224,8 @@ mod memecoin_entrypoints {
         let (token_0_reserves, token_1_reserves, _) = pair.get_reserves();
         assert(pair.token0() == memecoin_address, 'wrong token 0 address');
         assert(pair.token1() == eth.contract_address, 'wrong token 1 address');
-        assert(token_0_reserves == memecoin_bal_meme, 'wrong pool token reserves');
-        assert(token_1_reserves == memecoin_bal_eth, 'wrong pool memecoin reserves');
+        assert(token_0_reserves == factory_bal_meme, 'wrong pool token reserves');
+        assert(token_1_reserves == eth_amount, 'wrong pool memecoin reserves');
         let lp_token = ERC20ABIDispatcher { contract_address: pair_address };
         assert(lp_token.balanceOf(memecoin_address) == 0, 'shouldnt have lp tokens');
 
@@ -247,28 +250,26 @@ mod memecoin_entrypoints {
     #[should_panic(expected: ('Caller is not the owner',))]
     fn test_launch_memecoin_not_owner() {
         let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
-        memecoin
-            .launch_memecoin(
-                SupportedExchanges::Jediswap, ETH_ADDRESS(), UNLOCK_TIME(), array![].span()
+        let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
+        let pair_address = factory
+            .launch_on_jediswap(
+                memecoin_address, ETH_ADDRESS(), 1, LOCK_MANAGER_ADDRESS(), DEFAULT_MIN_LOCKTIME,
             );
     }
 
     #[test]
     #[should_panic(expected: ('Exchange address is zero',))]
+    //TODO: does this still make sense?
     fn test_launch_memecoin_amm_not_whitelisted() {
         //INFO: Ekubo is not supported in unit tests, as we don't have a way
         // to deploy their contracts. Thus, it's not possible to use it in unit tests.
         let owner = starknet::get_contract_address();
+        let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
         let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
         let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
 
-        let pool_address = memecoin
-            .launch_memecoin(
-                SupportedExchanges::Ekubo,
-                eth.contract_address,
-                UNLOCK_TIME(),
-                array![0, 0, 0, 0].span()
-            );
+        let pool_address = factory
+            .launch_on_ekubo(memecoin_address, eth.contract_address, 0, 0, 0, 0);
     }
 
     #[test]

@@ -9,6 +9,7 @@ use unruggable::exchanges::SupportedExchanges;
 use unruggable::exchanges::ekubo::launcher::{
     IEkuboLauncherDispatcher, IEkuboLauncherDispatcherTrait
 };
+use unruggable::factory::interface::{IFactoryDispatcher, IFactoryDispatcherTrait};
 use unruggable::locker::LockPosition;
 use unruggable::locker::interface::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
 use unruggable::mocks::ekubo::swapper::{
@@ -20,7 +21,7 @@ use unruggable::tests::fork_tests::utils::{
     EKUBO_SWAPPER_ADDRESS, deploy_ekubo_swapper, deploy_token0_with_owner
 };
 use unruggable::tests::unit_tests::utils::{
-    OWNER, DEFAULT_MIN_LOCKTIME, pow_256, LOCK_MANAGER_ADDRESS
+    OWNER, DEFAULT_MIN_LOCKTIME, pow_256, LOCK_MANAGER_ADDRESS, MEMEFACTORY_ADDRESS
 };
 use unruggable::tokens::interface::{IUnruggableMemecoinDispatcherTrait};
 use unruggable::tokens::memecoin::LiquidityPosition;
@@ -32,12 +33,11 @@ fn test_ekubo_launch_meme_token0_and_swap() {
     let owner = snforge_std::test_address();
     let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
     let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
+    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
     let launchpad_address = EKUBO_LAUNCHER_ADDRESS();
     let ekubo_launchpad = IEkuboLauncherDispatcher { contract_address: launchpad_address };
 
-    let unlock_time = starknet::get_block_timestamp() + DEFAULT_MIN_LOCKTIME;
-
-    // 0.3% fee, 0.6% tick spacing, starting tick is a price of 100 MEME / ETH
+    // 0.3% fee, 0.6% tick spacing, starting ti ck is a price of 100 MEME / ETH
     // the starting tick should be computed base on wanted initial price liquidity
     // initial price set at 100MEME/ETH -> 0.01ETH/MEME
     // exact tick = math.log(initial_price,1.000001)
@@ -45,17 +45,8 @@ fn test_ekubo_launch_meme_token0_and_swap() {
     let (fee, tick_spacing, starting_tick, bound) = (
         0xc49ba5e353f7d00000000000000000, 5982, 4600158, 88719042
     );
-    let liquidity_position = memecoin
-        .launch_memecoin(
-            SupportedExchanges::Ekubo,
-            ETH_ADDRESS(),
-            unlock_time,
-            array![fee, tick_spacing, starting_tick, bound].span()
-        );
-    let pair_address = match liquidity_position {
-        LiquidityPosition::ERC20(_) => panic_with_felt252('Expected NFT position'),
-        LiquidityPosition::NFT(id) => id,
-    };
+    let nft_id = factory
+        .launch_on_ekubo(memecoin_address, ETH_ADDRESS(), fee, tick_spacing, starting_tick, bound);
 
     // Test that swaps work correctly
 
@@ -166,6 +157,7 @@ fn test_ekubo_launch_meme_token0_pool_1_percent() {
     let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
     let launchpad_address = EKUBO_LAUNCHER_ADDRESS();
     let ekubo_launchpad = IEkuboLauncherDispatcher { contract_address: launchpad_address };
+    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
 
     let unlock_time = starknet::get_block_timestamp() + DEFAULT_MIN_LOCKTIME;
 
@@ -173,18 +165,8 @@ fn test_ekubo_launch_meme_token0_pool_1_percent() {
     let (fee, tick_spacing, starting_tick, bound) = (
         0x28f5c28f5c28f600000000000000000, 5982, 4600158, 88719042
     );
-    let liquidity_position = memecoin
-        .launch_memecoin(
-            SupportedExchanges::Ekubo,
-            ETH_ADDRESS(),
-            unlock_time,
-            array![fee, tick_spacing, starting_tick, bound].span()
-        );
-    let pair_address = match liquidity_position {
-        LiquidityPosition::ERC20(_) => panic_with_felt252('Expected NFT position'),
-        LiquidityPosition::NFT(id) => id,
-    };
-
+    let nft_id = factory
+        .launch_on_ekubo(memecoin_address, ETH_ADDRESS(), fee, tick_spacing, starting_tick, bound);
     // Test that swaps work correctly
 
     let (token0, token1) = sort_tokens(eth.contract_address, memecoin_address);
@@ -295,6 +277,7 @@ fn test_ekubo_launch_meme_token1_and_swap() {
     let (TOKEN0, _) = deploy_token0_with_owner(owner);
     let launchpad_address = EKUBO_LAUNCHER_ADDRESS();
     let ekubo_launchpad = IEkuboLauncherDispatcher { contract_address: launchpad_address };
+    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
 
     let unlock_time = starknet::get_block_timestamp() + DEFAULT_MIN_LOCKTIME;
     // 0.3% fee, 0.6% tick spacing, starting tick is a price of 100 MEME / ETH
@@ -306,17 +289,10 @@ fn test_ekubo_launch_meme_token1_and_swap() {
     let (fee, tick_spacing, starting_tick, bound) = (
         0xc49ba5e353f7d00000000000000000, 5982, 4600158, 88719042
     );
-    let liquidity_position = memecoin
-        .launch_memecoin(
-            SupportedExchanges::Ekubo,
-            TOKEN0.contract_address,
-            unlock_time,
-            array![fee, tick_spacing, starting_tick, bound].span()
+    let nft_id = factory
+        .launch_on_ekubo(
+            memecoin_address, TOKEN0.contract_address, fee, tick_spacing, starting_tick, bound
         );
-    let pair_address = match liquidity_position {
-        LiquidityPosition::ERC20(_) => panic_with_felt252('Expected NFT position'),
-        LiquidityPosition::NFT(id) => id,
-    };
 
     // Test that swaps work correctly
 

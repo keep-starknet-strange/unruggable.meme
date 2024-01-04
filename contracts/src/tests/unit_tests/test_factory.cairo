@@ -73,7 +73,7 @@ fn test_create_memecoin() {
     // initial supply - initial holder balance
     let holders_sum = *INITIAL_HOLDERS_AMOUNTS()[0] + *INITIAL_HOLDERS_AMOUNTS()[1];
     assert(
-        memecoin.balanceOf(memecoin_address) == DEFAULT_INITIAL_SUPPLY() - holders_sum,
+        memecoin.balanceOf(memecoin_factory_address) == DEFAULT_INITIAL_SUPPLY() - holders_sum,
         'wrong initial supply'
     );
     assert(

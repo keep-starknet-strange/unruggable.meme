@@ -80,7 +80,8 @@ mod erc20_entrypoints {
 
         // Check initial contract balance and initial holders balances.
         assert(
-            memecoin.balance_of(memecoin_address) == DEFAULT_INITIAL_SUPPLY() - holders_sum,
+            memecoin.balance_of(snforge_std::test_address()) == DEFAULT_INITIAL_SUPPLY()
+                - holders_sum,
             'Invalid balance memecoin'
         );
         assert(
@@ -169,7 +170,8 @@ mod erc20_entrypoints {
 
         // Check initial contract balance and initial holders balances.
         assert(
-            memecoin.balanceOf(memecoin_address) == DEFAULT_INITIAL_SUPPLY() - holders_sum,
+            memecoin.balanceOf(snforge_std::test_address()) == DEFAULT_INITIAL_SUPPLY()
+                - holders_sum,
             'Invalid balance memecoin'
         );
         assert(

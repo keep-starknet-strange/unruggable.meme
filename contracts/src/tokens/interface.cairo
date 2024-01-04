@@ -48,16 +48,10 @@ trait IUnruggableMemecoin<TState> {
     /// # Returns 
     ///     bool: whether token has launched
     fn is_launched(self: @TState) -> bool;
-    fn launch_memecoin(
-        ref self: TState,
-        exchange: SupportedExchanges,
-        counterparty_token_address: ContractAddress,
-        lp_unlock_time: u64,
-        additional_launch_parameters: Span<felt252>
-    ) -> LiquidityPosition;
     fn get_team_allocation(self: @TState) -> u256;
     fn memecoin_factory_address(self: @TState) -> ContractAddress;
     fn lock_manager_address(self: @TState) -> ContractAddress;
+    fn set_launched(ref self: TState, liquidity_position: LiquidityPosition);
 }
 
 #[starknet::interface]
@@ -86,35 +80,10 @@ trait IUnruggableAdditional<TState> {
     /// Checks whether token has launched
     ///
     /// # Returns 
-    ///     bool: whether token has launched
+    ///  * bool: whether token has launched
     fn is_launched(self: @TState) -> bool;
-
-    /// Launches Memecoin by creating a liquidity pool with the specified counterparty token using the Exchangev2 protocol.
-    ///
-    /// The owner must send tokens of the chosen counterparty (e.g., USDC) to launch Memecoin.
-    ///
-    /// # Arguments
-    /// * `exchange`: SupportedExchanges to create a pair and send liquidity.
-    /// * `liquidity_memecoin_amount`: The amount of Memecoin tokens to be provided as liquidity.
-    /// * `liquidity_counterparty_token`: The amount of counterparty tokens to be provided as liquidity.
-    /// * `deadline`: The deadline beyond which the operation will revert.
-    ///
-    /// # Panics
-    /// This method will panic if:
-    /// * The caller is not the owner of the contract.
-    /// * Insufficient Memecoin funds are available for liquidity.
-    /// * Insufficient counterparty token funds are available for liquidity.
-    ///
-    /// # Returns
-    /// * `ContractAddress` - The contract address of the created liquidity pool.
-    fn launch_memecoin(
-        ref self: TState,
-        exchange: SupportedExchanges,
-        counterparty_token_address: ContractAddress,
-        lp_unlock_time: u64,
-        additional_launch_parameters: Span<felt252>
-    ) -> LiquidityPosition;
     fn get_team_allocation(self: @TState) -> u256;
     fn memecoin_factory_address(self: @TState) -> ContractAddress;
     fn lock_manager_address(self: @TState) -> ContractAddress;
+    fn set_launched(ref self: TState, liquidity_position: LiquidityPosition);
 }

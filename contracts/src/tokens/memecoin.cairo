@@ -30,8 +30,6 @@ mod UnruggableMemecoin {
     use super::LiquidityPosition;
 
     use unruggable::errors;
-    use unruggable::exchanges::ekubo_adapter::{EkuboLaunchParameters, EkuboComponent};
-    use unruggable::exchanges::jediswap_adapter::JediswapComponent;
     use unruggable::exchanges::jediswap_adapter::{
         IJediswapFactoryDispatcher, IJediswapFactoryDispatcherTrait, IJediswapRouterDispatcher,
         IJediswapRouterDispatcherTrait
@@ -54,12 +52,6 @@ mod UnruggableMemecoin {
     #[abi(embed_v0)]
     impl ERC20MetadataImpl = ERC20Component::ERC20MetadataImpl<ContractState>;
     impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
-
-    component!(path: JediswapComponent, storage: jediswap, event: JediswapEvent);
-    impl JediswapAdapterImpl = JediswapComponent::JediswapAdapterImpl<ContractState>;
-
-    component!(path: EkuboComponent, storage: ekubo, event: EkuboEvent);
-    impl EkuboAdapterImpl = EkuboComponent::EkuboAdapterImpl<ContractState>;
 
     // Constants.
     /// The maximum number of holders allowed before launch.
@@ -91,10 +83,6 @@ mod UnruggableMemecoin {
         ownable: OwnableComponent::Storage,
         #[substorage(v0)]
         erc20: ERC20Component::Storage,
-        #[substorage(v0)]
-        jediswap: JediswapComponent::Storage,
-        #[substorage(v0)]
-        ekubo: EkuboComponent::Storage,
     }
 
     #[event]
@@ -104,10 +92,6 @@ mod UnruggableMemecoin {
         OwnableEvent: OwnableComponent::Event,
         #[flat]
         ERC20Event: ERC20Component::Event,
-        #[flat]
-        JediswapEvent: JediswapComponent::Event,
-        #[flat]
-        EkuboEvent: EkuboComponent::Event
     }
 
     /// Constructor called once when the contract is deployed.
@@ -161,82 +145,6 @@ mod UnruggableMemecoin {
         // * UnruggableMemecoin functions
         // ************************************
 
-        //TODO(ekubo): provide extra parameters for wanted initial price
-        // of ekubo pools
-        fn launch_memecoin(
-            ref self: ContractState,
-            exchange: SupportedExchanges,
-            counterparty_token_address: ContractAddress,
-            lp_unlock_time: u64,
-            additional_launch_parameters: Span<felt252>
-        ) -> LiquidityPosition {
-            // [Check Owner] Only the owner can launch the Memecoin
-            self.ownable.assert_only_owner();
-
-            let memecoin_address = starknet::get_contract_address();
-            let caller_address = get_caller_address();
-            let factory_address = self.factory_contract.read();
-
-            let pair_address = match exchange {
-                SupportedExchanges::Jediswap => {
-                    assert(
-                        additional_launch_parameters.len() == 0, 'jediswap doesnt expect params'
-                    );
-                    let router_address = IFactoryDispatcher { contract_address: factory_address }
-                        .exchange_address(SupportedExchanges::Jediswap);
-                    let mut pair_address = self
-                        .jediswap
-                        .create_and_add_liquidity(
-                            exchange_address: router_address,
-                            token_address: memecoin_address,
-                            counterparty_address: counterparty_token_address,
-                            unlock_time: lp_unlock_time,
-                            additional_parameters: ()
-                        );
-                    let liquidity_position = LiquidityPosition::ERC20(pair_address);
-                    self.liquidity_position.write(liquidity_position);
-                    liquidity_position
-                },
-                SupportedExchanges::Ekubo => {
-                    let launchpad_address = IFactoryDispatcher { contract_address: factory_address }
-                        .exchange_address(SupportedExchanges::Ekubo);
-
-                    assert(additional_launch_parameters.len() == 4, 'ekubo expects 4 params');
-
-                    let ekubo_parameters = EkuboLaunchParameters {
-                        token_address: memecoin_address,
-                        counterparty_address: counterparty_token_address,
-                        fee: (*additional_launch_parameters[0]).try_into().unwrap(),
-                        tick_spacing: (*additional_launch_parameters[1]).try_into().unwrap(),
-                        starting_tick: (*additional_launch_parameters[2]).try_into().unwrap(),
-                        bound: (*additional_launch_parameters[3]).try_into().unwrap(),
-                    };
-
-                    let mut nft_id = self
-                        .ekubo
-                        .create_and_add_liquidity(
-                            exchange_address: launchpad_address,
-                            token_address: memecoin_address,
-                            counterparty_address: counterparty_token_address,
-                            unlock_time: lp_unlock_time,
-                            additional_parameters: ekubo_parameters
-                        );
-
-                    let liquidity_position = LiquidityPosition::NFT(nft_id);
-                    self.liquidity_position.write(liquidity_position);
-                    liquidity_position
-                }
-            };
-
-            // Launch the coin
-            self.launch_time.write(get_block_timestamp());
-
-            // Renounce ownership of the memecoin
-            self.ownable.renounce_ownership();
-
-            pair_address
-        }
-
         /// Returns whether the memecoin has been is_launched.
         ///
         /// # Returns
@@ -257,6 +165,14 @@ mod UnruggableMemecoin {
 
         fn lock_manager_address(self: @ContractState) -> ContractAddress {
             self.locker_contract.read()
+        }
+
+        fn set_launched(ref self: ContractState, liquidity_position: LiquidityPosition) {
+            self.assert_only_factory();
+            assert(!self.is_launched(), 'Already launched');
+            self.liquidity_position.write(liquidity_position);
+            self.launch_time.write(get_block_timestamp());
+            self.ownable._transfer_ownership(0.try_into().unwrap());
         }
     }
 
@@ -325,10 +241,13 @@ mod UnruggableMemecoin {
     //
     #[generate_trait]
     impl UnruggableMemecoinInternalImpl of UnruggableMemecoinInternalTrait {
+        fn assert_only_factory(self: @ContractState) {
+            assert(get_caller_address() == self.factory_contract.read(), errors::NOT_FACTORY);
+        }
         // Initializes the state of the memecoin contract.
         ///
         /// This function sets the locker and factory contract addresses, enables a transfer limit delay,
-        /// checks and allocates the team supply of the memecoin, and mints the remaining supply to the contract itself.
+        /// checks and allocates the team supply of the memecoin, and mints the remaining supply to the factory.
         ///
         /// # Arguments
         ///
@@ -364,9 +283,7 @@ mod UnruggableMemecoin {
                 );
 
             // Mint remaining supply to the contract
-            self
-                .erc20
-                ._mint(recipient: get_contract_address(), amount: initial_supply - team_allocation);
+            self.erc20._mint(recipient: factory_address, amount: initial_supply - team_allocation);
         }
 
         /// Transfers tokens from the sender to the recipient, by applying relevant transfer restrictions.

@@ -228,12 +228,6 @@ fn deploy_memecoin_through_factory_with_owner(
     let lock_manager_address = deploy_locker();
     let (eth, eth_address) = deploy_eth_with_owner(owner);
 
-    let eth_amount: u256 = eth.total_supply() / 2; // 50% of supply
-
-    start_prank(CheatTarget::One(eth.contract_address), owner);
-    eth.approve(memecoin_factory_address, eth_amount);
-    stop_prank(CheatTarget::One(eth.contract_address));
-
     start_prank(CheatTarget::One(memecoin_factory.contract_address), owner);
     let memecoin_address = memecoin_factory
         .create_memecoin(
@@ -270,18 +264,26 @@ fn deploy_memecoin_through_factory() -> (IUnruggableMemecoinDispatcher, Contract
 fn deploy_and_launch_memecoin() -> (IUnruggableMemecoinDispatcher, ContractAddress) {
     let owner = snforge_std::test_address();
     let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
+    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
     let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
 
-    start_prank(CheatTarget::One(JEDI_ROUTER_ADDRESS()), memecoin_address);
+    // approve spending of eth by factory
+    let eth_amount: u256 = 1 * pow_256(10, 18); // 1 ETHER
+    start_prank(CheatTarget::One(eth.contract_address), owner);
+    eth.approve(factory.contract_address, eth_amount);
+    stop_prank(CheatTarget::One(eth.contract_address));
+
+    start_prank(CheatTarget::One(factory.contract_address), owner);
     start_warp(CheatTarget::One(memecoin_address), 1);
-    let pool_address = memecoin
-        .launch_memecoin(
-            SupportedExchanges::Jediswap,
+    let pool_address = factory
+        .launch_on_jediswap(
+            memecoin_address,
             eth.contract_address,
+            eth_amount,
+            LOCK_MANAGER_ADDRESS(),
             DEFAULT_MIN_LOCKTIME,
-            array![].span()
         );
-    stop_prank(CheatTarget::One(MEMEFACTORY_ADDRESS()));
+    stop_prank(CheatTarget::One(factory.contract_address));
     stop_warp(CheatTarget::One(memecoin_address));
     (memecoin, memecoin_address)
 }

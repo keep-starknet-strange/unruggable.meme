@@ -1,4 +1,19 @@
-use starknet::ContractAddress;
+use ERC20Component::InternalTrait; // required to use internals of ERC20Component
+use OwnableComponent::Ownable; // required to use internals of OwnableComponent
+use array::ArrayTrait;
+use debug::PrintTrait;
+use openzeppelin::access::ownable::OwnableComponent;
+use openzeppelin::token::erc20::ERC20Component;
+use openzeppelin::token::erc20::interface::{
+    IERC20, IERC20Metadata, ERC20ABIDispatcher, ERC20ABIDispatcherTrait
+};
+use starknet::{get_block_timestamp, ContractAddress, get_contract_address, get_caller_address};
+use unruggable::errors;
+use unruggable::locker::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
+use unruggable::tokens::interface::{
+    IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait, IUnruggableAdditional,
+    IUnruggableMemecoinCamel, IUnruggableMemecoinSnake
+};
 
 #[starknet::interface]
 trait IJediswapRouter<T> {
@@ -46,114 +61,83 @@ trait IJediswapPair<T> {
     fn totalSupply(self: @T) -> u256;
 }
 
-#[starknet::component]
-mod JediswapComponent {
-    use ERC20Component::InternalTrait; // required to use internals of ERC20Component
-    use OwnableComponent::Ownable; // required to use internals of OwnableComponent
-    use array::ArrayTrait;
-    use openzeppelin::access::ownable::OwnableComponent;
-    use openzeppelin::token::erc20::ERC20Component;
-    use openzeppelin::token::erc20::interface::{
-        IERC20, IERC20Metadata, ERC20ABIDispatcher, ERC20ABIDispatcherTrait
-    };
-    use starknet::{get_block_timestamp, ContractAddress};
-    use super::{
-        IJediswapRouterDispatcher, IJediswapRouterDispatcherTrait, IJediswapFactoryDispatcher,
-        IJediswapFactoryDispatcherTrait
-    };
-    use unruggable::errors;
-    use unruggable::locker::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
-    use unruggable::tokens::interface::{IUnruggableAdditional, IUnruggableMemecoinCamel};
+#[derive(Copy, Drop)]
+struct JediswapAdditionalParameters {
+    lock_manager_address: ContractAddress,
+    unlock_time: u64,
+    counterparty_amount: u256
+}
 
-    #[storage]
-    struct Storage {}
+impl JediswapAdapterImpl of unruggable::exchanges::IAmmAdapter<
+    JediswapAdditionalParameters, ContractAddress
+> {
+    fn create_and_add_liquidity(
+        exchange_address: ContractAddress,
+        token_address: ContractAddress,
+        counterparty_address: ContractAddress,
+        additional_parameters: JediswapAdditionalParameters,
+    ) -> ContractAddress {
+        // This component is made to be embedded inside the memecoin contract. In order to access
+        // its functions, we need to get a mutable reference to the memecoin contract.
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address: token_address, };
+        let this = get_contract_address();
+        let memecoin_address = memecoin.contract_address;
+        let counterparty_token = ERC20ABIDispatcher { contract_address: counterparty_address, };
+        let caller_address = starknet::get_caller_address();
 
-    impl JediswapAdapterImpl<
-        TContractState,
-        +HasComponent<TContractState>,
-        // The contract embedding this componenet
-        // must also embed ERC20Component
-        impl ERC20: ERC20Component::HasComponent<TContractState>,
-        impl Ownable: OwnableComponent::HasComponent<TContractState>,
-        +IUnruggableMemecoinCamel<TContractState>,
-        +IUnruggableAdditional<TContractState>,
-        +Drop<TContractState>
-    > of unruggable::exchanges::IAmmAdapter<ComponentState<TContractState>, (), ContractAddress> {
-        fn create_and_add_liquidity(
-            ref self: ComponentState<TContractState>,
-            exchange_address: ContractAddress,
-            token_address: ContractAddress,
-            counterparty_address: ContractAddress,
-            unlock_time: u64,
-            additional_parameters: (),
-        ) -> ContractAddress {
-            // This component is made to be embedded inside the memecoin contract. In order to access
-            // its functions, we need to get a mutable reference to the memecoin contract.
-            let memecoin = self.get_contract_mut();
+        // Create liquidity pool
+        let jedi_router = IJediswapRouterDispatcher { contract_address: exchange_address };
+        assert(jedi_router.contract_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
+        let jedi_factory = IJediswapFactoryDispatcher { contract_address: jedi_router.factory(), };
+        let pair_address = jedi_factory.create_pair(counterparty_address, memecoin_address);
 
-            // As the memecoin contract embeds ERC20Component, we need to get a mutable reference to
-            // its ERC20 component in order to access its internal functions (such as _approve).
-            let mut memecoin_erc20 = get_dep_component_mut!(ref self, ERC20);
-            let mut memecoin_ownable = get_dep_component_mut!(ref self, Ownable);
+        // Add liquidity - approve the entirety of the memecoin and counterparty token balances
+        // to supply as liquidity
+        // Transfer from caller to this contract so that jediswap can take the tokens from here
+        counterparty_token
+            .transferFrom(caller_address, this, additional_parameters.counterparty_amount,);
+        let memecoin_balance = memecoin.balanceOf(this);
+        memecoin.approve(jedi_router.contract_address, memecoin_balance);
+        counterparty_token
+            .approve(jedi_router.contract_address, additional_parameters.counterparty_amount);
+        let counterparty_balance = counterparty_token.balanceOf(this);
 
-            let memecoin_address = starknet::get_contract_address();
-            let caller_address = starknet::get_caller_address();
-            let counterparty_token = ERC20ABIDispatcher { contract_address: counterparty_address, };
-
-            // Create liquidity pool
-            let jedi_router = IJediswapRouterDispatcher { contract_address: exchange_address };
-            assert(jedi_router.contract_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
-            let jedi_factory = IJediswapFactoryDispatcher {
-                contract_address: jedi_router.factory(),
-            };
-            let pair_address = jedi_factory.create_pair(counterparty_address, memecoin_address);
-
-            // Add liquidity - approve the entirety of the memecoin and counterparty token balances
-            // to supply as liquidity
-            let memecoin_balance = memecoin.balanceOf(memecoin_address);
-            let counterparty_token_balance = counterparty_token.balanceOf(memecoin_address);
-            memecoin_erc20
-                ._approve(memecoin_address, jedi_router.contract_address, memecoin_balance);
-            counterparty_token.approve(jedi_router.contract_address, counterparty_token_balance);
-
-            // As we're supplying the first liquidity for this pool,
-            // The expected minimum amounts for each tokens are the amounts we're supplying.
-            let (amount_memecoin, amount_eth, liquidity_received) = jedi_router
-                .add_liquidity(
-                    memecoin_address,
-                    counterparty_address,
-                    memecoin_balance,
-                    counterparty_token_balance,
-                    memecoin_balance,
-                    counterparty_token_balance,
-                    memecoin_address,
-                    deadline: get_block_timestamp()
-                );
-            assert(
-                memecoin.balanceOf(pair_address) == memecoin_balance, 'add liquidity meme failed'
+        // As we're supplying the first liquidity for this pool,
+        // The expected minimum amounts for each tokens are the amounts we're supplying.
+        let (amount_memecoin, amount_eth, liquidity_received) = jedi_router
+            .add_liquidity(
+                memecoin_address,
+                counterparty_address,
+                memecoin_balance,
+                additional_parameters.counterparty_amount,
+                memecoin_balance,
+                additional_parameters.counterparty_amount,
+                this, // receiver of LP tokens is the factory, that instantly locks them
+                deadline: get_block_timestamp()
             );
-            assert(
-                counterparty_token.balanceOf(pair_address) == counterparty_token_balance,
-                'add liq counterparty failed'
+        assert(memecoin.balanceOf(pair_address) == memecoin_balance, 'add liquidity meme failed');
+        assert(
+            counterparty_token.balanceOf(pair_address) == additional_parameters.counterparty_amount,
+            'add liq counterparty failed'
+        );
+        let pair = ERC20ABIDispatcher { contract_address: pair_address, };
+
+        assert(pair.balanceOf(this) == liquidity_received, 'wrong LP tkns amount');
+
+        // Lock LP tokens
+        let lock_manager = ILockManagerDispatcher {
+            contract_address: additional_parameters.lock_manager_address
+        };
+        pair.approve(additional_parameters.lock_manager_address, liquidity_received);
+        let locked_address = lock_manager
+            .lock_tokens(
+                token: pair_address,
+                amount: liquidity_received,
+                unlock_time: additional_parameters.unlock_time,
+                withdrawer: caller_address,
             );
-            let pair = ERC20ABIDispatcher { contract_address: pair_address, };
+        assert(pair.balanceOf(locked_address) == liquidity_received, 'lock failed');
 
-            assert(pair.balanceOf(memecoin_address) == liquidity_received, 'wrong LP tkns amount');
-
-            // Lock LP tokens
-            let lock_manager_address = memecoin.lock_manager_address();
-            let lock_manager = ILockManagerDispatcher { contract_address: lock_manager_address };
-            pair.approve(lock_manager_address, liquidity_received);
-            let locked_address = lock_manager
-                .lock_tokens(
-                    token: pair_address,
-                    amount: liquidity_received,
-                    :unlock_time,
-                    withdrawer: memecoin_ownable.owner(),
-                );
-            assert(pair.balanceOf(locked_address) == liquidity_received, 'lock failed');
-
-            pair.contract_address
-        }
+        pair.contract_address
     }
 }

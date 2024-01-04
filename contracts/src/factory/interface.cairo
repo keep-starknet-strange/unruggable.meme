@@ -61,4 +61,23 @@ trait IFactory<TContractState> {
     ///
     /// * `bool` - Returns true if the address is a memecoin, false otherwise.
     fn is_memecoin(self: @TContractState, address: ContractAddress) -> bool;
+
+    fn launch_on_jediswap(
+        ref self: TContractState,
+        memecoin_address: ContractAddress,
+        counterparty_address: ContractAddress,
+        counterparty_amount: u256,
+        lock_manager_address: ContractAddress,
+        unlock_time: u64,
+    ) -> ContractAddress;
+
+    fn launch_on_ekubo(
+        ref self: TContractState,
+        memecoin_address: ContractAddress,
+        counterparty_address: ContractAddress,
+        fee: u128,
+        tick_spacing: u128,
+        starting_tick: u128,
+        bound: u128
+    ) -> u64;
 }
