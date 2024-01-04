@@ -6,7 +6,9 @@ use ekubo::types::keys::PoolKey;
 use openzeppelin::token::erc20::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
 use snforge_std::{start_prank, stop_prank, CheatTarget};
 use unruggable::exchanges::SupportedExchanges;
-use unruggable::exchanges::ekubo::launchpad::{ILaunchpadDispatcher, ILaunchpadDispatcherTrait};
+use unruggable::exchanges::ekubo::launcher::{
+    IEkuboLauncherDispatcher, IEkuboLauncherDispatcherTrait
+};
 use unruggable::locker::LockPosition;
 use unruggable::locker::interface::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
 use unruggable::mocks::ekubo::swapper::{
@@ -14,7 +16,7 @@ use unruggable::mocks::ekubo::swapper::{
 };
 use unruggable::tests::addresses::{ETH_ADDRESS, EKUBO_CORE, TOKEN0_ADDRESS};
 use unruggable::tests::fork_tests::utils::{
-    deploy_memecoin_through_factory_with_owner, sort_tokens, LAUNCHPAD_ADDRESS,
+    deploy_memecoin_through_factory_with_owner, sort_tokens, EKUBO_LAUNCHER_ADDRESS,
     EKUBO_SWAPPER_ADDRESS, deploy_ekubo_swapper, deploy_token0_with_owner
 };
 use unruggable::tests::unit_tests::utils::{
@@ -30,8 +32,8 @@ fn test_ekubo_launch_meme_token0_and_swap() {
     let owner = snforge_std::test_address();
     let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
     let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
-    let launchpad_address = LAUNCHPAD_ADDRESS();
-    let ekubo_launchpad = ILaunchpadDispatcher { contract_address: launchpad_address };
+    let launchpad_address = EKUBO_LAUNCHER_ADDRESS();
+    let ekubo_launchpad = IEkuboLauncherDispatcher { contract_address: launchpad_address };
 
     let unlock_time = starknet::get_block_timestamp() + DEFAULT_MIN_LOCKTIME;
 
@@ -162,8 +164,8 @@ fn test_ekubo_launch_meme_token0_pool_1_percent() {
     let owner = snforge_std::test_address();
     let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
     let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
-    let launchpad_address = LAUNCHPAD_ADDRESS();
-    let ekubo_launchpad = ILaunchpadDispatcher { contract_address: launchpad_address };
+    let launchpad_address = EKUBO_LAUNCHER_ADDRESS();
+    let ekubo_launchpad = IEkuboLauncherDispatcher { contract_address: launchpad_address };
 
     let unlock_time = starknet::get_block_timestamp() + DEFAULT_MIN_LOCKTIME;
 
@@ -291,8 +293,8 @@ fn test_ekubo_launch_meme_token1_and_swap() {
     let owner = snforge_std::test_address();
     let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
     let (TOKEN0, _) = deploy_token0_with_owner(owner);
-    let launchpad_address = LAUNCHPAD_ADDRESS();
-    let ekubo_launchpad = ILaunchpadDispatcher { contract_address: launchpad_address };
+    let launchpad_address = EKUBO_LAUNCHER_ADDRESS();
+    let ekubo_launchpad = IEkuboLauncherDispatcher { contract_address: launchpad_address };
 
     let unlock_time = starknet::get_block_timestamp() + DEFAULT_MIN_LOCKTIME;
     // 0.3% fee, 0.6% tick spacing, starting tick is a price of 100 MEME / ETH

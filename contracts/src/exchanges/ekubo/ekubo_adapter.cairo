@@ -31,7 +31,9 @@ mod EkuboComponent {
     use starknet::{get_block_timestamp, ContractAddress};
     use super::EkuboLaunchParameters;
     use unruggable::errors;
-    use unruggable::exchanges::ekubo::launchpad::{ILaunchpadDispatcher, ILaunchpadDispatcherTrait,};
+    use unruggable::exchanges::ekubo::launcher::{
+        IEkuboLauncherDispatcher, IEkuboLauncherDispatcherTrait,
+    };
     use unruggable::locker::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
     use unruggable::tokens::interface::{
         IUnruggableAdditional, IUnruggableMemecoinCamel, IUnruggableMemecoinSnake
@@ -78,7 +80,7 @@ mod EkuboComponent {
             let this_address = starknet::get_contract_address();
             let caller_address = starknet::get_caller_address();
             let counterparty_token = ERC20ABIDispatcher { contract_address: counterparty_address, };
-            let ekubo_launchpad = ILaunchpadDispatcher { contract_address: exchange_address };
+            let ekubo_launchpad = IEkuboLauncherDispatcher { contract_address: exchange_address };
             assert(ekubo_launchpad.contract_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
 
             // Transfer the tokens to the launchpad contract.

@@ -20,12 +20,13 @@ fn sort_tokens(
 }
 
 #[starknet::interface]
-trait ILaunchpad<T> {
+trait IEkuboLauncher<T> {
     fn launch_token(ref self: T, params: EkuboLaunchParameters) -> u64;
+    fn withdraw_fees(ref self: T, recipient: ContractAddress);
 }
 
 #[starknet::contract]
-mod Launchpad {
+mod EkuboLauncher {
     use debug::PrintTrait;
     use ekubo::interfaces::core::{ICoreDispatcher, ICoreDispatcherTrait, ILocker};
     use ekubo::interfaces::core::{PoolKey};
@@ -35,12 +36,11 @@ mod Launchpad {
     use ekubo::types::{i129::i129};
     use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
     use starknet::{ContractAddress, ClassHash, get_contract_address, get_caller_address};
-    use super::{ILaunchpad, EkuboLaunchParameters, sort_tokens};
+    use super::{IEkuboLauncher, EkuboLaunchParameters, sort_tokens};
     use unruggable::exchanges::ekubo::interfaces::{
         ITokenRegistryDispatcher, IPositionsDispatcher, IPositionsDispatcherTrait,
         IOwnedNFTDispatcher, IOwnedNFTDispatcherTrait,
     };
-    use unruggable::exchanges::ekubo::owned_nft::{OwnedNFT};
     use unruggable::tokens::interface::{
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
@@ -51,8 +51,6 @@ mod Launchpad {
         core: ICoreDispatcher,
         registry: ITokenRegistryDispatcher,
         positions: IPositionsDispatcher,
-        nft: IOwnedNFTDispatcher,
-        token_class_hash: ClassHash,
     }
 
     #[derive(starknet::Event, Drop)]
@@ -91,37 +89,20 @@ mod Launchpad {
         core: ICoreDispatcher,
         registry: ITokenRegistryDispatcher,
         positions: IPositionsDispatcher,
-        nft_class_hash: ClassHash,
-        token_uri_base: felt252,
     ) {
         self.core.write(core);
         self.registry.write(registry);
         self.positions.write(positions);
-
-        self
-            .nft
-            .write(
-                OwnedNFT::deploy(
-                    nft_class_hash: nft_class_hash,
-                    controller: get_contract_address(),
-                    name: 'Unruggable Launchpad NFT',
-                    symbol: 'Unruggable EkuLaunch',
-                    token_uri_base: token_uri_base,
-                    salt: 0
-                )
-            );
     }
 
     #[external(v0)]
-    impl LaunchpadImpl of ILaunchpad<ContractState> {
+    impl EkuboLauncherImpl of IEkuboLauncher<ContractState> {
         fn launch_token(ref self: ContractState, params: EkuboLaunchParameters) -> u64 {
             let caller = get_caller_address();
 
-            let token_id = self.nft.read().mint(caller);
-
             // Call the core with a callback to deposit and mint the LP tokens.
-            call_core_with_callback::<
-                CallbackData, ()
+            let nft_id = call_core_with_callback::<
+                CallbackData, u64
             >(self.core.read(), @CallbackData::LaunchCallback(LaunchCallback { params }));
 
             // Clear remaining balances. This is done _after_ the callback by core,
@@ -129,9 +110,21 @@ mod Launchpad {
             self.clear(params.token_address);
             self.clear(params.counterparty_address);
 
-            self.emit(Launched { params, caller, token_id });
+            self.emit(Launched { params, caller, token_id: nft_id });
 
-            token_id
+            nft_id
+        }
+
+        fn withdraw_fees(ref self: ContractState, recipient: ContractAddress) {
+            //TODO
+            call_core_with_callback::<
+                CallbackData, u64
+            >(
+                self.core.read(),
+                @CallbackData::WithdrawFeesCallback(WithdrawFeesCallback { recipient })
+            );
+
+            panic_with_felt252('unimplemented')
         }
     }
 
@@ -167,8 +160,6 @@ mod Launchpad {
                     // If the price is expressed in token1/token0, the initial_tick must be positive.
                     // If the price is expressed in token0/token1, the initial_tick must be negative.
                     // The initial_tick is the lower bound if the counterparty is token1,
-                    // TODO: this only supports positive meme/counterparty ratios (negative eth/meme)
-                    // If the meme has higher value than counterparty it should be the opposite
                     let (initial_tick, lower_bound, upper_bound) = if is_token1_counterparty {
                         (
                             i129 { sign: true, mag: launch_params.starting_tick },
@@ -197,7 +188,6 @@ mod Launchpad {
                     // the lower bound is always the initial tick. The upper bound is the
                     // maximum tick for the given tick spacing as we want the LP provider to
                     // provide yield covering the entire upside.
-                    // Min liquidity enforced is the total supply minus the team allocation.
                     let (id, _) = positions
                         .mint_and_deposit(
                             pool_key,
@@ -207,7 +197,7 @@ mod Launchpad {
                 }
             }
 
-            Default::default() // no specific return data
+            array![id.into()]
         }
     }
 

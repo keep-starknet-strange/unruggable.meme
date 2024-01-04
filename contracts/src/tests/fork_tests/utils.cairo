@@ -21,7 +21,7 @@ use unruggable::tokens::interface::{
 };
 
 
-fn LAUNCHPAD_ADDRESS() -> ContractAddress {
+fn EKUBO_LAUNCHER_ADDRESS() -> ContractAddress {
     'ekubo_launchpad'.try_into().unwrap()
 }
 
@@ -49,17 +49,16 @@ fn deploy_token0() -> (ERC20ABIDispatcher, ContractAddress) {
 }
 
 
-fn deploy_ekubo_launchpad() -> ContractAddress {
-    let launchpad = declare('Launchpad');
+fn deploy_ekubo_launcher() -> ContractAddress {
+    let launchpad = declare('EkuboLauncher');
     let mut calldata = Default::default();
     Serde::serialize(@EKUBO_CORE(), ref calldata);
     Serde::serialize(@EKUBO_REGISTRY(), ref calldata);
     Serde::serialize(@EKUBO_POSITIONS(), ref calldata);
-    Serde::serialize(@EKUBO_NFT_CLASS_HASH(), ref calldata);
-    //TODO(ekubo): fix launchpad uri
-    Serde::serialize(@'launchpad-uri', ref calldata);
 
-    launchpad.deploy_at(@calldata, LAUNCHPAD_ADDRESS()).expect('Launchpad deployment failed')
+    launchpad
+        .deploy_at(@calldata, EKUBO_LAUNCHER_ADDRESS())
+        .expect('EkuboLauncher deployment failed')
 }
 
 fn deploy_ekubo_swapper() -> ContractAddress {
@@ -96,7 +95,7 @@ fn deploy_meme_factory_with_owner(
 fn deploy_memecoin_through_factory_with_owner(
     owner: ContractAddress
 ) -> (IUnruggableMemecoinDispatcher, ContractAddress) {
-    let ekubo_launchpad = deploy_ekubo_launchpad();
+    let ekubo_launchpad = deploy_ekubo_launcher();
     let supported_amms = array![
         (SupportedExchanges::Jediswap, JEDI_ROUTER_ADDRESS()),
         (SupportedExchanges::Ekubo, ekubo_launchpad)
