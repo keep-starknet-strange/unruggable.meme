@@ -1,17 +1,20 @@
 use core::traits::TryInto;
 use debug::PrintTrait;
 use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
-use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget, TxInfoMock};
+use snforge_std::{
+    declare, ContractClassTrait, start_prank, stop_prank, CheatTarget, TxInfoMock, get_class_hash,
+    ContractClass
+};
 use starknet::ContractAddress;
 use unruggable::exchanges::SupportedExchanges;
 use unruggable::factory::interface::{IFactoryDispatcher, IFactoryDispatcherTrait};
 use unruggable::tests::addresses::{
     JEDI_FACTORY_ADDRESS, JEDI_ROUTER_ADDRESS, EKUBO_CORE, EKUBO_POSITIONS, EKUBO_REGISTRY,
-    EKUBO_NFT_CLASS_HASH
+    EKUBO_NFT_CLASS_HASH, ETH_ADDRESS
 };
 use unruggable::tests::unit_tests::utils::{
     deploy_locker, deploy_eth_with_owner, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS,
-    INITIAL_HOLDERS_AMOUNTS, TRANSFER_LIMIT_DELAY, SALT, DefaultTxInfoMock, OWNER
+    INITIAL_HOLDERS_AMOUNTS, TRANSFER_LIMIT_DELAY, SALT, DefaultTxInfoMock, OWNER, TOKEN0_ADDRESS
 };
 use unruggable::tokens::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -24,6 +27,25 @@ fn LAUNCHPAD_ADDRESS() -> ContractAddress {
 
 fn EKUBO_SWAPPER_ADDRESS() -> ContractAddress {
     'ekubo_swapper'.try_into().unwrap()
+}
+
+
+// Counterparty token ensured to be token0
+
+fn deploy_token0_with_owner(owner: ContractAddress) -> (ERC20ABIDispatcher, ContractAddress) {
+    let token = ContractClass { class_hash: get_class_hash(ETH_ADDRESS()) };
+    let mut calldata = Default::default();
+    Serde::serialize(@DEFAULT_INITIAL_SUPPLY(), ref calldata);
+    Serde::serialize(@owner, ref calldata);
+
+    let address = token.deploy_at(@calldata, TOKEN0_ADDRESS()).unwrap();
+    let dispatcher = ERC20ABIDispatcher { contract_address: address, };
+    (dispatcher, address)
+}
+
+
+fn deploy_token0() -> (ERC20ABIDispatcher, ContractAddress) {
+    deploy_token0_with_owner(OWNER())
 }
 
 

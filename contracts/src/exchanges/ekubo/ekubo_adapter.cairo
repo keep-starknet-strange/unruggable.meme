@@ -36,13 +36,13 @@ mod EkuboComponent {
     use unruggable::tokens::interface::{
         IUnruggableAdditional, IUnruggableMemecoinCamel, IUnruggableMemecoinSnake
     };
+    use unruggable::utils::math::PercentageMath;
 
     #[storage]
     struct Storage {}
 
 
-    #[embeddable_as(EkuboAdapterImpl)]
-    impl EkuboAdapter<
+    impl EkuboAdapterImpl<
         TContractState,
         +HasComponent<TContractState>,
         // The contract embedding this componenet
@@ -83,21 +83,24 @@ mod EkuboComponent {
             assert(ekubo_launchpad.contract_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
 
             // Transfer the tokens to the launchpad contract.
-            let memecoin_balance = memecoin.balanceOf(this_address);
-            let counterparty_token_balance = counterparty_token.balanceOf(this_address);
-
             // Using internal transfer here as memecoin_erc20 is the component of THIS same contract
             // so the caller_address is not this_address - unlike counterparty_token which is an external call.
+            let memecoin_balance = memecoin.balance_of(this_address);
             memecoin_erc20
                 ._transfer(this_address, ekubo_launchpad.contract_address, memecoin_balance);
 
             let nft_id = ekubo_launchpad.launch_token(ekubo_launch_params);
             //TODO: handle the NFT representing the LP
 
-            // We make sure that no liquidity was returned to the depositor.
-            // Otherwise, the LP deposit parameters were wrong.
-            memecoin_erc20.balanceOf(this_address).print();
-            assert(memecoin_erc20.balanceOf(this_address) == 0, 'ekubo has returned memecoin');
+            // Ensure that the LPing operation has not returned more than 0.5% of the provided liquidity to the caller.
+            // Otherwise, there was an error in the LP parameters.
+            let total_supply = memecoin_erc20.total_supply();
+            let team_alloc = memecoin.get_team_allocation();
+            let max_returned_tokens = PercentageMath::percent_mul(total_supply - team_alloc, 9950);
+            assert(
+                memecoin_erc20.balanceOf(this_address) < max_returned_tokens,
+                'ekubo has returned tokens'
+            );
 
             // Any counterparty tokens that were deposited in this contract must be returned to the caller
             // as no counterparty is required to launch a memecoin with Ekubo.

@@ -192,24 +192,18 @@ mod Launchpad {
                             amount: launched_token.balanceOf(get_contract_address())
                         );
 
-                    let team_alloc = launched_token.get_team_allocation();
-                    let total_supply = launched_token.total_supply();
-
                     // The pool bounds must be set according to the tick spacing.
                     // As we always supply 1-sided liquidity,
                     // the lower bound is always the initial tick. The upper bound is the
                     // maximum tick for the given tick spacing as we want the LP provider to
                     // provide yield covering the entire upside.
                     // Min liquidity enforced is the total supply minus the team allocation.
-                    let (id, liq) = positions
+                    let (id, _) = positions
                         .mint_and_deposit(
                             pool_key,
                             bounds: Bounds { lower: lower_bound, upper: upper_bound, },
                             min_liquidity: 0
                         );
-                    liq.print();
-                    (total_supply - team_alloc).print();
-                    PercentageMath::percent_mul(total_supply - team_alloc, 9900).print();
                 }
             }
 

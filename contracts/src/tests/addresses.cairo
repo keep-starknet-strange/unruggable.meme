@@ -22,7 +22,7 @@ fn ETH_ADDRESS() -> ContractAddress {
 
 // A helper that returns a very small address, ensuring that this token is always token0 in a pair
 fn TOKEN0_ADDRESS() -> ContractAddress {
-    0x000000000000000000000000000000000000000000000000000000f9e004dc7.try_into().unwrap()
+    0x00000000000000000000000000000000000000000000000000000000000000A.try_into().unwrap()
 }
 
 fn EKUBO_CORE() -> ContractAddress {
