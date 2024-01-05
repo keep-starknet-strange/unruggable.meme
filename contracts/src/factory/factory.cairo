@@ -176,8 +176,8 @@ mod Factory {
             let launchpad_address = self.exchange_address(SupportedExchanges::Ekubo);
             assert(get_caller_address() == memecoin.owner(), errors::CALLER_NOT_OWNER);
             assert(launchpad_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
-            assert(!memecoin.is_launched(), 'memecoin already launched'); //TODO: error message
-            assert(starting_tick.mag != 0, 'starting tick cannot be 0'); //TODO: test
+            assert(!memecoin.is_launched(), errors::ALREADY_LAUNCHED); //TODO: error message
+            assert(starting_tick.mag.is_non_zero(), errors::PRICE_ZERO); //TODO: test
             let counterparty_token = ERC20ABIDispatcher { contract_address: counterparty_address };
             let caller_address = get_caller_address();
 

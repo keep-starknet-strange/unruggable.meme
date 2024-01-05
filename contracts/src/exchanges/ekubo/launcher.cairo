@@ -1,9 +1,11 @@
+use ekubo::types::bounds::Bounds;
 use ekubo::types::i129::i129;
+use ekubo::types::keys::PoolKey;
 use starknet::ContractAddress;
 use unruggable::exchanges::ekubo::ekubo_adapter::{EkuboLaunchParameters};
 use unruggable::utils::ContractAddressOrder;
 
-//! Temporary workaround to store bounds
+//! Temporary workaround to store bounds and pool keys
 #[derive(Copy, Drop, Serde, PartialEq, Hash, starknet::Store)]
 struct StorableBounds {
     lower: i129,
@@ -21,11 +23,19 @@ struct StorablePoolKey {
 }
 
 #[derive(Copy, Drop, Serde, starknet::Store)]
-struct EkuboLP {
+struct StorableEkuboLP {
     owner: ContractAddress,
     counterparty_address: ContractAddress,
     pool_key: StorablePoolKey,
     bounds: StorableBounds,
+}
+
+#[derive(Copy, Drop, Serde)]
+struct EkuboLP {
+    owner: ContractAddress,
+    counterparty_address: ContractAddress,
+    pool_key: PoolKey,
+    bounds: Bounds,
 }
 
 fn sort_tokens(
@@ -42,10 +52,13 @@ fn sort_tokens(
 trait IEkuboLauncher<T> {
     fn launch_token(ref self: T, params: EkuboLaunchParameters) -> (u64, EkuboLP);
     fn withdraw_fees(ref self: T, id: u64, recipient: ContractAddress) -> u256;
+    fn launched_tokens(ref self: T, owner: ContractAddress) -> Span<u64>;
+    fn liquidity_position_details(ref self: T, id: u64) -> EkuboLP;
 }
 
 #[starknet::contract]
 mod EkuboLauncher {
+    use alexandria_storage::list::{List, ListTrait};
     use debug::PrintTrait;
     use ekubo::interfaces::core::{ICoreDispatcher, ICoreDispatcherTrait, ILocker};
     use ekubo::interfaces::core::{PoolKey};
@@ -54,9 +67,10 @@ mod EkuboLauncher {
     use ekubo::types::bounds::{Bounds};
     use ekubo::types::{i129::i129};
     use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
+    use starknet::SyscallResultTrait;
     use starknet::{ContractAddress, ClassHash, get_contract_address, get_caller_address};
     use super::{IEkuboLauncher, EkuboLaunchParameters, sort_tokens};
-    use super::{StorableBounds, StorablePoolKey, EkuboLP};
+    use super::{StorableBounds, StorablePoolKey, StorableEkuboLP, EkuboLP};
     use unruggable::errors;
     use unruggable::exchanges::ekubo::interfaces::{
         ITokenRegistryDispatcher, IPositionsDispatcher, IPositionsDispatcherTrait,
@@ -74,8 +88,8 @@ mod EkuboLauncher {
         registry: ITokenRegistryDispatcher,
         positions: IPositionsDispatcher,
         factory: ContractAddress,
-        liquidity_positions: LegacyMap<u64, EkuboLP>,
-    // owner_to_positions: LegacyMap<ContractAddress, Array<u64>>, //TODO(fix)
+        liquidity_positions: LegacyMap<u64, StorableEkuboLP>,
+        owner_to_positions: LegacyMap<ContractAddress, List<u64>>
     }
 
     #[derive(starknet::Event, Drop)]
@@ -124,13 +138,37 @@ mod EkuboLauncher {
 
     #[external(v0)]
     impl EkuboLauncherImpl of IEkuboLauncher<ContractState> {
+        //TODO(ekubo): add support to transfer the ownership of the LP to collect fees.
         fn launch_token(ref self: ContractState, params: EkuboLaunchParameters) -> (u64, EkuboLP) {
             // Call the core with a callback to deposit and mint the LP tokens.
             let (id, position) = call_core_with_callback::<
                 CallbackData, (u64, EkuboLP)
             >(self.core.read(), @CallbackData::LaunchCallback(LaunchCallback { params }));
 
-            self.liquidity_positions.write(id, position);
+            self
+                .liquidity_positions
+                .write(
+                    id,
+                    StorableEkuboLP {
+                        owner: position.owner,
+                        counterparty_address: position.counterparty_address,
+                        pool_key: StorablePoolKey {
+                            token0: position.pool_key.token0,
+                            token1: position.pool_key.token1,
+                            fee: position.pool_key.fee,
+                            tick_spacing: position.pool_key.tick_spacing,
+                            extension: position.pool_key.extension,
+                        },
+                        bounds: StorableBounds {
+                            lower: position.bounds.lower, upper: position.bounds.upper
+                        }
+                    }
+                );
+
+            // Append the owner's position to storage. It can only be removed if the ownership
+            // is transfered.
+            let mut owner_positions = self.owner_to_positions.read(params.owner);
+            owner_positions.append(id);
 
             // Clear remaining balances. This is done _after_ the callback by core,
             // otherwise the caller in the context would be the core.
@@ -143,7 +181,21 @@ mod EkuboLauncher {
         }
 
         fn withdraw_fees(ref self: ContractState, id: u64, recipient: ContractAddress) -> u256 {
-            let liquidity_position = self.liquidity_positions.read(id);
+            let stored_position = self.liquidity_positions.read(id);
+            let liquidity_position = EkuboLP {
+                owner: stored_position.owner,
+                counterparty_address: stored_position.counterparty_address,
+                pool_key: PoolKey {
+                    token0: stored_position.pool_key.token0,
+                    token1: stored_position.pool_key.token1,
+                    fee: stored_position.pool_key.fee,
+                    tick_spacing: stored_position.pool_key.tick_spacing,
+                    extension: stored_position.pool_key.extension,
+                },
+                bounds: Bounds {
+                    lower: stored_position.bounds.lower, upper: stored_position.bounds.upper,
+                }
+            };
             //TODO: perhaps factory should handle this
             assert(liquidity_position.owner == get_caller_address(), errors::CALLER_NOT_OWNER);
             let (token0, token1) = call_core_with_callback::<
@@ -168,6 +220,28 @@ mod EkuboLauncher {
             };
 
             fee_collected
+        }
+
+        fn launched_tokens(ref self: ContractState, owner: ContractAddress) -> Span<u64> {
+            self.owner_to_positions.read(owner).array().unwrap_syscall().span()
+        }
+
+        fn liquidity_position_details(ref self: ContractState, id: u64) -> EkuboLP {
+            let storable_pos = self.liquidity_positions.read(id);
+            EkuboLP {
+                owner: storable_pos.owner,
+                counterparty_address: storable_pos.counterparty_address,
+                pool_key: PoolKey {
+                    token0: storable_pos.pool_key.token0,
+                    token1: storable_pos.pool_key.token1,
+                    fee: storable_pos.pool_key.fee,
+                    tick_spacing: storable_pos.pool_key.tick_spacing,
+                    extension: storable_pos.pool_key.extension,
+                },
+                bounds: Bounds {
+                    lower: storable_pos.bounds.lower, upper: storable_pos.bounds.upper,
+                }
+            }
         }
     }
 
@@ -273,14 +347,8 @@ mod EkuboLauncher {
                         @EkuboLP {
                             owner: launch_params.owner,
                             counterparty_address: launch_params.counterparty_address,
-                            pool_key: StorablePoolKey {
-                                token0: token0,
-                                token1: token1,
-                                fee: launch_params.fee,
-                                tick_spacing: launch_params.tick_spacing,
-                                extension: 0.try_into().unwrap(),
-                            },
-                            bounds: StorableBounds { lower: bounds.lower, upper: bounds.upper, },
+                            pool_key,
+                            bounds
                         },
                         ref return_data
                     );

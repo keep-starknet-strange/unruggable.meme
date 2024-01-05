@@ -1,16 +1,20 @@
 use core::traits::TryInto;
 use debug::PrintTrait;
 use ekubo::interfaces::core::{ICoreDispatcher, ICoreDispatcherTrait};
+use ekubo::types::bounds::Bounds;
 use ekubo::types::i129::i129;
 use ekubo::types::keys::PoolKey;
 use openzeppelin::token::erc20::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
-use snforge_std::{start_prank, stop_prank, CheatTarget};
+use snforge_std::{
+    start_prank, stop_prank, spy_events, SpyOn, EventSpy, EventAssertions, CheatTarget
+};
 use starknet::ContractAddress;
 use unruggable::exchanges::SupportedExchanges;
 use unruggable::exchanges::ekubo::launcher::{
     IEkuboLauncherDispatcher, IEkuboLauncherDispatcherTrait, EkuboLP
 };
 use unruggable::factory::interface::{IFactoryDispatcher, IFactoryDispatcherTrait};
+use unruggable::factory::{Factory};
 use unruggable::locker::LockPosition;
 use unruggable::locker::interface::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
 use unruggable::mocks::ekubo::swapper::{
@@ -51,6 +55,7 @@ fn launch_memecoin_on_ekubo(
 
 fn swap_tokens_on_ekubo(
     token_in_address: ContractAddress,
+    amount_in: u256,
     is_token1: bool,
     price_above_1: bool,
     token_out_address: ContractAddress,
@@ -77,7 +82,7 @@ fn swap_tokens_on_ekubo(
     // since the pool price is expressend in counterparty/MEME, the price should move upwards (more counterparty for 1 meme)
     let swapper_address = deploy_ekubo_swapper();
     let ekubo_swapper = ISimpleSwapperDispatcher { contract_address: swapper_address };
-    let first_amount_in = 2 * pow_256(10, 16); // The initial price was fixed
+    let first_amount_in = amount_in;
     let swap_params = SwapParameters {
         amount: i129 { mag: first_amount_in.low, sign: false // positive sign is exact input
          },
@@ -149,9 +154,10 @@ fn test_launch_meme() {
     let owner = snforge_std::test_address();
     let (counterparty, counterparty_address) = deploy_eth_with_owner(owner);
     let starting_tick = i129 { sign: true, mag: 4600158 }; // 0.01ETH/MEME
+    let mut spy = spy_events(SpyOn::One(MEMEFACTORY_ADDRESS()));
     let (memecoin_address, id, position) = launch_memecoin_on_ekubo(
         counterparty_address, 0xc49ba5e353f7d00000000000000000, 5982, starting_tick, 88719042
-    );
+    ); // 0.3/0.6%
     let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
 
     let (token0, token1) = sort_tokens(counterparty_address, memecoin_address);
@@ -171,12 +177,44 @@ fn test_launch_meme() {
     assert(reserve_counterparty == 0, 'reserve counterparty not 0');
 
     // Verify that the reserve of memecoin is within 0.5% of the (total supply minus the team allocation)
+    // When providing liquidity, if the liquidity provided doesn't exactly match the repartition between
+    // bounds, a very small amount is returned.
     let team_alloc = memecoin.get_team_allocation();
     let expected_reserve_lower_bound = PercentageMath::percent_mul(
         memecoin.totalSupply() - team_alloc, 9950,
     );
     assert(reserve_memecoin > expected_reserve_lower_bound, 'reserves holds too few token');
-//TODO: check token info of minted LP
+
+    // Check LP position tracked
+    let ekubo_launcher = IEkuboLauncherDispatcher { contract_address: EKUBO_LAUNCHER_ADDRESS() };
+    let lp_positions = ekubo_launcher.launched_tokens(owner);
+    assert(lp_positions.len() == 1, 'should have 1 LP position');
+    let lp_details = ekubo_launcher.liquidity_position_details(*lp_positions[0]);
+    assert(lp_details.owner == owner, 'wrong owner');
+    assert(lp_details.counterparty_address == counterparty_address, 'wrong counterparty');
+    assert(lp_details.pool_key == pool_key, 'wrong pool key');
+    assert(
+        lp_details
+            .bounds == Bounds { lower: starting_tick, upper: i129 { sign: false, mag: 88719042 } },
+        'wrong bounds '
+    );
+
+    // Check events
+    spy
+        .assert_emitted(
+            @array![
+                (
+                    MEMEFACTORY_ADDRESS(),
+                    Factory::Event::MemecoinLaunched(
+                        Factory::MemecoinLaunched {
+                            memecoin_address,
+                            counterparty_token: counterparty_address,
+                            exchange_name: 'Ekubo'
+                        }
+                    )
+                )
+            ]
+        );
 }
 
 
@@ -192,7 +230,6 @@ fn test_swap_token0_price_below_1() {
     let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
     let counterparty = ERC20ABIDispatcher { contract_address: counterparty_address };
     let ekubo_launcher = IEkuboLauncherDispatcher { contract_address: EKUBO_LAUNCHER_ADDRESS() };
-    // Test that swaps work correctly
 
     let (token0, token1) = sort_tokens(counterparty_address, memecoin_address);
     let pool_key = PoolKey {
@@ -204,8 +241,10 @@ fn test_swap_token0_price_below_1() {
     };
     // Check that swaps work correctly
 
+    let amount_in = 2 * pow_256(10, 16);
     swap_tokens_on_ekubo(
         token_in_address: counterparty_address,
+        :amount_in,
         is_token1: true,
         price_above_1: false,
         token_out_address: memecoin_address,
@@ -219,9 +258,8 @@ fn test_swap_token0_price_below_1() {
     let balance_of_memecoin = memecoin.balance_of(recipient);
     let balance_of_counterparty = counterparty.balance_of(recipient);
     assert(balance_of_memecoin == 0, 'memecoin shouldnt collect fees');
-    //TODO amount in dynamic
     assert(
-        balance_of_counterparty == PercentageMath::percent_mul(2 * pow_256(10, 16), 0030),
+        balance_of_counterparty == PercentageMath::percent_mul(amount_in, 0030),
         'should collect 0.3% of eth'
     );
 }
@@ -266,8 +304,10 @@ fn test_launch_meme_token1_price_below_1() {
     );
     assert(reserve_memecoin > expected_reserve_lower_bound, 'reserves holds too few token');
 
+    let amount_in = 2 * pow_256(10, 16);
     swap_tokens_on_ekubo(
         token_in_address: counterparty_address,
+        :amount_in,
         is_token1: false,
         price_above_1: false,
         token_out_address: memecoin_address,
@@ -281,9 +321,8 @@ fn test_launch_meme_token1_price_below_1() {
     let balance_of_memecoin = memecoin.balance_of(recipient);
     let balance_of_counterparty = counterparty.balance_of(recipient);
     assert(balance_of_memecoin == 0, 'memecoin shouldnt collect fees');
-    //TODO amount in dynamic
     assert(
-        balance_of_counterparty == PercentageMath::percent_mul(2 * pow_256(10, 16), 0030),
+        balance_of_counterparty == PercentageMath::percent_mul(amount_in, 0030),
         'should collect 0.3% of eth'
     );
 }
@@ -328,10 +367,10 @@ fn test_launch_meme_token0_price_above_1() {
     );
     assert(reserve_memecoin > expected_reserve_lower_bound, 'reserves holds too few token');
 
-    // // Check that swaps work correctly
-
+    let amount_in = 2 * pow_256(10, 16);
     swap_tokens_on_ekubo(
         token_in_address: counterparty_address,
+        :amount_in,
         is_token1: true,
         price_above_1: true,
         token_out_address: memecoin_address,
@@ -345,9 +384,8 @@ fn test_launch_meme_token0_price_above_1() {
     let balance_of_memecoin = memecoin.balance_of(recipient);
     let balance_of_counterparty = counterparty.balance_of(recipient);
     assert(balance_of_memecoin == 0, 'memecoin shouldnt collect fees');
-    //TODO amount in dynamic
     assert(
-        balance_of_counterparty == PercentageMath::percent_mul(2 * pow_256(10, 16), 0030),
+        balance_of_counterparty == PercentageMath::percent_mul(amount_in, 0030),
         'should collect 0.3% of eth'
     );
 }
@@ -397,8 +435,10 @@ fn test_launch_meme_token1_price_above_1() {
 
     // Check that swaps work correctly
 
+    let amount_in = 2 * pow_256(10, 16);
     swap_tokens_on_ekubo(
         token_in_address: counterparty_address,
+        :amount_in,
         is_token1: false,
         price_above_1: true,
         token_out_address: memecoin_address,
@@ -412,9 +452,8 @@ fn test_launch_meme_token1_price_above_1() {
     let balance_of_memecoin = memecoin.balance_of(recipient);
     let balance_of_counterparty = counterparty.balance_of(recipient);
     assert(balance_of_memecoin == 0, 'memecoin shouldnt collect fees');
-    //TODO amount in dynamic
     assert(
-        balance_of_counterparty == PercentageMath::percent_mul(2 * pow_256(10, 16), 0030),
+        balance_of_counterparty == PercentageMath::percent_mul(amount_in, 0030),
         'should collect 0.3% of eth'
     );
 }
@@ -455,7 +494,7 @@ fn test_launch_meme_with_pool_1percent() {
 
 #[test]
 #[fork("Mainnet")]
-#[should_panic(expected: ('Caller is not owner',))]
+#[should_panic(expected: ('Caller is not the owner',))]
 fn test_not_owner_cant_withdraw_fees() {
     let owner = snforge_std::test_address();
     let (counterparty, counterparty_address) = deploy_eth_with_owner(owner);
@@ -470,6 +509,44 @@ fn test_not_owner_cant_withdraw_fees() {
     start_prank(CheatTarget::One(ekubo_launcher.contract_address), caller);
     ekubo_launcher.withdraw_fees(id, recipient);
     stop_prank(CheatTarget::One(ekubo_launcher.contract_address));
+}
+
+#[test]
+#[fork("Mainnet")]
+#[should_panic(expected: ('Starting tick cannot be 0',))]
+fn test_cant_launch_with_0_starting_tick() {
+    let owner = snforge_std::test_address();
+    let (counterparty, counterparty_address) = deploy_eth_with_owner(owner);
+    let starting_tick = i129 { sign: true, mag: 0 }; // 0.0ETH/MEME
+    let (memecoin_address, id, position) = launch_memecoin_on_ekubo(
+        counterparty_address, 0xc49ba5e353f7d00000000000000000, 5982, starting_tick, 88719042
+    );
+}
+
+#[test]
+#[fork("Mainnet")]
+#[should_panic(expected: ('Caller is not the owner',))]
+fn test_cant_launch_twice() {
+    let owner = snforge_std::test_address();
+    let (counterparty, counterparty_address) = deploy_eth_with_owner(owner);
+    let starting_tick = i129 { sign: true, mag: 4600158 }; // 0.01ETH/MEME
+    let (memecoin_address, id, position) = launch_memecoin_on_ekubo(
+        counterparty_address, 0xc49ba5e353f7d00000000000000000, 5982, starting_tick, 88719042
+    );
+
+    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
+    let ekubo_launcher = IEkuboLauncherDispatcher { contract_address: EKUBO_LAUNCHER_ADDRESS() };
+    start_prank(CheatTarget::One(factory.contract_address), owner);
+    // This will fail as the ownership of the memecoin has been renounced.
+    let (id, position) = factory
+        .launch_on_ekubo(
+            memecoin_address,
+            counterparty_address,
+            0xc49ba5e353f7d00000000000000000,
+            5982,
+            starting_tick,
+            88719042
+        );
 }
 //TODO! As there are no unit ekubo tests, we need to deeply test the whole flow of interaction with ekubo - including 
 //TODO! launching with wrong parameters, as the frontend data cant be trusted
