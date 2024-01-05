@@ -82,7 +82,6 @@ fn test_create_memecoin() {
             initial_holders: INITIAL_HOLDERS(),
             initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
             transfer_limit_delay: 1000,
-            counterparty_token: eth,
             contract_address_salt: SALT(),
         );
     stop_prank(CheatTarget::One(memecoin_factory.contract_address));

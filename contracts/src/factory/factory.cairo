@@ -5,6 +5,7 @@ use starknet::ContractAddress;
 mod Factory {
     use core::box::BoxTrait;
     use core::starknet::event::EventEmitter;
+    use core::zeroable::Zeroable;
     use ekubo::types::i129::i129;
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait;
@@ -20,7 +21,7 @@ mod Factory {
     use unruggable::errors;
     use unruggable::exchanges::{
         SupportedExchanges, ekubo_adapter, ekubo_adapter::EkuboAdditionalParameters,
-        jediswap_adapter, jediswap_adapter::JediswapAdditionalParameters
+        jediswap_adapter, jediswap_adapter::JediswapAdditionalParameters, ekubo::launcher::EkuboLP
     };
     use unruggable::factory::IFactory;
     use unruggable::tokens::UnruggableMemecoin::LiquidityPosition;
@@ -101,7 +102,6 @@ mod Factory {
             initial_holders: Span<ContractAddress>,
             initial_holders_amounts: Span<u256>,
             transfer_limit_delay: u64,
-            counterparty_token: ERC20ABIDispatcher,
             contract_address_salt: felt252,
         ) -> ContractAddress {
             let mut calldata = array![
@@ -171,27 +171,28 @@ mod Factory {
             tick_spacing: u128,
             starting_tick: i129,
             bound: u128
-        ) -> u64 {
+        ) -> (u64, EkuboLP) {
             let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
+            let launchpad_address = self.exchange_address(SupportedExchanges::Ekubo);
             assert(get_caller_address() == memecoin.owner(), errors::CALLER_NOT_OWNER);
+            assert(launchpad_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
             assert(!memecoin.is_launched(), 'memecoin already launched'); //TODO: error message
             assert(starting_tick.mag != 0, 'starting tick cannot be 0'); //TODO: test
             let counterparty_token = ERC20ABIDispatcher { contract_address: counterparty_address };
             let caller_address = get_caller_address();
-            let launchpad_address = self.exchange_address(SupportedExchanges::Ekubo);
 
             let ekubo_parameters = EkuboAdditionalParameters {
                 fee, tick_spacing, starting_tick, bound,
             };
 
-            let mut nft_id = ekubo_adapter::EkuboAdapterImpl::create_and_add_liquidity(
+            let (id, position) = ekubo_adapter::EkuboAdapterImpl::create_and_add_liquidity(
                 exchange_address: launchpad_address,
                 token_address: memecoin_address,
                 counterparty_address: counterparty_address,
                 additional_parameters: ekubo_parameters
             );
 
-            memecoin.set_launched(LiquidityPosition::NFT(nft_id));
+            memecoin.set_launched(LiquidityPosition::NFT(id));
             self
                 .emit(
                     MemecoinLaunched {
@@ -200,7 +201,7 @@ mod Factory {
                         exchange_name: 'Ekubo'
                     }
                 );
-            nft_id
+            (id, position)
         }
 
         fn lock_manager_address(self: @ContractState) -> ContractAddress {

@@ -34,7 +34,7 @@ fn EKUBO_SWAPPER_ADDRESS() -> ContractAddress {
 // Counterparty token ensured to be token0
 
 fn deploy_token0_with_owner(owner: ContractAddress) -> (ERC20ABIDispatcher, ContractAddress) {
-    let token = ContractClass { class_hash: get_class_hash(ETH_ADDRESS()) };
+    let token = declare('ERC20Token');
     let mut calldata = Default::default();
     Serde::serialize(@DEFAULT_INITIAL_SUPPLY(), ref calldata);
     Serde::serialize(@owner, ref calldata);
@@ -51,13 +51,13 @@ fn deploy_token0() -> (ERC20ABIDispatcher, ContractAddress) {
 
 
 fn deploy_ekubo_launcher() -> ContractAddress {
-    let launchpad = declare('EkuboLauncher');
+    let launcher = declare('EkuboLauncher');
     let mut calldata = Default::default();
     Serde::serialize(@EKUBO_CORE(), ref calldata);
     Serde::serialize(@EKUBO_REGISTRY(), ref calldata);
     Serde::serialize(@EKUBO_POSITIONS(), ref calldata);
 
-    launchpad
+    launcher
         .deploy_at(@calldata, EKUBO_LAUNCHER_ADDRESS())
         .expect('EkuboLauncher deployment failed')
 }
@@ -106,8 +106,6 @@ fn deploy_memecoin_through_factory_with_owner(
         .span();
     let memecoin_factory_address = deploy_meme_factory(supported_amms);
     let memecoin_factory = IFactoryDispatcher { contract_address: memecoin_factory_address };
-    // We have to deploy our own "ETH" as we cannot modify the balances of the real ETH.
-    let (eth, eth_address) = deploy_eth_with_owner(owner);
 
     start_prank(CheatTarget::One(memecoin_factory.contract_address), owner);
     let memecoin_address = memecoin_factory
@@ -119,7 +117,6 @@ fn deploy_memecoin_through_factory_with_owner(
             initial_holders: INITIAL_HOLDERS(),
             initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
             transfer_limit_delay: TRANSFER_LIMIT_DELAY,
-            counterparty_token: eth,
             contract_address_salt: SALT(),
         );
     stop_prank(CheatTarget::One(memecoin_factory.contract_address));

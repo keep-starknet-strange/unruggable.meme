@@ -2,6 +2,7 @@ use ekubo::types::i129::i129;
 use openzeppelin::token::erc20::ERC20ABIDispatcher;
 use starknet::ContractAddress;
 use unruggable::exchanges::SupportedExchanges;
+use unruggable::exchanges::ekubo::launcher::EkuboLP;
 
 #[starknet::interface]
 trait IFactory<TContractState> {
@@ -32,7 +33,6 @@ trait IFactory<TContractState> {
         initial_holders: Span<ContractAddress>,
         initial_holders_amounts: Span<u256>,
         transfer_limit_delay: u64,
-        counterparty_token: ERC20ABIDispatcher,
         contract_address_salt: felt252
     ) -> ContractAddress;
 
@@ -101,7 +101,7 @@ trait IFactory<TContractState> {
         tick_spacing: u128,
         starting_tick: i129,
         bound: u128
-    ) -> u64;
+    ) -> (u64, EkuboLP);
 
     /// Returns the router address for a given Exchange, provided that this Exchange
     /// was registered in the factory upon initialization.

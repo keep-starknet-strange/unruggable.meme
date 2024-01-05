@@ -9,7 +9,7 @@ use openzeppelin::token::erc20::interface::{
 use starknet::{get_contract_address, ContractAddress, ClassHash};
 use unruggable::errors;
 use unruggable::exchanges::ekubo::launcher::{
-    IEkuboLauncherDispatcher, IEkuboLauncherDispatcherTrait,
+    IEkuboLauncherDispatcher, IEkuboLauncherDispatcherTrait, EkuboLP
 };
 use unruggable::tokens::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait,
@@ -19,6 +19,7 @@ use unruggable::utils::math::PercentageMath;
 
 #[derive(Copy, Drop, Serde)]
 struct EkuboLaunchParameters {
+    owner: ContractAddress,
     token_address: ContractAddress,
     counterparty_address: ContractAddress,
     fee: u128,
@@ -29,6 +30,7 @@ struct EkuboLaunchParameters {
     bound: u128,
 }
 
+#[derive(Drop)]
 struct EkuboAdditionalParameters {
     fee: u128,
     tick_spacing: u128,
@@ -38,14 +40,17 @@ struct EkuboAdditionalParameters {
     bound: u128,
 }
 
-impl EkuboAdapterImpl of unruggable::exchanges::IAmmAdapter<EkuboAdditionalParameters, u64> {
+impl EkuboAdapterImpl of unruggable::exchanges::IAmmAdapter<
+    EkuboAdditionalParameters, (u64, EkuboLP)
+> {
     fn create_and_add_liquidity(
         exchange_address: ContractAddress,
         token_address: ContractAddress,
         counterparty_address: ContractAddress,
         additional_parameters: EkuboAdditionalParameters,
-    ) -> u64 {
+    ) -> (u64, EkuboLP) {
         let ekubo_launch_params = EkuboLaunchParameters {
+            owner: starknet::get_caller_address(),
             token_address: token_address,
             counterparty_address: counterparty_address,
             fee: additional_parameters.fee,
@@ -67,7 +72,7 @@ impl EkuboAdapterImpl of unruggable::exchanges::IAmmAdapter<EkuboAdditionalParam
         let memecoin_balance = memecoin.balance_of(this);
         memecoin.transfer(ekubo_launchpad.contract_address, memecoin_balance);
 
-        let nft_id = ekubo_launchpad.launch_token(ekubo_launch_params);
+        let (id, position) = ekubo_launchpad.launch_token(ekubo_launch_params);
         //TODO: handle the NFT representing the LP
 
         // Ensure that the LPing operation has not returned more than 0.5% of the provided liquidity to the caller.
@@ -83,7 +88,7 @@ impl EkuboAdapterImpl of unruggable::exchanges::IAmmAdapter<EkuboAdditionalParam
         assert(counterparty_token.balanceOf(this) == 0, 'counterparty leftovers');
 
         //TODO: lock tokens
-        nft_id
+        (id, position)
     }
 }
 
