@@ -1,28 +1,21 @@
 use starknet::ContractAddress;
 use unruggable::exchanges::ekubo::ekubo_adapter::EkuboLaunchParameters;
+use unruggable::utils::ContractAddressOrder;
 
 fn sort_tokens(
     tokenA: ContractAddress, tokenB: ContractAddress
 ) -> (ContractAddress, ContractAddress) {
-    let tokenA: felt252 = tokenA.into();
-    let tokenB: felt252 = tokenB.into();
-    let tokenA: u256 = tokenA.into();
-    let tokenB: u256 = tokenB.into();
     if tokenA < tokenB {
-        let token0: felt252 = tokenA.try_into().unwrap();
-        let token1: felt252 = tokenB.try_into().unwrap();
-        (token0.try_into().unwrap(), token1.try_into().unwrap())
+        (tokenA, tokenB)
     } else {
-        let token0: felt252 = tokenB.try_into().unwrap();
-        let token1: felt252 = tokenA.try_into().unwrap();
-        (token0.try_into().unwrap(), token1.try_into().unwrap())
+        (tokenB, tokenA)
     }
 }
 
 #[starknet::interface]
 trait IEkuboLauncher<T> {
     fn launch_token(ref self: T, params: EkuboLaunchParameters) -> u64;
-    fn withdraw_fees(ref self: T, recipient: ContractAddress);
+    fn withdraw_fees(ref self: T, recipient: ContractAddress); //TODO(ekubo)
 }
 
 #[starknet::contract]
@@ -106,7 +99,7 @@ mod EkuboLauncher {
             >(self.core.read(), @CallbackData::LaunchCallback(LaunchCallback { params }));
 
             // Clear remaining balances. This is done _after_ the callback by core,
-            // otherwise the caller in the context is not right
+            // otherwise the caller in the context would be the core.
             self.clear(params.token_address);
             self.clear(params.counterparty_address);
 
@@ -156,21 +149,34 @@ mod EkuboLauncher {
 
                     let is_token1_counterparty = launch_params.counterparty_address == token1;
 
-                    // The initial_tick must correspond to the wanted initial price.
-                    // If the price is expressed in token1/token0, the initial_tick must be positive.
-                    // If the price is expressed in token0/token1, the initial_tick must be negative.
-                    // The initial_tick is the lower bound if the counterparty is token1,
+                    // The initial_tick must correspond to the wanted initial price in counterparty/MEME
+                    // The ekubo prices are always in TOKEN1/TOKEN0.
+                    // The initial_tick is the lower bound if the counterparty is token1, the upper bound otherwise.
                     let (initial_tick, lower_bound, upper_bound) = if is_token1_counterparty {
                         (
-                            i129 { sign: true, mag: launch_params.starting_tick },
-                            i129 { sign: true, mag: launch_params.starting_tick },
+                            i129 {
+                                sign: launch_params.starting_tick.sign,
+                                mag: launch_params.starting_tick.mag
+                            },
+                            i129 {
+                                sign: launch_params.starting_tick.sign,
+                                mag: launch_params.starting_tick.mag
+                            },
                             i129 { sign: false, mag: launch_params.bound },
                         )
                     } else {
+                        // The initial tick sign is reversed if the counterparty is token0.
+                        // as the price provided was expressed in token1/token0.
                         (
-                            i129 { sign: false, mag: launch_params.starting_tick },
+                            i129 {
+                                sign: !launch_params.starting_tick.sign,
+                                mag: launch_params.starting_tick.mag
+                            },
                             i129 { sign: true, mag: launch_params.bound },
-                            i129 { sign: false, mag: launch_params.starting_tick },
+                            i129 {
+                                sign: !launch_params.starting_tick.sign,
+                                mag: launch_params.starting_tick.mag
+                            },
                         )
                     };
 
@@ -184,10 +190,8 @@ mod EkuboLauncher {
                         );
 
                     // The pool bounds must be set according to the tick spacing.
-                    // As we always supply 1-sided liquidity,
-                    // the lower bound is always the initial tick. The upper bound is the
-                    // maximum tick for the given tick spacing as we want the LP provider to
-                    // provide yield covering the entire upside.
+                    // The bounds were previously computed to provide yield covering the entire interval
+                    // [lower_bound, starting_tick]  or [starting_tick, upper_bound] depending on the counterparty.
                     let (id, _) = positions
                         .mint_and_deposit(
                             pool_key,

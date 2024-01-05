@@ -5,6 +5,7 @@ use starknet::ContractAddress;
 mod Factory {
     use core::box::BoxTrait;
     use core::starknet::event::EventEmitter;
+    use ekubo::types::i129::i129;
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait;
     use openzeppelin::token::erc20::interface::{
@@ -168,12 +169,13 @@ mod Factory {
             counterparty_address: ContractAddress,
             fee: u128,
             tick_spacing: u128,
-            starting_tick: u128,
+            starting_tick: i129,
             bound: u128
         ) -> u64 {
             let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
             assert(get_caller_address() == memecoin.owner(), errors::CALLER_NOT_OWNER);
-            assert(!memecoin.is_launched(), 'memecoin already launched');
+            assert(!memecoin.is_launched(), 'memecoin already launched'); //TODO: error message
+            assert(starting_tick.mag != 0, 'starting tick cannot be 0'); //TODO: test
             let counterparty_token = ERC20ABIDispatcher { contract_address: counterparty_address };
             let caller_address = get_caller_address();
             let launchpad_address = self.exchange_address(SupportedExchanges::Ekubo);

@@ -1,3 +1,4 @@
+use ekubo::types::i129::i129;
 use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
 use snforge_std::{
     declare, ContractClassTrait, start_prank, stop_prank, CheatTarget, start_warp, stop_warp
@@ -200,5 +201,8 @@ fn test_launch_memecoin_amm_not_whitelisted() {
     let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
     let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
 
-    let pool_address = factory.launch_on_ekubo(memecoin_address, eth.contract_address, 0, 0, 0, 0);
+    let pool_address = factory
+        .launch_on_ekubo(
+            memecoin_address, eth.contract_address, 0, 0, i129 { sign: false, mag: 0 }, 0
+        );
 }

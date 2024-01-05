@@ -7,9 +7,7 @@ mod locker;
 mod tests;
 mod tokens;
 
-mod utils {
-    mod math;
-}
+mod utils;
 
 mod mocks {
     mod erc20;

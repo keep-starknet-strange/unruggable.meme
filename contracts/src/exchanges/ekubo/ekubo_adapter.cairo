@@ -2,6 +2,7 @@ use array::ArrayTrait;
 use core::option::OptionTrait;
 use core::traits::TryInto;
 use debug::PrintTrait;
+use ekubo::types::i129::i129;
 use openzeppelin::token::erc20::interface::{
     IERC20, IERC20Metadata, ERC20ABIDispatcher, ERC20ABIDispatcherTrait
 };
@@ -22,17 +23,17 @@ struct EkuboLaunchParameters {
     counterparty_address: ContractAddress,
     fee: u128,
     tick_spacing: u128,
-    // the sign of the starting tick and the boudns is determined by the address of the deployed token contract
-    starting_tick: u128,
-    // The LP providing bound, upper/lower determined by the address of the LPed tokens
+    // the sign of the starting tick is positive (false) if ETH/MEME < 1 and negative (true) otherwise
+    starting_tick: i129,
+    // The LP providing bound. The sign will be determined by the address of the LPed tokens and the starting tick
     bound: u128,
 }
 
 struct EkuboAdditionalParameters {
     fee: u128,
     tick_spacing: u128,
-    // the sign of the starting tick and the boudns is determined by the address of the deployed token contract
-    starting_tick: u128,
+    // the sign of the starting tick is positive (false) if ETH/MEME < 1 and negative (true) otherwise
+    starting_tick: i129,
     // The LP providing bound, upper/lower determined by the address of the LPed tokens
     bound: u128,
 }

@@ -1,3 +1,4 @@
+use ekubo::types::i129::i129;
 use openzeppelin::token::erc20::ERC20ABIDispatcher;
 use starknet::ContractAddress;
 use unruggable::exchanges::SupportedExchanges;
@@ -98,7 +99,7 @@ trait IFactory<TContractState> {
         counterparty_address: ContractAddress,
         fee: u128,
         tick_spacing: u128,
-        starting_tick: u128,
+        starting_tick: i129,
         bound: u128
     ) -> u64;
 
