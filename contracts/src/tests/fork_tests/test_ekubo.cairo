@@ -145,7 +145,7 @@ fn swap_tokens_on_ekubo(
 
 #[test]
 #[fork("Mainnet")]
-fn test_ekubo_launch_meme() {
+fn test_launch_meme() {
     let owner = snforge_std::test_address();
     let (counterparty, counterparty_address) = deploy_eth_with_owner(owner);
     let starting_tick = i129 { sign: true, mag: 4600158 }; // 0.01ETH/MEME
@@ -182,7 +182,7 @@ fn test_ekubo_launch_meme() {
 
 #[test]
 #[fork("Mainnet")]
-fn test_ekubo_swap_token0_price_below_1() {
+fn test_swap_token0_price_below_1() {
     let owner = snforge_std::test_address();
     let (counterparty, counterparty_address) = deploy_eth_with_owner(owner);
     let starting_tick = i129 { sign: true, mag: 4600158 }; // 0.01ETH/MEME
@@ -228,7 +228,7 @@ fn test_ekubo_swap_token0_price_below_1() {
 
 #[test]
 #[fork("Mainnet")]
-fn test_ekubo_launch_meme_token1_price_below_1() {
+fn test_launch_meme_token1_price_below_1() {
     let owner = snforge_std::test_address();
     let (counterparty, counterparty_address) = deploy_token0_with_owner(owner);
     let starting_tick = i129 { sign: true, mag: 4600158 }; // 0.01ETH/MEME
@@ -291,7 +291,7 @@ fn test_ekubo_launch_meme_token1_price_below_1() {
 
 #[test]
 #[fork("Mainnet")]
-fn test_ekubo_launch_meme_token0_price_above_1() {
+fn test_launch_meme_token0_price_above_1() {
     let owner = snforge_std::test_address();
     let (counterparty, counterparty_address) = deploy_eth_with_owner(owner);
     let starting_tick = i129 { sign: false, mag: 4600158 }; // 100counterparty/MEME
@@ -305,7 +305,6 @@ fn test_ekubo_launch_meme_token0_price_above_1() {
     // Test that swaps work correctly
 
     let (token0, token1) = sort_tokens(counterparty.contract_address, memecoin_address);
-    // hardcoded
 
     let pool_key = PoolKey {
         token0: position.pool_key.token0,
@@ -356,7 +355,7 @@ fn test_ekubo_launch_meme_token0_price_above_1() {
 
 #[test]
 #[fork("Mainnet")]
-fn test_ekubo_launch_meme_token1_price_above_1() {
+fn test_launch_meme_token1_price_above_1() {
     let owner = snforge_std::test_address();
     let (counterparty, counterparty_address) = deploy_token0_with_owner(owner);
     let starting_tick = i129 { sign: false, mag: 4600158 }; // 100counterparty/MEME
@@ -422,7 +421,7 @@ fn test_ekubo_launch_meme_token1_price_above_1() {
 
 #[test]
 #[fork("Mainnet")]
-fn test_ekubo_launch_meme_with_pool_1percent() {
+fn test_launch_meme_with_pool_1percent() {
     let owner = snforge_std::test_address();
     let (counterparty, counterparty_address) = deploy_eth_with_owner(owner);
     let starting_tick = i129 { sign: true, mag: 4600158 }; // 0.01ETH/MEME
@@ -452,6 +451,25 @@ fn test_ekubo_launch_meme_with_pool_1percent() {
         memecoin.totalSupply() - team_alloc, 9950,
     );
     assert(reserve_memecoin > expected_reserve_lower_bound, 'reserves holds too few token');
+}
+
+#[test]
+#[fork("Mainnet")]
+#[should_panic(expected: ('Caller is not owner',))]
+fn test_not_owner_cant_withdraw_fees() {
+    let owner = snforge_std::test_address();
+    let (counterparty, counterparty_address) = deploy_eth_with_owner(owner);
+    let starting_tick = i129 { sign: true, mag: 4600158 }; // 0.01ETH/MEME
+    let (memecoin_address, id, position) = launch_memecoin_on_ekubo(
+        counterparty_address, 0xc49ba5e353f7d00000000000000000, 5982, starting_tick, 88719042
+    );
+    let ekubo_launcher = IEkuboLauncherDispatcher { contract_address: EKUBO_LAUNCHER_ADDRESS() };
+
+    let recipient = RECIPIENT();
+    let caller = 'not owner'.try_into().unwrap();
+    start_prank(CheatTarget::One(ekubo_launcher.contract_address), caller);
+    ekubo_launcher.withdraw_fees(id, recipient);
+    stop_prank(CheatTarget::One(ekubo_launcher.contract_address));
 }
 //TODO! As there are no unit ekubo tests, we need to deeply test the whole flow of interaction with ekubo - including 
 //TODO! launching with wrong parameters, as the frontend data cant be trusted

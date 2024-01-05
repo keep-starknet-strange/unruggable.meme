@@ -151,7 +151,6 @@ fn test_launch_memecoin_happy_path() {
         unlock_time: starknet::get_block_timestamp() + DEFAULT_MIN_LOCKTIME,
         owner: owner,
     };
-    //TODO: check correct lock supply
     assert(token_lock == expected_lock, 'wrong lock');
 
     // Check ownership renounced

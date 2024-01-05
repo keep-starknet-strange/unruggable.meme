@@ -24,7 +24,7 @@ struct EkuboLaunchParameters {
     counterparty_address: ContractAddress,
     fee: u128,
     tick_spacing: u128,
-    // the sign of the starting tick is positive (false) if ETH/MEME < 1 and negative (true) otherwise
+    // the sign of the starting tick is positive (false) if counterparty/token < 1 and negative (true) otherwise
     starting_tick: i129,
     // The LP providing bound. The sign will be determined by the address of the LPed tokens and the starting tick
     bound: u128,
@@ -34,7 +34,7 @@ struct EkuboLaunchParameters {
 struct EkuboAdditionalParameters {
     fee: u128,
     tick_spacing: u128,
-    // the sign of the starting tick is positive (false) if ETH/MEME < 1 and negative (true) otherwise
+    // the sign of the starting tick is positive (false) if counterparty/token < 1 and negative (true) otherwise
     starting_tick: i129,
     // The LP providing bound, upper/lower determined by the address of the LPed tokens
     bound: u128,
@@ -73,7 +73,6 @@ impl EkuboAdapterImpl of unruggable::exchanges::IAmmAdapter<
         memecoin.transfer(ekubo_launchpad.contract_address, memecoin_balance);
 
         let (id, position) = ekubo_launchpad.launch_token(ekubo_launch_params);
-        //TODO: handle the NFT representing the LP
 
         // Ensure that the LPing operation has not returned more than 0.5% of the provided liquidity to the caller.
         // Otherwise, there was an error in the LP parameters.
@@ -87,7 +86,6 @@ impl EkuboAdapterImpl of unruggable::exchanges::IAmmAdapter<
         clear(counterparty_address);
         assert(counterparty_token.balanceOf(this) == 0, 'counterparty leftovers');
 
-        //TODO: lock tokens
         (id, position)
     }
 }
