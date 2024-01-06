@@ -69,17 +69,13 @@ fn test_jediswap_integration() {
     // Check token lock
     let locker = ILockManagerDispatcher { contract_address: LOCK_MANAGER_ADDRESS() };
     let lock_address = locker.user_lock_at(OWNER(), 0);
-    let token_lock = locker.get_lock_details(lock_address);
+    let lock_position = locker.get_lock_details(lock_address);
     let expected_lock = LockPosition {
         token: pair_address,
-        amount: pair.totalSupply(),
+        amount: pair.totalSupply() - 1000, // upon first mint, 1000 lp tokens are burnt
         unlock_time: starknet::get_block_timestamp() + DEFAULT_MIN_LOCKTIME,
         owner: OWNER(),
     };
 
-    assert(token_lock.token == expected_lock.token, 'token not locked');
-    // can't test for the amount locked as the initial liq provided and the total supply
-    // of the pair do not match
-    assert(token_lock.unlock_time == expected_lock.unlock_time, 'wrong unlock time');
-    assert(token_lock.owner == expected_lock.owner, 'wrong owner');
+    assert(lock_position == expected_lock, 'wrong lock details');
 }

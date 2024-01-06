@@ -173,7 +173,7 @@ mod memecoin_entrypoints {
         IJediswapRouter, IJediswapRouterDispatcher, IJediswapRouterDispatcherTrait,
         IJediswapPairDispatcher, IJediswapPairDispatcherTrait
     };
-    use unruggable::exchanges::{SupportedExchanges, ExchangeTrait};
+    use unruggable::exchanges::{SupportedExchanges};
     use unruggable::factory::{IFactory, IFactoryDispatcher, IFactoryDispatcherTrait};
     use unruggable::locker::interface::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
     use unruggable::locker::{LockPosition};
@@ -225,12 +225,11 @@ mod memecoin_entrypoints {
         let token_lock = locker.get_lock_details(lock_address);
         let expected_lock = LockPosition {
             token: pair_address,
-            amount: pair.totalSupply(),
+            amount: pair.totalSupply() - 1000, // upon first mint, 1000 lp tokens are burnt
             unlock_time: starknet::get_block_timestamp() + DEFAULT_MIN_LOCKTIME,
             owner: owner,
         };
-        //TODO: check correct lock supply
-        // assert(token_lock == expected_lock, 'wrong lock');
+        assert(token_lock == expected_lock, 'wrong lock details');
 
         // Check ownership renounced
         assert(memecoin.owner().is_zero(), 'Still an owner');
