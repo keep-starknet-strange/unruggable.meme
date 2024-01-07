@@ -24,8 +24,8 @@ mod Factory {
         jediswap_adapter::JediswapAdditionalParameters, ekubo::launcher::EkuboLP
     };
     use unruggable::factory::IFactory;
-    use unruggable::tokens::UnruggableMemecoin::LiquidityType;
-    use unruggable::tokens::interface::{
+    use unruggable::token::UnruggableMemecoin::LiquidityType;
+    use unruggable::token::interface::{
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
 
@@ -61,7 +61,7 @@ mod Factory {
     #[storage]
     struct Storage {
         memecoin_class_hash: ClassHash,
-        amm_configs: LegacyMap<SupportedExchanges, ContractAddress>,
+        exchange_configs: LegacyMap<SupportedExchanges, ContractAddress>,
         //TODO: refactor to keep a list of deployed memecoins and expose it publicly
         deployed_memecoins: LegacyMap<ContractAddress, bool>,
         lock_manager_address: ContractAddress,
@@ -76,7 +76,7 @@ mod Factory {
         owner: ContractAddress,
         memecoin_class_hash: ClassHash,
         lock_manager_address: ContractAddress,
-        mut amms: Span<(SupportedExchanges, ContractAddress)>
+        mut exchanges: Span<(SupportedExchanges, ContractAddress)>
     ) {
         self.ownable.initializer(owner);
         self.memecoin_class_hash.write(memecoin_class_hash);
@@ -84,8 +84,10 @@ mod Factory {
 
         // Add Exchanges configurations
         loop {
-            match amms.pop_front() {
-                Option::Some((amm, address)) => self.amm_configs.write(*amm, *address),
+            match exchanges.pop_front() {
+                Option::Some((exchange, address)) => self
+                    .exchange_configs
+                    .write(*exchange, *address),
                 Option::None => { break; }
             }
         };
@@ -119,8 +121,6 @@ mod Factory {
             // save memecoin address
             self.deployed_memecoins.write(memecoin_address, true);
 
-            let caller = get_caller_address();
-
             self.emit(MemecoinCreated { owner, name, symbol, initial_supply, memecoin_address });
 
             memecoin_address
@@ -134,12 +134,14 @@ mod Factory {
             unlock_time: u64,
         ) -> ContractAddress {
             let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
-            assert(!memecoin.is_launched(), errors::ALREADY_LAUNCHED);
-            assert(get_caller_address() == memecoin.owner(), errors::CALLER_NOT_OWNER);
-            let quote_token = ERC20ABIDispatcher { contract_address: quote_address };
             let caller_address = get_caller_address();
-
             let router_address = self.exchange_address(SupportedExchanges::Jediswap);
+            let quote_token = ERC20ABIDispatcher { contract_address: quote_address };
+            assert(!memecoin.is_launched(), errors::ALREADY_LAUNCHED);
+            assert(caller_address == memecoin.owner(), errors::CALLER_NOT_OWNER);
+            assert(router_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
+            assert(!memecoin.is_launched(), errors::ALREADY_LAUNCHED);
+
             let mut pair_address = jediswap_adapter::JediswapAdapterImpl::create_and_add_liquidity(
                 exchange_address: router_address,
                 token_address: memecoin_address,
@@ -169,14 +171,14 @@ mod Factory {
         ) -> (u64, EkuboLP) {
             let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
             let launchpad_address = self.exchange_address(SupportedExchanges::Ekubo);
-            assert(get_caller_address() == memecoin.owner(), errors::CALLER_NOT_OWNER);
+            let quote_token = ERC20ABIDispatcher { contract_address: quote_address };
+            let caller_address = get_caller_address();
+            assert(caller_address == memecoin.owner(), errors::CALLER_NOT_OWNER);
             assert(launchpad_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
-            assert(!memecoin.is_launched(), errors::ALREADY_LAUNCHED); //TODO: error message
+            assert(!memecoin.is_launched(), errors::ALREADY_LAUNCHED);
             assert(
                 ekubo_parameters.starting_tick.mag.is_non_zero(), errors::PRICE_ZERO
             ); //TODO: test
-            let quote_token = ERC20ABIDispatcher { contract_address: quote_address };
-            let caller_address = get_caller_address();
 
             let (id, position) = ekubo_adapter::EkuboAdapterImpl::create_and_add_liquidity(
                 exchange_address: launchpad_address,
@@ -217,8 +219,8 @@ mod Factory {
             Option::Some((locker_address, liquidity_type))
         }
 
-        fn exchange_address(self: @ContractState, amm: SupportedExchanges) -> ContractAddress {
-            self.amm_configs.read(amm)
+        fn exchange_address(self: @ContractState, exchange: SupportedExchanges) -> ContractAddress {
+            self.exchange_configs.read(exchange)
         }
 
         fn is_memecoin(self: @ContractState, address: ContractAddress) -> bool {

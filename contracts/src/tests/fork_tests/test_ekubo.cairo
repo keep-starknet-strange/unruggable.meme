@@ -29,10 +29,10 @@ use unruggable::tests::fork_tests::utils::{
 use unruggable::tests::unit_tests::utils::{
     OWNER, DEFAULT_MIN_LOCKTIME, pow_256, LOCK_MANAGER_ADDRESS, MEMEFACTORY_ADDRESS, RECIPIENT
 };
-use unruggable::tokens::interface::{
+use unruggable::token::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
 };
-use unruggable::tokens::memecoin::LiquidityType;
+use unruggable::token::memecoin::LiquidityType;
 use unruggable::utils::math::PercentageMath;
 
 fn launch_memecoin_on_ekubo(

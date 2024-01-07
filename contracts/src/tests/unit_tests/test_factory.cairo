@@ -22,10 +22,10 @@ use unruggable::tests::unit_tests::utils::{
     deploy_memecoin_through_factory_with_owner, pow_256, LOCK_MANAGER_ADDRESS, DEFAULT_MIN_LOCKTIME,
     deploy_and_launch_memecoin
 };
-use unruggable::tokens::interface::{
+use unruggable::token::interface::{
     IUnruggableMemecoin, IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
 };
-use unruggable::tokens::memecoin::LiquidityType;
+use unruggable::token::memecoin::LiquidityType;
 
 #[test]
 fn test_locked_liquidity_not_locked() {

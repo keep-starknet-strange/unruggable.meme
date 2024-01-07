@@ -76,7 +76,7 @@ mod EkuboLauncher {
         ITokenRegistryDispatcher, IPositionsDispatcher, IPositionsDispatcherTrait,
         IOwnedNFTDispatcher, IOwnedNFTDispatcherTrait,
     };
-    use unruggable::tokens::interface::{
+    use unruggable::token::interface::{
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
     use unruggable::utils::math::PercentageMath;

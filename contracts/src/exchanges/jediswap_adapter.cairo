@@ -4,7 +4,7 @@ use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatch
 use starknet::{get_block_timestamp, ContractAddress, get_contract_address, get_caller_address};
 use unruggable::errors;
 use unruggable::locker::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
-use unruggable::tokens::interface::{
+use unruggable::token::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait,
 };
 

@@ -3,9 +3,7 @@ mod exchanges;
 mod factory;
 mod locker;
 
-#[cfg(test)]
-mod tests;
-mod tokens;
+mod token;
 
 mod utils;
 
@@ -20,3 +18,5 @@ mod mocks {
         mod swapper;
     }
 }
+#[cfg(test)]
+mod tests;

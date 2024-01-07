@@ -11,7 +11,7 @@ use unruggable::errors;
 use unruggable::exchanges::ekubo::launcher::{
     IEkuboLauncherDispatcher, IEkuboLauncherDispatcherTrait, EkuboLP
 };
-use unruggable::tokens::interface::{
+use unruggable::token::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait,
 };
 use unruggable::utils::math::PercentageMath;
@@ -56,11 +56,11 @@ impl EkuboAdapterImpl of unruggable::exchanges::ExchangeAdapter<
             }
         };
 
-        let memecoin = IUnruggableMemecoinDispatcher { contract_address: token_address, };
         let this = get_contract_address();
+        let caller_address = starknet::get_caller_address();
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address: token_address, };
         let memecoin_address = memecoin.contract_address;
         let quote_token = ERC20ABIDispatcher { contract_address: quote_address, };
-        let caller_address = starknet::get_caller_address();
 
         let ekubo_launchpad = IEkuboLauncherDispatcher { contract_address: exchange_address };
         assert(ekubo_launchpad.contract_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);

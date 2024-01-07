@@ -11,7 +11,7 @@ use unruggable::tests::addresses::{
     JEDI_ROUTER_ADDRESS, JEDI_FACTORY_ADDRESS, ETH_ADDRESS, EKUBO_CORE, EKUBO_POSITIONS,
     EKUBO_REGISTRY, EKUBO_NFT_CLASS_HASH, TOKEN0_ADDRESS
 };
-use unruggable::tokens::interface::{
+use unruggable::token::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
 };
 

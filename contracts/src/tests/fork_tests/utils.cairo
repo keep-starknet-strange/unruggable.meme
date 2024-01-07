@@ -17,7 +17,7 @@ use unruggable::tests::unit_tests::utils::{
     INITIAL_HOLDERS_AMOUNTS, TRANSFER_LIMIT_DELAY, SALT, DefaultTxInfoMock, OWNER, TOKEN0_ADDRESS,
     MEMEFACTORY_ADDRESS
 };
-use unruggable::tokens::interface::{
+use unruggable::token::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
 };
 
@@ -63,12 +63,12 @@ fn deploy_ekubo_launcher() -> ContractAddress {
 }
 
 // MemeFactory
-fn deploy_meme_factory(amms: Span<(SupportedExchanges, ContractAddress)>) -> ContractAddress {
-    deploy_meme_factory_with_owner(OWNER(), amms)
+fn deploy_meme_factory(exchanges: Span<(SupportedExchanges, ContractAddress)>) -> ContractAddress {
+    deploy_meme_factory_with_owner(OWNER(), exchanges)
 }
 
 fn deploy_meme_factory_with_owner(
-    owner: ContractAddress, amms: Span<(SupportedExchanges, ContractAddress)>
+    owner: ContractAddress, exchanges: Span<(SupportedExchanges, ContractAddress)>
 ) -> ContractAddress {
     let memecoin_class_hash = declare('UnruggableMemecoin').class_hash;
     let lock_manager_address = deploy_locker();
@@ -78,7 +78,7 @@ fn deploy_meme_factory_with_owner(
     Serde::serialize(@owner, ref calldata);
     Serde::serialize(@memecoin_class_hash, ref calldata);
     Serde::serialize(@lock_manager_address, ref calldata);
-    Serde::serialize(@amms.into(), ref calldata);
+    Serde::serialize(@exchanges.into(), ref calldata);
     contract.deploy_at(@calldata, MEMEFACTORY_ADDRESS()).expect('UnrugFactory deployment failed')
 }
 
@@ -92,12 +92,12 @@ fn deploy_memecoin_through_factory_with_owner(
     owner: ContractAddress
 ) -> (IUnruggableMemecoinDispatcher, ContractAddress) {
     let ekubo_launchpad = deploy_ekubo_launcher();
-    let supported_amms = array![
+    let supported_exchanges = array![
         (SupportedExchanges::Jediswap, JEDI_ROUTER_ADDRESS()),
         (SupportedExchanges::Ekubo, ekubo_launchpad)
     ]
         .span();
-    let memecoin_factory_address = deploy_meme_factory(supported_amms);
+    let memecoin_factory_address = deploy_meme_factory(supported_exchanges);
     let memecoin_factory = IFactoryDispatcher { contract_address: memecoin_factory_address };
 
     start_prank(CheatTarget::One(memecoin_factory.contract_address), owner);

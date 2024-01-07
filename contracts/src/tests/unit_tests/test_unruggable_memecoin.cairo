@@ -13,7 +13,7 @@ use unruggable::tests::unit_tests::utils::{
     INITIAL_HOLDERS_AMOUNTS, TRANSFER_LIMIT_DELAY, DefaultTxInfoMock,
     deploy_memecoin_through_factory
 };
-use unruggable::tokens::interface::{
+use unruggable::token::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
 };
 
@@ -36,8 +36,8 @@ mod test_constructor {
         JEDI_ROUTER_ADDRESS, MEMEFACTORY_ADDRESS, ALICE, BOB, TRANSFER_LIMIT_DELAY, pow_256,
         LOCK_MANAGER_ADDRESS, JEDI_FACTORY_ADDRESS
     };
-    use unruggable::tokens::UnruggableMemecoin;
-    use unruggable::tokens::interface::{
+    use unruggable::token::UnruggableMemecoin;
+    use unruggable::token::interface::{
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
 
@@ -173,10 +173,10 @@ mod memecoin_entrypoints {
         JEDI_ROUTER_ADDRESS, MEMEFACTORY_ADDRESS, ALICE, BOB, pow_256, LOCK_MANAGER_ADDRESS,
         deploy_and_launch_memecoin, TRANSFER_LIMIT_DELAY, UNLOCK_TIME, DEFAULT_MIN_LOCKTIME
     };
-    use unruggable::tokens::interface::{
+    use unruggable::token::interface::{
         IUnruggableMemecoin, IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
-    use unruggable::tokens::memecoin::{LiquidityType, UnruggableMemecoin};
+    use unruggable::token::memecoin::{LiquidityType, UnruggableMemecoin};
 
 
     #[test]
@@ -296,10 +296,10 @@ mod memecoin_internals {
         deploy_memecoin_through_factory, ETH_ADDRESS, deploy_memecoin_through_factory_with_owner,
         JEDI_ROUTER_ADDRESS, MEMEFACTORY_ADDRESS, ALICE, BOB
     };
-    use unruggable::tokens::interface::{
+    use unruggable::token::interface::{
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
-    use unruggable::tokens::memecoin::UnruggableMemecoin;
+    use unruggable::token::memecoin::UnruggableMemecoin;
 
     #[test]
     fn test__transfer_recipients_equal_holder_cap() {

@@ -4,7 +4,7 @@ use starknet::ContractAddress;
 use unruggable::exchanges::SupportedExchanges;
 use unruggable::exchanges::ekubo::launcher::EkuboLP;
 use unruggable::exchanges::ekubo_adapter::EkuboPoolParameters;
-use unruggable::tokens::memecoin::LiquidityType;
+use unruggable::token::memecoin::LiquidityType;
 
 #[starknet::interface]
 trait IFactory<TContractState> {
@@ -87,7 +87,8 @@ trait IFactory<TContractState> {
     ///
     /// # Returns
     ///
-    /// * `u64` - The ID of the created liquidity pool.
+    /// * `u64` - The ID of the created liquidity position.
+    /// * `EkuboLP` - The details of the liquidity position.
     ///
     /// # Panics
     ///
@@ -103,17 +104,17 @@ trait IFactory<TContractState> {
         ekubo_parameters: EkuboPoolParameters,
     ) -> (u64, EkuboLP);
 
-    /// Returns the router address for a given Exchange, provided that this Exchange
+    /// Returns the address for a given Exchange, provided that this Exchange
     /// was registered in the factory upon initialization.
     ///
     /// # Arguments
     ///
-    /// * `amm_name` - The name of the Exchange for which to retrieve the contract address.
+    /// * `exchange` - The exchange for which to retrieve the contract address.
     ///
     /// # Returns
     ///
     /// * `ContractAddress` - The contract address associated with the given Exchange name.
-    fn exchange_address(self: @TContractState, amm: SupportedExchanges) -> ContractAddress;
+    fn exchange_address(self: @TContractState, exchange: SupportedExchanges) -> ContractAddress;
 
     /// Returns information about the locked liquidity of a token launched with unruggable.
     ///

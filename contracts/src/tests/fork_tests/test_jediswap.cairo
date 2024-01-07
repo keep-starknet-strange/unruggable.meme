@@ -15,8 +15,8 @@ use unruggable::tests::unit_tests::utils::{
     OWNER, DEFAULT_MIN_LOCKTIME, pow_256, LOCK_MANAGER_ADDRESS, MEMEFACTORY_ADDRESS,
     deploy_eth_with_owner
 };
-use unruggable::tokens::interface::{IUnruggableMemecoinDispatcherTrait};
-use unruggable::tokens::memecoin::LiquidityType;
+use unruggable::token::interface::{IUnruggableMemecoinDispatcherTrait};
+use unruggable::token::memecoin::LiquidityType;
 use unruggable::utils::math::PercentageMath;
 
 #[test]
