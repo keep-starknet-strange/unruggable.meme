@@ -134,3 +134,7 @@ dist
 # Scarb and Starknet Foundry
 contracts/**/target
 contracts/.snfoundry_cache/
+
+# Starkli
+*account.json
+*keystore.json

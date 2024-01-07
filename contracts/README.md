@@ -28,6 +28,13 @@ To test the project, run:
 snforge
 ```
 
+## 🚀 Deploy
+
+To deploy the project on testnet, you need to:
+- Change directory to `scripts` folder
+- Copy and update the `.env.example` file into `scripts/.env`
+- Run the deployment script using `npm run deploy`
+
 ## 📚 Resources
 
 Here are some resources to help you get started:

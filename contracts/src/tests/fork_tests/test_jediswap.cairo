@@ -82,7 +82,7 @@ fn test_jediswap_integration() {
     let token_lock = locker.get_lock_details(lock_address);
     let expected_lock = LockPosition {
         token: pair_address,
-        amount: pair.totalSupply() - 1000,
+        amount: pair.totalSupply() - 1000, // upon first mint, 1000 lp tokens are burnt
         unlock_time: starknet::get_block_timestamp() + DEFAULT_MIN_LOCKTIME,
         owner: owner,
     };

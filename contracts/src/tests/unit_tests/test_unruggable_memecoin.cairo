@@ -178,7 +178,6 @@ mod memecoin_entrypoints {
     };
     use unruggable::token::memecoin::{LiquidityType, UnruggableMemecoin};
 
-
     #[test]
     fn test_renounce_ownership_upon_memecoin_launch() {
         let (memecoin, memecoin_address) = deploy_and_launch_memecoin();
@@ -427,7 +426,8 @@ mod memecoin_internals {
         // start_prank(CheatTarget::One(router_address), memecoin_address);
         // memecoin
         //     .launch_memecoin(
-        //         SupportedExchanges::Jediswap, quote_token_address, 20000000000000000, 1 * ETH_UNIT_DECIMALS
+        //         SupportedExchanges::Jediswap, counterparty_token_address, 20000000000000000, 1 * ETH_UNIT_DECIMALS
+        //         SupportedExchanges::Jediswap, counterparty_token_address, 20000000000000000, 1 * ETH_UNIT_DECIMALS
         //     );
         // TODO: call launch_memecoin() with params
         // memecoin.launch_memecoin();

@@ -301,7 +301,7 @@ mod UnruggableMemecoin {
             } else {
                 //TODO: make sure restrictions are compatible with ekubo and aggregators
                 let liquidity_type = self.liquidity_type.read().unwrap();
-                
+
                 // The LP pair must be whitelisted from transfer restrictions
                 match liquidity_type {
                     LiquidityType::ERC20(pair) => {
@@ -329,8 +329,9 @@ mod UnruggableMemecoin {
         ///
         fn is_after_time_restrictions(ref self: ContractState) -> bool {
             let current_time = get_block_timestamp();
-            self.is_launched() && current_time >= (self.launch_time.read() + self.transfer_restriction_delay.read())
-                
+            self.is_launched()
+                && current_time >= (self.launch_time.read()
+                    + self.transfer_restriction_delay.read())
         }
 
         /// Checks and allocates the team supply of the memecoin.
