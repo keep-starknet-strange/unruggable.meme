@@ -21,10 +21,10 @@ use unruggable::utils::math::PercentageMath;
 struct EkuboLaunchParameters {
     owner: ContractAddress,
     token_address: ContractAddress,
-    counterparty_address: ContractAddress,
+    quote_address: ContractAddress,
     fee: u128,
     tick_spacing: u128,
-    // the sign of the starting tick is positive (false) if counterparty/token < 1 and negative (true) otherwise
+    // the sign of the starting tick is positive (false) if quote/token < 1 and negative (true) otherwise
     starting_tick: i129,
     // The LP providing bound. The sign will be determined by the address of the LPed tokens and the starting tick
     bound: u128,
@@ -34,7 +34,7 @@ struct EkuboLaunchParameters {
 struct EkuboAdditionalParameters {
     fee: u128,
     tick_spacing: u128,
-    // the sign of the starting tick is positive (false) if counterparty/token < 1 and negative (true) otherwise
+    // the sign of the starting tick is positive (false) if quote/token < 1 and negative (true) otherwise
     starting_tick: i129,
     // The LP providing bound, upper/lower determined by the address of the LPed tokens
     bound: u128,
@@ -46,13 +46,13 @@ impl EkuboAdapterImpl of unruggable::exchanges::ExchangeAdapter<
     fn create_and_add_liquidity(
         exchange_address: ContractAddress,
         token_address: ContractAddress,
-        counterparty_address: ContractAddress,
+        quote_address: ContractAddress,
         additional_parameters: EkuboAdditionalParameters,
     ) -> (u64, EkuboLP) {
         let ekubo_launch_params = EkuboLaunchParameters {
             owner: starknet::get_caller_address(),
             token_address: token_address,
-            counterparty_address: counterparty_address,
+            quote_address: quote_address,
             fee: additional_parameters.fee,
             tick_spacing: additional_parameters.tick_spacing,
             starting_tick: additional_parameters.starting_tick,
@@ -62,7 +62,7 @@ impl EkuboAdapterImpl of unruggable::exchanges::ExchangeAdapter<
         let memecoin = IUnruggableMemecoinDispatcher { contract_address: token_address, };
         let this = get_contract_address();
         let memecoin_address = memecoin.contract_address;
-        let counterparty_token = ERC20ABIDispatcher { contract_address: counterparty_address, };
+        let quote_token = ERC20ABIDispatcher { contract_address: quote_address, };
         let caller_address = starknet::get_caller_address();
 
         let ekubo_launchpad = IEkuboLauncherDispatcher { contract_address: exchange_address };
@@ -81,10 +81,10 @@ impl EkuboAdapterImpl of unruggable::exchanges::ExchangeAdapter<
         let max_returned_tokens = PercentageMath::percent_mul(total_supply - team_alloc, 9950);
         assert(memecoin.balanceOf(this) < max_returned_tokens, 'ekubo has returned tokens');
 
-        // Any counterparty tokens that were deposited in this contract must be returned to the caller
-        // as no counterparty is required to launch a memecoin with Ekubo.
-        clear(counterparty_address);
-        assert(counterparty_token.balanceOf(this) == 0, 'counterparty leftovers');
+        // Any quote tokens that were deposited in this contract must be returned to the caller
+        // as no quote is required to launch a memecoin with Ekubo.
+        clear(quote_address);
+        assert(quote_token.balanceOf(this) == 0, 'quote leftovers');
 
         (id, position)
     }

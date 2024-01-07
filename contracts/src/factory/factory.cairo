@@ -54,7 +54,7 @@ mod Factory {
     #[derive(Drop, starknet::Event)]
     struct MemecoinLaunched {
         memecoin_address: ContractAddress,
-        counterparty_token: ContractAddress,
+        quote_token: ContractAddress,
         exchange_name: felt252,
     }
 
@@ -129,25 +129,23 @@ mod Factory {
         fn launch_on_jediswap(
             ref self: ContractState,
             memecoin_address: ContractAddress,
-            counterparty_address: ContractAddress,
-            counterparty_amount: u256,
+            quote_address: ContractAddress,
+            quote_amount: u256,
             unlock_time: u64,
         ) -> ContractAddress {
             let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
             assert(!memecoin.is_launched(), errors::ALREADY_LAUNCHED);
             assert(get_caller_address() == memecoin.owner(), errors::CALLER_NOT_OWNER);
-            let counterparty_token = ERC20ABIDispatcher { contract_address: counterparty_address };
+            let quote_token = ERC20ABIDispatcher { contract_address: quote_address };
             let caller_address = get_caller_address();
 
             let router_address = self.exchange_address(SupportedExchanges::Jediswap);
             let mut pair_address = jediswap_adapter::JediswapAdapterImpl::create_and_add_liquidity(
                 exchange_address: router_address,
                 token_address: memecoin_address,
-                counterparty_address: counterparty_address,
+                quote_address: quote_address,
                 additional_parameters: JediswapAdditionalParameters {
-                    lock_manager_address: self.lock_manager_address(),
-                    unlock_time,
-                    counterparty_amount
+                    lock_manager_address: self.lock_manager_address(), unlock_time, quote_amount
                 }
             );
 
@@ -155,9 +153,7 @@ mod Factory {
             self
                 .emit(
                     MemecoinLaunched {
-                        memecoin_address,
-                        counterparty_token: counterparty_address,
-                        exchange_name: 'Jediswap'
+                        memecoin_address, quote_token: quote_address, exchange_name: 'Jediswap'
                     }
                 );
             pair_address
@@ -166,7 +162,7 @@ mod Factory {
         fn launch_on_ekubo(
             ref self: ContractState,
             memecoin_address: ContractAddress,
-            counterparty_address: ContractAddress,
+            quote_address: ContractAddress,
             ekubo_parameters: EkuboAdditionalParameters,
         ) -> (u64, EkuboLP) {
             let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
@@ -177,13 +173,13 @@ mod Factory {
             assert(
                 ekubo_parameters.starting_tick.mag.is_non_zero(), errors::PRICE_ZERO
             ); //TODO: test
-            let counterparty_token = ERC20ABIDispatcher { contract_address: counterparty_address };
+            let quote_token = ERC20ABIDispatcher { contract_address: quote_address };
             let caller_address = get_caller_address();
 
             let (id, position) = ekubo_adapter::EkuboAdapterImpl::create_and_add_liquidity(
                 exchange_address: launchpad_address,
                 token_address: memecoin_address,
-                counterparty_address: counterparty_address,
+                quote_address: quote_address,
                 additional_parameters: ekubo_parameters
             );
 
@@ -191,9 +187,7 @@ mod Factory {
             self
                 .emit(
                     MemecoinLaunched {
-                        memecoin_address,
-                        counterparty_token: counterparty_address,
-                        exchange_name: 'Ekubo'
+                        memecoin_address, quote_token: quote_address, exchange_name: 'Ekubo'
                     }
                 );
             (id, position)

@@ -24,7 +24,7 @@ use unruggable::utils::math::PercentageMath;
 fn test_jediswap_integration() {
     let owner = snforge_std::test_address();
     let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
-    let (counterparty, counterparty_address) = deploy_eth_with_owner(owner);
+    let (quote, quote_address) = deploy_eth_with_owner(owner);
     let router = IJediswapRouterDispatcher { contract_address: JEDI_ROUTER_ADDRESS() };
     let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
 
@@ -32,21 +32,21 @@ fn test_jediswap_integration() {
 
     // approve spending of eth by factory
     let amount: u256 = 1 * pow_256(10, 18); // 1 ETHER
-    start_prank(CheatTarget::One(counterparty.contract_address), owner);
-    counterparty.approve(factory.contract_address, amount);
-    stop_prank(CheatTarget::One(counterparty.contract_address));
+    start_prank(CheatTarget::One(quote.contract_address), owner);
+    quote.approve(factory.contract_address, amount);
+    stop_prank(CheatTarget::One(quote.contract_address));
 
     let pair_address = factory
-        .launch_on_jediswap(memecoin_address, counterparty_address, amount, unlock_time);
+        .launch_on_jediswap(memecoin_address, quote_address, amount, unlock_time);
 
     let pair = IJediswapPairDispatcher { contract_address: pair_address };
 
     // Test that swaps work correctly
 
     // Approve required token amounts
-    start_prank(CheatTarget::One(counterparty.contract_address), owner);
-    counterparty.approve(JEDI_ROUTER_ADDRESS(), 1 * pow_256(10, 18));
-    stop_prank(CheatTarget::One(counterparty.contract_address));
+    start_prank(CheatTarget::One(quote.contract_address), owner);
+    quote.approve(JEDI_ROUTER_ADDRESS(), 1 * pow_256(10, 18));
+    stop_prank(CheatTarget::One(quote.contract_address));
 
     // Max buy cap is 2% of total supply
     // Initial rate is roughly 1 ETH for 21M meme,
@@ -57,7 +57,7 @@ fn test_jediswap_integration() {
         .swap_exact_tokens_for_tokens(
             amountIn: amount_in,
             amountOutMin: 0,
-            path: array![counterparty_address, memecoin_address],
+            path: array![quote_address, memecoin_address],
             to: owner,
             deadline: starknet::get_block_timestamp()
         );
@@ -65,13 +65,13 @@ fn test_jediswap_integration() {
 
     start_prank(CheatTarget::One(memecoin_address), owner);
     memecoin.approve(JEDI_ROUTER_ADDRESS(), first_out);
-    stop_prank(CheatTarget::One(counterparty.contract_address));
+    stop_prank(CheatTarget::One(quote.contract_address));
 
     let _second_swap = router
         .swap_exact_tokens_for_tokens(
             amountIn: first_out,
             amountOutMin: 0,
-            path: array![memecoin_address, counterparty_address],
+            path: array![memecoin_address, quote_address],
             to: owner,
             deadline: starknet::get_block_timestamp()
         );

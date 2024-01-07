@@ -58,7 +58,7 @@ trait IJediswapPair<T> {
 struct JediswapAdditionalParameters {
     lock_manager_address: ContractAddress,
     unlock_time: u64,
-    counterparty_amount: u256
+    quote_amount: u256
 }
 
 impl JediswapAdapterImpl of unruggable::exchanges::ExchangeAdapter<
@@ -67,50 +67,47 @@ impl JediswapAdapterImpl of unruggable::exchanges::ExchangeAdapter<
     fn create_and_add_liquidity(
         exchange_address: ContractAddress,
         token_address: ContractAddress,
-        counterparty_address: ContractAddress,
+        quote_address: ContractAddress,
         additional_parameters: JediswapAdditionalParameters,
     ) -> ContractAddress {
-        let JediswapAdditionalParameters{lock_manager_address, unlock_time, counterparty_amount, } =
+        let JediswapAdditionalParameters{lock_manager_address, unlock_time, quote_amount, } =
             additional_parameters;
         let memecoin = IUnruggableMemecoinDispatcher { contract_address: token_address, };
         let this = get_contract_address();
         let memecoin_address = memecoin.contract_address;
-        let counterparty_token = ERC20ABIDispatcher { contract_address: counterparty_address, };
+        let quote_token = ERC20ABIDispatcher { contract_address: quote_address, };
         let caller_address = starknet::get_caller_address();
 
         // Create liquidity pool
         let jedi_router = IJediswapRouterDispatcher { contract_address: exchange_address };
         assert(jedi_router.contract_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
         let jedi_factory = IJediswapFactoryDispatcher { contract_address: jedi_router.factory(), };
-        let pair_address = jedi_factory.create_pair(counterparty_address, memecoin_address);
+        let pair_address = jedi_factory.create_pair(quote_address, memecoin_address);
 
-        // Add liquidity - approve the entirety of the memecoin and counterparty token balances
+        // Add liquidity - approve the entirety of the memecoin and quote token balances
         // to supply as liquidity
         // Transfer from caller to this contract so that jediswap can take the tokens from here
-        counterparty_token.transferFrom(caller_address, this, counterparty_amount,);
+        quote_token.transferFrom(caller_address, this, quote_amount,);
         let memecoin_balance = memecoin.balanceOf(this);
         memecoin.approve(jedi_router.contract_address, memecoin_balance);
-        counterparty_token.approve(jedi_router.contract_address, counterparty_amount);
-        let counterparty_balance = counterparty_token.balanceOf(this);
+        quote_token.approve(jedi_router.contract_address, quote_amount);
+        let quote_balance = quote_token.balanceOf(this);
 
         // As we're supplying the first liquidity for this pool,
         // The expected minimum amounts for each tokens are the amounts we're supplying.
         let (amount_memecoin, amount_eth, liquidity_received) = jedi_router
             .add_liquidity(
                 memecoin_address,
-                counterparty_address,
+                quote_address,
                 memecoin_balance,
-                counterparty_amount,
+                quote_amount,
                 memecoin_balance,
-                counterparty_amount,
+                quote_amount,
                 this, // receiver of LP tokens is the factory, that instantly locks them
                 deadline: get_block_timestamp()
             );
         assert(memecoin.balanceOf(pair_address) == memecoin_balance, 'add liquidity meme failed');
-        assert(
-            counterparty_token.balanceOf(pair_address) == counterparty_amount,
-            'add liq counterparty failed'
-        );
+        assert(quote_token.balanceOf(pair_address) == quote_amount, 'add liq quote failed');
         let pair = ERC20ABIDispatcher { contract_address: pair_address, };
 
         assert(pair.balanceOf(this) == liquidity_received, 'wrong LP tkns amount');

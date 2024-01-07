@@ -19,7 +19,7 @@ trait IFactory<TContractState> {
     /// * `initial_holders` - An array containing the initial holders' addresses.
     /// * `initial_holders_amounts` - An array containing the initial amounts held by each corresponding initial holder.
     /// * `transfer_limit_delay` - The delay in seconds during which transfers will be limited to a % of max supply after launch.
-    /// * `counterparty_token` - The address of the counterparty token
+    /// * `quote_token` - The address of the quote token
     /// * `contract_address_salt` - A unique salt value for contract deployment
     ///
     /// # Returns
@@ -40,14 +40,14 @@ trait IFactory<TContractState> {
     /// Launches the memecoin on Jediswap by creating a liquidity pair and adding liquidity to it.
     ///
     /// This function can only be called by the owner of the memecoin and only if the memecoin has not been launched yet.
-    /// Launching on jediswap requires `counterparty_amount` counterparty tokens to be approved for transfer to the factory.
-    /// It creates a liquidity pair for the memecoin and the counterparty token on Jediswap, adds liquidity to it, and sets the memecoin as launched.
+    /// Launching on jediswap requires `quote_amount` quote tokens to be approved for transfer to the factory.
+    /// It creates a liquidity pair for the memecoin and the quote token on Jediswap, adds liquidity to it, and sets the memecoin as launched.
     ///
     /// # Arguments
     ///
     /// * `memecoin_address` - The address of the memecoin contract.
-    /// * `counterparty_address` - The address of the counterparty token contract.
-    /// * `counterparty_amount` - The amount of counterparty tokens to add as liquidity.
+    /// * `quote_address` - The address of the quote token contract.
+    /// * `quote_amount` - The amount of quote tokens to add as liquidity.
     /// * `unlock_time` - The timestamp when the liquidity can be unlocked.
     ///
     /// # Returns
@@ -64,20 +64,20 @@ trait IFactory<TContractState> {
     fn launch_on_jediswap(
         ref self: TContractState,
         memecoin_address: ContractAddress,
-        counterparty_address: ContractAddress,
-        counterparty_amount: u256,
+        quote_address: ContractAddress,
+        quote_amount: u256,
         unlock_time: u64,
     ) -> ContractAddress;
 
     /// Launches the memecoin on Ekubo by creating a pool with a set price and adding the memetoken to it.
     ///
     /// This function can only be called by the owner of the memecoin and only if the memecoin has not been launched yet.
-    /// It creates a liquidity pair for the memecoin and a counterparty token on Ekubo, adds liquidity to it, and sets the memecoin as launched.
+    /// It creates a liquidity pair for the memecoin and a quote token on Ekubo, adds liquidity to it, and sets the memecoin as launched.
     ///
     /// # Arguments
     ///
     /// * `memecoin_address` - The address of the memecoin contract.
-    /// * `counterparty_address` - The address of the counterparty token contract.
+    /// * `quote_address` - The address of the quote token contract.
     /// * `ekubo_parameters` - The parameters for the ekubo liquidity pool, including:
     ///     - `fee` - The fee for the liquidity pair.
     ///     - `tick_spacing` - The spacing between ticks for the liquidity pool.
@@ -98,7 +98,7 @@ trait IFactory<TContractState> {
     fn launch_on_ekubo(
         ref self: TContractState,
         memecoin_address: ContractAddress,
-        counterparty_address: ContractAddress,
+        quote_address: ContractAddress,
         ekubo_parameters: EkuboAdditionalParameters,
     ) -> (u64, EkuboLP);
 

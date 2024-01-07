@@ -31,7 +31,7 @@ fn EKUBO_SWAPPER_ADDRESS() -> ContractAddress {
 }
 
 
-// Counterparty token ensured to be token0
+// quote token ensured to be token0
 
 fn deploy_token0_with_owner(owner: ContractAddress) -> (ERC20ABIDispatcher, ContractAddress) {
     let token = declare('ERC20Token');

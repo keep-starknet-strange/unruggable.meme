@@ -25,7 +25,7 @@ struct StorablePoolKey {
 #[derive(Copy, Drop, Serde, starknet::Store)]
 struct StorableEkuboLP {
     owner: ContractAddress,
-    counterparty_address: ContractAddress,
+    quote_address: ContractAddress,
     pool_key: StorablePoolKey,
     bounds: StorableBounds,
 }
@@ -33,7 +33,7 @@ struct StorableEkuboLP {
 #[derive(Copy, Drop, Serde)]
 struct EkuboLP {
     owner: ContractAddress,
-    counterparty_address: ContractAddress,
+    quote_address: ContractAddress,
     pool_key: PoolKey,
     bounds: Bounds,
 }
@@ -151,7 +151,7 @@ mod EkuboLauncher {
                     id,
                     StorableEkuboLP {
                         owner: position.owner,
-                        counterparty_address: position.counterparty_address,
+                        quote_address: position.quote_address,
                         pool_key: StorablePoolKey {
                             token0: position.pool_key.token0,
                             token1: position.pool_key.token1,
@@ -173,7 +173,7 @@ mod EkuboLauncher {
             // Clear remaining balances. This is done _after_ the callback by core,
             // otherwise the caller in the context would be the core.
             self.clear(params.token_address);
-            self.clear(params.counterparty_address);
+            self.clear(params.quote_address);
 
             self.emit(Launched { params, owner: params.owner, token_id: id });
 
@@ -184,7 +184,7 @@ mod EkuboLauncher {
             let stored_position = self.liquidity_positions.read(id);
             let liquidity_position = EkuboLP {
                 owner: stored_position.owner,
-                counterparty_address: stored_position.counterparty_address,
+                quote_address: stored_position.quote_address,
                 pool_key: PoolKey {
                     token0: stored_position.pool_key.token0,
                     token1: stored_position.pool_key.token1,
@@ -207,7 +207,7 @@ mod EkuboLauncher {
                 )
             );
 
-            let fee_collected = if liquidity_position.counterparty_address == token0 {
+            let fee_collected = if liquidity_position.quote_address == token0 {
                 let token0 = ERC20ABIDispatcher { contract_address: token0 };
                 let balance_token0 = token0.balanceOf(get_contract_address());
                 token0.transfer(recipient, balance_token0);
@@ -230,7 +230,7 @@ mod EkuboLauncher {
             let storable_pos = self.liquidity_positions.read(id);
             EkuboLP {
                 owner: storable_pos.owner,
-                counterparty_address: storable_pos.counterparty_address,
+                quote_address: storable_pos.quote_address,
                 pool_key: PoolKey {
                     token0: storable_pos.pool_key.token0,
                     token1: storable_pos.pool_key.token1,
@@ -254,8 +254,7 @@ mod EkuboLauncher {
                 CallbackData::WithdrawFeesCallback(params) => {
                     let WithdrawFeesCallback{id, liquidity_position, recipient } = params;
                     let positions = self.positions.read();
-                    let EkuboLP{owner, counterparty_address: _, pool_key, bounds } =
-                        liquidity_position;
+                    let EkuboLP{owner, quote_address: _, pool_key, bounds } = liquidity_position;
                     let pool_key = PoolKey {
                         token0: pool_key.token0,
                         token1: pool_key.token1,
@@ -275,7 +274,7 @@ mod EkuboLauncher {
                 CallbackData::LaunchCallback(params) => {
                     let launch_params: EkuboLaunchParameters = params.params;
                     let (token0, token1) = sort_tokens(
-                        launch_params.token_address, launch_params.counterparty_address
+                        launch_params.token_address, launch_params.quote_address
                     );
                     let launched_token = IUnruggableMemecoinDispatcher {
                         contract_address: launch_params.token_address
@@ -290,12 +289,12 @@ mod EkuboLauncher {
                         extension: 0.try_into().unwrap(),
                     };
 
-                    let is_token1_counterparty = launch_params.counterparty_address == token1;
+                    let is_token1_quote = launch_params.quote_address == token1;
 
-                    // The initial_tick must correspond to the wanted initial price in counterparty/MEME
+                    // The initial_tick must correspond to the wanted initial price in quote/MEME
                     // The ekubo prices are always in TOKEN1/TOKEN0.
-                    // The initial_tick is the lower bound if the counterparty is token1, the upper bound otherwise.
-                    let (initial_tick, bounds) = if is_token1_counterparty {
+                    // The initial_tick is the lower bound if the quote is token1, the upper bound otherwise.
+                    let (initial_tick, bounds) = if is_token1_quote {
                         (
                             i129 {
                                 sign: launch_params.starting_tick.sign,
@@ -310,7 +309,7 @@ mod EkuboLauncher {
                             }
                         )
                     } else {
-                        // The initial tick sign is reversed if the counterparty is token0.
+                        // The initial tick sign is reversed if the quote is token0.
                         // as the price provided was expressed in token1/token0.
                         (
                             i129 {
@@ -338,7 +337,7 @@ mod EkuboLauncher {
 
                     // The pool bounds must be set according to the tick spacing.
                     // The bounds were previously computed to provide yield covering the entire interval
-                    // [lower_bound, starting_tick]  or [starting_tick, upper_bound] depending on the counterparty.
+                    // [lower_bound, starting_tick]  or [starting_tick, upper_bound] depending on the quote.
                     let (id, _) = positions.mint_and_deposit(pool_key, bounds, min_liquidity: 0);
 
                     let mut return_data: Array<felt252> = Default::default();
@@ -346,7 +345,7 @@ mod EkuboLauncher {
                     Serde::serialize(
                         @EkuboLP {
                             owner: launch_params.owner,
-                            counterparty_address: launch_params.counterparty_address,
+                            quote_address: launch_params.quote_address,
                             pool_key,
                             bounds
                         },

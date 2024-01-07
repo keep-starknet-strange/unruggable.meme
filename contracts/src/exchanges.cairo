@@ -14,7 +14,7 @@ trait ExchangeAdapter<A, R> {
     fn create_and_add_liquidity(
         exchange_address: ContractAddress,
         token_address: ContractAddress,
-        counterparty_address: ContractAddress,
+        quote_address: ContractAddress,
         additional_parameters: A,
     ) -> R;
 }

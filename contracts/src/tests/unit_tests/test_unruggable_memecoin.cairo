@@ -427,7 +427,7 @@ mod memecoin_internals {
         // start_prank(CheatTarget::One(router_address), memecoin_address);
         // memecoin
         //     .launch_memecoin(
-        //         SupportedExchanges::Jediswap, counterparty_token_address, 20000000000000000, 1 * ETH_UNIT_DECIMALS
+        //         SupportedExchanges::Jediswap, quote_token_address, 20000000000000000, 1 * ETH_UNIT_DECIMALS
         //     );
         // TODO: call launch_memecoin() with params
         // memecoin.launch_memecoin();
