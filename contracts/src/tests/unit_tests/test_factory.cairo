@@ -4,7 +4,7 @@ use snforge_std::{
     declare, ContractClassTrait, start_prank, stop_prank, CheatTarget, start_warp, stop_warp
 };
 use starknet::{ContractAddress, contract_address_const};
-use unruggable::exchanges::ekubo_adapter::EkuboAdditionalParameters;
+use unruggable::exchanges::ekubo_adapter::EkuboPoolParameters;
 use unruggable::exchanges::jediswap_adapter::{
     IJediswapFactory, IJediswapFactoryDispatcher, IJediswapFactoryDispatcherTrait, IJediswapRouter,
     IJediswapRouterDispatcher, IJediswapRouterDispatcherTrait, IJediswapPairDispatcher,
@@ -204,7 +204,7 @@ fn test_launch_memecoin_amm_not_whitelisted() {
         .launch_on_ekubo(
             memecoin_address,
             eth.contract_address,
-            EkuboAdditionalParameters {
+            EkuboPoolParameters {
                 fee: 0, tick_spacing: 0, starting_tick: i129 { sign: false, mag: 0 }, bound: 0
             }
         );

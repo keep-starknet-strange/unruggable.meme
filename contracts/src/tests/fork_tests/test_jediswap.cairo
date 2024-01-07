@@ -16,7 +16,7 @@ use unruggable::tests::unit_tests::utils::{
     deploy_eth_with_owner
 };
 use unruggable::tokens::interface::{IUnruggableMemecoinDispatcherTrait};
-use unruggable::tokens::memecoin::LiquidityPosition;
+use unruggable::tokens::memecoin::LiquidityType;
 use unruggable::utils::math::PercentageMath;
 
 #[test]

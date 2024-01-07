@@ -114,7 +114,7 @@ mod EkuboLauncher {
     #[derive(Serde, Drop, Copy)]
     struct WithdrawFeesCallback {
         id: u64,
-        liquidity_position: EkuboLP,
+        liquidity_type: EkuboLP,
         recipient: ContractAddress,
     }
 
@@ -182,7 +182,7 @@ mod EkuboLauncher {
 
         fn withdraw_fees(ref self: ContractState, id: u64, recipient: ContractAddress) -> u256 {
             let stored_position = self.liquidity_positions.read(id);
-            let liquidity_position = EkuboLP {
+            let liquidity_type = EkuboLP {
                 owner: stored_position.owner,
                 quote_address: stored_position.quote_address,
                 pool_key: PoolKey {
@@ -197,17 +197,17 @@ mod EkuboLauncher {
                 }
             };
             //TODO: perhaps factory should handle this
-            assert(liquidity_position.owner == get_caller_address(), errors::CALLER_NOT_OWNER);
+            assert(liquidity_type.owner == get_caller_address(), errors::CALLER_NOT_OWNER);
             let (token0, token1) = call_core_with_callback::<
                 CallbackData, (ContractAddress, ContractAddress)
             >(
                 self.core.read(),
                 @CallbackData::WithdrawFeesCallback(
-                    WithdrawFeesCallback { id, liquidity_position, recipient }
+                    WithdrawFeesCallback { id, liquidity_type, recipient }
                 )
             );
 
-            let fee_collected = if liquidity_position.quote_address == token0 {
+            let fee_collected = if liquidity_type.quote_address == token0 {
                 let token0 = ERC20ABIDispatcher { contract_address: token0 };
                 let balance_token0 = token0.balanceOf(get_contract_address());
                 token0.transfer(recipient, balance_token0);
@@ -252,9 +252,9 @@ mod EkuboLauncher {
 
             match consume_callback_data::<CallbackData>(core, data) {
                 CallbackData::WithdrawFeesCallback(params) => {
-                    let WithdrawFeesCallback{id, liquidity_position, recipient } = params;
+                    let WithdrawFeesCallback{id, liquidity_type, recipient } = params;
                     let positions = self.positions.read();
-                    let EkuboLP{owner, quote_address: _, pool_key, bounds } = liquidity_position;
+                    let EkuboLP{owner, quote_address: _, pool_key, bounds } = liquidity_type;
                     let pool_key = PoolKey {
                         token0: pool_key.token0,
                         token1: pool_key.token1,
@@ -284,8 +284,8 @@ mod EkuboLauncher {
                     let pool_key = PoolKey {
                         token0: token0,
                         token1: token1,
-                        fee: launch_params.fee,
-                        tick_spacing: launch_params.tick_spacing,
+                        fee: launch_params.pool_params.fee,
+                        tick_spacing: launch_params.pool_params.tick_spacing,
                         extension: 0.try_into().unwrap(),
                     };
 
@@ -297,15 +297,15 @@ mod EkuboLauncher {
                     let (initial_tick, bounds) = if is_token1_quote {
                         (
                             i129 {
-                                sign: launch_params.starting_tick.sign,
-                                mag: launch_params.starting_tick.mag
+                                sign: launch_params.pool_params.starting_tick.sign,
+                                mag: launch_params.pool_params.starting_tick.mag
                             },
                             Bounds {
                                 lower: i129 {
-                                    sign: launch_params.starting_tick.sign,
-                                    mag: launch_params.starting_tick.mag
+                                    sign: launch_params.pool_params.starting_tick.sign,
+                                    mag: launch_params.pool_params.starting_tick.mag
                                 },
-                                upper: i129 { sign: false, mag: launch_params.bound }
+                                upper: i129 { sign: false, mag: launch_params.pool_params.bound }
                             }
                         )
                     } else {
@@ -313,14 +313,14 @@ mod EkuboLauncher {
                         // as the price provided was expressed in token1/token0.
                         (
                             i129 {
-                                sign: !launch_params.starting_tick.sign,
-                                mag: launch_params.starting_tick.mag
+                                sign: !launch_params.pool_params.starting_tick.sign,
+                                mag: launch_params.pool_params.starting_tick.mag
                             },
                             Bounds {
-                                lower: i129 { sign: true, mag: launch_params.bound },
+                                lower: i129 { sign: true, mag: launch_params.pool_params.bound },
                                 upper: i129 {
-                                    sign: !launch_params.starting_tick.sign,
-                                    mag: launch_params.starting_tick.mag
+                                    sign: !launch_params.pool_params.starting_tick.sign,
+                                    mag: launch_params.pool_params.starting_tick.mag
                                 }
                             }
                         )

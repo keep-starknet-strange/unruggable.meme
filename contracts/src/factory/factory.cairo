@@ -20,11 +20,11 @@ mod Factory {
     };
     use unruggable::errors;
     use unruggable::exchanges::{
-        SupportedExchanges, ekubo_adapter, ekubo_adapter::EkuboAdditionalParameters,
-        jediswap_adapter, jediswap_adapter::JediswapAdditionalParameters, ekubo::launcher::EkuboLP
+        SupportedExchanges, ekubo_adapter, ekubo_adapter::EkuboPoolParameters, jediswap_adapter,
+        jediswap_adapter::JediswapAdditionalParameters, ekubo::launcher::EkuboLP
     };
     use unruggable::factory::IFactory;
-    use unruggable::tokens::UnruggableMemecoin::LiquidityPosition;
+    use unruggable::tokens::UnruggableMemecoin::LiquidityType;
     use unruggable::tokens::interface::{
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
@@ -149,7 +149,7 @@ mod Factory {
                 }
             );
 
-            memecoin.set_launched(LiquidityPosition::ERC20(pair_address));
+            memecoin.set_launched(LiquidityType::ERC20(pair_address));
             self
                 .emit(
                     MemecoinLaunched {
@@ -163,7 +163,7 @@ mod Factory {
             ref self: ContractState,
             memecoin_address: ContractAddress,
             quote_address: ContractAddress,
-            ekubo_parameters: EkuboAdditionalParameters,
+            ekubo_parameters: EkuboPoolParameters,
         ) -> (u64, EkuboLP) {
             let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
             let launchpad_address = self.exchange_address(SupportedExchanges::Ekubo);
@@ -183,7 +183,7 @@ mod Factory {
                 additional_parameters: ekubo_parameters
             );
 
-            memecoin.set_launched(LiquidityPosition::NFT(id));
+            memecoin.set_launched(LiquidityType::NFT(id));
             self
                 .emit(
                     MemecoinLaunched {

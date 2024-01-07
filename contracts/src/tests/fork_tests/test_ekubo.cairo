@@ -13,7 +13,7 @@ use unruggable::exchanges::SupportedExchanges;
 use unruggable::exchanges::ekubo::launcher::{
     IEkuboLauncherDispatcher, IEkuboLauncherDispatcherTrait, EkuboLP
 };
-use unruggable::exchanges::ekubo_adapter::EkuboAdditionalParameters;
+use unruggable::exchanges::ekubo_adapter::EkuboPoolParameters;
 use unruggable::factory::interface::{IFactoryDispatcher, IFactoryDispatcherTrait};
 use unruggable::factory::{Factory};
 use unruggable::locker::LockPosition;
@@ -32,7 +32,7 @@ use unruggable::tests::unit_tests::utils::{
 use unruggable::tokens::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
 };
-use unruggable::tokens::memecoin::LiquidityPosition;
+use unruggable::tokens::memecoin::LiquidityType;
 use unruggable::utils::math::PercentageMath;
 
 fn launch_memecoin_on_ekubo(
@@ -46,7 +46,7 @@ fn launch_memecoin_on_ekubo(
         .launch_on_ekubo(
             memecoin_address,
             quote_address,
-            EkuboAdditionalParameters { fee, tick_spacing, starting_tick, bound }
+            EkuboPoolParameters { fee, tick_spacing, starting_tick, bound }
         );
 
     (memecoin_address, id, position)
@@ -537,7 +537,7 @@ fn test_cant_launch_twice() {
         .launch_on_ekubo(
             memecoin_address,
             quote_address,
-            EkuboAdditionalParameters {
+            EkuboPoolParameters {
                 fee: 0xc49ba5e353f7d00000000000000000,
                 tick_spacing: 5982,
                 starting_tick,

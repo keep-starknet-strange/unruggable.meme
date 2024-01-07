@@ -3,7 +3,7 @@ use starknet::ContractAddress;
 
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
-enum LiquidityPosition {
+enum LiquidityType {
     ERC20: ContractAddress,
     NFT: u64
 }
@@ -27,7 +27,7 @@ mod UnruggableMemecoin {
         ContractAddress, contract_address_const, get_contract_address, get_caller_address,
         get_tx_info, get_block_timestamp
     };
-    use super::LiquidityPosition;
+    use super::LiquidityType;
 
     use unruggable::errors;
     use unruggable::exchanges::jediswap_adapter::{
@@ -74,7 +74,7 @@ mod UnruggableMemecoin {
         transfer_restriction_delay: u64,
         launch_time: u64,
         factory_contract: ContractAddress,
-        liquidity_position: LiquidityPosition,
+        liquidity_type: LiquidityType,
         // Components.
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
@@ -141,10 +141,11 @@ mod UnruggableMemecoin {
             self.factory_contract.read()
         }
 
-        fn set_launched(ref self: ContractState, liquidity_position: LiquidityPosition) {
+
+        fn set_launched(ref self: ContractState, liquidity_type: LiquidityType) {
             self.assert_only_factory();
             assert(!self.is_launched(), errors::ALREADY_LAUNCHED);
-            self.liquidity_position.write(liquidity_position);
+            self.liquidity_type.write(liquidity_type);
             self.launch_time.write(get_block_timestamp());
             self.ownable._transfer_ownership(0.try_into().unwrap());
         }
@@ -295,17 +296,16 @@ mod UnruggableMemecoin {
                 self.enforce_prelaunch_holders_limit(sender, recipient, amount);
             } else {
                 //TODO: make sure restrictions are compatible with ekubo and aggregators
-                let liquidity_position = self.liquidity_position.read();
-                match liquidity_position {
-                    LiquidityPosition::ERC20(pair) => {
+                let liquidity_type = self.liquidity_type.read();
+                match liquidity_type {
+                    LiquidityType::ERC20(pair) => {
                         if (get_caller_address() == pair || recipient == pair) {
                             return;
                         }
                     },
-                    LiquidityPosition::NFT(_) => {}
+                    LiquidityType::NFT(_) => {}
                 }
 
-                //TODO: verify compatibility with ekubo
                 assert(
                     amount <= self.total_supply().percent_mul(MAX_PERCENTAGE_BUY_LAUNCH.into()),
                     'Max buy cap reached'

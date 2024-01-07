@@ -1,6 +1,6 @@
 use openzeppelin::token::erc20::interface::{IERC20Metadata, IERC20, IERC20Camel};
 use starknet::ContractAddress;
-use super::memecoin::LiquidityPosition;
+use super::memecoin::LiquidityType;
 use unruggable::exchanges::SupportedExchanges;
 
 #[starknet::interface]
@@ -50,7 +50,7 @@ trait IUnruggableMemecoin<TState> {
     fn is_launched(self: @TState) -> bool;
     fn get_team_allocation(self: @TState) -> u256;
     fn memecoin_factory_address(self: @TState) -> ContractAddress;
-    fn set_launched(ref self: TState, liquidity_position: LiquidityPosition);
+    fn set_launched(ref self: TState, liquidity_type: LiquidityType);
 }
 
 #[starknet::interface]
@@ -95,7 +95,7 @@ trait IUnruggableAdditional<TState> {
     ///
     /// # Arguments
     ///
-    /// * `liquidity_position` - The liquidity position at the time of launch.
+    /// * `liquidity_type` - The liquidity position at the time of launch.
     ///
     /// # Panics
     ///
@@ -104,5 +104,5 @@ trait IUnruggableAdditional<TState> {
     /// * The caller's address is not the same as the `factory` of the memecoin (error code: `errors::CALLER_NOT_FACTORY`).
     /// * The memecoin has already been launched (error code: `errors::ALREADY_LAUNCHED`).
     ///
-    fn set_launched(ref self: TState, liquidity_position: LiquidityPosition);
+    fn set_launched(ref self: TState, liquidity_type: LiquidityType);
 }

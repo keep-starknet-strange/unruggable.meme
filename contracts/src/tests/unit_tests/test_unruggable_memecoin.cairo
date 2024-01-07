@@ -176,7 +176,7 @@ mod memecoin_entrypoints {
     use unruggable::tokens::interface::{
         IUnruggableMemecoin, IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
-    use unruggable::tokens::memecoin::{LiquidityPosition, UnruggableMemecoin};
+    use unruggable::tokens::memecoin::{LiquidityType, UnruggableMemecoin};
 
 
     #[test]

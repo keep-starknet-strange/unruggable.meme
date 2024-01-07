@@ -22,16 +22,11 @@ struct EkuboLaunchParameters {
     owner: ContractAddress,
     token_address: ContractAddress,
     quote_address: ContractAddress,
-    fee: u128,
-    tick_spacing: u128,
-    // the sign of the starting tick is positive (false) if quote/token < 1 and negative (true) otherwise
-    starting_tick: i129,
-    // The LP providing bound. The sign will be determined by the address of the LPed tokens and the starting tick
-    bound: u128,
+    pool_params: EkuboPoolParameters
 }
 
 #[derive(Drop, Copy, Serde)]
-struct EkuboAdditionalParameters {
+struct EkuboPoolParameters {
     fee: u128,
     tick_spacing: u128,
     // the sign of the starting tick is positive (false) if quote/token < 1 and negative (true) otherwise
@@ -41,22 +36,24 @@ struct EkuboAdditionalParameters {
 }
 
 impl EkuboAdapterImpl of unruggable::exchanges::ExchangeAdapter<
-    EkuboAdditionalParameters, (u64, EkuboLP)
+    EkuboPoolParameters, (u64, EkuboLP)
 > {
     fn create_and_add_liquidity(
         exchange_address: ContractAddress,
         token_address: ContractAddress,
         quote_address: ContractAddress,
-        additional_parameters: EkuboAdditionalParameters,
+        additional_parameters: EkuboPoolParameters,
     ) -> (u64, EkuboLP) {
         let ekubo_launch_params = EkuboLaunchParameters {
             owner: starknet::get_caller_address(),
             token_address: token_address,
             quote_address: quote_address,
-            fee: additional_parameters.fee,
-            tick_spacing: additional_parameters.tick_spacing,
-            starting_tick: additional_parameters.starting_tick,
-            bound: additional_parameters.bound,
+            pool_params: EkuboPoolParameters {
+                fee: additional_parameters.fee,
+                tick_spacing: additional_parameters.tick_spacing,
+                starting_tick: additional_parameters.starting_tick,
+                bound: additional_parameters.bound,
+            }
         };
 
         let memecoin = IUnruggableMemecoinDispatcher { contract_address: token_address, };

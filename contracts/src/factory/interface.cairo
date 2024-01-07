@@ -3,7 +3,7 @@ use openzeppelin::token::erc20::ERC20ABIDispatcher;
 use starknet::ContractAddress;
 use unruggable::exchanges::SupportedExchanges;
 use unruggable::exchanges::ekubo::launcher::EkuboLP;
-use unruggable::exchanges::ekubo_adapter::EkuboAdditionalParameters;
+use unruggable::exchanges::ekubo_adapter::EkuboPoolParameters;
 
 #[starknet::interface]
 trait IFactory<TContractState> {
@@ -99,7 +99,7 @@ trait IFactory<TContractState> {
         ref self: TContractState,
         memecoin_address: ContractAddress,
         quote_address: ContractAddress,
-        ekubo_parameters: EkuboAdditionalParameters,
+        ekubo_parameters: EkuboPoolParameters,
     ) -> (u64, EkuboLP);
 
     /// Returns the router address for a given Exchange, provided that this Exchange
