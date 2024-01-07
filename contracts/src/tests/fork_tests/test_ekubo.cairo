@@ -149,6 +149,26 @@ fn swap_tokens_on_ekubo(
 
 #[test]
 #[fork("Mainnet")]
+fn test_locked_liquidity_ekubo() {
+    let owner = snforge_std::test_address();
+    let (quote, quote_address) = deploy_eth_with_owner(owner);
+    let starting_tick = i129 { sign: true, mag: 4600158 };
+    let (memecoin_address, id, position) = launch_memecoin_on_ekubo(
+        quote_address, 0xc49ba5e353f7d00000000000000000, 5982, starting_tick, 88719042
+    );
+    let ekubo_launcher = IEkuboLauncherDispatcher { contract_address: EKUBO_LAUNCHER_ADDRESS() };
+    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
+
+    let (locker_address, locked_type) = factory.locked_liquidity(memecoin_address).unwrap();
+    assert(locker_address == EKUBO_LAUNCHER_ADDRESS(), 'wrong locker address');
+    match locked_type {
+        LiquidityType::ERC20(_) => panic_with_felt252('wrong liquidity type'),
+        LiquidityType::NFT(id) => ()
+    }
+}
+
+#[test]
+#[fork("Mainnet")]
 fn test_launch_meme() {
     let owner = snforge_std::test_address();
     let (quote, quote_address) = deploy_eth_with_owner(owner);

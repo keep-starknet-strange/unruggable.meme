@@ -25,16 +25,31 @@ use unruggable::tests::unit_tests::utils::{
 use unruggable::tokens::interface::{
     IUnruggableMemecoin, IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
 };
+use unruggable::tokens::memecoin::LiquidityType;
 
 #[test]
-fn test_lock_manager_address() {
-    let (_, router_address) = deploy_jedi_amm_factory_and_router();
-    let memecoin_factory_address = deploy_meme_factory(router_address);
-    let memecoin_factory = IFactoryDispatcher { contract_address: memecoin_factory_address };
+fn test_locked_liquidity_not_locked() {
+    let owner = snforge_std::test_address();
+    let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
+    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
 
-    let lock_manager_address = memecoin_factory.lock_manager_address();
-    assert(lock_manager_address == LOCK_MANAGER_ADDRESS(), 'wrong lock manager address');
+    assert(factory.locked_liquidity(memecoin_address).is_none(), 'liquidty not locked yet');
 }
+
+#[test]
+fn test_locked_liquidity_jediswap() {
+    let (memecoin, memecoin_address) = deploy_and_launch_memecoin();
+    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
+
+    let (locker_address, locked_type) = factory.locked_liquidity(memecoin_address).unwrap();
+    assert(locker_address == LOCK_MANAGER_ADDRESS(), 'wrong locker address');
+    match locked_type {
+        LiquidityType::ERC20(_) => (),
+        LiquidityType::NFT(_) => panic_with_felt252('wrong liquidity type')
+    }
+}
+
+// Test for ekubo is in fork tests
 
 #[test]
 fn test_exchange_address() {

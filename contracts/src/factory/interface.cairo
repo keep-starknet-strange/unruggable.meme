@@ -4,6 +4,7 @@ use starknet::ContractAddress;
 use unruggable::exchanges::SupportedExchanges;
 use unruggable::exchanges::ekubo::launcher::EkuboLP;
 use unruggable::exchanges::ekubo_adapter::EkuboPoolParameters;
+use unruggable::tokens::memecoin::LiquidityType;
 
 #[starknet::interface]
 trait IFactory<TContractState> {
@@ -114,13 +115,19 @@ trait IFactory<TContractState> {
     /// * `ContractAddress` - The contract address associated with the given Exchange name.
     fn exchange_address(self: @TContractState, amm: SupportedExchanges) -> ContractAddress;
 
-
-    /// Returns the locker address for the memecoins of this factory.
+    /// Returns information about the locked liquidity of a token launched with unruggable.
+    ///
+    /// # Arguments
+    ///
+    /// * `token` - The address of the token to fetch info for.
     ///
     /// # Returns
     ///
-    /// * `ContractAddress` - The contract address associated with the given Exchange name.
-    fn lock_manager_address(self: @TContractState) -> ContractAddress;
+    /// * `ContractAddress` - The address where the liquidity is locked.
+    /// * `LiquidityType` - The type of liquidity pair (ERC20 address of NFT id)
+    fn locked_liquidity(
+        self: @TContractState, token: ContractAddress
+    ) -> Option<(ContractAddress, LiquidityType)>;
 
     /// Checks if a given address is a memecoin.
     ///

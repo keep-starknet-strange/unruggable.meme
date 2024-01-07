@@ -145,7 +145,9 @@ mod Factory {
                 token_address: memecoin_address,
                 quote_address: quote_address,
                 additional_parameters: JediswapAdditionalParameters {
-                    lock_manager_address: self.lock_manager_address(), unlock_time, quote_amount
+                    lock_manager_address: self.lock_manager_address.read(),
+                    unlock_time,
+                    quote_amount
                 }
             );
 
@@ -193,8 +195,26 @@ mod Factory {
             (id, position)
         }
 
-        fn lock_manager_address(self: @ContractState) -> ContractAddress {
-            self.lock_manager_address.read()
+        fn locked_liquidity(
+            self: @ContractState, token: ContractAddress
+        ) -> Option<(ContractAddress, LiquidityType)> {
+            let memecoin = IUnruggableMemecoinDispatcher { contract_address: token };
+            let liquidity_type = match memecoin.liquidity_type() {
+                Option::Some(liquidity_type) => liquidity_type,
+                Option::None => { return Option::None; },
+            };
+            let locker_address = match liquidity_type {
+                LiquidityType::ERC20(pair_address) => {
+                    // ERC20 tokens are locked inside an ERC20Tokens-Locker
+                    self.lock_manager_address.read()
+                },
+                LiquidityType::NFT(id) => {
+                    // Ekubo NFTs are locked inside the EkuboLauncher contract
+                    self.exchange_address(SupportedExchanges::Ekubo)
+                }
+            };
+
+            Option::Some((locker_address, liquidity_type))
         }
 
         fn exchange_address(self: @ContractState, amm: SupportedExchanges) -> ContractAddress {

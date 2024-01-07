@@ -74,7 +74,7 @@ mod UnruggableMemecoin {
         transfer_restriction_delay: u64,
         launch_time: u64,
         factory_contract: ContractAddress,
-        liquidity_type: LiquidityType,
+        liquidity_type: Option<LiquidityType>,
         // Components.
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
@@ -115,6 +115,8 @@ mod UnruggableMemecoin {
 
         self.ownable.initializer(owner);
 
+        self.liquidity_type.write(Option::None);
+
         // Initialize the token / internal logic
         self
             .initializer(
@@ -141,11 +143,14 @@ mod UnruggableMemecoin {
             self.factory_contract.read()
         }
 
+        fn liquidity_type(self: @ContractState) -> Option<LiquidityType> {
+            self.liquidity_type.read()
+        }
 
         fn set_launched(ref self: ContractState, liquidity_type: LiquidityType) {
             self.assert_only_factory();
             assert(!self.is_launched(), errors::ALREADY_LAUNCHED);
-            self.liquidity_type.write(liquidity_type);
+            self.liquidity_type.write(Option::Some(liquidity_type));
             self.launch_time.write(get_block_timestamp());
             self.ownable._transfer_ownership(0.try_into().unwrap());
         }
@@ -296,7 +301,7 @@ mod UnruggableMemecoin {
                 self.enforce_prelaunch_holders_limit(sender, recipient, amount);
             } else {
                 //TODO: make sure restrictions are compatible with ekubo and aggregators
-                let liquidity_type = self.liquidity_type.read();
+                let liquidity_type = self.liquidity_type.read().unwrap();
                 match liquidity_type {
                     LiquidityType::ERC20(pair) => {
                         if (get_caller_address() == pair || recipient == pair) {
