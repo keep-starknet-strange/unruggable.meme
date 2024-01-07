@@ -27,7 +27,7 @@ fn EKUBO_LAUNCHER_ADDRESS() -> ContractAddress {
 }
 
 fn EKUBO_SWAPPER_ADDRESS() -> ContractAddress {
-    'ekubo_swapper'.try_into().unwrap()
+    0x07a83729aaaae6344d6fca558614cd22ecdd3f5cd90ec0cd20c8d6bf08170431.try_into().unwrap()
 }
 
 
@@ -60,13 +60,6 @@ fn deploy_ekubo_launcher() -> ContractAddress {
     launcher
         .deploy_at(@calldata, EKUBO_LAUNCHER_ADDRESS())
         .expect('EkuboLauncher deployment failed')
-}
-
-fn deploy_ekubo_swapper() -> ContractAddress {
-    let swapper = declare('SimpleSwapper');
-    let mut calldata = Default::default();
-    Serde::serialize(@EKUBO_CORE(), ref calldata);
-    swapper.deploy_at(@calldata, EKUBO_SWAPPER_ADDRESS()).expect('Swapper deployment failed')
 }
 
 // MemeFactory

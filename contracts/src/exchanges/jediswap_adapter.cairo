@@ -61,7 +61,7 @@ struct JediswapAdditionalParameters {
     counterparty_amount: u256
 }
 
-impl JediswapAdapterImpl of unruggable::exchanges::IAmmAdapter<
+impl JediswapAdapterImpl of unruggable::exchanges::ExchangeAdapter<
     JediswapAdditionalParameters, ContractAddress
 > {
     fn create_and_add_liquidity(

@@ -167,23 +167,18 @@ mod Factory {
             ref self: ContractState,
             memecoin_address: ContractAddress,
             counterparty_address: ContractAddress,
-            fee: u128,
-            tick_spacing: u128,
-            starting_tick: i129,
-            bound: u128
+            ekubo_parameters: EkuboAdditionalParameters,
         ) -> (u64, EkuboLP) {
             let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
             let launchpad_address = self.exchange_address(SupportedExchanges::Ekubo);
             assert(get_caller_address() == memecoin.owner(), errors::CALLER_NOT_OWNER);
             assert(launchpad_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
             assert(!memecoin.is_launched(), errors::ALREADY_LAUNCHED); //TODO: error message
-            assert(starting_tick.mag.is_non_zero(), errors::PRICE_ZERO); //TODO: test
+            assert(
+                ekubo_parameters.starting_tick.mag.is_non_zero(), errors::PRICE_ZERO
+            ); //TODO: test
             let counterparty_token = ERC20ABIDispatcher { contract_address: counterparty_address };
             let caller_address = get_caller_address();
-
-            let ekubo_parameters = EkuboAdditionalParameters {
-                fee, tick_spacing, starting_tick, bound,
-            };
 
             let (id, position) = ekubo_adapter::EkuboAdapterImpl::create_and_add_liquidity(
                 exchange_address: launchpad_address,

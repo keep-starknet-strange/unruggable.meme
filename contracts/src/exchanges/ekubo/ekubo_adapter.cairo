@@ -30,7 +30,7 @@ struct EkuboLaunchParameters {
     bound: u128,
 }
 
-#[derive(Drop)]
+#[derive(Drop, Copy, Serde)]
 struct EkuboAdditionalParameters {
     fee: u128,
     tick_spacing: u128,
@@ -40,7 +40,7 @@ struct EkuboAdditionalParameters {
     bound: u128,
 }
 
-impl EkuboAdapterImpl of unruggable::exchanges::IAmmAdapter<
+impl EkuboAdapterImpl of unruggable::exchanges::ExchangeAdapter<
     EkuboAdditionalParameters, (u64, EkuboLP)
 > {
     fn create_and_add_liquidity(

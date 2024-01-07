@@ -13,6 +13,7 @@ use unruggable::exchanges::SupportedExchanges;
 use unruggable::exchanges::ekubo::launcher::{
     IEkuboLauncherDispatcher, IEkuboLauncherDispatcherTrait, EkuboLP
 };
+use unruggable::exchanges::ekubo_adapter::EkuboAdditionalParameters;
 use unruggable::factory::interface::{IFactoryDispatcher, IFactoryDispatcherTrait};
 use unruggable::factory::{Factory};
 use unruggable::locker::LockPosition;
@@ -23,7 +24,7 @@ use unruggable::mocks::ekubo::swapper::{
 use unruggable::tests::addresses::{EKUBO_CORE};
 use unruggable::tests::fork_tests::utils::{
     deploy_memecoin_through_factory_with_owner, sort_tokens, EKUBO_LAUNCHER_ADDRESS,
-    EKUBO_SWAPPER_ADDRESS, deploy_ekubo_swapper, deploy_token0_with_owner, deploy_eth_with_owner
+    EKUBO_SWAPPER_ADDRESS, deploy_token0_with_owner, deploy_eth_with_owner
 };
 use unruggable::tests::unit_tests::utils::{
     OWNER, DEFAULT_MIN_LOCKTIME, pow_256, LOCK_MANAGER_ADDRESS, MEMEFACTORY_ADDRESS, RECIPIENT
@@ -47,7 +48,9 @@ fn launch_memecoin_on_ekubo(
     let ekubo_launcher = IEkuboLauncherDispatcher { contract_address: EKUBO_LAUNCHER_ADDRESS() };
     let (id, position) = factory
         .launch_on_ekubo(
-            memecoin_address, counterparty_address, fee, tick_spacing, starting_tick, bound
+            memecoin_address,
+            counterparty_address,
+            EkuboAdditionalParameters { fee, tick_spacing, starting_tick, bound }
         );
 
     (memecoin_address, id, position)
@@ -80,7 +83,7 @@ fn swap_tokens_on_ekubo(
     // so the received amounts should be around 100x the amount of counterparty sent
     // with a 5% margin of error for the price impact.
     // since the pool price is expressend in counterparty/MEME, the price should move upwards (more counterparty for 1 meme)
-    let swapper_address = deploy_ekubo_swapper();
+    let swapper_address = EKUBO_SWAPPER_ADDRESS();
     let ekubo_swapper = ISimpleSwapperDispatcher { contract_address: swapper_address };
     let first_amount_in = amount_in;
     let swap_params = SwapParameters {
@@ -542,10 +545,12 @@ fn test_cant_launch_twice() {
         .launch_on_ekubo(
             memecoin_address,
             counterparty_address,
-            0xc49ba5e353f7d00000000000000000,
-            5982,
-            starting_tick,
-            88719042
+            EkuboAdditionalParameters {
+                fee: 0xc49ba5e353f7d00000000000000000,
+                tick_spacing: 5982,
+                starting_tick,
+                bound: 88719042
+            }
         );
 }
 //TODO! As there are no unit ekubo tests, we need to deeply test the whole flow of interaction with ekubo - including 

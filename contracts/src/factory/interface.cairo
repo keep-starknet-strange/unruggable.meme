@@ -3,6 +3,7 @@ use openzeppelin::token::erc20::ERC20ABIDispatcher;
 use starknet::ContractAddress;
 use unruggable::exchanges::SupportedExchanges;
 use unruggable::exchanges::ekubo::launcher::EkuboLP;
+use unruggable::exchanges::ekubo_adapter::EkuboAdditionalParameters;
 
 #[starknet::interface]
 trait IFactory<TContractState> {
@@ -77,10 +78,11 @@ trait IFactory<TContractState> {
     ///
     /// * `memecoin_address` - The address of the memecoin contract.
     /// * `counterparty_address` - The address of the counterparty token contract.
-    /// * `fee` - The fee for the liquidity pair.
-    /// * `tick_spacing` - The spacing between ticks for the liquidity pool.
-    /// * `starting_tick` - The starting tick for the liquidity pool.
-    /// * `bound` - The bound for the liquidity pool - should be set to the max tick for this pool.
+    /// * `ekubo_parameters` - The parameters for the ekubo liquidity pool, including:
+    ///     - `fee` - The fee for the liquidity pair.
+    ///     - `tick_spacing` - The spacing between ticks for the liquidity pool.
+    ///     - `starting_tick` - The starting tick for the liquidity pool.
+    ///     - `bound` - The bound for the liquidity pool - should be set to the max tick for this pool (the sign is determined in the contract).
     ///
     /// # Returns
     ///
@@ -97,10 +99,7 @@ trait IFactory<TContractState> {
         ref self: TContractState,
         memecoin_address: ContractAddress,
         counterparty_address: ContractAddress,
-        fee: u128,
-        tick_spacing: u128,
-        starting_tick: i129,
-        bound: u128
+        ekubo_parameters: EkuboAdditionalParameters,
     ) -> (u64, EkuboLP);
 
     /// Returns the router address for a given Exchange, provided that this Exchange
