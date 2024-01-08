@@ -75,6 +75,7 @@ mod EkuboLauncher {
     use super::{IEkuboLauncher, EkuboLaunchParameters, sort_tokens};
     use super::{StorableBounds, StorablePoolKey, StorableEkuboLP, EkuboLP};
     use unruggable::errors;
+    use unruggable::exchanges::ekubo::errors::NOT_POSITION_OWNER;
     use unruggable::exchanges::ekubo::interfaces::{
         ITokenRegistryDispatcher, IPositionsDispatcher, IPositionsDispatcherTrait,
         IOwnedNFTDispatcher, IOwnedNFTDispatcherTrait,
@@ -421,7 +422,7 @@ mod EkuboLauncher {
             self: @ContractState, position_to_transfer: StorableEkuboLP,
         ) {
             let owner_of_position: ContractAddress = position_to_transfer.owner;
-            assert(get_caller_address() == owner_of_position, errors::CALLER_NOT_OWNER);
+            assert(get_caller_address() == owner_of_position, NOT_POSITION_OWNER);
         }
 
         /// Removes the id of a position from the list of positions of a user.
