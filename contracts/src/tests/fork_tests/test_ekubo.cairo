@@ -272,10 +272,6 @@ fn test_swap_token0_price_below_1() {
         extension: position.pool_key.extension
     };
 
-    let mut tx_info: TxInfoMock = Default::default();
-    tx_info.transaction_hash = Option::Some(1);
-    start_spoof(CheatTarget::One(memecoin_address), tx_info);
-
     // Check that swaps work correctly
     let amount_in = 2 * pow_256(10, 16);
     swap_tokens_on_ekubo(
@@ -288,10 +284,12 @@ fn test_swap_token0_price_below_1() {
         pool_key: pool_key
     );
 
-    // Test that the owner of the LP can withdraw fees from the launcher
-    tx_info.transaction_hash = Option::Some(2);
+    // Change tx hash to avoid multicall detection
+    let mut tx_info: TxInfoMock = Default::default();
+    tx_info.transaction_hash = Option::Some(1);
     start_spoof(CheatTarget::One(memecoin_address), tx_info);
 
+    // Test that the owner of the LP can withdraw fees from the launcher
     let recipient = RECIPIENT();
     ekubo_launcher.withdraw_fees(id, recipient);
     let balance_of_memecoin = memecoin.balance_of(recipient);
@@ -343,10 +341,6 @@ fn test_launch_meme_token1_price_below_1() {
     );
     assert(reserve_memecoin > expected_reserve_lower_bound, 'reserves holds too few token');
 
-    let mut tx_info: TxInfoMock = Default::default();
-    tx_info.transaction_hash = Option::Some(1);
-    start_spoof(CheatTarget::One(memecoin_address), tx_info);
-
     let amount_in = 2 * pow_256(10, 16);
     swap_tokens_on_ekubo(
         token_in_address: quote_address,
@@ -358,7 +352,9 @@ fn test_launch_meme_token1_price_below_1() {
         pool_key: pool_key
     );
 
-    tx_info.transaction_hash = Option::Some(2);
+    // Change tx hash to avoid multicall detection
+    let mut tx_info: TxInfoMock = Default::default();
+    tx_info.transaction_hash = Option::Some(1);
     start_spoof(CheatTarget::One(memecoin_address), tx_info);
 
     // Test that the owner of the LP can withdraw fees from the launcher
@@ -412,10 +408,6 @@ fn test_launch_meme_token0_price_above_1() {
     );
     assert(reserve_memecoin > expected_reserve_lower_bound, 'reserves holds too few token');
 
-    let mut tx_info: TxInfoMock = Default::default();
-    tx_info.transaction_hash = Option::Some(1);
-    start_spoof(CheatTarget::One(memecoin_address), tx_info);
-
     // Test that swaps work correctly
     let amount_in = 2 * pow_256(10, 16);
     swap_tokens_on_ekubo(
@@ -428,10 +420,12 @@ fn test_launch_meme_token0_price_above_1() {
         pool_key: pool_key
     );
 
-    // Test that the owner of the LP can withdraw fees from the launcher
-    tx_info.transaction_hash = Option::Some(2);
+    // Change tx hash to avoid multicall detection
+    let mut tx_info: TxInfoMock = Default::default();
+    tx_info.transaction_hash = Option::Some(1);
     start_spoof(CheatTarget::One(memecoin_address), tx_info);
 
+    // Test that the owner of the LP can withdraw fees from the launcher
     let recipient = RECIPIENT();
     ekubo_launcher.withdraw_fees(id, recipient);
     let balance_of_memecoin = memecoin.balance_of(recipient);
@@ -483,10 +477,6 @@ fn test_launch_meme_token1_price_above_1() {
     );
     assert(reserve_memecoin > expected_reserve_lower_bound, 'reserves holds too few token');
 
-    let mut tx_info: TxInfoMock = Default::default();
-    tx_info.transaction_hash = Option::Some(1);
-    start_spoof(CheatTarget::One(memecoin_address), tx_info);
-
     // Check that swaps work correctly
     let amount_in = 2 * pow_256(10, 16);
     swap_tokens_on_ekubo(
@@ -499,11 +489,12 @@ fn test_launch_meme_token1_price_above_1() {
         pool_key: pool_key
     );
 
-    // Test that the owner of the LP can withdraw fees from the launcher
-    // creating and setting unique tx_hash here 
-    tx_info.transaction_hash = Option::Some(2);
+    // Change tx hash to avoid multicall detection
+    let mut tx_info: TxInfoMock = Default::default();
+    tx_info.transaction_hash = Option::Some(1);
     start_spoof(CheatTarget::One(memecoin_address), tx_info);
 
+    // Test that the owner of the LP can withdraw fees from the launcher
     let recipient = RECIPIENT();
     ekubo_launcher.withdraw_fees(id, recipient);
     let balance_of_memecoin = memecoin.balance_of(recipient);

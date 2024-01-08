@@ -26,5 +26,5 @@ sort-module-level-items = true
 
 [[tool.snforge.fork]]
 name = "Mainnet"
-url = ""
+url = "https://starknet-mainnet.g.alchemy.com/v2/v0Md_5fihoGkWsiwO1I0FFwPgFu9KVLB"
 block_id.tag = "Latest"
