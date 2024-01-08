@@ -2,8 +2,8 @@ use core::traits::TryInto;
 use debug::PrintTrait;
 use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
 use snforge_std::{
-    declare, ContractClassTrait, start_prank, stop_prank, CheatTarget, TxInfoMock, get_class_hash,
-    ContractClass
+    declare, ContractClassTrait, start_prank, stop_prank, start_spoof, CheatTarget, TxInfoMock,
+    get_class_hash, ContractClass
 };
 use starknet::ContractAddress;
 use unruggable::exchanges::SupportedExchanges;
@@ -119,7 +119,7 @@ fn deploy_memecoin_through_factory_with_owner(
     // occured in the same tx. Rather than adding these lines in each test, we make it a default.
     let mut tx_info: TxInfoMock = Default::default();
     tx_info.transaction_hash = Option::Some(1234);
-    snforge_std::start_spoof(CheatTarget::One(memecoin_address), tx_info);
+    start_spoof(CheatTarget::One(memecoin_address), tx_info);
 
     (IUnruggableMemecoinDispatcher { contract_address: memecoin_address }, memecoin_address)
 }
