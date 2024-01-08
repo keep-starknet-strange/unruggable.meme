@@ -9,7 +9,7 @@ use snforge_std::{
     start_prank, stop_prank, start_spoof, stop_spoof, spy_events, SpyOn, EventSpy, EventAssertions,
     CheatTarget, TxInfoMock
 };
-use starknet::{ContractAddress, get_contract_address};
+use starknet::{ContractAddress};
 use unruggable::exchanges::SupportedExchanges;
 use unruggable::exchanges::ekubo::launcher::{
     IEkuboLauncherDispatcher, IEkuboLauncherDispatcherTrait, EkuboLP
