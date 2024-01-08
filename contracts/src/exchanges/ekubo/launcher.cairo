@@ -1,7 +1,7 @@
 use ekubo::types::bounds::Bounds;
 use ekubo::types::i129::i129;
 use ekubo::types::keys::PoolKey;
-use starknet::ContractAddress;
+use core::starknet::ContractAddress;
 use unruggable::exchanges::ekubo::ekubo_adapter::{EkuboLaunchParameters};
 use unruggable::utils::ContractAddressOrder;
 
@@ -51,7 +51,9 @@ fn sort_tokens(
 #[starknet::interface]
 trait IEkuboLauncher<T> {
     fn launch_token(ref self: T, params: EkuboLaunchParameters) -> (u64, EkuboLP);
-    fn transfer_position_ownership(ref self: T, position_to_transfer: StorableEkuboLP);
+    fn transfer_position_ownership(
+        ref self: T, position_to_transfer: StorableEkuboLP, id: u64, recipient: ContractAddress
+    );
     fn withdraw_fees(ref self: T, id: u64, recipient: ContractAddress) -> u256;
     fn launched_tokens(ref self: T, owner: ContractAddress) -> Span<u64>;
     fn liquidity_position_details(ref self: T, id: u64) -> EkuboLP;
@@ -69,7 +71,7 @@ mod EkuboLauncher {
     use ekubo::types::{i129::i129};
     use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
     use starknet::SyscallResultTrait;
-    use starknet::{ContractAddress, ClassHash, get_contract_address, get_caller_address};
+    use starknet::{ContractAddress, ClassHash, get_contract_address, get_caller_address, Store};
     use super::{IEkuboLauncher, EkuboLaunchParameters, sort_tokens};
     use super::{StorableBounds, StorablePoolKey, StorableEkuboLP, EkuboLP};
     use unruggable::errors;
@@ -182,11 +184,24 @@ mod EkuboLauncher {
         }
 
         fn transfer_position_ownership(
-            ref self: ContractState, position_to_transfer: StorableEkuboLP
+            ref self: ContractState,
+            position_to_transfer: StorableEkuboLP,
+            id: u64,
+            recipient: ContractAddress
         ) {
-            let caller: ContractAddress = get_caller_address();
-            let owner_of_position: ContractAddress = position_to_transfer.owner;
-            assert(caller == owner_of_position, 'not the owner of the position');
+            self.assert_only_position_owner(position_to_transfer);
+
+            assert(recipient.into() != 0_felt252, errors::RECIPIENT_ADDRESS_ZERO);
+
+            let mut positions_of_owner = self.owner_to_positions.read(get_caller_address());
+
+            // Remove position of the owner
+            self.remove_position_from_list(id, positions_of_owner);
+
+            let mut positions_of_recipient = self.owner_to_positions.read(recipient);
+
+            // Add position to recipient
+            positions_of_recipient.append(id);
         }
 
 
@@ -388,6 +403,50 @@ mod EkuboLauncher {
 
             // Clear this contract and send the tokens back to the caller
             token.transfer(recipient: caller, amount: token.balanceOf(this));
+        }
+
+        /// Ensures that the caller is the owner of the specified lock.
+        ///
+        /// # Arguments
+        ///
+        /// * `lock_address` - The ID of the lock.
+        ///
+        /// # Panics
+        ///
+        /// This function will panic if:
+        ///
+        /// * The caller's address is not the same as the `owner` of the `TokenLock` (error code: `errors::NOT_LOCK_OWNER`).
+        ///
+        fn assert_only_position_owner(
+            self: @ContractState, position_to_transfer: StorableEkuboLP,
+        ) {
+            let owner_of_position: ContractAddress = position_to_transfer.owner;
+            assert(get_caller_address() == owner_of_position, errors::CALLER_NOT_OWNER);
+        }
+
+        /// Removes the id of a position from the list of positions of a user.
+        ///
+        /// Internally, this function reads the list of locks of the specified `owner` or `tokens` from the `user_locks` and `token_locks` mapping.
+        /// It then iterates over the list and replaces the specified `lock_address` with the last element of the list.
+        /// The length of the list is then decremented by one, and the last element of the list is set to zero.
+        fn remove_position_from_list(self: @ContractState, position: u64, mut list: List<u64>) {
+            let list_len = list.len();
+            let mut i = 0;
+            loop {
+                if i == list_len {
+                    break;
+                }
+                let current_position = list[i];
+                if current_position == position {
+                    let last_element = list[list_len - 1];
+                    list.set(i, last_element);
+                    list.set(list_len - 1, 0.try_into().unwrap());
+                    list.len -= 1;
+                    Store::write(list.address_domain, list.base, list.len).unwrap_syscall();
+                    break;
+                }
+                i += 1;
+            }
         }
     }
 }
