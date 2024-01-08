@@ -48,6 +48,7 @@ const dimensions = {
   '180': '180px',
   '386': '386px',
   '480': '480px',
+  '620': '620px',
   half: '50%',
   full: '100%',
   min: 'min-content',

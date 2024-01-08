@@ -3,6 +3,7 @@ import { starknetChainId, useAccount, useContractWrite } from '@starknet-react/c
 import { Wallet, X } from 'lucide-react'
 import { useCallback, useMemo } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
+import { useNavigate } from 'react-router-dom'
 import { IconButton, PrimaryButton, SecondaryButton } from 'src/components/Button'
 import Input from 'src/components/Input'
 import NumericalInput from 'src/components/Input/NumericalInput'
@@ -38,6 +39,9 @@ const schema = z.object({
 export default function DeployPage() {
   const { pushDeployedTokenContracts } = useDeploymentStore()
 
+  // navigation
+  const navigate = useNavigate()
+
   const { account, address, chainId } = useAccount()
   const { writeAsync, isPending } = useContractWrite({})
 
@@ -68,7 +72,6 @@ export default function DeployPage() {
       if (!account?.address || !accountChainId) return
 
       const salt = stark.randomAddress()
-      const unique = 0
 
       const parsedInitialSupply = parseFormatedAmount(data.initialSupply)
 
@@ -86,7 +89,7 @@ export default function DeployPage() {
         data.holders.map(({ amount }) =>
           uint256.bnToUint256(BigInt(parseFormatedAmount(amount)) * BigInt(decimalsScale(DECIMALS)))
         ), // initial_holders_amounts
-        stark.randomAddress(), // contract salt
+        salt, // contract salt
       ])
 
       // Token address. Used to transfer tokens to initial holders.
@@ -96,7 +99,12 @@ export default function DeployPage() {
         calldata: constructorCalldata,
       }
 
-      const tokenAddress = hash.calculateContractAddressFromHash(salt, TOKEN_CLASS_HASH, constructorCalldata, unique)
+      const tokenAddress = hash.calculateContractAddressFromHash(
+        salt,
+        TOKEN_CLASS_HASH,
+        constructorCalldata.slice(0, -1),
+        FACTORY_ADDRESSES[accountChainId]
+      )
 
       try {
         await writeAsync({ calls: [createMemecoin] })
@@ -109,11 +117,13 @@ export default function DeployPage() {
           teamAllocation: totalTeamAllocation,
           launched: false,
         })
+
+        navigate(`/token/${tokenAddress}`)
       } catch (err) {
         console.error(err)
       }
     },
-    [account, writeAsync, pushDeployedTokenContracts, accountChainId]
+    [account, writeAsync, pushDeployedTokenContracts, accountChainId, navigate]
   )
 
   return (

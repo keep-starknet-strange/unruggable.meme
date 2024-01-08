@@ -15,7 +15,7 @@ export const tokenContractContainer = style([
 
     ':hover': {
       boxShadow: '0 12px 16px #00000080',
-      filter: 'brightness(1.1)',
+      filter: 'brightness(1.2)',
     },
   },
   sprinkles({
