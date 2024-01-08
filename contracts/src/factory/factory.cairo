@@ -4,6 +4,9 @@ use starknet::ContractAddress;
 #[starknet::contract]
 mod Factory {
     use core::box::BoxTrait;
+    use core::starknet::event::EventEmitter;
+    use core::zeroable::Zeroable;
+    use ekubo::types::i129::i129;
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait;
     use openzeppelin::token::erc20::interface::{
@@ -15,8 +18,16 @@ mod Factory {
     use starknet::{
         ContractAddress, ClassHash, get_caller_address, get_contract_address, contract_address_const
     };
-    use unruggable::exchanges::{SupportedExchanges};
+    use unruggable::errors;
+    use unruggable::exchanges::{
+        SupportedExchanges, ekubo_adapter, ekubo_adapter::EkuboPoolParameters, jediswap_adapter,
+        jediswap_adapter::JediswapAdditionalParameters, ekubo::launcher::EkuboLP
+    };
     use unruggable::factory::IFactory;
+    use unruggable::token::UnruggableMemecoin::LiquidityType;
+    use unruggable::token::interface::{
+        IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
+    };
 
     // Components.
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
@@ -25,13 +36,14 @@ mod Factory {
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
-        MemeCoinCreated: MemeCoinCreated,
+        MemecoinCreated: MemecoinCreated,
+        MemecoinLaunched: MemecoinLaunched,
         #[flat]
         OwnableEvent: OwnableComponent::Event
     }
 
     #[derive(Drop, starknet::Event)]
-    struct MemeCoinCreated {
+    struct MemecoinCreated {
         owner: ContractAddress,
         name: felt252,
         symbol: felt252,
@@ -39,13 +51,20 @@ mod Factory {
         memecoin_address: ContractAddress
     }
 
-    const ETH_UNIT_DECIMALS: u256 = 1000000000000000000;
+    #[derive(Drop, starknet::Event)]
+    struct MemecoinLaunched {
+        memecoin_address: ContractAddress,
+        quote_token: ContractAddress,
+        exchange_name: felt252,
+    }
 
     #[storage]
     struct Storage {
         memecoin_class_hash: ClassHash,
-        amm_configs: LegacyMap<SupportedExchanges, ContractAddress>,
+        exchange_configs: LegacyMap<SupportedExchanges, ContractAddress>,
+        //TODO: refactor to keep a list of deployed memecoins and expose it publicly
         deployed_memecoins: LegacyMap<ContractAddress, bool>,
+        lock_manager_address: ContractAddress,
         // Components.
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
@@ -56,16 +75,19 @@ mod Factory {
         ref self: ContractState,
         owner: ContractAddress,
         memecoin_class_hash: ClassHash,
-        mut amms: Span<(SupportedExchanges, ContractAddress)>
+        lock_manager_address: ContractAddress,
+        mut exchanges: Span<(SupportedExchanges, ContractAddress)>
     ) {
-        // Initialize the owner.
         self.ownable.initializer(owner);
         self.memecoin_class_hash.write(memecoin_class_hash);
+        self.lock_manager_address.write(lock_manager_address);
 
         // Add Exchanges configurations
         loop {
-            match amms.pop_front() {
-                Option::Some((amm, address)) => self.amm_configs.write(*amm, *address),
+            match exchanges.pop_front() {
+                Option::Some((exchange, address)) => self
+                    .exchange_configs
+                    .write(*exchange, *address),
                 Option::None => { break; }
             }
         };
@@ -76,22 +98,16 @@ mod Factory {
         fn create_memecoin(
             ref self: ContractState,
             owner: ContractAddress,
-            lock_manager_address: ContractAddress,
             name: felt252,
             symbol: felt252,
             initial_supply: u256,
             initial_holders: Span<ContractAddress>,
             initial_holders_amounts: Span<u256>,
             transfer_limit_delay: u64,
-            counterparty_token: ERC20ABIDispatcher,
             contract_address_salt: felt252,
         ) -> ContractAddress {
             let mut calldata = array![
-                owner.into(),
-                lock_manager_address.into(),
-                transfer_limit_delay.into(),
-                name.into(),
-                symbol.into()
+                owner.into(), transfer_limit_delay.into(), name.into(), symbol.into()
             ];
             Serde::serialize(@initial_supply, ref calldata);
             Serde::serialize(@initial_holders.into(), ref calldata);
@@ -105,19 +121,106 @@ mod Factory {
             // save memecoin address
             self.deployed_memecoins.write(memecoin_address, true);
 
-            let caller = get_caller_address();
-            //TODO(make the initial liquidity a parameter)
-            let eth_amount: u256 = 1 * ETH_UNIT_DECIMALS;
-
-            counterparty_token
-                .transferFrom(sender: caller, recipient: memecoin_address, amount: eth_amount);
-            self.emit(MemeCoinCreated { owner, name, symbol, initial_supply, memecoin_address });
+            self.emit(MemecoinCreated { owner, name, symbol, initial_supply, memecoin_address });
 
             memecoin_address
         }
 
-        fn amm_router_address(self: @ContractState, amm: SupportedExchanges) -> ContractAddress {
-            self.amm_configs.read(amm)
+        fn launch_on_jediswap(
+            ref self: ContractState,
+            memecoin_address: ContractAddress,
+            quote_address: ContractAddress,
+            quote_amount: u256,
+            unlock_time: u64,
+        ) -> ContractAddress {
+            let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
+            let caller_address = get_caller_address();
+            let router_address = self.exchange_address(SupportedExchanges::Jediswap);
+            let quote_token = ERC20ABIDispatcher { contract_address: quote_address };
+            assert(!memecoin.is_launched(), errors::ALREADY_LAUNCHED);
+            assert(caller_address == memecoin.owner(), errors::CALLER_NOT_OWNER);
+            assert(router_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
+            assert(!memecoin.is_launched(), errors::ALREADY_LAUNCHED);
+
+            let mut pair_address = jediswap_adapter::JediswapAdapterImpl::create_and_add_liquidity(
+                exchange_address: router_address,
+                token_address: memecoin_address,
+                quote_address: quote_address,
+                additional_parameters: JediswapAdditionalParameters {
+                    lock_manager_address: self.lock_manager_address.read(),
+                    unlock_time,
+                    quote_amount
+                }
+            );
+
+            memecoin.set_launched(LiquidityType::ERC20(pair_address));
+            self
+                .emit(
+                    MemecoinLaunched {
+                        memecoin_address, quote_token: quote_address, exchange_name: 'Jediswap'
+                    }
+                );
+            pair_address
+        }
+
+        fn launch_on_ekubo(
+            ref self: ContractState,
+            memecoin_address: ContractAddress,
+            quote_address: ContractAddress,
+            ekubo_parameters: EkuboPoolParameters,
+        ) -> (u64, EkuboLP) {
+            let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
+            let launchpad_address = self.exchange_address(SupportedExchanges::Ekubo);
+            let quote_token = ERC20ABIDispatcher { contract_address: quote_address };
+            let caller_address = get_caller_address();
+            assert(caller_address == memecoin.owner(), errors::CALLER_NOT_OWNER);
+            assert(launchpad_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
+            assert(!memecoin.is_launched(), errors::ALREADY_LAUNCHED);
+            assert(
+                ekubo_parameters.starting_tick.mag.is_non_zero(), errors::PRICE_ZERO
+            ); //TODO: test
+
+            let (id, position) = ekubo_adapter::EkuboAdapterImpl::create_and_add_liquidity(
+                exchange_address: launchpad_address,
+                token_address: memecoin_address,
+                quote_address: quote_address,
+                additional_parameters: ekubo_parameters
+            );
+
+            memecoin.set_launched(LiquidityType::NFT(id));
+            self
+                .emit(
+                    MemecoinLaunched {
+                        memecoin_address, quote_token: quote_address, exchange_name: 'Ekubo'
+                    }
+                );
+            (id, position)
+        }
+
+        fn locked_liquidity(
+            self: @ContractState, token: ContractAddress
+        ) -> Option<(ContractAddress, LiquidityType)> {
+            let memecoin = IUnruggableMemecoinDispatcher { contract_address: token };
+            let liquidity_type = match memecoin.liquidity_type() {
+                Option::Some(liquidity_type) => liquidity_type,
+                Option::None => { return Option::None; },
+            };
+            let locker_address = match liquidity_type {
+                LiquidityType::ERC20(pair_address) => {
+                    // ERC20 tokens are locked inside an ERC20Tokens-Locker
+                    self.lock_manager_address.read()
+                },
+                LiquidityType::NFT(id) => {
+                    // Ekubo NFTs are locked inside the EkuboLauncher contract
+                    self.exchange_address(SupportedExchanges::Ekubo)
+                }
+            };
+
+            Option::Some((locker_address, liquidity_type))
+        }
+
+        fn exchange_address(self: @ContractState, exchange: SupportedExchanges) -> ContractAddress {
+            self.exchange_configs.read(exchange)
         }
 
         fn is_memecoin(self: @ContractState, address: ContractAddress) -> bool {

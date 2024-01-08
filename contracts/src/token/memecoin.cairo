@@ -1,8 +1,16 @@
 //! `UnruggableMemecoin` is an ERC20 token has additional features to prevent rug pulls.
 use starknet::ContractAddress;
 
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+enum LiquidityType {
+    ERC20: ContractAddress,
+    NFT: u64
+}
+
 #[starknet::contract]
 mod UnruggableMemecoin {
+    use core::traits::TryInto;
     use core::zeroable::Zeroable;
     use debug::PrintTrait;
     use integer::BoundedInt;
@@ -19,17 +27,17 @@ mod UnruggableMemecoin {
         ContractAddress, contract_address_const, get_contract_address, get_caller_address,
         get_tx_info, get_block_timestamp
     };
+    use super::LiquidityType;
 
     use unruggable::errors;
-    use unruggable::exchanges::jediswap_adapter::JediswapComponent;
     use unruggable::exchanges::jediswap_adapter::{
         IJediswapFactoryDispatcher, IJediswapFactoryDispatcherTrait, IJediswapRouterDispatcher,
         IJediswapRouterDispatcherTrait
     };
-    use unruggable::exchanges::{SupportedExchanges, ExchangeTrait};
+    use unruggable::exchanges::{SupportedExchanges};
     use unruggable::factory::{IFactory, IFactoryDispatcher, IFactoryDispatcherTrait};
     use unruggable::locker::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
-    use unruggable::tokens::interface::{
+    use unruggable::token::interface::{
         IUnruggableMemecoinSnake, IUnruggableMemecoinCamel, IUnruggableAdditional
     };
     use unruggable::utils::math::PercentageMath;
@@ -45,9 +53,6 @@ mod UnruggableMemecoin {
     impl ERC20MetadataImpl = ERC20Component::ERC20MetadataImpl<ContractState>;
     impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
 
-    component!(path: JediswapComponent, storage: jediswap, event: JediswapEvent);
-    impl JediswapAdapterImpl = JediswapComponent::JediswapAdapterImpl<ContractState>;
-
     // Constants.
     /// The maximum number of holders allowed before launch.
     /// This is to prevent the contract from being is_launched with a large number of holders.
@@ -60,27 +65,21 @@ mod UnruggableMemecoin {
     //TODO: discuss whether this should be a constant or a parameter
     const MAX_PERCENTAGE_BUY_LAUNCH: u8 = 200; // 2%
 
-    const ETH_UNIT_DECIMALS: u256 = 1000000000000000000;
-
-
     #[storage]
     struct Storage {
         marker_v_0: (),
         pre_launch_holders_count: u8,
         team_allocation: u256,
         tx_hash_tracker: LegacyMap<ContractAddress, felt252>,
-        locker_contract: ContractAddress,
         transfer_restriction_delay: u64,
         launch_time: u64,
         factory_contract: ContractAddress,
-        pair_address: ContractAddress,
+        liquidity_type: Option<LiquidityType>,
         // Components.
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
         #[substorage(v0)]
         erc20: ERC20Component::Storage,
-        #[substorage(v0)]
-        jediswap: JediswapComponent::Storage,
     }
 
     #[event]
@@ -90,14 +89,11 @@ mod UnruggableMemecoin {
         OwnableEvent: OwnableComponent::Event,
         #[flat]
         ERC20Event: ERC20Component::Event,
-        #[flat]
-        JediswapEvent: JediswapComponent::Event
     }
 
     /// Constructor called once when the contract is deployed.
     /// # Arguments
     /// * `owner` - The owner of the contract.
-    /// * `LOCK_MANAGER_ADDRESS` - Token locker address.
     /// * `transfer_restriction_delay` - Delay timestamp to release transfer amount check.
     /// * `name` - The name of the token.
     /// * `symbol` - The symbol of the token.
@@ -108,7 +104,6 @@ mod UnruggableMemecoin {
     fn constructor(
         ref self: ContractState,
         owner: ContractAddress,
-        lock_manager_address: ContractAddress,
         transfer_restriction_delay: u64,
         name: felt252,
         symbol: felt252,
@@ -116,19 +111,16 @@ mod UnruggableMemecoin {
         initial_holders: Span<ContractAddress>,
         initial_holders_amounts: Span<u256>,
     ) {
-        // Initialize the ERC20 token.
         self.erc20.initializer(name, symbol);
 
-        // Initialize the owner.
         self.ownable.initializer(owner);
 
-        // Initialize the token / internal logic
-        let factory_address = get_caller_address();
+        self.liquidity_type.write(Option::None);
 
+        // Initialize the token / internal logic
         self
             .initializer(
-                :lock_manager_address,
-                :factory_address,
+                factory_address: get_caller_address(),
                 :transfer_restriction_delay,
                 :initial_supply,
                 :initial_holders,
@@ -136,61 +128,8 @@ mod UnruggableMemecoin {
             );
     }
 
-    //
-    // External
-    //
     #[abi(embed_v0)]
     impl UnruggableEntrypoints of IUnruggableAdditional<ContractState> {
-        // ************************************
-        // * UnruggableMemecoin functions
-        // ************************************
-
-        fn launch_memecoin(
-            ref self: ContractState,
-            exchange: SupportedExchanges,
-            counterparty_token_address: ContractAddress,
-            lp_unlock_time: u64,
-        ) -> ContractAddress {
-            // [Check Owner] Only the owner can launch the Memecoin
-            self.ownable.assert_only_owner();
-
-            let memecoin_address = starknet::get_contract_address();
-            let caller_address = get_caller_address();
-            let factory_address = self.factory_contract.read();
-
-            let pair_address = match exchange {
-                SupportedExchanges::JediSwap => {
-                    let router_address = IFactoryDispatcher { contract_address: factory_address }
-                        .amm_router_address(SupportedExchanges::JediSwap);
-                    let pair_address = self
-                        .jediswap
-                        .create_and_add_liquidity(
-                            exchange_address: router_address,
-                            token_address: memecoin_address,
-                            counterparty_address: counterparty_token_address,
-                            unlock_time: lp_unlock_time,
-                            additional_parameters: array![].span(),
-                        );
-                    self.pair_address.write(pair_address);
-                    pair_address
-                },
-                SupportedExchanges::Ekubo => panic_with_felt252(errors::EXCHANGE_NOT_SUPPORTED)
-            };
-
-            // Launch the coin
-            self.launch_time.write(get_block_timestamp());
-
-            // Renounce ownership of the memecoin
-            self.ownable.renounce_ownership();
-
-            pair_address
-        }
-
-        /// Returns whether the memecoin has been is_launched.
-        ///
-        /// # Returns
-        ///
-        /// * `bool` - True if the memecoin has been is_launched, false otherwise.
         fn is_launched(self: @ContractState) -> bool {
             self.launch_time.read().is_non_zero()
         }
@@ -204,16 +143,21 @@ mod UnruggableMemecoin {
             self.factory_contract.read()
         }
 
-        fn lock_manager_address(self: @ContractState) -> ContractAddress {
-            self.locker_contract.read()
+        fn liquidity_type(self: @ContractState) -> Option<LiquidityType> {
+            self.liquidity_type.read()
+        }
+
+        fn set_launched(ref self: ContractState, liquidity_type: LiquidityType) {
+            self.assert_only_factory();
+            assert(!self.is_launched(), errors::ALREADY_LAUNCHED);
+            self.liquidity_type.write(Option::Some(liquidity_type));
+            self.launch_time.write(get_block_timestamp());
+            self.ownable._transfer_ownership(0.try_into().unwrap());
         }
     }
 
     #[abi(embed_v0)]
     impl SnakeEntrypoints of IUnruggableMemecoinSnake<ContractState> {
-        // ************************************
-        // * snake_case functions
-        // ************************************
         fn total_supply(self: @ContractState) -> u256 {
             self.erc20.total_supply()
         }
@@ -274,23 +218,26 @@ mod UnruggableMemecoin {
     //
     #[generate_trait]
     impl UnruggableMemecoinInternalImpl of UnruggableMemecoinInternalTrait {
+        fn assert_only_factory(self: @ContractState) {
+            assert(get_caller_address() == self.factory_contract.read(), errors::NOT_FACTORY);
+        }
         // Initializes the state of the memecoin contract.
         ///
-        /// This function sets the locker and factory contract addresses, enables a transfer limit delay,
-        /// checks and allocates the team supply of the memecoin, and mints the remaining supply to the contract itself.
+        /// This function sets the factory contract address, enables a transfer limit delay,
+        /// checks and allocates the team supply of the memecoin, and mints the remaining supply to the factory.
         ///
         /// # Arguments
         ///
-        /// * `LOCK_MANAGER_ADDRESS` - The address of the locker contract.
         /// * `factory_address` - The address of the factory contract.
         /// * `transfer_restriction_delay` - The delay in seconds before transfers are no longer limited.
         /// * `initial_supply` - The initial supply of the memecoin.
         /// * `initial_holders` - A span of addresses that will hold the memecoin initially.
         /// * `initial_holders_amounts` - A span of amounts corresponding to the initial holders.
         ///
+        /// # Returns
+        /// * `u256` - The total amount of memecoin allocated to the team.
         fn initializer(
             ref self: ContractState,
-            lock_manager_address: ContractAddress,
             factory_address: ContractAddress,
             transfer_restriction_delay: u64,
             initial_supply: u256,
@@ -298,7 +245,6 @@ mod UnruggableMemecoin {
             initial_holders_amounts: Span<u256>
         ) {
             // Internal Registry
-            self.locker_contract.write(lock_manager_address);
             self.factory_contract.write(factory_address);
 
             // Enable a transfer limit - until this time has passed,
@@ -311,29 +257,26 @@ mod UnruggableMemecoin {
                 );
 
             // Mint remaining supply to the contract
-            self
-                .erc20
-                ._mint(recipient: get_contract_address(), amount: initial_supply - team_allocation);
+            self.erc20._mint(recipient: factory_address, amount: initial_supply - team_allocation);
         }
 
-        /// Transfers tokens from the sender to the recipient, by applying relevant transfer restrictions.
+        /// Transfers tokens from the sender to the recipient, by applying relevant restrictions.
         fn _transfer(
             ref self: ContractState,
             sender: ContractAddress,
             recipient: ContractAddress,
             amount: u256
         ) {
-            // When we call launch_memecoin(), we invoke the add_liquidity() of the router,
+            // When we launch on jediswap on the factory, we invoke the add_liquidity() of the router,
             // which performs a transferFrom() to send the tokens to the pool.
-            // Therefore, we need to bypass this validation if the sender is the memecoin contract.
-            if sender != get_contract_address() {
+            // Therefore, we need to bypass this validation if the sender is the factory contract.
+            if sender != self.factory_contract.read() {
                 self.apply_transfer_restrictions(sender, recipient, amount)
             }
             self.erc20._transfer(sender, recipient, amount);
         }
 
         /// Applies the relevant transfer restrictions, if the timing for restrictions has not elapsed yet.
-        /// - The amount of tokens transferred does not exceed a certain percentage of the total supply.
         /// - Before launch, the number of holders and their allocation does not exceed the maximum allowed.
         /// - After launch, the transfer amount does not exceed a certain percentage of the total supply.
         /// and the recipient has not already received tokens in the current transaction.
@@ -353,18 +296,26 @@ mod UnruggableMemecoin {
                 return;
             }
 
-            assert(
-                amount <= self.total_supply().percent_mul(MAX_PERCENTAGE_BUY_LAUNCH.into()),
-                'Max buy cap reached'
-            );
-
             if !self.is_launched() {
                 self.enforce_prelaunch_holders_limit(sender, recipient, amount);
             } else {
-                if (get_caller_address() == self.pair_address.read()
-                    || recipient == self.pair_address.read()) {
-                    return;
+                //TODO: make sure restrictions are compatible with ekubo and aggregators
+                let liquidity_type = self.liquidity_type.read().unwrap();
+
+                // The LP pair must be whitelisted from transfer restrictions
+                match liquidity_type {
+                    LiquidityType::ERC20(pair) => {
+                        if (get_caller_address() == pair || recipient == pair) {
+                            return;
+                        }
+                    },
+                    LiquidityType::NFT(_) => {}
                 }
+
+                assert(
+                    amount <= self.total_supply().percent_mul(MAX_PERCENTAGE_BUY_LAUNCH.into()),
+                    'Max buy cap reached'
+                );
 
                 self.ensure_not_multicall(recipient);
             }
@@ -372,18 +323,15 @@ mod UnruggableMemecoin {
 
         /// Checks if the current time is after the launch period.
         ///
-        /// # Arguments
-        ///
-        /// * `self` - A reference to the `ContractState` instance.
-        ///
         /// # Returns
         ///
         /// * `bool` - True if the current time is after the launch period, false otherwise.
         ///
         fn is_after_time_restrictions(ref self: ContractState) -> bool {
             let current_time = get_block_timestamp();
-            current_time >= (self.launch_time.read() + self.transfer_restriction_delay.read())
-                && self.is_launched()
+            self.is_launched()
+                && current_time >= (self.launch_time.read()
+                    + self.transfer_restriction_delay.read())
         }
 
         /// Checks and allocates the team supply of the memecoin.

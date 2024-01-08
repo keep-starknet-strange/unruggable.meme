@@ -2,14 +2,12 @@ mod errors;
 mod exchanges;
 mod factory;
 mod locker;
-
 #[cfg(test)]
 mod tests;
-mod tokens;
 
-mod utils {
-    mod math;
-}
+mod token;
+
+mod utils;
 
 mod mocks {
     mod erc20;
@@ -17,5 +15,8 @@ mod mocks {
         mod factory;
         mod pair;
         mod router;
+    }
+    mod ekubo {
+        mod swapper;
     }
 }

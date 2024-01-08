@@ -11,7 +11,7 @@ use unruggable::tests::unit_tests::utils::{
     OWNER, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, RECIPIENT, SPENDER, deploy_locker, INITIAL_HOLDERS,
     INITIAL_HOLDERS_AMOUNTS, TRANSFER_LIMIT_DELAY, DefaultTxInfoMock, deploy_standalone_memecoin
 };
-use unruggable::tokens::interface::{
+use unruggable::token::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
 };
 
@@ -25,7 +25,7 @@ mod erc20_metadata {
         deploy_standalone_memecoin, OWNER, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, RECIPIENT, SPENDER,
         deploy_locker, TRANSFER_LIMIT_DELAY
     };
-    use unruggable::tokens::interface::{
+    use unruggable::token::interface::{
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
 
@@ -61,7 +61,7 @@ mod erc20_entrypoints {
         deploy_locker, TRANSFER_LIMIT_DELAY, INITIAL_HOLDERS, DefaultTxInfoMock,
         INITIAL_HOLDERS_AMOUNTS
     };
-    use unruggable::tokens::interface::{
+    use unruggable::token::interface::{
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
 
@@ -80,7 +80,8 @@ mod erc20_entrypoints {
 
         // Check initial contract balance and initial holders balances.
         assert(
-            memecoin.balance_of(memecoin_address) == DEFAULT_INITIAL_SUPPLY() - holders_sum,
+            memecoin.balance_of(snforge_std::test_address()) == DEFAULT_INITIAL_SUPPLY()
+                - holders_sum,
             'Invalid balance memecoin'
         );
         assert(
@@ -169,7 +170,8 @@ mod erc20_entrypoints {
 
         // Check initial contract balance and initial holders balances.
         assert(
-            memecoin.balanceOf(memecoin_address) == DEFAULT_INITIAL_SUPPLY() - holders_sum,
+            memecoin.balanceOf(snforge_std::test_address()) == DEFAULT_INITIAL_SUPPLY()
+                - holders_sum,
             'Invalid balance memecoin'
         );
         assert(

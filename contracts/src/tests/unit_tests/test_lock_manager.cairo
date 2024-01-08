@@ -12,7 +12,7 @@ use unruggable::tests::unit_tests::utils::{
     OWNER, deploy_eth, deploy_locker, DEFAULT_MIN_LOCKTIME, LOCK_POSITION_ADDRESS,
     DEFAULT_INITIAL_SUPPLY, DEFAULT_LOCK_AMOUNT
 };
-use unruggable::tokens::interface::{
+use unruggable::token::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
 };
 

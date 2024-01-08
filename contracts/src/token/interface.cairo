@@ -1,5 +1,6 @@
 use openzeppelin::token::erc20::interface::{IERC20Metadata, IERC20, IERC20Camel};
 use starknet::ContractAddress;
+use super::memecoin::LiquidityType;
 use unruggable::exchanges::SupportedExchanges;
 
 #[starknet::interface]
@@ -47,15 +48,10 @@ trait IUnruggableMemecoin<TState> {
     /// # Returns 
     ///     bool: whether token has launched
     fn is_launched(self: @TState) -> bool;
-    fn launch_memecoin(
-        ref self: TState,
-        exchange: SupportedExchanges,
-        counterparty_token_address: ContractAddress,
-        lp_unlock_time: u64,
-    ) -> ContractAddress;
+    fn liquidity_type(self: @TState) -> Option<LiquidityType>;
     fn get_team_allocation(self: @TState) -> u256;
     fn memecoin_factory_address(self: @TState) -> ContractAddress;
-    fn lock_manager_address(self: @TState) -> ContractAddress;
+    fn set_launched(ref self: TState, liquidity_type: LiquidityType);
 }
 
 #[starknet::interface]
@@ -81,37 +77,37 @@ trait IUnruggableMemecoinSnake<TState> {
 
 #[starknet::interface]
 trait IUnruggableAdditional<TState> {
-    /// Checks whether token has launched
-    ///
-    /// # Returns 
-    ///     bool: whether token has launched
-    fn is_launched(self: @TState) -> bool;
-
-    /// Launches Memecoin by creating a liquidity pool with the specified counterparty token using the Exchangev2 protocol.
-    ///
-    /// The owner must send tokens of the chosen counterparty (e.g., USDC) to launch Memecoin.
-    ///
-    /// # Arguments
-    /// * `exchange`: SupportedExchanges to create a pair and send liquidity.
-    /// * `liquidity_memecoin_amount`: The amount of Memecoin tokens to be provided as liquidity.
-    /// * `liquidity_counterparty_token`: The amount of counterparty tokens to be provided as liquidity.
-    /// * `deadline`: The deadline beyond which the operation will revert.
-    ///
-    /// # Panics
-    /// This method will panic if:
-    /// * The caller is not the owner of the contract.
-    /// * Insufficient Memecoin funds are available for liquidity.
-    /// * Insufficient counterparty token funds are available for liquidity.
+    /// Returns whether the memecoin has been launched.
     ///
     /// # Returns
-    /// * `ContractAddress` - The contract address of the created liquidity pool.
-    fn launch_memecoin(
-        ref self: TState,
-        exchange: SupportedExchanges,
-        counterparty_token_address: ContractAddress,
-        lp_unlock_time: u64,
-    ) -> ContractAddress;
+    ///
+    /// * `bool` - True if the memecoin has been launched, false otherwise.
+    fn is_launched(self: @TState) -> bool;
+
+    /// Returns the type of liquidity the memecoin was launched with,
+    /// along with either the LP tokens addresses or the NFT ID.
+    fn liquidity_type(self: @TState) -> Option<LiquidityType>;
+
+    /// Returns the team allocation.
     fn get_team_allocation(self: @TState) -> u256;
+
+    /// Returns the memecoin factory address.
     fn memecoin_factory_address(self: @TState) -> ContractAddress;
-    fn lock_manager_address(self: @TState) -> ContractAddress;
+
+    /// Sets the memecoin as launched and transfers ownership to the zero address.
+    ///
+    /// This function can only be called by the factory contract. It sets the memecoin as launched, records the liquidity position and the launch time, and transfers ownership of the memecoin to the zero address.
+    ///
+    /// # Arguments
+    ///
+    /// * `liquidity_type` - The liquidity position at the time of launch.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if:
+    ///
+    /// * The caller's address is not the same as the `factory` of the memecoin (error code: `errors::CALLER_NOT_FACTORY`).
+    /// * The memecoin has already been launched (error code: `errors::ALREADY_LAUNCHED`).
+    ///
+    fn set_launched(ref self: TState, liquidity_type: LiquidityType);
 }

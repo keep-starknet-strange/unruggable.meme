@@ -150,7 +150,6 @@ trait ILockManager<TContractState> {
     ///
     /// # Arguments
     ///
-    /// * `self` - A reference to the `ContractState` instance.
     /// * `lock_address` - The address of the lock.
     ///
     /// # Returns
