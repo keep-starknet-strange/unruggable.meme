@@ -405,17 +405,17 @@ mod EkuboLauncher {
             token.transfer(recipient: caller, amount: token.balanceOf(this));
         }
 
-        /// Ensures that the caller is the owner of the specified lock.
+        /// Ensures that the caller is the owner of the specified position.
         ///
         /// # Arguments
         ///
-        /// * `lock_address` - The ID of the lock.
+        /// * `position_to_transfer` - The LP position to transfer.
         ///
         /// # Panics
         ///
         /// This function will panic if:
         ///
-        /// * The caller's address is not the same as the `owner` of the `TokenLock` (error code: `errors::NOT_LOCK_OWNER`).
+        /// * The caller's address is not the same as the `owner` of the `position_to_transfer` (error code: `errors::CALLER_NOT_OWNER`).
         ///
         fn assert_only_position_owner(
             self: @ContractState, position_to_transfer: StorableEkuboLP,
@@ -426,8 +426,8 @@ mod EkuboLauncher {
 
         /// Removes the id of a position from the list of positions of a user.
         ///
-        /// Internally, this function reads the list of locks of the specified `owner` or `tokens` from the `user_locks` and `token_locks` mapping.
-        /// It then iterates over the list and replaces the specified `lock_address` with the last element of the list.
+        /// Internally, this function reads the list of positions of the specified `owner` from the 'owner_to_positions' mapping.
+        /// It then iterates over the list and replaces the specified `position` with the last element of the list.
         /// The length of the list is then decremented by one, and the last element of the list is set to zero.
         fn remove_position_from_list(self: @ContractState, position: u64, mut list: List<u64>) {
             let list_len = list.len();
