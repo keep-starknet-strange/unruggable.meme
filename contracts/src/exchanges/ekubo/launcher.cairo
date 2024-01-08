@@ -5,7 +5,7 @@ use ekubo::types::keys::PoolKey;
 use unruggable::exchanges::ekubo::ekubo_adapter::{EkuboLaunchParameters};
 use unruggable::utils::ContractAddressOrder;
 
-//! Temporary workaround to store bounds and pool keys
+//! Temporary workaround to store bounds
 #[derive(Copy, Drop, Serde, PartialEq, Hash, starknet::Store)]
 struct StorableBounds {
     lower: i129,
@@ -51,9 +51,7 @@ fn sort_tokens(
 #[starknet::interface]
 trait IEkuboLauncher<T> {
     fn launch_token(ref self: T, params: EkuboLaunchParameters) -> (u64, EkuboLP);
-    fn transfer_position_ownership(
-        ref self: T, position_to_transfer: StorableEkuboLP, id: u64, recipient: ContractAddress
-    );
+    fn transfer_position_ownership(ref self: T, id: u64, recipient: ContractAddress);
     fn withdraw_fees(ref self: T, id: u64, recipient: ContractAddress) -> u256;
     fn launched_tokens(ref self: T, owner: ContractAddress) -> Span<u64>;
     fn liquidity_position_details(ref self: T, id: u64) -> EkuboLP;
@@ -142,7 +140,6 @@ mod EkuboLauncher {
 
     #[external(v0)]
     impl EkuboLauncherImpl of IEkuboLauncher<ContractState> {
-        //TODO(ekubo): add support to transfer the ownership of the LP to collect fees.
         fn launch_token(ref self: ContractState, params: EkuboLaunchParameters) -> (u64, EkuboLP) {
             // Call the core with a callback to deposit and mint the LP tokens.
             let (id, position) = call_core_with_callback::<
@@ -185,11 +182,9 @@ mod EkuboLauncher {
         }
 
         fn transfer_position_ownership(
-            ref self: ContractState,
-            position_to_transfer: StorableEkuboLP,
-            id: u64,
-            recipient: ContractAddress
+            ref self: ContractState, id: u64, recipient: ContractAddress
         ) {
+            let position_to_transfer = self.liquidity_positions.read(id);
             self.assert_only_position_owner(position_to_transfer);
 
             assert(recipient.into() != 0_felt252, errors::RECIPIENT_ADDRESS_ZERO);
@@ -416,7 +411,7 @@ mod EkuboLauncher {
         ///
         /// This function will panic if:
         ///
-        /// * The caller's address is not the same as the `owner` of the `position_to_transfer` (error code: `errors::CALLER_NOT_OWNER`).
+        /// * The caller's address is not the same as the `owner` of the `position_to_transfer` (error code: `NOT_POSITION_OWNER`).
         ///
         fn assert_only_position_owner(
             self: @ContractState, position_to_transfer: StorableEkuboLP,

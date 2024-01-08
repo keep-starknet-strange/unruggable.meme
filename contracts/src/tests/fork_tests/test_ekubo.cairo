@@ -13,7 +13,7 @@ use unruggable::exchanges::SupportedExchanges;
 use unruggable::exchanges::ekubo::launcher::{
     IEkuboLauncherDispatcher, IEkuboLauncherDispatcherTrait, EkuboLP
 };
-use unruggable::exchanges::ekubo_adapter::EkuboPoolParameters;
+use unruggable::exchanges::ekubo_adapter::{EkuboPoolParameters, EkuboLaunchParameters};
 use unruggable::factory::interface::{IFactoryDispatcher, IFactoryDispatcherTrait};
 use unruggable::factory::{Factory};
 use unruggable::locker::LockPosition;
@@ -27,7 +27,8 @@ use unruggable::tests::fork_tests::utils::{
     EKUBO_SWAPPER_ADDRESS, deploy_token0_with_owner, deploy_eth_with_owner
 };
 use unruggable::tests::unit_tests::utils::{
-    OWNER, DEFAULT_MIN_LOCKTIME, pow_256, LOCK_MANAGER_ADDRESS, MEMEFACTORY_ADDRESS, RECIPIENT
+    OWNER, DEFAULT_MIN_LOCKTIME, pow_256, LOCK_MANAGER_ADDRESS, MEMEFACTORY_ADDRESS, RECIPIENT,
+    ALICE
 };
 use unruggable::token::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -505,6 +506,35 @@ fn test_launch_meme_with_pool_1percent() {
         memecoin.totalSupply() - team_alloc, 9950,
     );
     assert(reserve_memecoin > expected_reserve_lower_bound, 'reserves holds too few token');
+}
+
+#[test]
+#[fork("Mainnet")]
+fn test_transfer_ekuboLP_position() {
+    let owner = snforge_std::test_address();
+    let (quote, quote_address) = deploy_eth_with_owner(owner);
+    let starting_tick = i129 { sign: true, mag: 4600158 }; // 0.01ETH/MEME
+    let (memecoin_address, id1, position1) = launch_memecoin_on_ekubo(
+        quote_address, 0xc49ba5e353f7d00000000000000000, 5982, starting_tick, 88719042
+    );
+
+    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
+    let ekubo_launcher = IEkuboLauncherDispatcher { contract_address: EKUBO_LAUNCHER_ADDRESS() };
+
+    start_prank(CheatTarget::One(ekubo_launcher.contract_address), ALICE());
+    let ekubo_launch_params = EkuboLaunchParameters {
+        owner: ALICE(),
+        token_address: memecoin_address,
+        quote_address: quote_address,
+        pool_params: EkuboPoolParameters {
+            fee: 0xc49ba5e353f7d00000000000000000,
+            tick_spacing: 5982,
+            starting_tick: i129 { sign: true, mag: 4600158 }, // 0.01ETH/MEME
+            bound: 88719042,
+        }
+    };
+
+    let (id2, position2) = ekubo_launcher.launch_token(ekubo_launch_params);
 }
 
 #[test]
