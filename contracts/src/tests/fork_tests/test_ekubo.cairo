@@ -1,12 +1,13 @@
+use core::debug::PrintTrait;
 use core::traits::TryInto;
-use debug::PrintTrait;
 use ekubo::interfaces::core::{ICoreDispatcher, ICoreDispatcherTrait};
 use ekubo::types::bounds::Bounds;
 use ekubo::types::i129::i129;
 use ekubo::types::keys::PoolKey;
 use openzeppelin::token::erc20::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
 use snforge_std::{
-    start_prank, stop_prank, spy_events, SpyOn, EventSpy, EventAssertions, CheatTarget
+    start_prank, stop_prank, start_spoof, stop_spoof, spy_events, SpyOn, EventSpy, EventAssertions,
+    CheatTarget, TxInfoMock
 };
 use starknet::ContractAddress;
 use unruggable::exchanges::SupportedExchanges;
@@ -27,7 +28,8 @@ use unruggable::tests::fork_tests::utils::{
     EKUBO_SWAPPER_ADDRESS, deploy_token0_with_owner, deploy_eth_with_owner
 };
 use unruggable::tests::unit_tests::utils::{
-    OWNER, DEFAULT_MIN_LOCKTIME, pow_256, LOCK_MANAGER_ADDRESS, MEMEFACTORY_ADDRESS, RECIPIENT
+    OWNER, DEFAULT_MIN_LOCKTIME, pow_256, LOCK_MANAGER_ADDRESS, MEMEFACTORY_ADDRESS, RECIPIENT,
+    DefaultTxInfoMock
 };
 use unruggable::token::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -42,6 +44,7 @@ fn launch_memecoin_on_ekubo(
     let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
     let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
     let ekubo_launcher = IEkuboLauncherDispatcher { contract_address: EKUBO_LAUNCHER_ADDRESS() };
+
     let (id, position) = factory
         .launch_on_ekubo(
             memecoin_address,
@@ -90,12 +93,18 @@ fn swap_tokens_on_ekubo(
         skip_ahead: 0,
     };
 
+    let mut tx_info: TxInfoMock = Default::default();
+    tx_info.transaction_hash = Option::Some(123);
+    start_spoof(CheatTarget::One(token_in.contract_address), tx_info);
+
     // We transfer tokens to the swapper contract, which performs the swap
     // This is required the way the swapper contract is coded.
     // It then sends back the funds to the caller
     start_prank(CheatTarget::One(token_in.contract_address), owner);
     token_in.transfer(swapper_address, first_amount_in);
     stop_prank(CheatTarget::One(token_in.contract_address));
+
+    stop_spoof(CheatTarget::One(token_in.contract_address));
 
     // If MEME/quote > 1 and we swap token1 for token0,
     // OR if MEME/quote < 1 and we swap token0 for token1,
@@ -105,6 +114,7 @@ fn swap_tokens_on_ekubo(
     } else {
         PercentageMath::percent_mul(100 * first_amount_in, 9500)
     };
+
     ekubo_swapper
         .swap(
             pool_key: pool_key,
@@ -130,9 +140,15 @@ fn swap_tokens_on_ekubo(
     let second_expected_output = PercentageMath::percent_mul(first_amount_in, 9940);
     let balance_token_in_before = token_in.balance_of(owner);
 
+    let mut tx_info: TxInfoMock = Default::default();
+    tx_info.transaction_hash = Option::Some(456);
+    start_spoof(CheatTarget::One(token_out.contract_address), tx_info);
+
     start_prank(CheatTarget::One(token_out.contract_address), owner);
     token_out.transfer(swapper_address, second_amount_in);
     stop_prank(CheatTarget::One(token_out.contract_address));
+
+    stop_spoof(CheatTarget::One(token_out.contract_address));
 
     ekubo_swapper
         .swap(
@@ -234,7 +250,6 @@ fn test_launch_meme() {
         );
 }
 
-
 #[test]
 #[fork("Mainnet")]
 fn test_swap_token0_price_below_1() {
@@ -256,8 +271,8 @@ fn test_swap_token0_price_below_1() {
         tick_spacing: position.pool_key.tick_spacing.try_into().unwrap(),
         extension: position.pool_key.extension
     };
-    // Check that swaps work correctly
 
+    // Check that swaps work correctly
     let amount_in = 2 * pow_256(10, 16);
     swap_tokens_on_ekubo(
         token_in_address: quote_address,
@@ -268,6 +283,11 @@ fn test_swap_token0_price_below_1() {
         owner: owner,
         pool_key: pool_key
     );
+
+    // Change tx hash to avoid multicall detection
+    let mut tx_info: TxInfoMock = Default::default();
+    tx_info.transaction_hash = Option::Some(1);
+    start_spoof(CheatTarget::One(memecoin_address), tx_info);
 
     // Test that the owner of the LP can withdraw fees from the launcher
     let recipient = RECIPIENT();
@@ -332,6 +352,11 @@ fn test_launch_meme_token1_price_below_1() {
         pool_key: pool_key
     );
 
+    // Change tx hash to avoid multicall detection
+    let mut tx_info: TxInfoMock = Default::default();
+    tx_info.transaction_hash = Option::Some(1);
+    start_spoof(CheatTarget::One(memecoin_address), tx_info);
+
     // Test that the owner of the LP can withdraw fees from the launcher
     let recipient = RECIPIENT();
     ekubo_launcher.withdraw_fees(id, recipient);
@@ -343,7 +368,6 @@ fn test_launch_meme_token1_price_below_1() {
         'should collect 0.3% of eth'
     );
 }
-
 
 #[test]
 #[fork("Mainnet")]
@@ -384,6 +408,7 @@ fn test_launch_meme_token0_price_above_1() {
     );
     assert(reserve_memecoin > expected_reserve_lower_bound, 'reserves holds too few token');
 
+    // Test that swaps work correctly
     let amount_in = 2 * pow_256(10, 16);
     swap_tokens_on_ekubo(
         token_in_address: quote_address,
@@ -394,6 +419,11 @@ fn test_launch_meme_token0_price_above_1() {
         owner: owner,
         pool_key: pool_key
     );
+
+    // Change tx hash to avoid multicall detection
+    let mut tx_info: TxInfoMock = Default::default();
+    tx_info.transaction_hash = Option::Some(1);
+    start_spoof(CheatTarget::One(memecoin_address), tx_info);
 
     // Test that the owner of the LP can withdraw fees from the launcher
     let recipient = RECIPIENT();
@@ -406,7 +436,6 @@ fn test_launch_meme_token0_price_above_1() {
         'should collect 0.3% of eth'
     );
 }
-
 
 #[test]
 #[fork("Mainnet")]
@@ -449,7 +478,6 @@ fn test_launch_meme_token1_price_above_1() {
     assert(reserve_memecoin > expected_reserve_lower_bound, 'reserves holds too few token');
 
     // Check that swaps work correctly
-
     let amount_in = 2 * pow_256(10, 16);
     swap_tokens_on_ekubo(
         token_in_address: quote_address,
@@ -460,6 +488,11 @@ fn test_launch_meme_token1_price_above_1() {
         owner: owner,
         pool_key: pool_key
     );
+
+    // Change tx hash to avoid multicall detection
+    let mut tx_info: TxInfoMock = Default::default();
+    tx_info.transaction_hash = Option::Some(1);
+    start_spoof(CheatTarget::One(memecoin_address), tx_info);
 
     // Test that the owner of the LP can withdraw fees from the launcher
     let recipient = RECIPIENT();

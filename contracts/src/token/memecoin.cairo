@@ -317,7 +317,7 @@ mod UnruggableMemecoin {
                     'Max buy cap reached'
                 );
 
-                self.ensure_not_multicall(recipient);
+                self.ensure_not_multicall();
             }
         }
 
@@ -392,18 +392,19 @@ mod UnruggableMemecoin {
 
         /// Ensures that the current call is not a part of a multicall.
         ///
-        /// By keeping track of the last transaction hash each address has received tokens at,
+        /// By keeping track of the transaction origin contract address,
         /// we can ensure that the current call is not part of a transaction already performed.
         ///
         /// # Arguments
-        /// * `recipient` - The contract address of the recipient.
         //TODO(audit): Verify whether this can cause a problem for trading through aggregators, that can
         // do multiple transfers when using complex routes.
         #[inline(always)]
-        fn ensure_not_multicall(ref self: ContractState, recipient: ContractAddress) {
-            let tx_hash: felt252 = get_tx_info().unbox().transaction_hash;
-            assert(self.tx_hash_tracker.read(recipient) != tx_hash, 'Multi calls not allowed');
-            self.tx_hash_tracker.write(recipient, tx_hash);
+        fn ensure_not_multicall(ref self: ContractState) {
+            let tx_info = get_tx_info().unbox();
+            let tx_hash = tx_info.transaction_hash;
+            let tx_origin = tx_info.account_contract_address;
+            assert(self.tx_hash_tracker.read(tx_origin) != tx_hash, 'Multi calls not allowed');
+            self.tx_hash_tracker.write(tx_origin, tx_hash);
         }
 
 

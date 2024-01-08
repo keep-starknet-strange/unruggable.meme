@@ -237,16 +237,13 @@ mod memecoin_entrypoints {
 
         // Approvals required for transferFrom
         start_prank(CheatTarget::One(memecoin_address), INITIAL_HOLDER_1());
-        memecoin.approve(this_address, 1);
-        stop_prank(CheatTarget::One(memecoin_address));
-        start_prank(CheatTarget::One(memecoin_address), INITIAL_HOLDER_2());
-        memecoin.approve(this_address, 1);
+        memecoin.approve(this_address, 2);
         stop_prank(CheatTarget::One(memecoin_address));
 
-        // Transfer token from owner to ALICE() twice - should fail because
+        // Transfer token from owner twice, to ALICE() and to BOB() - should fail because
         // the tx_hash is the same for both calls
         memecoin.transfer_from(INITIAL_HOLDER_1(), ALICE(), 1);
-        memecoin.transfer_from(INITIAL_HOLDER_2(), ALICE(), 1);
+        memecoin.transfer_from(INITIAL_HOLDER_1(), BOB(), 1);
     }
 
     #[test]
@@ -262,8 +259,7 @@ mod memecoin_entrypoints {
         );
         start_prank(CheatTarget::One(memecoin.contract_address), INITIAL_HOLDER_1());
         let send_amount = memecoin.transfer_from(INITIAL_HOLDER_1(), ALICE(), 0);
-        start_prank(CheatTarget::One(memecoin.contract_address), INITIAL_HOLDER_2());
-        let send_amount = memecoin.transfer_from(INITIAL_HOLDER_2(), ALICE(), 0);
+        let send_amount = memecoin.transfer_from(INITIAL_HOLDER_1(), BOB(), 0);
     }
 
     #[test]
