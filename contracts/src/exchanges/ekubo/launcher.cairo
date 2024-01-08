@@ -51,6 +51,7 @@ fn sort_tokens(
 #[starknet::interface]
 trait IEkuboLauncher<T> {
     fn launch_token(ref self: T, params: EkuboLaunchParameters) -> (u64, EkuboLP);
+    fn transfer_position_ownership(ref self: T, position_to_transfer: StorableEkuboLP);
     fn withdraw_fees(ref self: T, id: u64, recipient: ContractAddress) -> u256;
     fn launched_tokens(ref self: T, owner: ContractAddress) -> Span<u64>;
     fn liquidity_position_details(ref self: T, id: u64) -> EkuboLP;
@@ -179,6 +180,15 @@ mod EkuboLauncher {
 
             (id, position)
         }
+
+        fn transfer_position_ownership(
+            ref self: ContractState, position_to_transfer: StorableEkuboLP
+        ) {
+            let caller: ContractAddress = get_caller_address();
+            let owner_of_position: ContractAddress = position_to_transfer.owner;
+            assert(caller == owner_of_position, 'not the owner of the position');
+        }
+
 
         fn withdraw_fees(ref self: ContractState, id: u64, recipient: ContractAddress) -> u256 {
             let stored_position = self.liquidity_positions.read(id);
