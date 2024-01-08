@@ -400,8 +400,9 @@ mod UnruggableMemecoin {
         // do multiple transfers when using complex routes.
         #[inline(always)]
         fn ensure_not_multicall(ref self: ContractState) {
-            let tx_hash: felt252 = get_tx_info().unbox().transaction_hash;
-            let tx_origin: ContractAddress = get_tx_info().unbox().account_contract_address;
+            let tx_info = get_tx_info().unbox();
+            let tx_hash = tx_info.transaction_hash;
+            let tx_origin = tx_info.account_contract_address;
             assert(self.tx_hash_tracker.read(tx_origin) != tx_hash, 'Multi calls not allowed');
             self.tx_hash_tracker.write(tx_origin, tx_hash);
         }
