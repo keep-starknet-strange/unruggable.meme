@@ -104,11 +104,7 @@ mod Factory {
 
         // Deployment of the launcher
         let mut calldata = array![
-            core.into(),
-            registry.into(),
-            positions.into(),
-            ekubo_launcher_class_hash.into(),
-            get_contract_address().into()
+            core.into(), registry.into(), positions.into(), get_contract_address().into()
         ];
 
         let (launcher_address, _) = deploy_syscall(
