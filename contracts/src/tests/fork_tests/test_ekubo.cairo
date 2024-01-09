@@ -260,11 +260,11 @@ fn test_transfer_ekuboLP_position() {
         quote_address, 0xc49ba5e353f7d00000000000000000, 5982, starting_tick, 88719042
     );
 
-    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
+    // Execute the transfer of position
     let ekubo_launcher = IEkuboLauncherDispatcher { contract_address: EKUBO_LAUNCHER_ADDRESS() };
-
     ekubo_launcher.transfer_position_ownership(id, ALICE());
 
+    // Check that LP transfer to Alice is successful
     assert(ekubo_launcher.launched_tokens(ALICE()).len() == 1, 'transfer failed');
 }
 
