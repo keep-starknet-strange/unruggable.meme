@@ -71,7 +71,7 @@ fn deploy_meme_factory_with_owner(
     owner: ContractAddress, exchanges: Span<(SupportedExchanges, ContractAddress)>
 ) -> ContractAddress {
     let memecoin_class_hash = declare('UnruggableMemecoin').class_hash;
-    let ekubo_launcher_class_hash = declare('alexandria_storage').class_hash;
+    let ekubo_launcher_class_hash = declare('EkuboLauncher').class_hash;
     let lock_manager_address = deploy_locker();
     let core = EKUBO_CORE();
     let registry = EKUBO_REGISTRY();
