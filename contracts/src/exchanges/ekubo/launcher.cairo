@@ -200,8 +200,7 @@ mod EkuboLauncher {
             // Add position to recipient
             positions_of_recipient.append(id);
 
-            // Modify StorableEkuboLP owner value
-
+            // Modify StorableEkuboLP owner value in storage for the corresponding ID
             let new_storable_ekubo_LP = StorableEkuboLP {
                 owner: recipient,
                 quote_address: position_to_transfer.quote_address,
