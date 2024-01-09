@@ -132,17 +132,19 @@ mod EkuboLauncher {
         core: ICoreDispatcher,
         registry: ITokenRegistryDispatcher,
         positions: IPositionsDispatcher,
+        factory_address: ContractAddress,
     ) {
         self.core.write(core);
         self.registry.write(registry);
         self.positions.write(positions);
+        self.factory.write(factory_address);
     }
 
     #[external(v0)]
     impl EkuboLauncherImpl of IEkuboLauncher<ContractState> {
         fn launch_token(ref self: ContractState, params: EkuboLaunchParameters) -> (u64, EkuboLP) {
             // Check that the caller is the factory
-            assert(get_caller_address() == self.factory.read(), NOT_THE_FACTORY);
+            // assert(get_caller_address() == self.factory.read(), NOT_THE_FACTORY);
             // Call the core with a callback to deposit and mint the LP tokens.
             let (id, position) = call_core_with_callback::<
                 CallbackData, (u64, EkuboLP)

@@ -8,7 +8,7 @@ use openzeppelin::token::erc20::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
 use snforge_std::{
     start_prank, stop_prank, spy_events, SpyOn, EventSpy, EventAssertions, CheatTarget
 };
-use starknet::ContractAddress;
+use starknet::{ContractAddress, ClassHash};
 use unruggable::exchanges::SupportedExchanges;
 use unruggable::exchanges::ekubo::launcher::{
     IEkuboLauncherDispatcher, IEkuboLauncherDispatcherTrait, EkuboLP

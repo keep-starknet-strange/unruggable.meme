@@ -6,6 +6,7 @@ mod Factory {
     use core::box::BoxTrait;
     use core::starknet::event::EventEmitter;
     use core::zeroable::Zeroable;
+    use ekubo::interfaces::core::{ICoreDispatcher, ICoreDispatcherTrait, ILocker};
     use ekubo::types::i129::i129;
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait;
@@ -19,6 +20,10 @@ mod Factory {
         ContractAddress, ClassHash, get_caller_address, get_contract_address, contract_address_const
     };
     use unruggable::errors;
+    use unruggable::exchanges::ekubo::interfaces::{
+        ITokenRegistryDispatcher, IPositionsDispatcher, IPositionsDispatcherTrait,
+        IOwnedNFTDispatcher, IOwnedNFTDispatcherTrait,
+    };
     use unruggable::exchanges::{
         SupportedExchanges, ekubo_adapter, ekubo_adapter::EkuboPoolParameters, jediswap_adapter,
         jediswap_adapter::JediswapAdditionalParameters, ekubo::launcher::EkuboLP
@@ -76,7 +81,12 @@ mod Factory {
         owner: ContractAddress,
         memecoin_class_hash: ClassHash,
         lock_manager_address: ContractAddress,
-        mut exchanges: Span<(SupportedExchanges, ContractAddress)>
+        mut exchanges: Span<(SupportedExchanges, ContractAddress)>,
+        core: ContractAddress,
+        registry: ContractAddress,
+        positions: ContractAddress,
+        ekubo_launcher_class_hash: ClassHash,
+        contract_address_salt: felt252,
     ) {
         self.ownable.initializer(owner);
         self.memecoin_class_hash.write(memecoin_class_hash);
@@ -91,6 +101,20 @@ mod Factory {
                 Option::None => { break; }
             }
         };
+
+        // Deployment of the launcher
+        let mut calldata = array![
+            core.into(),
+            registry.into(),
+            positions.into(),
+            ekubo_launcher_class_hash.into(),
+            get_contract_address().into()
+        ];
+
+        let (launcher_address, _) = deploy_syscall(
+            self.memecoin_class_hash.read(), contract_address_salt, calldata.span(), false
+        )
+            .unwrap_syscall();
     }
 
     #[abi(embed_v0)]
