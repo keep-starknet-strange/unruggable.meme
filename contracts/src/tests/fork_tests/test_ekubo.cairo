@@ -514,27 +514,16 @@ fn test_transfer_ekuboLP_position() {
     let owner = snforge_std::test_address();
     let (quote, quote_address) = deploy_eth_with_owner(owner);
     let starting_tick = i129 { sign: true, mag: 4600158 }; // 0.01ETH/MEME
-    let (memecoin_address, id1, position1) = launch_memecoin_on_ekubo(
+    let (memecoin_address, id, position) = launch_memecoin_on_ekubo(
         quote_address, 0xc49ba5e353f7d00000000000000000, 5982, starting_tick, 88719042
     );
 
     let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
     let ekubo_launcher = IEkuboLauncherDispatcher { contract_address: EKUBO_LAUNCHER_ADDRESS() };
 
-    start_prank(CheatTarget::One(ekubo_launcher.contract_address), ALICE());
-    let ekubo_launch_params = EkuboLaunchParameters {
-        owner: ALICE(),
-        token_address: memecoin_address,
-        quote_address: quote_address,
-        pool_params: EkuboPoolParameters {
-            fee: 0xc49ba5e353f7d00000000000000000,
-            tick_spacing: 5982,
-            starting_tick: i129 { sign: true, mag: 4600158 }, // 0.01ETH/MEME
-            bound: 88719042,
-        }
-    };
+    ekubo_launcher.transfer_position_ownership(id, ALICE());
 
-    let (id2, position2) = ekubo_launcher.launch_token(ekubo_launch_params);
+    assert(ekubo_launcher.launched_tokens(ALICE()).len() == 1, 'transfer failed');
 }
 
 #[test]

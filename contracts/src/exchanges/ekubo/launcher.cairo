@@ -73,7 +73,7 @@ mod EkuboLauncher {
     use super::{IEkuboLauncher, EkuboLaunchParameters, sort_tokens};
     use super::{StorableBounds, StorablePoolKey, StorableEkuboLP, EkuboLP};
     use unruggable::errors;
-    use unruggable::exchanges::ekubo::errors::NOT_POSITION_OWNER;
+    use unruggable::exchanges::ekubo::errors::{NOT_POSITION_OWNER, NOT_THE_FACTORY};
     use unruggable::exchanges::ekubo::interfaces::{
         ITokenRegistryDispatcher, IPositionsDispatcher, IPositionsDispatcherTrait,
         IOwnedNFTDispatcher, IOwnedNFTDispatcherTrait,
@@ -141,6 +141,8 @@ mod EkuboLauncher {
     #[external(v0)]
     impl EkuboLauncherImpl of IEkuboLauncher<ContractState> {
         fn launch_token(ref self: ContractState, params: EkuboLaunchParameters) -> (u64, EkuboLP) {
+            // Check that the caller is the factory
+            assert(get_caller_address() == self.factory.read(), NOT_THE_FACTORY);
             // Call the core with a callback to deposit and mint the LP tokens.
             let (id, position) = call_core_with_callback::<
                 CallbackData, (u64, EkuboLP)
@@ -198,6 +200,17 @@ mod EkuboLauncher {
 
             // Add position to recipient
             positions_of_recipient.append(id);
+
+            // Modify StorableEkuboLP owner value
+
+            let new_storable_ekubo_LP = StorableEkuboLP {
+                owner: recipient,
+                quote_address: position_to_transfer.quote_address,
+                pool_key: position_to_transfer.pool_key,
+                bounds: position_to_transfer.bounds,
+            };
+
+            self.liquidity_positions.write(id, new_storable_ekubo_LP);
         }
 
 
@@ -413,9 +426,7 @@ mod EkuboLauncher {
         ///
         /// * The caller's address is not the same as the `owner` of the `position_to_transfer` (error code: `NOT_POSITION_OWNER`).
         ///
-        fn assert_only_position_owner(
-            self: @ContractState, position_to_transfer: StorableEkuboLP,
-        ) {
+        fn assert_only_position_owner(self: @ContractState, position_to_transfer: StorableEkuboLP) {
             let owner_of_position: ContractAddress = position_to_transfer.owner;
             assert(get_caller_address() == owner_of_position, NOT_POSITION_OWNER);
         }
