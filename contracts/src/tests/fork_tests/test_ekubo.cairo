@@ -265,7 +265,16 @@ fn test_transfer_ekuboLP_position() {
     ekubo_launcher.transfer_position_ownership(id, ALICE());
 
     // Check that LP transfer to Alice is successful
-    assert(ekubo_launcher.launched_tokens(ALICE()).len() == 1, 'transfer failed');
+    assert(
+        (ekubo_launcher.launched_tokens(ALICE()).len() == 1
+            && ekubo_launcher.launched_tokens(owner).len() == 0),
+        'transfer failed'
+    );
+
+    assert(
+        ekubo_launcher.liquidity_position_details(id).owner == ALICE(),
+        'launcher storage not updated'
+    );
 }
 
 #[test]
