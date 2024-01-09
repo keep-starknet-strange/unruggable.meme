@@ -266,8 +266,8 @@ fn test_transfer_ekuboLP_position() {
 
     // Check that LP transfer to Alice is successful
     assert(
-        (ekubo_launcher.launched_tokens(ALICE()).len() == 1
-            && ekubo_launcher.launched_tokens(owner).len() == 0),
+        ekubo_launcher.launched_tokens(ALICE()).len() == 1
+            && ekubo_launcher.launched_tokens(owner).len() == 0,
         'transfer failed'
     );
 
