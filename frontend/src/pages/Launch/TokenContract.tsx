@@ -10,9 +10,10 @@ import * as styles from './TokenContract.css'
 
 interface TokenContractProps extends BoxProps {
   tokenContract: TokenContractType
+  launched?: boolean
 }
 
-export default function TokenContract({ tokenContract, ...props }: TokenContractProps) {
+export default function TokenContract({ tokenContract, launched, ...props }: TokenContractProps) {
   const teamAllocationPercentage = useMemo(
     () => new Percent(tokenContract.teamAllocation, tokenContract.maxSupply).toFixed(),
     [tokenContract.teamAllocation, tokenContract.maxSupply]
@@ -37,9 +38,11 @@ export default function TokenContract({ tokenContract, ...props }: TokenContract
             <Text.Body color="text2">${tokenContract.symbol}</Text.Body>
           </Row>
 
-          <Text.Custom className={styles.launchStatus({ launched: tokenContract.launched })}>
-            {tokenContract.launched ? 'Launched' : 'Not launched'}
-          </Text.Custom>
+          {launched !== undefined && (
+            <Text.Custom className={styles.launchStatus({ launched })}>
+              {launched ? 'Launched' : 'Not launched'}
+            </Text.Custom>
+          )}
         </Row>
 
         <Row gap="8">

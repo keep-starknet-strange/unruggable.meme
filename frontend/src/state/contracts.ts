@@ -10,7 +10,6 @@ export interface TokenContract {
   symbol: string
   maxSupply: string
   teamAllocation: string
-  launched: boolean
 }
 
 interface State {

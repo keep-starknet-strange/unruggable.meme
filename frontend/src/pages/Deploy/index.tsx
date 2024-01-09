@@ -115,7 +115,6 @@ export default function DeployPage() {
           symbol: data.symbol,
           maxSupply: parsedInitialSupply,
           teamAllocation: totalTeamAllocation,
-          launched: false,
         })
 
         navigate(`/token/${tokenAddress}`)
