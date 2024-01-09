@@ -29,7 +29,7 @@ use unruggable::tests::fork_tests::utils::{
 };
 use unruggable::tests::unit_tests::utils::{
     OWNER, DEFAULT_MIN_LOCKTIME, pow_256, LOCK_MANAGER_ADDRESS, MEMEFACTORY_ADDRESS, RECIPIENT,
-    DefaultTxInfoMock
+    ALICE, DefaultTxInfoMock
 };
 use unruggable::token::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -248,6 +248,33 @@ fn test_launch_meme() {
                 )
             ]
         );
+}
+
+#[test]
+#[fork("Mainnet")]
+fn test_transfer_ekuboLP_position() {
+    let owner = snforge_std::test_address();
+    let (quote, quote_address) = deploy_eth_with_owner(owner);
+    let starting_tick = i129 { sign: true, mag: 4600158 }; // 0.01ETH/MEME
+    let (memecoin_address, id, position) = launch_memecoin_on_ekubo(
+        quote_address, 0xc49ba5e353f7d00000000000000000, 5982, starting_tick, 88719042
+    );
+
+    // Execute the transfer of position
+    let ekubo_launcher = IEkuboLauncherDispatcher { contract_address: EKUBO_LAUNCHER_ADDRESS() };
+    ekubo_launcher.transfer_position_ownership(id, ALICE());
+
+    // Check that LP transfer to Alice is successful
+    assert(
+        ekubo_launcher.launched_tokens(ALICE()).len() == 1
+            && ekubo_launcher.launched_tokens(owner).len() == 0,
+        'transfer failed'
+    );
+
+    assert(
+        ekubo_launcher.liquidity_position_details(id).owner == ALICE(),
+        'launcher storage not updated'
+    );
 }
 
 #[test]

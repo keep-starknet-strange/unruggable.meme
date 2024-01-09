@@ -390,15 +390,16 @@ mod LockManager {
                     break;
                 }
                 let current_lock_address = list[i];
-                if current_lock_address == lock_address {
-                    let last_element = list[list_len - 1];
-                    list.set(i, last_element);
-                    list.set(list_len - 1, 0.try_into().unwrap());
-                    list.len -= 1;
-                    Store::write(list.address_domain, list.base, list.len).unwrap_syscall();
-                    break;
+                if current_lock_address != lock_address {
+                    i += 1;
+                    continue;
                 }
-                i += 1;
+                let last_element = list[list_len - 1];
+                list.set(i, last_element);
+                list.set(list_len - 1, 0.try_into().unwrap());
+                list.len -= 1;
+                Store::write(list.address_domain, list.base, list.len).unwrap_syscall();
+                break;
             }
         }
     }

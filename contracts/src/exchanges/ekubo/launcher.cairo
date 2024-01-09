@@ -5,7 +5,7 @@ use starknet::ContractAddress;
 use unruggable::exchanges::ekubo::ekubo_adapter::{EkuboLaunchParameters};
 use unruggable::utils::ContractAddressOrder;
 
-//! Temporary workaround to store bounds and pool keys
+//! Temporary workaround to store bounds
 #[derive(Copy, Drop, Serde, PartialEq, Hash, starknet::Store)]
 struct StorableBounds {
     lower: i129,
@@ -51,6 +51,7 @@ fn sort_tokens(
 #[starknet::interface]
 trait IEkuboLauncher<T> {
     fn launch_token(ref self: T, params: EkuboLaunchParameters) -> (u64, EkuboLP);
+    fn transfer_position_ownership(ref self: T, id: u64, recipient: ContractAddress);
     fn withdraw_fees(ref self: T, id: u64, recipient: ContractAddress) -> u256;
     fn launched_tokens(ref self: T, owner: ContractAddress) -> Span<u64>;
     fn liquidity_position_details(ref self: T, id: u64) -> EkuboLP;
@@ -68,10 +69,11 @@ mod EkuboLauncher {
     use ekubo::types::{i129::i129};
     use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
     use starknet::SyscallResultTrait;
-    use starknet::{ContractAddress, ClassHash, get_contract_address, get_caller_address};
+    use starknet::{ContractAddress, ClassHash, get_contract_address, get_caller_address, Store};
     use super::{IEkuboLauncher, EkuboLaunchParameters, sort_tokens};
     use super::{StorableBounds, StorablePoolKey, StorableEkuboLP, EkuboLP};
     use unruggable::errors;
+    use unruggable::exchanges::ekubo::errors::{NOT_POSITION_OWNER};
     use unruggable::exchanges::ekubo::interfaces::{
         ITokenRegistryDispatcher, IPositionsDispatcher, IPositionsDispatcherTrait,
         IOwnedNFTDispatcher, IOwnedNFTDispatcherTrait,
@@ -179,6 +181,36 @@ mod EkuboLauncher {
 
             (id, position)
         }
+
+        fn transfer_position_ownership(
+            ref self: ContractState, id: u64, recipient: ContractAddress
+        ) {
+            let position_to_transfer = self.liquidity_positions.read(id);
+            self.assert_only_position_owner(position_to_transfer);
+
+            assert(recipient.into() != 0_felt252, errors::RECIPIENT_ADDRESS_ZERO);
+
+            let mut positions_of_owner = self.owner_to_positions.read(get_caller_address());
+
+            // Remove position of the owner
+            self.remove_position_from_list(id, positions_of_owner);
+
+            let mut positions_of_recipient = self.owner_to_positions.read(recipient);
+
+            // Add position to recipient
+            positions_of_recipient.append(id);
+
+            // Modify StorableEkuboLP owner value in storage for the corresponding ID
+            let new_storable_ekubo_LP = StorableEkuboLP {
+                owner: recipient,
+                quote_address: position_to_transfer.quote_address,
+                pool_key: position_to_transfer.pool_key,
+                bounds: position_to_transfer.bounds,
+            };
+
+            self.liquidity_positions.write(id, new_storable_ekubo_LP);
+        }
+
 
         fn withdraw_fees(ref self: ContractState, id: u64, recipient: ContractAddress) -> u256 {
             let stored_position = self.liquidity_positions.read(id);
@@ -378,6 +410,50 @@ mod EkuboLauncher {
 
             // Clear this contract and send the tokens back to the caller
             token.transfer(recipient: caller, amount: token.balanceOf(this));
+        }
+
+
+        /// Ensures that the caller is the owner of the specified position.
+        ///
+        /// # Arguments
+        ///
+        /// * `position_to_transfer` - The LP position to transfer.
+        ///
+        /// # Panics
+        ///
+        /// This function will panic if:
+        ///
+        /// * The caller's address is not the same as the `owner` of the `position_to_transfer` (error code: `NOT_POSITION_OWNER`).
+        ///
+        fn assert_only_position_owner(self: @ContractState, position_to_transfer: StorableEkuboLP) {
+            let owner_of_position: ContractAddress = position_to_transfer.owner;
+            assert(get_caller_address() == owner_of_position, NOT_POSITION_OWNER);
+        }
+
+        /// Removes the id of a position from the list of positions of a user.
+        ///
+        /// Internally, this function reads the list of positions of the specified `owner` from the 'owner_to_positions' mapping.
+        /// It then iterates over the list and replaces the specified `position` with the last element of the list.
+        /// The length of the list is then decremented by one, and the last element of the list is set to zero.
+        fn remove_position_from_list(self: @ContractState, position: u64, mut list: List<u64>) {
+            let list_len = list.len();
+            let mut i = 0;
+            loop {
+                if i == list_len {
+                    break;
+                }
+                let current_position = list[i];
+                if current_position != position {
+                    i += 1;
+                    continue;
+                }
+                let last_element = list[list_len - 1];
+                list.set(i, last_element);
+                list.set(list_len - 1, 0.try_into().unwrap());
+                list.len -= 1;
+                Store::write(list.address_domain, list.base, list.len).unwrap_syscall();
+                break;
+            }
         }
     }
 }
