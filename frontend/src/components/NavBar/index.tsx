@@ -21,6 +21,10 @@ export const links = [
     name: 'Screen',
     path: '/screen',
   },
+  {
+    name: 'About',
+    path: '/about',
+  },
 ]
 
 export default function NavBar() {
