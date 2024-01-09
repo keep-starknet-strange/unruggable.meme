@@ -71,7 +71,13 @@ fn deploy_meme_factory_with_owner(
     owner: ContractAddress, exchanges: Span<(SupportedExchanges, ContractAddress)>
 ) -> ContractAddress {
     let memecoin_class_hash = declare('UnruggableMemecoin').class_hash;
+    let ekubo_launcher_class_hash = declare('alexandria_storage').class_hash;
     let lock_manager_address = deploy_locker();
+    let core = EKUBO_CORE();
+    let registry = EKUBO_REGISTRY();
+    let positions = EKUBO_POSITIONS();
+
+    let random_contract_salt = 0;
 
     let contract = declare('Factory');
     let mut calldata = array![];
@@ -79,6 +85,11 @@ fn deploy_meme_factory_with_owner(
     Serde::serialize(@memecoin_class_hash, ref calldata);
     Serde::serialize(@lock_manager_address, ref calldata);
     Serde::serialize(@exchanges.into(), ref calldata);
+    Serde::serialize(@EKUBO_CORE(), ref calldata);
+    Serde::serialize(@EKUBO_REGISTRY(), ref calldata);
+    Serde::serialize(@EKUBO_POSITIONS(), ref calldata);
+    Serde::serialize(@ekubo_launcher_class_hash, ref calldata);
+    Serde::serialize(@random_contract_salt, ref calldata);
     contract.deploy_at(@calldata, MEMEFACTORY_ADDRESS()).expect('UnrugFactory deployment failed')
 }
 

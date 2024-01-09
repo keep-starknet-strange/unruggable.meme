@@ -108,7 +108,7 @@ mod Factory {
         ];
 
         let (launcher_address, _) = deploy_syscall(
-            self.memecoin_class_hash.read(), contract_address_salt, calldata.span(), false
+            ekubo_launcher_class_hash, contract_address_salt, calldata.span(), false
         )
             .unwrap_syscall();
     }
