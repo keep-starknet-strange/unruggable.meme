@@ -122,9 +122,6 @@ mod LockManager {
             unlock_time: u64,
             withdrawer: ContractAddress
         ) -> ContractAddress {
-            //TODO(safety): Add a check to verify that the token locked is an LP pair - to avoid people locking tokens
-            // unintentionally
-
             assert(amount != 0, errors::ZERO_AMOUNT);
             assert(token.into() != 0_felt252, errors::ZERO_TOKEN);
             assert(withdrawer.into() != 0_felt252, errors::ZERO_WITHDRAWER);
