@@ -10,7 +10,7 @@ use starknet::{ContractAddress, contract_address_const};
 use unruggable::exchanges::{SupportedExchanges};
 use unruggable::tests::unit_tests::utils::{
     OWNER, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, RECIPIENT, SPENDER, deploy_locker, INITIAL_HOLDERS,
-    INITIAL_HOLDERS_AMOUNTS, TRANSFER_LIMIT_DELAY, DefaultTxInfoMock,
+    INITIAL_HOLDERS_AMOUNTS, TRANSFER_RESTRICTION_DELAY, DefaultTxInfoMock,
     deploy_memecoin_through_factory
 };
 use unruggable::token::interface::{
@@ -33,7 +33,7 @@ mod test_constructor {
         deploy_eth_with_owner, OWNER, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS,
         INITIAL_HOLDER_1, INITIAL_HOLDER_2, INITIAL_HOLDERS_AMOUNTS, SALT, DefaultTxInfoMock,
         deploy_memecoin_through_factory, ETH_ADDRESS, deploy_memecoin_through_factory_with_owner,
-        JEDI_ROUTER_ADDRESS, MEMEFACTORY_ADDRESS, ALICE, BOB, TRANSFER_LIMIT_DELAY, pow_256,
+        JEDI_ROUTER_ADDRESS, MEMEFACTORY_ADDRESS, ALICE, BOB, TRANSFER_RESTRICTION_DELAY, pow_256,
         LOCK_MANAGER_ADDRESS, JEDI_FACTORY_ADDRESS
     };
     use unruggable::token::UnruggableMemecoin;
@@ -51,7 +51,6 @@ mod test_constructor {
         UnruggableMemecoin::constructor(
             ref memecoin,
             OWNER(),
-            TRANSFER_LIMIT_DELAY,
             NAME(),
             SYMBOL(),
             DEFAULT_INITIAL_SUPPLY(),
@@ -65,10 +64,6 @@ mod test_constructor {
         );
 
         // Check internals that must be set upon deployment
-        assert(
-            memecoin.transfer_restriction_delay.read() == TRANSFER_LIMIT_DELAY,
-            'wrong transfer limit delay'
-        );
         assert(
             memecoin.team_allocation.read() == 2_100_000 * pow_256(10, 18), 'wrong team allocation'
         ); // 10% of supply
@@ -88,7 +83,6 @@ mod test_constructor {
         UnruggableMemecoin::constructor(
             ref state,
             OWNER(),
-            TRANSFER_LIMIT_DELAY,
             NAME(),
             SYMBOL(),
             DEFAULT_INITIAL_SUPPLY(),
@@ -119,7 +113,6 @@ mod test_constructor {
         UnruggableMemecoin::constructor(
             ref state,
             OWNER(),
-            TRANSFER_LIMIT_DELAY,
             NAME(),
             SYMBOL(),
             DEFAULT_INITIAL_SUPPLY(),
@@ -131,9 +124,7 @@ mod test_constructor {
     #[test]
     #[should_panic(expected: ('Max team allocation reached',))]
     fn test_constructor_too_much_team_alloc_should_fail() {
-        let mut calldata = array![
-            OWNER().into(), 'locker', TRANSFER_LIMIT_DELAY.into(), NAME().into(), SYMBOL().into()
-        ];
+        let mut calldata = array![OWNER().into(), 'locker', NAME().into(), SYMBOL().into()];
         // Allocation over 10% (over 2.1M)
         let alloc_holder_1 = 1_050_000 * pow_256(10, 18);
         let alloc_holder_2 = 1_050_001 * pow_256(10, 18);
@@ -141,7 +132,6 @@ mod test_constructor {
         UnruggableMemecoin::constructor(
             ref state,
             OWNER(),
-            TRANSFER_LIMIT_DELAY,
             NAME(),
             SYMBOL(),
             DEFAULT_INITIAL_SUPPLY(),
@@ -171,7 +161,7 @@ mod memecoin_entrypoints {
         INITIAL_HOLDER_1, INITIAL_HOLDER_2, INITIAL_HOLDERS_AMOUNTS, SALT, DefaultTxInfoMock,
         deploy_memecoin_through_factory, ETH_ADDRESS, deploy_memecoin_through_factory_with_owner,
         JEDI_ROUTER_ADDRESS, MEMEFACTORY_ADDRESS, ALICE, BOB, pow_256, LOCK_MANAGER_ADDRESS,
-        deploy_and_launch_memecoin, TRANSFER_LIMIT_DELAY, UNLOCK_TIME, DEFAULT_MIN_LOCKTIME
+        deploy_and_launch_memecoin, TRANSFER_RESTRICTION_DELAY, UNLOCK_TIME, DEFAULT_MIN_LOCKTIME
     };
     use unruggable::token::interface::{
         IUnruggableMemecoin, IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -255,7 +245,8 @@ mod memecoin_entrypoints {
         // setting block timestamp >= launch_time + transfer_delay. Transfer should succeed
         // as multi calls to the same recipient are allowed after the delay
         start_warp(
-            CheatTarget::One(memecoin.contract_address), launch_timestamp + TRANSFER_LIMIT_DELAY
+            CheatTarget::One(memecoin.contract_address),
+            launch_timestamp + TRANSFER_RESTRICTION_DELAY
         );
         start_prank(CheatTarget::One(memecoin.contract_address), INITIAL_HOLDER_1());
         let send_amount = memecoin.transfer_from(INITIAL_HOLDER_1(), ALICE(), 0);
@@ -313,7 +304,7 @@ mod memecoin_internals {
             // create a unique address
             let unique_recipient: ContractAddress = (index.into() + 9999).try_into().unwrap();
 
-            // creating and setting unique tx_hash here 
+            // creating and setting unique tx_hash here
             let mut tx_info: TxInfoMock = Default::default();
             tx_info.transaction_hash = Option::Some(index.into() + 9999);
             snforge_std::start_spoof(CheatTarget::One(memecoin.contract_address), tx_info);
@@ -348,7 +339,7 @@ mod memecoin_internals {
                 break;
             }
 
-            // creating and setting unique tx_hash here 
+            // creating and setting unique tx_hash here
             let mut tx_info: TxInfoMock = Default::default();
             tx_info.transaction_hash = Option::Some(index.into() + 9999);
             snforge_std::start_spoof(CheatTarget::One(memecoin.contract_address), tx_info);
@@ -377,7 +368,7 @@ mod memecoin_internals {
             // create a unique address
             let unique_recipient: ContractAddress = (index.into() + 9999).try_into().unwrap();
 
-            // creating and setting unique tx_hash here 
+            // creating and setting unique tx_hash here
             let mut tx_info: TxInfoMock = Default::default();
             tx_info.transaction_hash = Option::Some(index.into() + 9999);
             snforge_std::start_spoof(CheatTarget::One(memecoin.contract_address), tx_info);
@@ -404,7 +395,7 @@ mod memecoin_internals {
             // create a unique address
             let unique_recipient: ContractAddress = (index.into() + 9999).try_into().unwrap();
 
-            // creating and setting unique tx_hash here 
+            // creating and setting unique tx_hash here
             let mut tx_info: TxInfoMock = Default::default();
             tx_info.transaction_hash = Option::Some(index.into() + 9999);
             snforge_std::start_spoof(CheatTarget::One(memecoin.contract_address), tx_info);

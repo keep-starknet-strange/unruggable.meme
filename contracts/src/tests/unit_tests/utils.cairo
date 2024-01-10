@@ -83,7 +83,7 @@ fn UNLOCK_TIME() -> u64 {
 }
 
 const ETH_DECIMALS: u8 = 18;
-const TRANSFER_LIMIT_DELAY: u64 = 1000;
+const TRANSFER_RESTRICTION_DELAY: u64 = 1000;
 
 
 fn MEMEFACTORY_ADDRESS() -> ContractAddress {
@@ -105,9 +105,7 @@ fn deploy_standalone_memecoin() -> (IUnruggableMemecoinDispatcher, ContractAddre
 
     // Deploy the memecoin with the default parameters.
     let contract = declare('UnruggableMemecoin');
-    let mut calldata = array![
-        OWNER().into(), TRANSFER_LIMIT_DELAY.into(), NAME().into(), SYMBOL().into(),
-    ];
+    let mut calldata = array![OWNER().into(), NAME().into(), SYMBOL().into(),];
     Serde::serialize(@DEFAULT_INITIAL_SUPPLY(), ref calldata);
     Serde::serialize(@INITIAL_HOLDERS(), ref calldata);
     Serde::serialize(@INITIAL_HOLDERS_AMOUNTS(), ref calldata);
@@ -237,7 +235,6 @@ fn deploy_memecoin_through_factory_with_owner(
             initial_supply: DEFAULT_INITIAL_SUPPLY(),
             initial_holders: INITIAL_HOLDERS(),
             initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
-            transfer_limit_delay: TRANSFER_LIMIT_DELAY,
             contract_address_salt: SALT(),
         );
     stop_prank(CheatTarget::One(memecoin_factory.contract_address));
@@ -275,7 +272,11 @@ fn deploy_and_launch_memecoin() -> (IUnruggableMemecoinDispatcher, ContractAddre
     start_warp(CheatTarget::One(memecoin_address), 1);
     let pool_address = factory
         .launch_on_jediswap(
-            memecoin_address, eth.contract_address, eth_amount, DEFAULT_MIN_LOCKTIME,
+            memecoin_address,
+            TRANSFER_RESTRICTION_DELAY,
+            eth.contract_address,
+            eth_amount,
+            DEFAULT_MIN_LOCKTIME,
         );
     stop_prank(CheatTarget::One(factory.contract_address));
     stop_warp(CheatTarget::One(memecoin_address));

@@ -20,7 +20,7 @@ use unruggable::tests::unit_tests::utils::{
     SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS, INITIAL_HOLDERS_AMOUNTS, SALT,
     deploy_memecoin_through_factory, MEMEFACTORY_ADDRESS,
     deploy_memecoin_through_factory_with_owner, pow_256, LOCK_MANAGER_ADDRESS, DEFAULT_MIN_LOCKTIME,
-    deploy_and_launch_memecoin
+    deploy_and_launch_memecoin, TRANSFER_RESTRICTION_DELAY
 };
 use unruggable::token::interface::{
     IUnruggableMemecoin, IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -97,7 +97,6 @@ fn test_create_memecoin() {
             initial_supply: DEFAULT_INITIAL_SUPPLY(),
             initial_holders: INITIAL_HOLDERS(),
             initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
-            transfer_limit_delay: 1000,
             contract_address_salt: SALT(),
         );
     stop_prank(CheatTarget::One(memecoin_factory.contract_address));
@@ -140,7 +139,11 @@ fn test_launch_memecoin_happy_path() {
     start_warp(CheatTarget::One(memecoin_address), 1);
     let pair_address = factory
         .launch_on_jediswap(
-            memecoin_address, eth.contract_address, eth_amount, DEFAULT_MIN_LOCKTIME,
+            memecoin_address,
+            TRANSFER_RESTRICTION_DELAY,
+            eth.contract_address,
+            eth_amount,
+            DEFAULT_MIN_LOCKTIME,
         );
     stop_prank(CheatTarget::One(factory.contract_address));
     stop_warp(CheatTarget::One(memecoin_address));
@@ -191,7 +194,11 @@ fn test_launch_memecoin_already_launched() {
     start_prank(CheatTarget::One(factory.contract_address), OWNER());
     let pair_address = factory
         .launch_on_jediswap(
-            memecoin_address, eth.contract_address, eth_amount, DEFAULT_MIN_LOCKTIME,
+            memecoin_address,
+            TRANSFER_RESTRICTION_DELAY,
+            eth.contract_address,
+            eth_amount,
+            DEFAULT_MIN_LOCKTIME,
         );
 }
 
@@ -201,7 +208,9 @@ fn test_launch_memecoin_not_owner() {
     let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
     let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
     let pair_address = factory
-        .launch_on_jediswap(memecoin_address, ETH_ADDRESS(), 1, DEFAULT_MIN_LOCKTIME,);
+        .launch_on_jediswap(
+            memecoin_address, TRANSFER_RESTRICTION_DELAY, ETH_ADDRESS(), 1, DEFAULT_MIN_LOCKTIME,
+        );
 }
 
 #[test]
@@ -218,6 +227,7 @@ fn test_launch_memecoin_amm_not_whitelisted() {
     let pool_address = factory
         .launch_on_ekubo(
             memecoin_address,
+            TRANSFER_RESTRICTION_DELAY,
             eth.contract_address,
             EkuboPoolParameters {
                 fee: 0, tick_spacing: 0, starting_tick: i129 { sign: false, mag: 0 }, bound: 0

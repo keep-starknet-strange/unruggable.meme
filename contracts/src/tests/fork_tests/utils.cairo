@@ -14,8 +14,7 @@ use unruggable::tests::addresses::{
 };
 use unruggable::tests::unit_tests::utils::{
     deploy_locker, deploy_eth_with_owner, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS,
-    INITIAL_HOLDERS_AMOUNTS, TRANSFER_LIMIT_DELAY, SALT, DefaultTxInfoMock, OWNER, TOKEN0_ADDRESS,
-    MEMEFACTORY_ADDRESS
+    INITIAL_HOLDERS_AMOUNTS, SALT, DefaultTxInfoMock, OWNER, TOKEN0_ADDRESS, MEMEFACTORY_ADDRESS
 };
 use unruggable::token::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -109,7 +108,6 @@ fn deploy_memecoin_through_factory_with_owner(
             initial_supply: DEFAULT_INITIAL_SUPPLY(),
             initial_holders: INITIAL_HOLDERS(),
             initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
-            transfer_limit_delay: TRANSFER_LIMIT_DELAY,
             contract_address_salt: SALT(),
         );
     stop_prank(CheatTarget::One(memecoin_factory.contract_address));
