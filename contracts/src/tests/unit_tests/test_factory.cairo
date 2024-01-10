@@ -238,7 +238,12 @@ fn test_launch_memecoin_not_owner() {
     let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
     let pair_address = factory
         .launch_on_jediswap(
-            memecoin_address, TRANSFER_RESTRICTION_DELAY, MAX_PERCENTAGE_BUY_LAUNCH, ETH_ADDRESS(), 1, DEFAULT_MIN_LOCKTIME,
+            memecoin_address,
+            TRANSFER_RESTRICTION_DELAY,
+            MAX_PERCENTAGE_BUY_LAUNCH,
+            ETH_ADDRESS(),
+            1,
+            DEFAULT_MIN_LOCKTIME,
         );
 }
 

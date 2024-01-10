@@ -145,11 +145,17 @@ mod UnruggableMemecoin {
         }
 
         fn set_launched(
-            ref self: ContractState, liquidity_type: LiquidityType, transfer_restriction_delay: u64, max_percentage_buy_launch: u16
+            ref self: ContractState,
+            liquidity_type: LiquidityType,
+            transfer_restriction_delay: u64,
+            max_percentage_buy_launch: u16
         ) {
             self.assert_only_factory();
             assert(!self.is_launched(), errors::ALREADY_LAUNCHED);
-            assert(max_percentage_buy_launch >= MIN_MAX_PERCENTAGE_BUY_LAUNCH, errors::MAX_PERCENTAGE_BUY_LAUNCH_TOO_LOW);
+            assert(
+                max_percentage_buy_launch >= MIN_MAX_PERCENTAGE_BUY_LAUNCH,
+                errors::MAX_PERCENTAGE_BUY_LAUNCH_TOO_LOW
+            );
 
             self.liquidity_type.write(Option::Some(liquidity_type));
             self.launch_time.write(get_block_timestamp());
@@ -316,7 +322,9 @@ mod UnruggableMemecoin {
                 }
 
                 assert(
-                    amount <= self.total_supply().percent_mul(self.max_percentage_buy_launch.read().into()),
+                    amount <= self
+                        .total_supply()
+                        .percent_mul(self.max_percentage_buy_launch.read().into()),
                     'Max buy cap reached'
                 );
 

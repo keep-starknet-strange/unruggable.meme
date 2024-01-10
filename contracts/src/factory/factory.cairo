@@ -151,7 +151,12 @@ mod Factory {
                 }
             );
 
-            memecoin.set_launched(LiquidityType::ERC20(pair_address), :transfer_restriction_delay, :max_percentage_buy_launch);
+            memecoin
+                .set_launched(
+                    LiquidityType::ERC20(pair_address),
+                    :transfer_restriction_delay,
+                    :max_percentage_buy_launch
+                );
             self
                 .emit(
                     MemecoinLaunched {
@@ -185,7 +190,10 @@ mod Factory {
                 additional_parameters: ekubo_parameters
             );
 
-            memecoin.set_launched(LiquidityType::NFT(id), :transfer_restriction_delay, :max_percentage_buy_launch);
+            memecoin
+                .set_launched(
+                    LiquidityType::NFT(id), :transfer_restriction_delay, :max_percentage_buy_launch
+                );
             self
                 .emit(
                     MemecoinLaunched {

@@ -38,7 +38,12 @@ fn test_jediswap_integration() {
 
     let pair_address = factory
         .launch_on_jediswap(
-            memecoin_address, TRANSFER_RESTRICTION_DELAY, MAX_PERCENTAGE_BUY_LAUNCH, quote_address, amount, unlock_time
+            memecoin_address,
+            TRANSFER_RESTRICTION_DELAY,
+            MAX_PERCENTAGE_BUY_LAUNCH,
+            quote_address,
+            amount,
+            unlock_time
         );
 
     let pair = IJediswapPairDispatcher { contract_address: pair_address };
