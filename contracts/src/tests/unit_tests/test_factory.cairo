@@ -206,7 +206,7 @@ fn test_launch_memecoin_not_owner() {
 
 #[test]
 #[should_panic(expected: ('Exchange address is zero',))]
-//TODO: does this still make sense?
+//TODO: does this test still make sense?
 fn test_launch_memecoin_amm_not_whitelisted() {
     //INFO: Ekubo is not supported in unit tests, as we don't have a way
     // to deploy their contracts. Thus, it's not possible to use it in unit tests.

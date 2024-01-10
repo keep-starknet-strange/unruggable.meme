@@ -50,10 +50,102 @@ fn sort_tokens(
 
 #[starknet::interface]
 trait IEkuboLauncher<T> {
+    /// Launches a new token.
+    ///
+    /// This function calls the core contract with a callback to deposit and mint
+    /// the LP tokens. The core of the launch logic is actually performed during the
+    /// callback in the `locked` function, where the pool is initialized, the tokens
+    /// are transferred to the pool, and the Ekubo LP position is minted and
+    /// transferred to this contract.  It then tracks the new ekubo position id with
+    /// the position parameters in the `liquidity_positions` mapping in the
+    /// contract, appends the owner's position to the `owner_to_positions` mapping,
+    /// clears the remaining balances of the token and quote addresses, and emits a
+    /// `Launched` event.
+    ///
+    /// # Arguments
+    ///
+    /// * `params` - The parameters for the token launch.
+    ///
+    /// # Returns
+    ///
+    /// * `(u64, EkuboLP)` - The ID and position of the new token.
+    ///
     fn launch_token(ref self: T, params: EkuboLaunchParameters) -> (u64, EkuboLP);
+    /// Transfers the ownership of a liquidity position held by this contract.
+    ///
+    /// This function transfers the ownership of a liquidity position from the caller to a recipient.
+    /// It first reads the position to be transferred from the `liquidity_positions` mapping,
+    /// asserts that the caller is the owner of the position,
+    /// and asserts that the recipient address is not zero.
+    /// It then reads the positions of the caller and recipient from the `owner_to_positions` mapping,
+    /// removes the position from the caller's list,
+    /// appends it to the recipient's list,
+    /// and writes the updated position with the new owner to the `liquidity_positions` mapping.
+    /// The underlying Ekubo LP position is not modified.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The ID of the liquidity position to be transferred.
+    /// * `recipient` - The address of the recipient.
+    ///
+    /// # Panics
+    ///
+    /// * If the caller is not the owner of the position.
+    /// * If the recipient address is zero.
+    ///
     fn transfer_position_ownership(ref self: T, id: u64, recipient: ContractAddress);
+    /// Withdraws the fees collected from a liquidity position in quote tokens.
+    ///
+    /// This function reads the liquidity position from the `liquidity_positions` mapping,
+    /// asserts that the caller is the owner of the position,
+    /// and calls the core contract with a callback to withdraw the fees. The callback call withdraws the fees in both
+    /// tokens from the Ekubo position, and transfers them to this contract.
+    /// Upon return from the callback, it then checks if the quote address of the position is the same as the first token address returned by the callback.
+    /// If it is, it reads the balance of the first token, transfers it to the recipient, and returns the balance.
+    /// If it is not, it reads the balance of the second token, transfers it to the recipient, and returns the balance.
+    /// The fees accumulated in the base token are not withdrawn.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The ID of the liquidity position.
+    /// * `recipient` - The address of the recipient.
+    ///
+    /// # Returns
+    ///
+    /// * `u256` - The amount of fees collected.
+    ///
+    /// # Panics
+    ///
+    /// * If the caller is not the owner of the position.
+    ///
     fn withdraw_fees(ref self: T, id: u64, recipient: ContractAddress) -> u256;
+    /// Returns the IDs of the tokens launched by a specific owner.
+    ///
+    /// This function reads the positions of the owner from the `owner_to_positions` mapping,
+    /// and returns a span of the IDs of the tokens launched by the owner.
+    ///
+    /// # Arguments
+    ///
+    /// * `owner` - The address of the owner.
+    ///
+    /// # Returns
+    ///
+    /// * `Span<u64>` - A span of the IDs of the tokens launched by the owner.
+    ///
     fn launched_tokens(ref self: T, owner: ContractAddress) -> Span<u64>;
+    /// Returns the details of a liquidity position.
+    ///
+    /// This function reads the liquidity position with the given ID from the `liquidity_positions` mapping,
+    /// and returns a `EkuboLP` struct containing the details of the position.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The ID of the liquidity position.
+    ///
+    /// # Returns
+    ///
+    /// * `EkuboLP` - A struct containing the details of the liquidity position.
+    ///
     fn liquidity_position_details(ref self: T, id: u64) -> EkuboLP;
 }
 
@@ -140,7 +232,6 @@ mod EkuboLauncher {
 
     #[external(v0)]
     impl EkuboLauncherImpl of IEkuboLauncher<ContractState> {
-        //TODO(ekubo): add support to transfer the ownership of the LP to collect fees.
         fn launch_token(ref self: ContractState, params: EkuboLaunchParameters) -> (u64, EkuboLP) {
             // Call the core with a callback to deposit and mint the LP tokens.
             let (id, position) = call_core_with_callback::<
@@ -181,6 +272,7 @@ mod EkuboLauncher {
 
             (id, position)
         }
+
 
         fn transfer_position_ownership(
             ref self: ContractState, id: u64, recipient: ContractAddress
@@ -228,7 +320,6 @@ mod EkuboLauncher {
                     lower: stored_position.bounds.lower, upper: stored_position.bounds.upper,
                 }
             };
-            //TODO: perhaps factory should handle this
             assert(liquidity_type.owner == get_caller_address(), errors::CALLER_NOT_OWNER);
             let (token0, token1) = call_core_with_callback::<
                 CallbackData, (ContractAddress, ContractAddress)
@@ -279,6 +370,7 @@ mod EkuboLauncher {
 
     #[external(v0)]
     impl LockerImpl of ILocker<ContractState> {
+        /// Callback function called by the core contract.
         fn locked(ref self: ContractState, id: u32, data: Array<felt252>) -> Array<felt252> {
             let core = self.core.read();
 
