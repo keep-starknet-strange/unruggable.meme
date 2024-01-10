@@ -52,7 +52,10 @@ trait IUnruggableMemecoin<TState> {
     fn get_team_allocation(self: @TState) -> u256;
     fn memecoin_factory_address(self: @TState) -> ContractAddress;
     fn set_launched(
-        ref self: TState, liquidity_type: LiquidityType, transfer_restriction_delay: u64
+        ref self: TState,
+        liquidity_type: LiquidityType,
+        transfer_restriction_delay: u64,
+        max_percentage_buy_launch: u16
     );
 }
 
@@ -113,6 +116,9 @@ trait IUnruggableAdditional<TState> {
     /// * The memecoin has already been launched (error code: `errors::ALREADY_LAUNCHED`).
     ///
     fn set_launched(
-        ref self: TState, liquidity_type: LiquidityType, transfer_restriction_delay: u64
+        ref self: TState,
+        liquidity_type: LiquidityType,
+        transfer_restriction_delay: u64,
+        max_percentage_buy_launch: u16
     );
 }
