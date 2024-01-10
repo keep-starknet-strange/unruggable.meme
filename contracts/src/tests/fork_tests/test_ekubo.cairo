@@ -29,7 +29,7 @@ use unruggable::tests::fork_tests::utils::{
 };
 use unruggable::tests::unit_tests::utils::{
     OWNER, DEFAULT_MIN_LOCKTIME, pow_256, LOCK_MANAGER_ADDRESS, MEMEFACTORY_ADDRESS, RECIPIENT,
-    ALICE, DefaultTxInfoMock
+    ALICE, DefaultTxInfoMock, TRANSFER_RESTRICTION_DELAY,
 };
 use unruggable::token::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -48,6 +48,7 @@ fn launch_memecoin_on_ekubo(
     let (id, position) = factory
         .launch_on_ekubo(
             memecoin_address,
+            TRANSFER_RESTRICTION_DELAY,
             quote_address,
             EkuboPoolParameters { fee, tick_spacing, starting_tick, bound }
         );
@@ -616,6 +617,7 @@ fn test_cant_launch_twice() {
     let (id, position) = factory
         .launch_on_ekubo(
             memecoin_address,
+            TRANSFER_RESTRICTION_DELAY,
             quote_address,
             EkuboPoolParameters {
                 fee: 0xc49ba5e353f7d00000000000000000,

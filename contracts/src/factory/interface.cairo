@@ -19,7 +19,6 @@ trait IFactory<TContractState> {
     /// * `initial_supply` - The initial supply of the Memecoin.
     /// * `initial_holders` - An array containing the initial holders' addresses.
     /// * `initial_holders_amounts` - An array containing the initial amounts held by each corresponding initial holder.
-    /// * `transfer_limit_delay` - The delay in seconds during which transfers will be limited to a % of max supply after launch.
     /// * `quote_token` - The address of the quote token
     /// * `contract_address_salt` - A unique salt value for contract deployment
     ///
@@ -34,7 +33,6 @@ trait IFactory<TContractState> {
         initial_supply: u256,
         initial_holders: Span<ContractAddress>,
         initial_holders_amounts: Span<u256>,
-        transfer_limit_delay: u64,
         contract_address_salt: felt252
     ) -> ContractAddress;
 
@@ -47,6 +45,7 @@ trait IFactory<TContractState> {
     /// # Arguments
     ///
     /// * `memecoin_address` - The address of the memecoin contract.
+    /// * `transfer_restriction_delay` - The delay in seconds during which transfers will be limited to a % of max supply after launch.
     /// * `quote_address` - The address of the quote token contract.
     /// * `quote_amount` - The amount of quote tokens to add as liquidity.
     /// * `unlock_time` - The timestamp when the liquidity can be unlocked.
@@ -65,6 +64,7 @@ trait IFactory<TContractState> {
     fn launch_on_jediswap(
         ref self: TContractState,
         memecoin_address: ContractAddress,
+        transfer_restriction_delay: u64,
         quote_address: ContractAddress,
         quote_amount: u256,
         unlock_time: u64,
@@ -78,6 +78,7 @@ trait IFactory<TContractState> {
     /// # Arguments
     ///
     /// * `memecoin_address` - The address of the memecoin contract.
+    /// * `transfer_restriction_delay` - The delay in seconds during which transfers will be limited to a % of max supply after launch.
     /// * `quote_address` - The address of the quote token contract.
     /// * `ekubo_parameters` - The parameters for the ekubo liquidity pool, including:
     ///     - `fee` - The fee for the liquidity pair.
@@ -100,6 +101,7 @@ trait IFactory<TContractState> {
     fn launch_on_ekubo(
         ref self: TContractState,
         memecoin_address: ContractAddress,
+        transfer_restriction_delay: u64,
         quote_address: ContractAddress,
         ekubo_parameters: EkuboPoolParameters,
     ) -> (u64, EkuboLP);

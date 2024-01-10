@@ -102,12 +102,9 @@ mod Factory {
             initial_supply: u256,
             initial_holders: Span<ContractAddress>,
             initial_holders_amounts: Span<u256>,
-            transfer_limit_delay: u64,
             contract_address_salt: felt252,
         ) -> ContractAddress {
-            let mut calldata = array![
-                owner.into(), transfer_limit_delay.into(), name.into(), symbol.into()
-            ];
+            let mut calldata = array![owner.into(), name.into(), symbol.into()];
             Serde::serialize(@initial_supply, ref calldata);
             Serde::serialize(@initial_holders.into(), ref calldata);
             Serde::serialize(@initial_holders_amounts.into(), ref calldata);
@@ -128,6 +125,7 @@ mod Factory {
         fn launch_on_jediswap(
             ref self: ContractState,
             memecoin_address: ContractAddress,
+            transfer_restriction_delay: u64,
             quote_address: ContractAddress,
             quote_amount: u256,
             unlock_time: u64,
@@ -152,7 +150,7 @@ mod Factory {
                 }
             );
 
-            memecoin.set_launched(LiquidityType::ERC20(pair_address));
+            memecoin.set_launched(LiquidityType::ERC20(pair_address), :transfer_restriction_delay);
             self
                 .emit(
                     MemecoinLaunched {
@@ -165,6 +163,7 @@ mod Factory {
         fn launch_on_ekubo(
             ref self: ContractState,
             memecoin_address: ContractAddress,
+            transfer_restriction_delay: u64,
             quote_address: ContractAddress,
             ekubo_parameters: EkuboPoolParameters,
         ) -> (u64, EkuboLP) {
@@ -184,7 +183,7 @@ mod Factory {
                 additional_parameters: ekubo_parameters
             );
 
-            memecoin.set_launched(LiquidityType::NFT(id));
+            memecoin.set_launched(LiquidityType::NFT(id), :transfer_restriction_delay);
             self
                 .emit(
                     MemecoinLaunched {

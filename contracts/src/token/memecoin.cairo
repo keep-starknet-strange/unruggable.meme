@@ -94,7 +94,6 @@ mod UnruggableMemecoin {
     /// Constructor called once when the contract is deployed.
     /// # Arguments
     /// * `owner` - The owner of the contract.
-    /// * `transfer_restriction_delay` - Delay timestamp to release transfer amount check.
     /// * `name` - The name of the token.
     /// * `symbol` - The symbol of the token.
     /// * `initial_supply` - The initial supply of the token.
@@ -104,7 +103,6 @@ mod UnruggableMemecoin {
     fn constructor(
         ref self: ContractState,
         owner: ContractAddress,
-        transfer_restriction_delay: u64,
         name: felt252,
         symbol: felt252,
         initial_supply: u256,
@@ -121,7 +119,6 @@ mod UnruggableMemecoin {
         self
             .initializer(
                 factory_address: get_caller_address(),
-                :transfer_restriction_delay,
                 :initial_supply,
                 :initial_holders,
                 :initial_holders_amounts
@@ -147,11 +144,20 @@ mod UnruggableMemecoin {
             self.liquidity_type.read()
         }
 
-        fn set_launched(ref self: ContractState, liquidity_type: LiquidityType) {
+        fn set_launched(
+            ref self: ContractState, liquidity_type: LiquidityType, transfer_restriction_delay: u64
+        ) {
             self.assert_only_factory();
             assert(!self.is_launched(), errors::ALREADY_LAUNCHED);
+
             self.liquidity_type.write(Option::Some(liquidity_type));
             self.launch_time.write(get_block_timestamp());
+
+            // Enable a transfer limit - until this time has passed,
+            // transfers are limited to a certain amount.
+            self.transfer_restriction_delay.write(transfer_restriction_delay);
+
+            // renounce ownership
             self.ownable._transfer_ownership(0.try_into().unwrap());
         }
     }
@@ -221,7 +227,8 @@ mod UnruggableMemecoin {
         fn assert_only_factory(self: @ContractState) {
             assert(get_caller_address() == self.factory_contract.read(), errors::NOT_FACTORY);
         }
-        // Initializes the state of the memecoin contract.
+
+        /// Initializes the state of the memecoin contract.
         ///
         /// This function sets the factory contract address, enables a transfer limit delay,
         /// checks and allocates the team supply of the memecoin, and mints the remaining supply to the factory.
@@ -229,7 +236,6 @@ mod UnruggableMemecoin {
         /// # Arguments
         ///
         /// * `factory_address` - The address of the factory contract.
-        /// * `transfer_restriction_delay` - The delay in seconds before transfers are no longer limited.
         /// * `initial_supply` - The initial supply of the memecoin.
         /// * `initial_holders` - A span of addresses that will hold the memecoin initially.
         /// * `initial_holders_amounts` - A span of amounts corresponding to the initial holders.
@@ -239,17 +245,12 @@ mod UnruggableMemecoin {
         fn initializer(
             ref self: ContractState,
             factory_address: ContractAddress,
-            transfer_restriction_delay: u64,
             initial_supply: u256,
             initial_holders: Span<ContractAddress>,
             initial_holders_amounts: Span<u256>
         ) {
             // Internal Registry
             self.factory_contract.write(factory_address);
-
-            // Enable a transfer limit - until this time has passed,
-            // transfers are limited to a certain amount.
-            self.transfer_restriction_delay.write(transfer_restriction_delay);
 
             let team_allocation = self
                 .check_and_allocate_team_supply(
