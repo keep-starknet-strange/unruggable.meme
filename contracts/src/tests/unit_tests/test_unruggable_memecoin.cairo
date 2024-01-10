@@ -124,9 +124,7 @@ mod test_constructor {
     #[test]
     #[should_panic(expected: ('Max team allocation reached',))]
     fn test_constructor_too_much_team_alloc_should_fail() {
-        let mut calldata = array![
-            OWNER().into(), 'locker', NAME().into(), SYMBOL().into()
-        ];
+        let mut calldata = array![OWNER().into(), 'locker', NAME().into(), SYMBOL().into()];
         // Allocation over 10% (over 2.1M)
         let alloc_holder_1 = 1_050_000 * pow_256(10, 18);
         let alloc_holder_2 = 1_050_001 * pow_256(10, 18);
@@ -247,7 +245,8 @@ mod memecoin_entrypoints {
         // setting block timestamp >= launch_time + transfer_delay. Transfer should succeed
         // as multi calls to the same recipient are allowed after the delay
         start_warp(
-            CheatTarget::One(memecoin.contract_address), launch_timestamp + TRANSFER_RESTRICTION_DELAY
+            CheatTarget::One(memecoin.contract_address),
+            launch_timestamp + TRANSFER_RESTRICTION_DELAY
         );
         start_prank(CheatTarget::One(memecoin.contract_address), INITIAL_HOLDER_1());
         let send_amount = memecoin.transfer_from(INITIAL_HOLDER_1(), ALICE(), 0);

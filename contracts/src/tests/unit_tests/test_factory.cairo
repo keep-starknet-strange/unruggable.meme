@@ -139,7 +139,11 @@ fn test_launch_memecoin_happy_path() {
     start_warp(CheatTarget::One(memecoin_address), 1);
     let pair_address = factory
         .launch_on_jediswap(
-            memecoin_address, TRANSFER_RESTRICTION_DELAY, eth.contract_address, eth_amount, DEFAULT_MIN_LOCKTIME,
+            memecoin_address,
+            TRANSFER_RESTRICTION_DELAY,
+            eth.contract_address,
+            eth_amount,
+            DEFAULT_MIN_LOCKTIME,
         );
     stop_prank(CheatTarget::One(factory.contract_address));
     stop_warp(CheatTarget::One(memecoin_address));
@@ -190,7 +194,11 @@ fn test_launch_memecoin_already_launched() {
     start_prank(CheatTarget::One(factory.contract_address), OWNER());
     let pair_address = factory
         .launch_on_jediswap(
-            memecoin_address, TRANSFER_RESTRICTION_DELAY, eth.contract_address, eth_amount, DEFAULT_MIN_LOCKTIME,
+            memecoin_address,
+            TRANSFER_RESTRICTION_DELAY,
+            eth.contract_address,
+            eth_amount,
+            DEFAULT_MIN_LOCKTIME,
         );
 }
 
@@ -200,7 +208,9 @@ fn test_launch_memecoin_not_owner() {
     let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
     let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
     let pair_address = factory
-        .launch_on_jediswap(memecoin_address, TRANSFER_RESTRICTION_DELAY, ETH_ADDRESS(), 1, DEFAULT_MIN_LOCKTIME,);
+        .launch_on_jediswap(
+            memecoin_address, TRANSFER_RESTRICTION_DELAY, ETH_ADDRESS(), 1, DEFAULT_MIN_LOCKTIME,
+        );
 }
 
 #[test]

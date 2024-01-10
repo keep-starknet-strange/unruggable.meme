@@ -37,7 +37,9 @@ fn test_jediswap_integration() {
     stop_prank(CheatTarget::One(quote.contract_address));
 
     let pair_address = factory
-        .launch_on_jediswap(memecoin_address, TRANSFER_RESTRICTION_DELAY, quote_address, amount, unlock_time);
+        .launch_on_jediswap(
+            memecoin_address, TRANSFER_RESTRICTION_DELAY, quote_address, amount, unlock_time
+        );
 
     let pair = IJediswapPairDispatcher { contract_address: pair_address };
 

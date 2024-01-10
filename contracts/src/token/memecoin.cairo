@@ -144,7 +144,9 @@ mod UnruggableMemecoin {
             self.liquidity_type.read()
         }
 
-        fn set_launched(ref self: ContractState, liquidity_type: LiquidityType, transfer_restriction_delay: u64) {
+        fn set_launched(
+            ref self: ContractState, liquidity_type: LiquidityType, transfer_restriction_delay: u64
+        ) {
             self.assert_only_factory();
             assert(!self.is_launched(), errors::ALREADY_LAUNCHED);
 

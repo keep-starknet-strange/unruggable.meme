@@ -14,8 +14,7 @@ use unruggable::tests::addresses::{
 };
 use unruggable::tests::unit_tests::utils::{
     deploy_locker, deploy_eth_with_owner, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS,
-    INITIAL_HOLDERS_AMOUNTS, SALT, DefaultTxInfoMock, OWNER, TOKEN0_ADDRESS,
-    MEMEFACTORY_ADDRESS
+    INITIAL_HOLDERS_AMOUNTS, SALT, DefaultTxInfoMock, OWNER, TOKEN0_ADDRESS, MEMEFACTORY_ADDRESS
 };
 use unruggable::token::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait

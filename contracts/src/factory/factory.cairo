@@ -104,9 +104,7 @@ mod Factory {
             initial_holders_amounts: Span<u256>,
             contract_address_salt: felt252,
         ) -> ContractAddress {
-            let mut calldata = array![
-                owner.into(), name.into(), symbol.into()
-            ];
+            let mut calldata = array![owner.into(), name.into(), symbol.into()];
             Serde::serialize(@initial_supply, ref calldata);
             Serde::serialize(@initial_holders.into(), ref calldata);
             Serde::serialize(@initial_holders_amounts.into(), ref calldata);
