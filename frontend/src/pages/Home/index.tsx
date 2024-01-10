@@ -27,12 +27,12 @@ export default function HomePage() {
         </Text.Custom>
 
         <Row gap="16" className={styles.buttonContainer}>
-          <Link to="/launch">
-            <PrimaryButton className={styles.firstArticleButton}>Launch</PrimaryButton>
+          <Link to="/deploy">
+            <PrimaryButton className={styles.firstArticleButton}>Deploy</PrimaryButton>
           </Link>
 
           <Link to="/manage">
-            <SecondaryButton className={styles.firstArticleButton}>Manage</SecondaryButton>
+            <SecondaryButton className={styles.firstArticleButton}>Check token</SecondaryButton>
           </Link>
         </Row>
       </Column>

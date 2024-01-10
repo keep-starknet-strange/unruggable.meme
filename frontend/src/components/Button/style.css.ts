@@ -1,6 +1,6 @@
 import { style } from '@vanilla-extract/css'
 import { recipe } from '@vanilla-extract/recipes'
-import { sprinkles, vars } from 'src/theme/css/sprinkles.css'
+import { sprinkles } from 'src/theme/css/sprinkles.css'
 
 export const Base = style([
   {
@@ -102,7 +102,6 @@ export const thirdDimension = style([
     overflow: 'hidden',
     boxShadow: '0 6px 10px #00000040',
     position: 'relative',
-    background: vars.color.accentGradient,
     outline: 'none',
 
     '::before': {
