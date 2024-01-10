@@ -126,6 +126,7 @@ mod Factory {
             ref self: ContractState,
             memecoin_address: ContractAddress,
             transfer_restriction_delay: u64,
+            max_percentage_buy_launch: u16,
             quote_address: ContractAddress,
             quote_amount: u256,
             unlock_time: u64,
@@ -150,7 +151,7 @@ mod Factory {
                 }
             );
 
-            memecoin.set_launched(LiquidityType::ERC20(pair_address), :transfer_restriction_delay);
+            memecoin.set_launched(LiquidityType::ERC20(pair_address), :transfer_restriction_delay, :max_percentage_buy_launch);
             self
                 .emit(
                     MemecoinLaunched {
@@ -164,6 +165,7 @@ mod Factory {
             ref self: ContractState,
             memecoin_address: ContractAddress,
             transfer_restriction_delay: u64,
+            max_percentage_buy_launch: u16,
             quote_address: ContractAddress,
             ekubo_parameters: EkuboPoolParameters,
         ) -> (u64, EkuboLP) {
@@ -183,7 +185,7 @@ mod Factory {
                 additional_parameters: ekubo_parameters
             );
 
-            memecoin.set_launched(LiquidityType::NFT(id), :transfer_restriction_delay);
+            memecoin.set_launched(LiquidityType::NFT(id), :transfer_restriction_delay, :max_percentage_buy_launch);
             self
                 .emit(
                     MemecoinLaunched {

@@ -20,7 +20,7 @@ use unruggable::tests::unit_tests::utils::{
     SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS, INITIAL_HOLDERS_AMOUNTS, SALT,
     deploy_memecoin_through_factory, MEMEFACTORY_ADDRESS,
     deploy_memecoin_through_factory_with_owner, pow_256, LOCK_MANAGER_ADDRESS, DEFAULT_MIN_LOCKTIME,
-    deploy_and_launch_memecoin, TRANSFER_RESTRICTION_DELAY
+    deploy_and_launch_memecoin, TRANSFER_RESTRICTION_DELAY, MAX_PERCENTAGE_BUY_LAUNCH
 };
 use unruggable::token::interface::{
     IUnruggableMemecoin, IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -141,6 +141,7 @@ fn test_launch_memecoin_happy_path() {
         .launch_on_jediswap(
             memecoin_address,
             TRANSFER_RESTRICTION_DELAY,
+            MAX_PERCENTAGE_BUY_LAUNCH,
             eth.contract_address,
             eth_amount,
             DEFAULT_MIN_LOCKTIME,
@@ -196,6 +197,34 @@ fn test_launch_memecoin_already_launched() {
         .launch_on_jediswap(
             memecoin_address,
             TRANSFER_RESTRICTION_DELAY,
+            MAX_PERCENTAGE_BUY_LAUNCH,
+            eth.contract_address,
+            eth_amount,
+            DEFAULT_MIN_LOCKTIME,
+        );
+}
+
+#[test]
+#[should_panic(expected: ('Max percentage buy too low',))]
+fn test_launch_memecoin_with_percentage_buy_launch_too_low() {
+    let owner = snforge_std::test_address();
+    let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
+    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
+    let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
+
+    // approve spending of eth by factory
+    let eth_amount: u256 = 1 * pow_256(10, 18); // 1 ETHER
+    let factory_balance_meme = memecoin.balanceOf(factory.contract_address);
+    start_prank(CheatTarget::One(eth.contract_address), owner);
+    eth.approve(factory.contract_address, eth_amount);
+    stop_prank(CheatTarget::One(eth.contract_address));
+
+    start_prank(CheatTarget::One(factory.contract_address), owner);
+    let pair_address = factory
+        .launch_on_jediswap(
+            memecoin_address,
+            TRANSFER_RESTRICTION_DELAY,
+            49, // 0.49%
             eth.contract_address,
             eth_amount,
             DEFAULT_MIN_LOCKTIME,
@@ -209,7 +238,7 @@ fn test_launch_memecoin_not_owner() {
     let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
     let pair_address = factory
         .launch_on_jediswap(
-            memecoin_address, TRANSFER_RESTRICTION_DELAY, ETH_ADDRESS(), 1, DEFAULT_MIN_LOCKTIME,
+            memecoin_address, TRANSFER_RESTRICTION_DELAY, MAX_PERCENTAGE_BUY_LAUNCH, ETH_ADDRESS(), 1, DEFAULT_MIN_LOCKTIME,
         );
 }
 
@@ -228,6 +257,7 @@ fn test_launch_memecoin_amm_not_whitelisted() {
         .launch_on_ekubo(
             memecoin_address,
             TRANSFER_RESTRICTION_DELAY,
+            MAX_PERCENTAGE_BUY_LAUNCH,
             eth.contract_address,
             EkuboPoolParameters {
                 fee: 0, tick_spacing: 0, starting_tick: i129 { sign: false, mag: 0 }, bound: 0
