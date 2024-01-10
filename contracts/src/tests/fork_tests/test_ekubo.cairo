@@ -625,7 +625,3 @@ fn test_cant_launch_twice() {
             }
         );
 }
-//TODO! As there are no unit ekubo tests, we need to deeply test the whole flow of interaction with ekubo - including 
-//TODO! launching with wrong parameters, as the frontend data cant be trusted
-
-

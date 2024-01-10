@@ -62,7 +62,6 @@ mod Factory {
     struct Storage {
         memecoin_class_hash: ClassHash,
         exchange_configs: LegacyMap<SupportedExchanges, ContractAddress>,
-        //TODO: refactor to keep a list of deployed memecoins and expose it publicly
         deployed_memecoins: LegacyMap<ContractAddress, bool>,
         lock_manager_address: ContractAddress,
         // Components.
@@ -176,9 +175,7 @@ mod Factory {
             assert(caller_address == memecoin.owner(), errors::CALLER_NOT_OWNER);
             assert(launchpad_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
             assert(!memecoin.is_launched(), errors::ALREADY_LAUNCHED);
-            assert(
-                ekubo_parameters.starting_tick.mag.is_non_zero(), errors::PRICE_ZERO
-            ); //TODO: test
+            assert(ekubo_parameters.starting_tick.mag.is_non_zero(), errors::PRICE_ZERO);
 
             let (id, position) = ekubo_adapter::EkuboAdapterImpl::create_and_add_liquidity(
                 exchange_address: launchpad_address,
