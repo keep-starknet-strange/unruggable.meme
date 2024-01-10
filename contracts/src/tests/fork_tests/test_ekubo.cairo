@@ -29,7 +29,7 @@ use unruggable::tests::fork_tests::utils::{
 };
 use unruggable::tests::unit_tests::utils::{
     OWNER, DEFAULT_MIN_LOCKTIME, pow_256, LOCK_MANAGER_ADDRESS, MEMEFACTORY_ADDRESS, RECIPIENT,
-    ALICE, DefaultTxInfoMock, TRANSFER_RESTRICTION_DELAY,
+    ALICE, DefaultTxInfoMock, TRANSFER_RESTRICTION_DELAY, MAX_PERCENTAGE_BUY_LAUNCH
 };
 use unruggable::token::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -49,6 +49,7 @@ fn launch_memecoin_on_ekubo(
         .launch_on_ekubo(
             memecoin_address,
             TRANSFER_RESTRICTION_DELAY,
+            MAX_PERCENTAGE_BUY_LAUNCH,
             quote_address,
             EkuboPoolParameters { fee, tick_spacing, starting_tick, bound }
         );
@@ -301,7 +302,7 @@ fn test_swap_token0_price_below_1() {
     };
 
     // Check that swaps work correctly
-    let amount_in = 2 * pow_256(10, 16);
+    let amount_in = MAX_PERCENTAGE_BUY_LAUNCH.into() * pow_256(10, 14);
     swap_tokens_on_ekubo(
         token_in_address: quote_address,
         :amount_in,
@@ -369,7 +370,7 @@ fn test_launch_meme_token1_price_below_1() {
     );
     assert(reserve_memecoin > expected_reserve_lower_bound, 'reserves holds too few token');
 
-    let amount_in = 2 * pow_256(10, 16);
+    let amount_in = MAX_PERCENTAGE_BUY_LAUNCH.into() * pow_256(10, 14);
     swap_tokens_on_ekubo(
         token_in_address: quote_address,
         :amount_in,
@@ -437,7 +438,7 @@ fn test_launch_meme_token0_price_above_1() {
     assert(reserve_memecoin > expected_reserve_lower_bound, 'reserves holds too few token');
 
     // Test that swaps work correctly
-    let amount_in = 2 * pow_256(10, 16);
+    let amount_in = MAX_PERCENTAGE_BUY_LAUNCH.into() * pow_256(10, 14);
     swap_tokens_on_ekubo(
         token_in_address: quote_address,
         :amount_in,
@@ -506,7 +507,7 @@ fn test_launch_meme_token1_price_above_1() {
     assert(reserve_memecoin > expected_reserve_lower_bound, 'reserves holds too few token');
 
     // Check that swaps work correctly
-    let amount_in = 2 * pow_256(10, 16);
+    let amount_in = MAX_PERCENTAGE_BUY_LAUNCH.into() * pow_256(10, 14);
     swap_tokens_on_ekubo(
         token_in_address: quote_address,
         :amount_in,
@@ -618,6 +619,7 @@ fn test_cant_launch_twice() {
         .launch_on_ekubo(
             memecoin_address,
             TRANSFER_RESTRICTION_DELAY,
+            MAX_PERCENTAGE_BUY_LAUNCH,
             quote_address,
             EkuboPoolParameters {
                 fee: 0xc49ba5e353f7d00000000000000000,

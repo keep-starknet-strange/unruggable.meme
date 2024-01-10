@@ -46,6 +46,7 @@ trait IFactory<TContractState> {
     ///
     /// * `memecoin_address` - The address of the memecoin contract.
     /// * `transfer_restriction_delay` - The delay in seconds during which transfers will be limited to a % of max supply after launch.
+    /// * `max_percentage_buy_launch` - The max buyable amount in % of the max supply after launch and during the transfer restriction delay.
     /// * `quote_address` - The address of the quote token contract.
     /// * `quote_amount` - The amount of quote tokens to add as liquidity.
     /// * `unlock_time` - The timestamp when the liquidity can be unlocked.
@@ -65,6 +66,7 @@ trait IFactory<TContractState> {
         ref self: TContractState,
         memecoin_address: ContractAddress,
         transfer_restriction_delay: u64,
+        max_percentage_buy_launch: u16,
         quote_address: ContractAddress,
         quote_amount: u256,
         unlock_time: u64,
@@ -102,6 +104,7 @@ trait IFactory<TContractState> {
         ref self: TContractState,
         memecoin_address: ContractAddress,
         transfer_restriction_delay: u64,
+        max_percentage_buy_launch: u16,
         quote_address: ContractAddress,
         ekubo_parameters: EkuboPoolParameters,
     ) -> (u64, EkuboLP);

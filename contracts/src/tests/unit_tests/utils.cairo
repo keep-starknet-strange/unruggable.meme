@@ -84,6 +84,7 @@ fn UNLOCK_TIME() -> u64 {
 
 const ETH_DECIMALS: u8 = 18;
 const TRANSFER_RESTRICTION_DELAY: u64 = 1000;
+const MAX_PERCENTAGE_BUY_LAUNCH: u16 = 200; // 2%
 
 
 fn MEMEFACTORY_ADDRESS() -> ContractAddress {
@@ -274,6 +275,7 @@ fn deploy_and_launch_memecoin() -> (IUnruggableMemecoinDispatcher, ContractAddre
         .launch_on_jediswap(
             memecoin_address,
             TRANSFER_RESTRICTION_DELAY,
+            MAX_PERCENTAGE_BUY_LAUNCH,
             eth.contract_address,
             eth_amount,
             DEFAULT_MIN_LOCKTIME,
