@@ -8,7 +8,7 @@ import { IconButton, PrimaryButton, SecondaryButton } from 'src/components/Butto
 import Input from 'src/components/Input'
 import NumericalInput from 'src/components/Input/NumericalInput'
 import Section from 'src/components/Section'
-import { FACTORY_ADDRESSES, LOCKER_ADDRESSES, TOKEN_CLASS_HASH } from 'src/constants/contracts'
+import { FACTORY_ADDRESSES, TOKEN_CLASS_HASH } from 'src/constants/contracts'
 import { DECIMALS, MAX_HOLDERS_PER_DEPLOYMENT, Selector } from 'src/constants/misc'
 import { useDeploymentStore } from 'src/hooks/useDeployment'
 import Box from 'src/theme/components/Box'
@@ -81,7 +81,6 @@ export default function DeployPage() {
 
       const constructorCalldata = CallData.compile([
         data.ownerAddress, // owner
-        LOCKER_ADDRESSES[accountChainId], // locker
         data.name, // name
         data.symbol, // symbol
         uint256.bnToUint256(BigInt(parsedInitialSupply) * BigInt(decimalsScale(DECIMALS))), // initial_supply

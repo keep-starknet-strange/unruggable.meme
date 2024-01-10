@@ -7,7 +7,7 @@ export enum Selector {
   AGGREGATE = 'aggregate',
   NAME = 'name',
   SYMBOL = 'symbol',
-  LAUNCHED = 'launched',
+  IS_LAUNCHED = 'is_launched',
   GET_TEAM_ALLOCATION = 'get_team_allocation',
   TOTAL_SUPPLY = 'total_supply',
 }

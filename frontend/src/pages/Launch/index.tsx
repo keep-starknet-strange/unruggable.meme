@@ -28,7 +28,7 @@ export default function LaunchPage() {
       deployedTokenContracts.map(
         (tokenContract): CallStruct => ({
           to: tokenContract.address,
-          selector: hash.getSelector(Selector.LAUNCHED),
+          selector: hash.getSelector(Selector.IS_LAUNCHED),
           calldata: [],
         })
       ),

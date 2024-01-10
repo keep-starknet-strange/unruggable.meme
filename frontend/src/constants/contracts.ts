@@ -4,15 +4,10 @@ import { constants, json } from 'starknet'
 // Class hashes
 
 // eslint-disable-next-line import/no-unused-modules
-export const TOKEN_CLASS_HASH = '0x015a2494ca74d9a049f3917cc2a3b6cacc5d294fd67c0c8414c16f56cba1bb45'
+export const TOKEN_CLASS_HASH = '0x016261bfec15670ecc794d922fe87b6c1a250090d489811debf1b9c8cfac1225'
 
 export const FACTORY_ADDRESSES = {
-  [constants.StarknetChainId.SN_GOERLI]: '0x07cc35da454fe2dc8bd36ef826a86d04cd51c42568a912fe8dcc9e0f581c5a0f',
-  [constants.StarknetChainId.SN_MAIN]: '0xdead',
-}
-
-export const LOCKER_ADDRESSES = {
-  [constants.StarknetChainId.SN_GOERLI]: '0x01d28399e4aca5d93e709d7405ad81b6ebb3c4b82e7f75b72372fdb83ee33953',
+  [constants.StarknetChainId.SN_GOERLI]: '0x01745a0a5207bfbecdb024a17e2f6502dbb292fb0235ef7ea828091385fbc9b2',
   [constants.StarknetChainId.SN_MAIN]: '0xdead',
 }
 

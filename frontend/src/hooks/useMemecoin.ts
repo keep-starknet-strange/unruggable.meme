@@ -54,7 +54,7 @@ export function useMemecoinInfos() {
 
       const launchedCalldata = CallData.compile({
         to: tokenAddress,
-        selector: hash.getSelector(Selector.LAUNCHED),
+        selector: hash.getSelector(Selector.IS_LAUNCHED),
         calldata: [],
       })
 
