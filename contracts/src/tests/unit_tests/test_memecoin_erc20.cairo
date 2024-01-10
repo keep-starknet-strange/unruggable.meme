@@ -9,7 +9,7 @@ use starknet::{ContractAddress, contract_address_const};
 use unruggable::exchanges::{SupportedExchanges};
 use unruggable::tests::unit_tests::utils::{
     OWNER, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, RECIPIENT, SPENDER, deploy_locker, INITIAL_HOLDERS,
-    INITIAL_HOLDERS_AMOUNTS, TRANSFER_LIMIT_DELAY, DefaultTxInfoMock, deploy_standalone_memecoin
+    INITIAL_HOLDERS_AMOUNTS, TRANSFER_RESTRICTION_DELAY, DefaultTxInfoMock, deploy_standalone_memecoin
 };
 use unruggable::token::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -23,7 +23,7 @@ mod erc20_metadata {
     use starknet::{ContractAddress, contract_address_const};
     use super::{
         deploy_standalone_memecoin, OWNER, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, RECIPIENT, SPENDER,
-        deploy_locker, TRANSFER_LIMIT_DELAY
+        deploy_locker
     };
     use unruggable::token::interface::{
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -58,7 +58,7 @@ mod erc20_entrypoints {
     use starknet::{ContractAddress, contract_address_const};
     use super::{
         deploy_standalone_memecoin, OWNER, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, RECIPIENT, SPENDER,
-        deploy_locker, TRANSFER_LIMIT_DELAY, INITIAL_HOLDERS, DefaultTxInfoMock,
+        deploy_locker, INITIAL_HOLDERS, DefaultTxInfoMock,
         INITIAL_HOLDERS_AMOUNTS
     };
     use unruggable::token::interface::{

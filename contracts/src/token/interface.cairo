@@ -45,13 +45,13 @@ trait IUnruggableMemecoin<TState> {
     // ************************************
     /// Checks whether token has launched
     ///
-    /// # Returns 
+    /// # Returns
     ///     bool: whether token has launched
     fn is_launched(self: @TState) -> bool;
     fn liquidity_type(self: @TState) -> Option<LiquidityType>;
     fn get_team_allocation(self: @TState) -> u256;
     fn memecoin_factory_address(self: @TState) -> ContractAddress;
-    fn set_launched(ref self: TState, liquidity_type: LiquidityType);
+    fn set_launched(ref self: TState, liquidity_type: LiquidityType, transfer_restriction_delay: u64);
 }
 
 #[starknet::interface]
@@ -101,6 +101,7 @@ trait IUnruggableAdditional<TState> {
     /// # Arguments
     ///
     /// * `liquidity_type` - The liquidity position at the time of launch.
+    /// * `transfer_restriction_delay` - The delay in seconds before transfers are no longer limited.
     ///
     /// # Panics
     ///
@@ -109,5 +110,5 @@ trait IUnruggableAdditional<TState> {
     /// * The caller's address is not the same as the `factory` of the memecoin (error code: `errors::CALLER_NOT_FACTORY`).
     /// * The memecoin has already been launched (error code: `errors::ALREADY_LAUNCHED`).
     ///
-    fn set_launched(ref self: TState, liquidity_type: LiquidityType);
+    fn set_launched(ref self: TState, liquidity_type: LiquidityType, transfer_restriction_delay: u64);
 }
