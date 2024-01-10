@@ -280,7 +280,7 @@ mod memecoin_internals {
         MAX_HOLDERS_BEFORE_LAUNCH
     };
     use core::debug::PrintTrait;
-    use openzeppelin::token::erc20::interface::IERC20;
+    use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
     use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
     use starknet::{ContractAddress, contract_address_const};
     use super::{TxInfoMock};
@@ -289,7 +289,7 @@ mod memecoin_internals {
         deploy_eth_with_owner, OWNER, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS,
         INITIAL_HOLDER_1, INITIAL_HOLDER_2, INITIAL_HOLDERS_AMOUNTS, SALT, DefaultTxInfoMock,
         deploy_memecoin_through_factory, ETH_ADDRESS, deploy_memecoin_through_factory_with_owner,
-        JEDI_ROUTER_ADDRESS, MEMEFACTORY_ADDRESS, ALICE, BOB
+        JEDI_ROUTER_ADDRESS, MEMEFACTORY_ADDRESS, ALICE, BOB, deploy_and_launch_memecoin
     };
     use unruggable::token::interface::{
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -389,51 +389,15 @@ mod memecoin_internals {
     }
 
     #[test]
-    #[ignore]
-    //TODO: implement this test
     fn test__transfer_no_holder_cap_after_launch() {
-        // The initial call to launch the memecoin should be made by the owner.
-        // However the subsequent calls should be made by the router - as such,
-        // we can't mock the owner using starknet-foundry.
-        // We simply set the test contract as the owner of the memecoin.
-        let owner = starknet::get_contract_address();
-        let initial_holders_amounts = array![50, 30,].span();
+        let (memecoin, memecoin_address) = deploy_and_launch_memecoin();
+        let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
 
-        let mut calldata = array![owner.into(), NAME().into(), SYMBOL().into()];
-        Serde::serialize(@DEFAULT_INITIAL_SUPPLY(), ref calldata);
-        Serde::serialize(@INITIAL_HOLDERS(), ref calldata);
-        Serde::serialize(@initial_holders_amounts, ref calldata);
-        let contract = declare('UnruggableMemecoin');
-        let contract_address = contract.deploy(@calldata).expect('failed to deploy memecoin');
-        let memecoin = IUnruggableMemecoinDispatcher { contract_address };
-
-        // set owner as caller to launch the token
-        start_prank(CheatTarget::All, owner);
-
-        // NOTE:
-        // 1. The initial call to `memecoin_address` should be made by the owner.
-        // 2. Subsequently, the router needs to call memecoin to transfer tokens to the pool.
-        // 3. The second call to `memecoin_address` should be made by the router.
-        //    However, note that the prank still designates owner as the caller.
-        // `set_contract_address()` from starknet cannot be used in this context.
-        // related issue: https://github.com/foundry-rs/starknet-foundry/issues/1402
-
-        // start_prank(CheatTarget::One(memecoin_address), router_address);
-        // start_prank(CheatTarget::One(router_address), memecoin_address);
-        // memecoin
-        //     .launch_memecoin(
-        //         SupportedExchanges::Jediswap, counterparty_token_address, 20000000000000000, 1 * ETH_UNIT_DECIMALS
-        //         SupportedExchanges::Jediswap, counterparty_token_address, 20000000000000000, 1 * ETH_UNIT_DECIMALS
-        //     );
-        // TODO: call launch_memecoin() with params
-        // memecoin.launch_memecoin();
-
-        // set INITIAL_HOLDER_1() as caller to distribute tokens
         start_prank(CheatTarget::All, INITIAL_HOLDER_1());
 
         let mut index = 0;
         loop {
-            if index == MAX_HOLDERS_BEFORE_LAUNCH {
+            if index == MAX_HOLDERS_BEFORE_LAUNCH + 100 {
                 break;
             }
 
@@ -452,4 +416,3 @@ mod memecoin_internals {
         };
     }
 }
-
