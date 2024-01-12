@@ -4,9 +4,9 @@ import Box, { BoxProps } from 'src/theme/components/Box'
 
 import * as styles from './style.css'
 
-type InputProps = {
+interface InputProps extends BoxProps {
   addon?: React.ReactNode
-} & BoxProps
+}
 
 const Input = forwardRef<HTMLElement, InputProps>(function ({ addon, className, ...props }, ref) {
   return (

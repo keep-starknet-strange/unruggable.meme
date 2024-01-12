@@ -44,6 +44,7 @@ const dimensions = {
   '28': '28px',
   '32': '32px',
   '42': '42px',
+  '54': '54px',
   '64': '64px',
   '180': '180px',
   '386': '386px',
@@ -142,6 +143,7 @@ export const vars = createGlobalTheme(':root', {
     bg2: '#1a1f23',
 
     border1: '#191B1D',
+    border2: '#ffffff30',
   },
   border: {
     light: '1px solid #191B1D',
@@ -185,6 +187,10 @@ export const vars = createGlobalTheme(':root', {
     medium: '500',
     semibold: '600',
     bold: '700',
+  },
+  fonts: {
+    body: 'Inter, sans-serif',
+    code: 'monospace',
   },
   time: {
     '125': '125ms',
@@ -349,6 +355,7 @@ const unresponsiveProperties = defineProperties({
     outlineWidth: borderWidth,
     outlineStyle: borderStyle,
 
+    fontFamily: vars.fonts,
     textDecoration: ['none', 'underline'],
 
     overflow,

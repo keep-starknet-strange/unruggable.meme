@@ -218,7 +218,7 @@ export default function DeployPage() {
 
             <div />
 
-            <PrimaryButton type="submit" disabled={!account || isPending} className={styles.deployButton} major>
+            <PrimaryButton type="submit" disabled={!account || isPending} large>
               {account ? (isPending ? 'Waiting for signature' : 'Deploy') : 'Connect wallet'}
             </PrimaryButton>
           </Column>

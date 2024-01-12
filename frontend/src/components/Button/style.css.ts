@@ -1,6 +1,6 @@
 import { style } from '@vanilla-extract/css'
 import { recipe } from '@vanilla-extract/recipes'
-import { sprinkles } from 'src/theme/css/sprinkles.css'
+import { sprinkles, vars } from 'src/theme/css/sprinkles.css'
 
 export const Base = style([
   {
@@ -25,23 +25,50 @@ export const Base = style([
   }),
 ])
 
-export const primaryButton = style([
-  Base,
-  sprinkles({
-    paddingX: '16',
-    border: 'none',
-    background: 'accent',
-    color: 'text1',
-    position: 'relative',
-    outlineColor: 'accent',
-    outlineStyle: 'solid',
-    outlineWidth: {
-      default: '0px',
-      hover: '1px',
-      active: '1px',
+export const primaryButton = recipe({
+  base: [
+    Base,
+    sprinkles({
+      paddingX: '16',
+      border: 'none',
+      background: 'accent',
+      color: 'text1',
+      position: 'relative',
+      outlineColor: 'accent',
+      outlineStyle: 'solid',
+      outlineWidth: {
+        default: '0px',
+        hover: '1px',
+        active: '1px',
+      },
+    }),
+  ],
+
+  variants: {
+    large: {
+      true: sprinkles({
+        minHeight: '54',
+        fontSize: '18',
+        fontWeight: 'medium',
+      }),
     },
-  }),
-])
+    disabled: {
+      true: [
+        {
+          background: `${vars.color.bg2} !important`,
+          outline: 'none !important',
+          cursor: 'default !important',
+        },
+        sprinkles({ opacity: '0.5' }),
+      ],
+    },
+  },
+
+  defaultVariants: {
+    large: false,
+    disabled: false,
+  },
+})
 
 export const secondaryButton = recipe({
   base: [
@@ -93,51 +120,5 @@ export const iconButton = style([
     },
     background: 'transparent',
     border: 'none',
-  }),
-])
-
-export const thirdDimension = style([
-  primaryButton,
-  {
-    overflow: 'hidden',
-    boxShadow: '0 6px 10px #00000040',
-    position: 'relative',
-    outline: 'none',
-
-    '::before': {
-      content: '""',
-      position: 'absolute',
-      zIndex: 1,
-      top: '2px',
-      left: '6px',
-      right: '6px',
-      height: '12px',
-      borderRadius: '20px 20px 100px 100px / 14px 14px 30px 30px',
-      background: 'linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0))',
-    },
-  },
-])
-
-export const thirdDimensionSpan = style([
-  {
-    selectors: {
-      [`${thirdDimension}:hover &`]: {
-        opacity: 1,
-      },
-    },
-    top: '-1px',
-    right: '-1px',
-    bottom: '-1px',
-    left: '-1px',
-    borderRadius: '11px',
-  },
-  sprinkles({
-    background: 'accent',
-    transition: '125',
-    position: 'absolute',
-    opacity: '0',
-    borderRadius: '10',
-    transitionDuration: '250',
-    zIndex: '1',
   }),
 ])

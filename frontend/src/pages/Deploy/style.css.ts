@@ -31,18 +31,6 @@ export const container = style([
   }),
 ])
 
-export const deployButton = style([
-  {
-    ':disabled': {
-      opacity: '0.5',
-    },
-  },
-  sprinkles({
-    fontSize: '24',
-    fontWeight: 'semibold',
-  }),
-])
-
 export const inputLabel = sprinkles({
   marginLeft: '8',
   fontWeight: 'medium',

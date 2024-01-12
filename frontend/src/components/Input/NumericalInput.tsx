@@ -15,9 +15,9 @@ const formatNumber = (value: string) => {
   }).format(numericValue)
 }
 
-type NumberInputProps = {
+interface NumberInputProps extends BoxProps {
   addon?: React.ReactNode
-} & BoxProps
+}
 
 const NumericalInput = forwardRef<HTMLInputElement, NumberInputProps>(
   ({ addon, className, value, onChange, ...props }, ref) => {

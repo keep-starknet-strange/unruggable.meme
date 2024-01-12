@@ -58,8 +58,6 @@ export default function LaunchPage() {
     [launchedStatusCallArgs.length, launchedStatus?.data?.[0].toString()]
   )
 
-  console.log(parsedLaunchedStatus)
-
   return (
     <>
       <Section>
