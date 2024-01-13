@@ -5,7 +5,7 @@ import HomeLayout from './components/Layout/Home'
 import DeployPage from './pages/Deploy'
 import HomePage from './pages/Home'
 import LaunchPage from './pages/Launch'
-import ScreenPage from './pages/Screen'
+import TokenPage from './pages/Token'
 
 const router = createBrowserRouter([
   {
@@ -33,10 +33,10 @@ const router = createBrowserRouter([
     ),
   },
   {
-    path: '/screen',
+    path: '/token/:address',
     element: (
       <AppLayout>
-        <ScreenPage />
+        <TokenPage />
       </AppLayout>
     ),
   },

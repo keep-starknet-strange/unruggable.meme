@@ -9,7 +9,6 @@ const themeContractValues = {
 
     bg1: null,
     bg2: null,
-    bg3: null,
 
     appGradient: null,
     accentGradient: null,
@@ -45,10 +44,12 @@ const dimensions = {
   '28': '28px',
   '32': '32px',
   '42': '42px',
+  '54': '54px',
   '64': '64px',
   '180': '180px',
   '386': '386px',
   '480': '480px',
+  '620': '620px',
   half: '50%',
   full: '100%',
   min: 'min-content',
@@ -132,18 +133,17 @@ export const vars = createGlobalTheme(':root', {
     text2: '#5D6775',
 
     appGradient: `radial-gradient(50% 50% at 50% 30%, ${transparentize(0.9, '#6E44FF')}, transparent)`,
-    accentGradient: 'linear-gradient(120deg, #ff003e, #6E44FF)',
-    disabledGradient: 'linear-gradient(120deg, #86797c, #9d9aa7)',
+    accentGradient: 'linear-gradient(215deg, #cc0033, #6E44FF)',
 
     accent: '#6E44FF',
 
     error: '#ff003e',
 
-    bg1: '#06080A',
-    bg2: '#12181c',
-    bg3: '#191B1D',
+    bg1: '#0c1012',
+    bg2: '#1a1f23',
 
     border1: '#191B1D',
+    border2: '#ffffff30',
   },
   border: {
     light: '1px solid #191B1D',
@@ -187,6 +187,10 @@ export const vars = createGlobalTheme(':root', {
     medium: '500',
     semibold: '600',
     bold: '700',
+  },
+  fonts: {
+    body: 'Inter, sans-serif',
+    code: 'monospace',
   },
   time: {
     '125': '125ms',
@@ -351,6 +355,7 @@ const unresponsiveProperties = defineProperties({
     outlineWidth: borderWidth,
     outlineStyle: borderStyle,
 
+    fontFamily: vars.fonts,
     textDecoration: ['none', 'underline'],
 
     overflow,

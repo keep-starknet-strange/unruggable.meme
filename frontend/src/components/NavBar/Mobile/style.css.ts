@@ -35,7 +35,7 @@ export const navLink = recipe({
 
   variants: {
     active: {
-      true: sprinkles({ background: 'bg3' }),
+      true: sprinkles({ background: 'text2' }),
       false: {},
     },
   },

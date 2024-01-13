@@ -6,7 +6,7 @@ import { sprinkles, vars } from 'src/theme/css/sprinkles.css'
 export const tokenContractContainer = style([
   {
     backgroundImage: `
-      linear-gradient(to top, ${transparentize(0.6, '#12181c')} 0%, ${transparentize(0.5, '#12181c')} 70%),
+      linear-gradient(to top, ${transparentize(0.4, '#12181c')} 0%, ${transparentize(0.3, '#12181c')} 70%),
       url("src/assets/forest.png")
     `,
     backgroundSize: '150%',
@@ -15,7 +15,7 @@ export const tokenContractContainer = style([
 
     ':hover': {
       boxShadow: '0 12px 16px #00000080',
-      filter: 'brightness(1.1)',
+      filter: 'brightness(1.2)',
     },
   },
   sprinkles({
@@ -25,8 +25,14 @@ export const tokenContractContainer = style([
     paddingX: '12',
     cursor: 'pointer',
     transitionDuration: '125',
+    border: 'light',
   }),
 ])
+
+export const tokenName = style({
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+})
 
 export const teamAllocation = style([
   sprinkles({
@@ -54,7 +60,7 @@ export const launchStatus = recipe({
       display: 'flex',
       alignItems: 'center',
       gap: '8',
-      background: 'bg3',
+      background: 'bg2',
       paddingX: '8',
       paddingY: '4',
       color: 'text1',

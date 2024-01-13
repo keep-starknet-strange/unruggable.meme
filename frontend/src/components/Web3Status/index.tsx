@@ -8,7 +8,7 @@ import { shortenL2Address } from 'src/utils/address'
 import { PrimaryButton, SecondaryButton } from '../Button'
 import WalletConnectModal from '../WalletModal/Connect'
 import { L2WalletOverviewModal } from '../WalletModal/Overview'
-import * as styles from './styles.css'
+import * as styles from './style.css'
 
 function Web3StatusContent() {
   const { address: l2Account } = useAccount()
@@ -31,7 +31,11 @@ function Web3StatusContent() {
       </Row>
     )
   } else {
-    return <PrimaryButton onClick={toggleWalletConnectModal}>Connect wallet</PrimaryButton>
+    return (
+      <PrimaryButton onClick={toggleWalletConnectModal} minWidth="180">
+        Connect wallet
+      </PrimaryButton>
+    )
   }
 }
 

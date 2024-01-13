@@ -10,9 +10,10 @@ import * as styles from './TokenContract.css'
 
 interface TokenContractProps extends BoxProps {
   tokenContract: TokenContractType
+  launched?: boolean
 }
 
-export default function TokenContract({ tokenContract, ...props }: TokenContractProps) {
+export default function TokenContract({ tokenContract, launched, ...props }: TokenContractProps) {
   const teamAllocationPercentage = useMemo(
     () => new Percent(tokenContract.teamAllocation, tokenContract.maxSupply).toFixed(),
     [tokenContract.teamAllocation, tokenContract.maxSupply]
@@ -31,15 +32,17 @@ export default function TokenContract({ tokenContract, ...props }: TokenContract
       {...props}
     >
       <Column gap="24">
-        <Row justifyContent="space-between">
-          <Row gap="16" alignItems="baseline">
-            <Text.HeadlineMedium>{tokenContract.name}</Text.HeadlineMedium>
+        <Row justifyContent="space-between" gap="8">
+          <Row gap="12" alignItems="baseline" minWidth="0" flex="1">
+            <Text.HeadlineMedium className={styles.tokenName}>{tokenContract.name}</Text.HeadlineMedium>
             <Text.Body color="text2">${tokenContract.symbol}</Text.Body>
           </Row>
 
-          <Text.Custom className={styles.launchStatus({ launched: tokenContract.launched })}>
-            {tokenContract.launched ? 'Launched' : 'Not launched'}
-          </Text.Custom>
+          {launched !== undefined && (
+            <Text.Custom className={styles.launchStatus({ launched })}>
+              {launched ? 'Launched' : 'Not launched'}
+            </Text.Custom>
+          )}
         </Row>
 
         <Row gap="8">
