@@ -11,6 +11,8 @@ export const currencyInput = z
   .string()
   .refine((input) => +parseFormatedAmount(input) > 0, { message: 'Invalid amount' })
 
+export const percentInput = z.number().multipleOf(0.01)
+
 export const holder = z.object({
   address,
   amount: currencyInput,

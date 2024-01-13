@@ -8,6 +8,7 @@ import { useMatch } from 'react-router-dom'
 import { PrimaryButton } from 'src/components/Button'
 import Input from 'src/components/Input'
 import NumericalInput from 'src/components/Input/NumericalInput'
+import PercentInput from 'src/components/Input/PercentInput'
 import Section from 'src/components/Section'
 import Slider from 'src/components/Slider'
 import Toggler from 'src/components/Toggler'
@@ -25,7 +26,7 @@ import * as Text from 'src/theme/components/Text'
 import { vars } from 'src/theme/css/sprinkles.css'
 import { parseFormatedAmount } from 'src/utils/amount'
 import { parseDuration } from 'src/utils/moment'
-import { currencyInput } from 'src/utils/zod'
+import { currencyInput, percentInput } from 'src/utils/zod'
 import { getChecksumAddress } from 'starknet'
 import { z } from 'zod'
 
@@ -34,9 +35,14 @@ import * as styles from './style.css'
 // zod schemes
 
 const ekuboSchema = z.object({
+  hodlLimit: percentInput,
   startingMarketCap: currencyInput.refine((input) => +parseFormatedAmount(input) >= MIN_STARTING_MCAP, {
     message: `Market cap cannot fall behind $${MIN_STARTING_MCAP.toLocaleString()}`,
   }),
+})
+
+const jediswapSchema = z.object({
+  hodlLimit: percentInput,
 })
 
 export default function TokenPage() {
@@ -63,16 +69,29 @@ export default function TokenPage() {
   }, [getMemecoinInfos, collectionAddress])
 
   // form
+  const schema = useMemo(() => {
+    const liquidityType = Object.values(LiquidityType)[liquidityTypeIndex] as LiquidityType
+
+    switch (liquidityType) {
+      case LiquidityType.EKUBO: {
+        return ekuboSchema
+      }
+
+      case LiquidityType.JEDISWAP: {
+        return jediswapSchema
+      }
+    }
+  }, [liquidityTypeIndex])
   const {
-    register: ekuboRegister,
-    handleSubmit: ekuboHandleSubmit,
-    formState: { errors: ekuboErrors },
-  } = useForm<z.infer<typeof ekuboSchema>>({
-    resolver: zodResolver(ekuboSchema),
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<z.infer<typeof ekuboSchema> & z.infer<typeof jediswapSchema>>({
+    resolver: zodResolver(schema),
   })
 
   // launch
-  const launchOnEkubo = useCallback(async (data: z.infer<typeof ekuboSchema>) => {
+  const launch = useCallback(async (data: z.infer<typeof schema>) => {
     console.log(data)
   }, [])
 
@@ -143,7 +162,7 @@ export default function TokenPage() {
       const parsedTransferRestrictionDelay = parseDuration(moment.duration(transferRestrictionDelay, 'minutes'))
 
       return (
-        <Column as="form" onSubmit={ekuboHandleSubmit(launchOnEkubo)} gap="32">
+        <Column as="form" onSubmit={handleSubmit(launch)} gap="32">
           <Row gap="12" justifyContent="space-between">
             <Text.HeadlineMedium>Launch token</Text.HeadlineMedium>
 
@@ -162,6 +181,19 @@ export default function TokenPage() {
             />
           </Column>
 
+          <Column gap="8">
+            <Text.HeadlineSmall>Hold limit</Text.HeadlineSmall>
+            <PercentInput
+              addon={<Text.HeadlineSmall>%</Text.HeadlineSmall>}
+              placeholder="1.00"
+              {...register('hodlLimit')}
+            />
+
+            <Box className={styles.errorContainer}>
+              {errors.hodlLimit?.message ? <Text.Error>{errors.hodlLimit.message}</Text.Error> : null}
+            </Box>
+          </Column>
+
           {LiquidityType.EKUBO === Object.values(LiquidityType)[liquidityTypeIndex] && (
             <Column gap="8">
               <Text.HeadlineSmall>Starting market cap</Text.HeadlineSmall>
@@ -169,19 +201,18 @@ export default function TokenPage() {
               <NumericalInput
                 addon={<Text.HeadlineSmall>$</Text.HeadlineSmall>}
                 placeholder="420,000.00"
-                {...ekuboRegister('startingMarketCap')}
+                {...register('startingMarketCap')}
               />
 
               <Box className={styles.errorContainer}>
-                {ekuboErrors.startingMarketCap?.message ? (
-                  <Text.Error>{ekuboErrors.startingMarketCap.message}</Text.Error>
-                ) : null}
+                {errors.startingMarketCap?.message ? <Text.Error>{errors.startingMarketCap.message}</Text.Error> : null}
               </Box>
             </Column>
           )}
 
-          <PrimaryButton type="submit" large>
-            Launch
+          <PrimaryButton type="submit" large disabled>
+            {/* Launch */}
+            Coming soon
           </PrimaryButton>
           {onlyVisibleToYou}
         </Column>
@@ -191,11 +222,12 @@ export default function TokenPage() {
     memecoinInfos?.isOwner,
     memecoinInfos?.launched,
     transferRestrictionDelay,
-    ekuboHandleSubmit,
-    launchOnEkubo,
+    handleSubmit,
+    launch,
     liquidityTypeIndex,
-    ekuboRegister,
-    ekuboErrors.startingMarketCap?.message,
+    register,
+    errors.startingMarketCap?.message,
+    errors.hodlLimit?.message,
   ])
 
   return (

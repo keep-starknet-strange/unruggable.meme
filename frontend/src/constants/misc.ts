@@ -21,7 +21,7 @@ export enum LiquidityType {
   JEDISWAP = 'Jediswap',
 }
 
-export const MIN_STARTING_MCAP = 50_000 // $50k
+export const MIN_STARTING_MCAP = 10_000 // $10k
 
 export const TRANSFER_RESTRICTION_DELAY_STEP = 15 // 15m
 export const MIN_TRANSFER_RESTRICTION_DELAY = 30 // 30m

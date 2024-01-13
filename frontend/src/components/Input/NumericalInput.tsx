@@ -1,54 +1,22 @@
-import clsx from 'clsx'
-import React, { forwardRef, useEffect, useState } from 'react'
-import Box, { BoxProps } from 'src/theme/components/Box'
+import { forwardRef, useCallback } from 'react'
 
-import * as styles from './NumericalInput.css'
+import { FormattableInput, FormattableInputProps } from '.'
 
-const formatNumber = (value: string) => {
-  // add 999 at the end to not lose potential `.0` and not shift commas
-  const numericValue = parseInt(`${value.replace(/[^0-9]/g, '')}`)
-  if (isNaN(numericValue)) return ''
+type NumericalInputProps = Omit<FormattableInputProps, 'formatInput'>
 
-  return new Intl.NumberFormat('en-US', {
-    style: 'decimal',
-    maximumFractionDigits: 18,
-  }).format(numericValue)
-}
+const NumericalInput = forwardRef<HTMLInputElement, NumericalInputProps>(({ ...props }, ref) => {
+  const formatNumber = useCallback((value: string) => {
+    const numericValue = parseInt(value.replace(/[^0-9]/g, ''))
+    if (isNaN(numericValue)) return ''
 
-interface NumberInputProps extends BoxProps {
-  addon?: React.ReactNode
-}
+    return new Intl.NumberFormat('en-US', {
+      style: 'decimal',
+      maximumFractionDigits: 18,
+    }).format(numericValue)
+  }, [])
 
-const NumericalInput = forwardRef<HTMLInputElement, NumberInputProps>(
-  ({ addon, className, value, onChange, ...props }, ref) => {
-    const [inputValue, setInputValue] = useState('')
-    useEffect(() => {
-      if (value !== undefined && value !== null) {
-        setInputValue(formatNumber(value.toString()))
-      }
-    }, [value])
-
-    const handleInputEvent = (event: React.ChangeEvent<HTMLInputElement>) => {
-      setInputValue(formatNumber(event.target.value))
-      onChange && onChange(event)
-    }
-
-    return (
-      <Box className={clsx(styles.inputContainer, className)}>
-        {addon}
-        <Box
-          as="input"
-          type="text"
-          {...props}
-          ref={ref}
-          className={styles.input}
-          value={inputValue}
-          onChange={handleInputEvent}
-        />
-      </Box>
-    )
-  }
-)
+  return <FormattableInput {...props} formatInput={formatNumber} ref={ref} />
+})
 
 NumericalInput.displayName = 'NumericalInput'
 
