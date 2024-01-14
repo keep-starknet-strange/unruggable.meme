@@ -215,7 +215,7 @@ const borderWidth = ['0px', '0.5px', '1px', '1.5px', '2px', '3px', '4px', '5px']
 
 const borderStyle = ['none', 'solid'] as const
 
-const breakpoints = {
+export const breakpoints = {
   sm: 640,
   md: 768,
   lg: 1024,

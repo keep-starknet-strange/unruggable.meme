@@ -14,9 +14,9 @@ interface ContentProps {
 export default function Content({ children, title, close }: ContentProps) {
   return (
     <Box className={styles.content}>
-      <Column gap="32">
+      <Column gap="42">
         <Row justifyContent="space-between">
-          <Text.HeadlineSmall>{title}</Text.HeadlineSmall>
+          <Text.HeadlineSmall className={styles.title}>{title}</Text.HeadlineSmall>
 
           <Box className={styles.closeContainer}>
             <Icons.Close onClick={close} />
