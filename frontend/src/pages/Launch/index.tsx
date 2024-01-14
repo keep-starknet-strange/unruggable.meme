@@ -96,7 +96,7 @@ export default function LaunchPage() {
         </Column>
       </Section>
 
-      <ImportTokenModal />
+      <ImportTokenModal save />
     </>
   )
 }
