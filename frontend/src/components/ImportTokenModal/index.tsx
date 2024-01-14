@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useCallback, useEffect } from 'react'
+import { Loader2Icon } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import useDebounce from 'src/hooks/useDebounce'
@@ -9,6 +10,7 @@ import { useCloseModal, useImportTokenModal } from 'src/hooks/useModal'
 import Box from 'src/theme/components/Box'
 import { Column } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
+import { isValidL2Address } from 'src/utils/address'
 import { address } from 'src/utils/zod'
 import { getChecksumAddress } from 'starknet'
 import { z } from 'zod'
@@ -25,7 +27,13 @@ const schema = z.object({
   tokenAddress: address,
 })
 
-export function ImportTokenModal() {
+interface ImportTokenModalProps {
+  save?: boolean
+}
+
+export function ImportTokenModal({ save = false }: ImportTokenModalProps) {
+  const [loading, setLoading] = useState(false)
+
   const { deployedTokenContracts, pushDeployedTokenContracts } = useDeploymentStore()
 
   // modal
@@ -58,6 +66,13 @@ export function ImportTokenModal() {
 
   const debouncedTokenAddress = useDebounce(tokenAddress)
 
+  // loading
+  const shouldLoad = useCallback((event: React.FormEvent<HTMLInputElement>) => {
+    const value = (event.target as HTMLInputElement).value
+
+    setLoading(isValidL2Address(value))
+  }, [])
+
   // token check
   const [{ error }, getMemecoinInfos] = useMemecoinInfos()
 
@@ -75,12 +90,18 @@ export function ImportTokenModal() {
       const memecoinInfos = await getMemecoinInfos(tokenAddress)
 
       if (memecoinInfos) {
-        pushDeployedTokenContracts(memecoinInfos)
+        // save token if needed
+        if (save) {
+          pushDeployedTokenContracts(memecoinInfos)
+        }
 
         openTokenPage(tokenAddress)
+        return
       }
+
+      setLoading(false)
     },
-    [getMemecoinInfos, deployedTokenContracts, openTokenPage, pushDeployedTokenContracts]
+    [getMemecoinInfos, deployedTokenContracts, openTokenPage, pushDeployedTokenContracts, save]
   )
 
   // handle error
@@ -104,11 +125,13 @@ export function ImportTokenModal() {
         <Column gap="8">
           <Text.Body className={styles.inputLabel}>Token Address</Text.Body>
 
-          <Input placeholder="0x000000000000000000" {...register('tokenAddress')} />
+          <Input placeholder="0x000000000000000000" {...register('tokenAddress', { onChange: shouldLoad })} />
 
           <Box className={styles.errorContainer}>
             {errors.tokenAddress?.message ? <Text.Error>{errors.tokenAddress.message}</Text.Error> : null}
           </Box>
+
+          {loading && <Loader2Icon className={styles.loader} />}
         </Column>
       </Content>
 

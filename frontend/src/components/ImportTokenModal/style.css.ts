@@ -1,3 +1,4 @@
+import { keyframes, style } from '@vanilla-extract/css'
 import { sprinkles } from 'src/theme/css/sprinkles.css'
 
 export const inputLabel = sprinkles({
@@ -10,3 +11,22 @@ export const errorContainer = sprinkles({
   paddingTop: '4',
   color: 'error',
 })
+
+const rotateAnimation = keyframes({
+  '100%': {
+    transform: 'rotate(360deg)',
+  },
+})
+
+export const loader = style([
+  {
+    animation: rotateAnimation,
+    animationDuration: '2s',
+    animationIterationCount: 'infinite',
+    animationTimingFunction: 'linear',
+  },
+  sprinkles({
+    marginLeft: '8',
+    color: 'text1',
+  }),
+])
