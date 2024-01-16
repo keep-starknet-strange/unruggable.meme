@@ -318,7 +318,14 @@ mod UnruggableMemecoin {
                             return;
                         }
                     },
-                    LiquidityType::NFT(_) => {}
+                    LiquidityType::NFT(_) => {
+                        // whitelisting ekubo router will fix one-hop swaps, but might still be problematic for multihop ones.
+                        if (get_caller_address() == 0x00000005dd3D2F4429AF886cD1a3b08289DBcEa99A294197E9eB43b0e0325b4b
+                            .try_into()
+                            .unwrap()) {
+                            return;
+                        }
+                    }
                 }
 
                 assert(

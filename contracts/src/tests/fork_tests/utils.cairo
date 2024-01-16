@@ -25,8 +25,8 @@ fn EKUBO_LAUNCHER_ADDRESS() -> ContractAddress {
     'ekubo_launchpad'.try_into().unwrap()
 }
 
-fn EKUBO_SWAPPER_ADDRESS() -> ContractAddress {
-    0x07a83729aaaae6344d6fca558614cd22ecdd3f5cd90ec0cd20c8d6bf08170431.try_into().unwrap()
+fn EKUBO_ROUTER_ADDRESS() -> ContractAddress {
+    0x01b6f560def289b32e2a7b0920909615531a4d9d5636ca509045843559dc23d5.try_into().unwrap()
 }
 
 

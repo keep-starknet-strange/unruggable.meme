@@ -4,6 +4,7 @@ use ekubo::interfaces::core::{ICoreDispatcher, ICoreDispatcherTrait};
 use ekubo::types::bounds::Bounds;
 use ekubo::types::i129::i129;
 use ekubo::types::keys::PoolKey;
+use ekubo::interfaces::router::{Depth, Delta, RouteNode, TokenAmount};
 use openzeppelin::token::erc20::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
 use snforge_std::{
     start_prank, stop_prank, start_spoof, stop_spoof, spy_events, SpyOn, EventSpy, EventAssertions,
@@ -19,13 +20,10 @@ use unruggable::factory::interface::{IFactoryDispatcher, IFactoryDispatcherTrait
 use unruggable::factory::{Factory};
 use unruggable::locker::LockPosition;
 use unruggable::locker::interface::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
-use unruggable::mocks::ekubo::swapper::{
-    SwapParameters, ISimpleSwapperDispatcher, ISimpleSwapperDispatcherTrait
-};
 use unruggable::tests::addresses::{EKUBO_CORE};
 use unruggable::tests::fork_tests::utils::{
     deploy_memecoin_through_factory_with_owner, sort_tokens, EKUBO_LAUNCHER_ADDRESS,
-    EKUBO_SWAPPER_ADDRESS, deploy_token0_with_owner, deploy_eth_with_owner
+    EKUBO_ROUTER_ADDRESS, deploy_token0_with_owner, deploy_eth_with_owner
 };
 use unruggable::tests::unit_tests::utils::{
     OWNER, DEFAULT_MIN_LOCKTIME, pow_256, LOCK_MANAGER_ADDRESS, MEMEFACTORY_ADDRESS, RECIPIENT,
@@ -36,6 +34,35 @@ use unruggable::token::interface::{
 };
 use unruggable::token::memecoin::LiquidityType;
 use unruggable::utils::math::PercentageMath;
+
+//! copy of ekubo's router interface, added the `clear` entrypoint (which is missing from interface)
+#[starknet::interface]
+trait IRouter<TContractState> {
+    // Does a single swap against a single node using tokens held by this contract, and receives the output to this contract
+    fn swap(ref self: TContractState, node: RouteNode, token_amount: TokenAmount) -> Delta;
+
+    // Does a multihop swap, where the output/input of each hop is passed as input/output of the next swap
+    // Note to do exact output swaps, the route must be given in reverse
+    fn multihop_swap(
+        ref self: TContractState, route: Array<RouteNode>, token_amount: TokenAmount
+    ) -> Array<Delta>;
+
+    // Quote the given token amount against the route in the swap
+    fn quote(
+        ref self: TContractState, route: Array<RouteNode>, token_amount: TokenAmount
+    ) -> Array<Delta>;
+
+    // Returns the delta for swapping a pool to the given price
+    fn get_delta_to_sqrt_ratio(self: @TContractState, pool_key: PoolKey, sqrt_ratio: u256) -> Delta;
+
+    // Returns the amount available for purchase for swapping +/- the given percent, expressed as a 0.128 number
+    // Note this is a square root of the percent
+    // e.g. if you want to get the 2% market depth, you'd pass FLOOR((sqrt(1.02) - 1) * 2**128) = 3385977594616997568912048723923598803
+    fn get_market_depth(self: @TContractState, pool_key: PoolKey, sqrt_percent: u128) -> Depth;
+
+    fn clear(ref self: TContractState, token: ContractAddress);
+}
+
 
 fn launch_memecoin_on_ekubo(
     quote_address: ContractAddress, fee: u128, tick_spacing: u128, starting_tick: i129, bound: u128
@@ -84,16 +111,9 @@ fn swap_tokens_on_ekubo(
     // so the received amounts should be around 100x the amount of quote sent
     // with a 5% margin of error for the price impact.
     // since the pool price is expressend in quote/MEME, the price should move upwards (more quote for 1 meme)
-    let swapper_address = EKUBO_SWAPPER_ADDRESS();
-    let ekubo_swapper = ISimpleSwapperDispatcher { contract_address: swapper_address };
+    let router_address = EKUBO_ROUTER_ADDRESS();
+    let ekubo_router = IRouterDispatcher { contract_address: router_address };
     let first_amount_in = amount_in;
-    let swap_params = SwapParameters {
-        amount: i129 { mag: first_amount_in.low, sign: false // positive sign is exact input
-         },
-        is_token1,
-        sqrt_ratio_limit: sqrt_limit_swap1, // higher than current
-        skip_ahead: 0,
-    };
 
     let mut tx_info: TxInfoMock = Default::default();
     tx_info.transaction_hash = Option::Some(123);
@@ -103,7 +123,7 @@ fn swap_tokens_on_ekubo(
     // This is required the way the swapper contract is coded.
     // It then sends back the funds to the caller
     start_prank(CheatTarget::One(token_in.contract_address), owner);
-    token_in.transfer(swapper_address, first_amount_in);
+    token_in.transfer(router_address, first_amount_in);
     stop_prank(CheatTarget::One(token_in.contract_address));
 
     stop_spoof(CheatTarget::One(token_in.contract_address));
@@ -117,14 +137,17 @@ fn swap_tokens_on_ekubo(
         PercentageMath::percent_mul(100 * first_amount_in, 9500)
     };
 
-    ekubo_swapper
-        .swap(
-            pool_key: pool_key,
-            swap_params: swap_params,
-            recipient: owner,
-            calculated_amount_threshold: expected_output
-                .low, // threshold is min amount of received tokens
-        );
+    let route_node = RouteNode {
+        pool_key: pool_key, sqrt_ratio_limit: sqrt_limit_swap1, skip_ahead: 0
+    };
+
+    let token_amount = TokenAmount {
+        token: token_in.contract_address,
+        amount: i129 { mag: first_amount_in.low, sign: false // positive sign is exact input
+         },
+    };
+    ekubo_router.swap(route_node, token_amount);
+    ekubo_router.clear(token_out.contract_address);
 
     // Second swap:
 
@@ -132,13 +155,6 @@ fn swap_tokens_on_ekubo(
     // the expected amount should be the initial amount,
     // minus the fees of the pool.
     let second_amount_in = token_out.balance_of(owner);
-    let swap_params = SwapParameters {
-        amount: i129 { mag: second_amount_in.low, sign: false // exact input
-         },
-        is_token1: !is_token1,
-        sqrt_ratio_limit: sqrt_limit_swap2, // lower than current
-        skip_ahead: 0,
-    };
     let second_expected_output = PercentageMath::percent_mul(first_amount_in, 9940);
     let balance_token_in_before = token_in.balance_of(owner);
 
@@ -147,19 +163,23 @@ fn swap_tokens_on_ekubo(
     start_spoof(CheatTarget::One(token_out.contract_address), tx_info);
 
     start_prank(CheatTarget::One(token_out.contract_address), owner);
-    token_out.transfer(swapper_address, second_amount_in);
+    token_out.transfer(router_address, second_amount_in);
     stop_prank(CheatTarget::One(token_out.contract_address));
 
     stop_spoof(CheatTarget::One(token_out.contract_address));
 
-    ekubo_swapper
-        .swap(
-            pool_key: pool_key,
-            swap_params: swap_params,
-            recipient: owner,
-            calculated_amount_threshold: second_expected_output
-                .low, // threshold is min amount of received tokens
-        );
+    let route_node = RouteNode {
+        pool_key: pool_key, sqrt_ratio_limit: sqrt_limit_swap2, skip_ahead: 0
+    };
+
+    let token_amount = TokenAmount {
+        token: token_out.contract_address,
+        amount: i129 { mag: second_amount_in.low, sign: false // exact input
+         },
+    };
+
+    ekubo_router.swap(route_node, token_amount);
+    ekubo_router.clear(token_in.contract_address);
 
     let token_in_received = token_in.balance_of(owner) - balance_token_in_before;
     assert(token_in_received >= second_expected_output, 'swap output too low');
@@ -209,8 +229,9 @@ fn test_launch_meme() {
     let core = ICoreDispatcher { contract_address: EKUBO_CORE() };
     let liquidity = core.get_pool_liquidity(pool_key);
     let price = core.get_pool_price(pool_key);
-    let reserve_memecoin = core.get_reserves(memecoin_address);
-    let reserve_quote = core.get_reserves(quote_address);
+    let reserve_memecoin = memecoin.balance_of(core.contract_address);
+    let reserve_quote = ERC20ABIDispatcher { contract_address: quote_address }
+        .balance_of(core.contract_address);
     assert(reserve_quote == 0, 'reserve quote not 0');
 
     // Verify that the reserve of memecoin is within 0.5% of the (total supply minus the team allocation)
@@ -359,9 +380,10 @@ fn test_launch_meme_token1_price_below_1() {
     let core = ICoreDispatcher { contract_address: EKUBO_CORE() };
     let liquidity = core.get_pool_liquidity(pool_key);
     let price = core.get_pool_price(pool_key);
-    let reserve_memecoin = core.get_reserves(memecoin_address);
-    let reserve_token0 = core.get_reserves(quote_address);
-    assert(reserve_token0 == 0, 'reserve quote not 0');
+    let reserve_memecoin = memecoin.balance_of(core.contract_address);
+    let reserve_quote = ERC20ABIDispatcher { contract_address: quote_address }
+        .balance_of(core.contract_address);
+    assert(reserve_quote == 0, 'reserve quote not 0');
 
     // Verify that the reserve of memecoin is within 0.5% of the (total supply minus the team allocation)
     let team_alloc = memecoin.get_team_allocation();
@@ -426,9 +448,10 @@ fn test_launch_meme_token0_price_above_1() {
     let core = ICoreDispatcher { contract_address: EKUBO_CORE() };
     let liquidity = core.get_pool_liquidity(pool_key);
     let price = core.get_pool_price(pool_key);
-    let reserve_memecoin = core.get_reserves(memecoin_address);
-    let reserve_fake_quote = core.get_reserves(quote_address);
-    assert(reserve_fake_quote == 0, 'reserve quote not 0');
+    let reserve_memecoin = memecoin.balance_of(core.contract_address);
+    let reserve_quote = ERC20ABIDispatcher { contract_address: quote_address }
+        .balance_of(core.contract_address);
+    assert(reserve_quote == 0, 'reserve quote not 0');
 
     // Verify that the reserve of memecoin is within 0.5% of the (total supply minus the team allocation)
     let team_alloc = memecoin.get_team_allocation();
@@ -495,8 +518,9 @@ fn test_launch_meme_token1_price_above_1() {
     let core = ICoreDispatcher { contract_address: EKUBO_CORE() };
     let liquidity = core.get_pool_liquidity(pool_key);
     let price = core.get_pool_price(pool_key);
-    let reserve_memecoin = core.get_reserves(memecoin_address);
-    let reserve_token0 = core.get_reserves(quote_address);
+    let reserve_memecoin = memecoin.balance_of(core.contract_address);
+    let reserve_token0 = ERC20ABIDispatcher { contract_address: quote_address }
+        .balance_of(core.contract_address);
     assert(reserve_token0 == 0, 'reserve quote not 0');
 
     // Verify that the reserve of memecoin is within 0.5% of the (total supply minus the team allocation)
@@ -557,9 +581,10 @@ fn test_launch_meme_with_pool_1percent() {
     let core = ICoreDispatcher { contract_address: EKUBO_CORE() };
     let liquidity = core.get_pool_liquidity(pool_key);
     let price = core.get_pool_price(pool_key);
-    let reserve_memecoin = core.get_reserves(memecoin_address);
-    let reserve_fake_quote = core.get_reserves(quote_address);
-    assert(reserve_fake_quote == 0, 'reserve quote not 0');
+    let reserve_memecoin = memecoin.balance_of(core.contract_address);
+    let reserve_token0 = ERC20ABIDispatcher { contract_address: quote_address }
+        .balance_of(core.contract_address);
+    assert(reserve_token0 == 0, 'reserve quote not 0');
 
     // Verify that the reserve of memecoin is within 0.5% of the (total supply minus the team allocation)
     let team_alloc = memecoin.get_team_allocation();
