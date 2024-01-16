@@ -25,12 +25,15 @@ mod Factory {
         jediswap_adapter::JediswapAdditionalParameters, ekubo::launcher::EkuboLP
     };
     use unruggable::factory::{IFactory, LaunchParameters};
-    use unruggable::token::UnruggableMemecoin::LiquidityType;
     use unruggable::token::interface::{
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
     use unruggable::utils::math::PercentageMath;
     use unruggable::utils::unique_count;
+    use unruggable::token::memecoin::{
+        UnruggableMemecoin::LiquidityType, UnruggableMemecoin::LiquidityParameters,
+        JediswapLiquidityParameters, EkuboLiquidityParameters
+    };
 
     /// The maximum percentage of the total supply that can be allocated to the team.
     /// This is to prevent the team from having too much control over the supply.
@@ -159,6 +162,9 @@ mod Factory {
             memecoin
                 .set_launched(
                     LiquidityType::JediERC20(pair_address),
+                    LiquidityParameters::Jediswap(
+                        JediswapLiquidityParameters { quote_address, quote_amount, }
+                    ),
                     :transfer_restriction_delay,
                     :max_percentage_buy_launch,
                     :team_allocation
@@ -206,6 +212,12 @@ mod Factory {
             memecoin
                 .set_launched(
                     LiquidityType::EkuboNFT(id),
+                    LiquidityType::EkuboNFT(id),
+                    LiquidityParameters::Ekubo(
+                        EkuboLiquidityParameters {
+                            quote_address, ekubo_pool_parameters: ekubo_parameters
+                        }
+                    ),
                     :transfer_restriction_delay,
                     :max_percentage_buy_launch,
                     :team_allocation
