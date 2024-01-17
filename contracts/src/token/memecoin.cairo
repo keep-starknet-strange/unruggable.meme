@@ -173,6 +173,7 @@ mod UnruggableMemecoin {
             transfer_restriction_delay: u64,
             max_percentage_buy_launch: u16,
             team_allocation: u256,
+            base_amount: u256
         ) {
             self.assert_only_factory();
             assert(!self.is_launched(), errors::ALREADY_LAUNCHED);
@@ -180,6 +181,8 @@ mod UnruggableMemecoin {
                 max_percentage_buy_launch >= MIN_MAX_PERCENTAGE_BUY_LAUNCH,
                 errors::MAX_PERCENTAGE_BUY_LAUNCH_TOO_LOW
             );
+
+            self.launch_liquidity_base_amount.write(Option::Some(base_amount));
 
             // save liquidity params and launch block number
             self

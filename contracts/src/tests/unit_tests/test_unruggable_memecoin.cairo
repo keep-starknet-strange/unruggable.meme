@@ -104,6 +104,34 @@ mod memecoin_entrypoints {
     }
 
     #[test]
+    fn test_get_team_allocation_after_refund() {
+        let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
+        let amount = 1_050_000 * pow_256(10, 18);
+
+        // refund half of the team allocation
+        start_prank(CheatTarget::One(memecoin.contract_address), INITIAL_HOLDER_1());
+        let send_amount = memecoin.transfer(memecoin.memecoin_factory_address(), amount);
+
+        let team_alloc = memecoin.get_team_allocation();
+        // Team alloc is set to 10% in test utils
+        assert(team_alloc == 1_050_000 * pow_256(10, 18), 'Invalid team allocation');
+    }
+
+    #[test]
+    fn test_get_team_allocation_after_post_launch_refund() {
+        let (memecoin, memecoin_address) = deploy_and_launch_memecoin();
+        let amount = 100 * pow_256(10, 18);
+
+        // refund half of the team allocation
+        start_prank(CheatTarget::One(memecoin.contract_address), INITIAL_HOLDER_1());
+        let send_amount = memecoin.transfer(memecoin.memecoin_factory_address(), amount);
+
+        let team_alloc = memecoin.get_team_allocation();
+        // Team alloc is set to 10% in test utils
+        assert(team_alloc == 2_100_000 * pow_256(10, 18), 'Invalid team allocation');
+    }
+
+    #[test]
     fn test_memecoin_factory_address() {
         let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
 
