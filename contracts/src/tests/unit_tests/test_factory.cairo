@@ -1,7 +1,7 @@
 use ekubo::types::i129::i129;
 use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
 use snforge_std::{
-    declare, ContractClassTrait, start_prank, stop_prank, CheatTarget, start_warp, stop_warp
+    declare, ContractClassTrait, start_prank, stop_prank, CheatTarget, start_warp, stop_warp, start_roll, stop_roll
 };
 use starknet::{ContractAddress, contract_address_const};
 use unruggable::exchanges::ekubo_adapter::EkuboPoolParameters;
@@ -26,8 +26,8 @@ use unruggable::tests::unit_tests::utils::{
 use unruggable::token::interface::{
     IUnruggableMemecoin, IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
 };
-use unruggable::token::memecoin::LiquidityType;
 use unruggable::utils::sum;
+use unruggable::token::memecoin::{LiquidityType, LiquidityParameters};
 
 #[test]
 fn test_locked_liquidity_not_locked() {
@@ -114,6 +114,7 @@ fn test_launch_memecoin_happy_path() {
     let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
     let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
     let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
+    let block_number = 42;
 
     // approve spending of eth by factory
     let eth_amount: u256 = 1 * pow_256(10, 18); // 1 ETHER
@@ -124,6 +125,7 @@ fn test_launch_memecoin_happy_path() {
 
     start_prank(CheatTarget::One(factory.contract_address), owner);
     start_warp(CheatTarget::One(memecoin_address), 1);
+    start_roll(CheatTarget::One(memecoin_address), block_number);
     let pair_address = factory
         .launch_on_jediswap(
             LaunchParameters {
@@ -139,8 +141,10 @@ fn test_launch_memecoin_happy_path() {
         );
     stop_prank(CheatTarget::One(factory.contract_address));
     stop_warp(CheatTarget::One(memecoin_address));
+    stop_roll(CheatTarget::One(memecoin_address));
 
     assert(memecoin.is_launched(), 'should be launched');
+    assert(memecoin.launched_at_block_number() == block_number, 'bad block number');
 
     // Check pair creation
     let team_allocation = sum(INITIAL_HOLDERS_AMOUNTS());
@@ -168,6 +172,43 @@ fn test_launch_memecoin_happy_path() {
     // Check ownership renounced
     assert(memecoin.owner().is_zero(), 'Still an owner');
 }
+
+// #[test]
+// fn test_launch_memecoin_with_jediswap_parameters() {
+//     let owner = snforge_std::test_address();
+//     let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
+//     let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
+//     let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
+
+//     // approve spending of eth by factory
+//     let eth_amount: u256 = 1 * pow_256(10, 18); // 1 ETHER
+//     let factory_balance_meme = memecoin.balanceOf(factory.contract_address);
+//     start_prank(CheatTarget::One(eth.contract_address), owner);
+//     eth.approve(factory.contract_address, eth_amount);
+//     stop_prank(CheatTarget::One(eth.contract_address));
+
+//     start_prank(CheatTarget::One(factory.contract_address), owner);
+//     let pair_address = factory
+//         .launch_on_jediswap(
+//             memecoin_address,
+//             TRANSFER_RESTRICTION_DELAY,
+//             MAX_PERCENTAGE_BUY_LAUNCH,
+//             eth.contract_address,
+//             eth_amount,
+//             DEFAULT_MIN_LOCKTIME,
+//         );
+//     stop_prank(CheatTarget::One(factory.contract_address));
+
+//     let liquidity_parameters = memecoin.launched_with_liquidity_parameters();
+
+//     match liquidity_parameters {
+//         LiquidityParameters::Ekubo(_) => panic_with_felt252('wrong liquidity parameters type'),
+//         LiquidityParameters::Jediswap(jediswap_liquidity_parameters) => {
+//             assert(jediswap_liquidity_parameters.quote_address == eth.contract_address, 'Bad quote address');
+//             assert(jediswap_liquidity_parameters.quote_amount == eth_amount, 'Bad quote amount');
+//         }
+//     }
+// }
 
 #[test]
 fn test_launch_memecoin_pair_exists_should_succeed() {

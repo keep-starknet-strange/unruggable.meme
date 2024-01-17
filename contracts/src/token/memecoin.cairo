@@ -44,8 +44,8 @@ mod UnruggableMemecoin {
         IERC20, IERC20Metadata, ERC20ABIDispatcher, ERC20ABIDispatcherTrait
     };
     use starknet::{
-        ContractAddress, contract_address_const, get_contract_address, get_caller_address,
-        get_tx_info, get_block_timestamp, get_execution_info
+        ContractAddress, contract_address_const, get_caller_address,
+        get_tx_info, get_block_timestamp, get_block_info
     };
     use super::{LiquidityType, LiquidityParameters};
 
@@ -81,14 +81,16 @@ mod UnruggableMemecoin {
     struct Storage {
         marker_v_0: (),
         team_allocation: u256,
+        pre_launch_holders_count: u8,
         tx_hash_tracker: LegacyMap<ContractAddress, felt252>,
         transfer_restriction_delay: u64,
         launch_time: u64,
         launch_block_number: u64,
-        launch_liquidity_parameters: LiquidityParameters,
+        launch_liquidity_parameters: Option<LiquidityParameters>,
         factory_contract: ContractAddress,
         liquidity_type: Option<LiquidityType>,
         max_percentage_buy_launch: u16,
+        launch_liquidity_base_amount: Option<u256>,
         // Components.
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
@@ -142,13 +144,18 @@ mod UnruggableMemecoin {
             self.launch_block_number.read()
         }
 
-        fn launched_with_liquidity_parameters(self: @ContractState) -> LiquidityParameters {
+        fn launched_with_liquidity_parameters(self: @ContractState) -> Option<LiquidityParameters> {
             self.launch_liquidity_parameters.read()
         }
 
         /// Returns the team allocation in tokens.
         fn get_team_allocation(self: @ContractState) -> u256 {
-            self.team_allocation.read()
+            let total_supply = self.total_supply();
+
+            match self.launch_liquidity_base_amount.read() {
+                Option::Some(launch_liquidity_base_amount) => total_supply - launch_liquidity_base_amount,
+                Option::None => total_supply - self.balance_of(account: self.factory_contract.read())
+            }
         }
 
         fn memecoin_factory_address(self: @ContractState) -> ContractAddress {
@@ -177,8 +184,8 @@ mod UnruggableMemecoin {
             // save liquidity params and launch block number
             self
                 .launch_block_number
-                .write(get_execution_info().unbox().block_info.unbox().block_number);
-            self.launch_liquidity_parameters.write(liquidity_params);
+                .write(get_block_info().unbox().block_number);
+            self.launch_liquidity_parameters.write(Option::Some(liquidity_params));
 
             self.liquidity_type.write(Option::Some(liquidity_type));
             self.launch_time.write(get_block_timestamp());
@@ -374,7 +381,6 @@ mod UnruggableMemecoin {
                 && current_time >= (self.launch_time.read()
                     + self.transfer_restriction_delay.read())
         }
-
 
         /// Ensures that the current call is not a part of a multicall.
         ///

@@ -48,6 +48,8 @@ trait IUnruggableMemecoin<TState> {
     /// # Returns
     ///     bool: whether token has launched
     fn is_launched(self: @TState) -> bool;
+    fn launched_at_block_number(self: @TState) -> u64;
+    fn launched_with_liquidity_parameters(self: @TState) -> Option<LiquidityParameters>;
     fn liquidity_type(self: @TState) -> Option<LiquidityType>;
     fn get_team_allocation(self: @TState) -> u256;
     fn memecoin_factory_address(self: @TState) -> ContractAddress;
@@ -96,7 +98,7 @@ trait IUnruggableAdditional<TState> {
     fn launched_at_block_number(self: @TState) -> u64;
 
     /// Returns the liquidity parameters used to launch the memecoin.
-    fn launched_with_liquidity_parameters(self: @TState) -> LiquidityParameters;
+    fn launched_with_liquidity_parameters(self: @TState) -> Option<LiquidityParameters>;
 
     /// Returns the type of liquidity the memecoin was launched with,
     /// along with either the LP tokens addresses or the NFT ID.
