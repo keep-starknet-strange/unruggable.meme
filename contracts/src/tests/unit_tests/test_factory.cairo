@@ -1,3 +1,4 @@
+use core::option::OptionTrait;
 use ekubo::types::i129::i129;
 use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
 use snforge_std::{
@@ -5,6 +6,7 @@ use snforge_std::{
 };
 use starknet::{ContractAddress, contract_address_const};
 use unruggable::exchanges::ekubo_adapter::EkuboPoolParameters;
+
 use unruggable::exchanges::jediswap_adapter::{
     IJediswapFactory, IJediswapFactoryDispatcher, IJediswapFactoryDispatcherTrait, IJediswapRouter,
     IJediswapRouterDispatcher, IJediswapRouterDispatcherTrait, IJediswapPairDispatcher,
@@ -28,6 +30,7 @@ use unruggable::token::interface::{
 };
 use unruggable::utils::sum;
 use unruggable::token::memecoin::{LiquidityType, LiquidityParameters};
+
 
 #[test]
 fn test_locked_liquidity_not_locked() {
@@ -173,42 +176,91 @@ fn test_launch_memecoin_happy_path() {
     assert(memecoin.owner().is_zero(), 'Still an owner');
 }
 
-// #[test]
-// fn test_launch_memecoin_with_jediswap_parameters() {
-//     let owner = snforge_std::test_address();
-//     let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
-//     let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
-//     let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
+#[test]
+fn test_launch_memecoin_with_jediswap_parameters() {
+    let owner = snforge_std::test_address();
+    let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
+    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
+    let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
 
-//     // approve spending of eth by factory
-//     let eth_amount: u256 = 1 * pow_256(10, 18); // 1 ETHER
-//     let factory_balance_meme = memecoin.balanceOf(factory.contract_address);
-//     start_prank(CheatTarget::One(eth.contract_address), owner);
-//     eth.approve(factory.contract_address, eth_amount);
-//     stop_prank(CheatTarget::One(eth.contract_address));
+    // approve spending of eth by factory
+    let eth_amount: u256 = 1 * pow_256(10, 18); // 1 ETHER
+    let factory_balance_meme = memecoin.balanceOf(factory.contract_address);
+    start_prank(CheatTarget::One(eth.contract_address), owner);
+    eth.approve(factory.contract_address, eth_amount);
+    stop_prank(CheatTarget::One(eth.contract_address));
 
-//     start_prank(CheatTarget::One(factory.contract_address), owner);
-//     let pair_address = factory
-//         .launch_on_jediswap(
-//             memecoin_address,
-//             TRANSFER_RESTRICTION_DELAY,
-//             MAX_PERCENTAGE_BUY_LAUNCH,
-//             eth.contract_address,
-//             eth_amount,
-//             DEFAULT_MIN_LOCKTIME,
-//         );
-//     stop_prank(CheatTarget::One(factory.contract_address));
+    start_prank(CheatTarget::One(factory.contract_address), owner);
+    let pair_address = factory
+        .launch_on_jediswap(
+            memecoin_address,
+            TRANSFER_RESTRICTION_DELAY,
+            MAX_PERCENTAGE_BUY_LAUNCH,
+            eth.contract_address,
+            eth_amount,
+            DEFAULT_MIN_LOCKTIME,
+        );
+    stop_prank(CheatTarget::One(factory.contract_address));
 
-//     let liquidity_parameters = memecoin.launched_with_liquidity_parameters();
+    let liquidity_parameters = memecoin.launched_with_liquidity_parameters().unwrap();
 
-//     match liquidity_parameters {
-//         LiquidityParameters::Ekubo(_) => panic_with_felt252('wrong liquidity parameters type'),
-//         LiquidityParameters::Jediswap(jediswap_liquidity_parameters) => {
-//             assert(jediswap_liquidity_parameters.quote_address == eth.contract_address, 'Bad quote address');
-//             assert(jediswap_liquidity_parameters.quote_amount == eth_amount, 'Bad quote amount');
-//         }
-//     }
-// }
+    match liquidity_parameters {
+        LiquidityParameters::Ekubo(_) => panic_with_felt252('wrong liquidity parameters type'),
+        LiquidityParameters::Jediswap(jediswap_liquidity_parameters) => {
+            assert(jediswap_liquidity_parameters.quote_address == eth.contract_address, 'Bad quote address');
+            assert(jediswap_liquidity_parameters.quote_amount == eth_amount, 'Bad quote amount');
+        }
+    }
+}
+
+#[test]
+fn test_launch_memecoin_with_ekubo_parameters() {
+    let owner = snforge_std::test_address();
+    let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
+    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
+    let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
+
+    let fee = 0xc49ba5e353f7d00000000000000000;
+    let tick_spacing = 5982;
+    let starting_tick = i129 { sign: true, mag: 4600158 }; // 0.01ETH/MEME
+    let bound = 88719042;
+
+    // approve spending of eth by factory
+    let eth_amount: u256 = 1 * pow_256(10, 18); // 1 ETHER
+    let factory_balance_meme = memecoin.balanceOf(factory.contract_address);
+    start_prank(CheatTarget::One(eth.contract_address), owner);
+    eth.approve(factory.contract_address, eth_amount);
+    stop_prank(CheatTarget::One(eth.contract_address));
+
+    start_prank(CheatTarget::One(factory.contract_address), owner);
+    let pair_address = factory
+        .launch_on_ekubo(
+            memecoin_address,
+            TRANSFER_RESTRICTION_DELAY,
+            MAX_PERCENTAGE_BUY_LAUNCH,
+            eth.contract_address,
+            EkuboPoolParameters {
+                fee,
+                tick_spacing,
+                starting_tick,
+                bound
+            }
+        );
+    stop_prank(CheatTarget::One(factory.contract_address));
+
+    let liquidity_parameters = memecoin.launched_with_liquidity_parameters().unwrap();
+
+    match liquidity_parameters {
+        LiquidityParameters::Ekubo(ekubo_liquidity_parameters) => {
+            assert(ekubo_liquidity_parameters.quote_address == eth.contract_address, 'Bad quote address');
+            assert(ekubo_liquidity_parameters.ekubo_pool_parameters.fee == fee, 'Bad ekubo fee');
+            assert(ekubo_liquidity_parameters.ekubo_pool_parameters.tick_spacing == tick_spacing, 'Bad ekubo tick spacing');
+            assert(ekubo_liquidity_parameters.ekubo_pool_parameters.starting_tick == starting_tick, 'Bad ekubo starting tick');
+            assert(ekubo_liquidity_parameters.ekubo_pool_parameters.bound == bound, 'Bad ekubo bound');
+        },
+        LiquidityParameters::Jediswap(jediswap_liquidity_parameters) => panic_with_felt252('wrong liquidity parameters type'),
+    }
+}
 
 #[test]
 fn test_launch_memecoin_pair_exists_should_succeed() {
