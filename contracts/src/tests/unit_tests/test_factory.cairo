@@ -2,7 +2,8 @@ use core::option::OptionTrait;
 use ekubo::types::i129::i129;
 use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
 use snforge_std::{
-    declare, ContractClassTrait, start_prank, stop_prank, CheatTarget, start_warp, stop_warp, start_roll, stop_roll
+    declare, ContractClassTrait, start_prank, stop_prank, CheatTarget, start_warp, stop_warp,
+    start_roll, stop_roll
 };
 use starknet::{ContractAddress, contract_address_const};
 use unruggable::exchanges::ekubo_adapter::EkuboPoolParameters;
@@ -207,7 +208,10 @@ fn test_launch_memecoin_with_jediswap_parameters() {
     match liquidity_parameters {
         LiquidityParameters::Ekubo(_) => panic_with_felt252('wrong liquidity parameters type'),
         LiquidityParameters::Jediswap(jediswap_liquidity_parameters) => {
-            assert(jediswap_liquidity_parameters.quote_address == eth.contract_address, 'Bad quote address');
+            assert(
+                jediswap_liquidity_parameters.quote_address == eth.contract_address,
+                'Bad quote address'
+            );
             assert(jediswap_liquidity_parameters.quote_amount == eth_amount, 'Bad quote amount');
         }
     }
@@ -239,12 +243,7 @@ fn test_launch_memecoin_with_ekubo_parameters() {
             TRANSFER_RESTRICTION_DELAY,
             MAX_PERCENTAGE_BUY_LAUNCH,
             eth.contract_address,
-            EkuboPoolParameters {
-                fee,
-                tick_spacing,
-                starting_tick,
-                bound
-            }
+            EkuboPoolParameters { fee, tick_spacing, starting_tick, bound }
         );
     stop_prank(CheatTarget::One(factory.contract_address));
 
@@ -252,13 +251,26 @@ fn test_launch_memecoin_with_ekubo_parameters() {
 
     match liquidity_parameters {
         LiquidityParameters::Ekubo(ekubo_liquidity_parameters) => {
-            assert(ekubo_liquidity_parameters.quote_address == eth.contract_address, 'Bad quote address');
+            assert(
+                ekubo_liquidity_parameters.quote_address == eth.contract_address,
+                'Bad quote address'
+            );
             assert(ekubo_liquidity_parameters.ekubo_pool_parameters.fee == fee, 'Bad ekubo fee');
-            assert(ekubo_liquidity_parameters.ekubo_pool_parameters.tick_spacing == tick_spacing, 'Bad ekubo tick spacing');
-            assert(ekubo_liquidity_parameters.ekubo_pool_parameters.starting_tick == starting_tick, 'Bad ekubo starting tick');
-            assert(ekubo_liquidity_parameters.ekubo_pool_parameters.bound == bound, 'Bad ekubo bound');
+            assert(
+                ekubo_liquidity_parameters.ekubo_pool_parameters.tick_spacing == tick_spacing,
+                'Bad ekubo tick spacing'
+            );
+            assert(
+                ekubo_liquidity_parameters.ekubo_pool_parameters.starting_tick == starting_tick,
+                'Bad ekubo starting tick'
+            );
+            assert(
+                ekubo_liquidity_parameters.ekubo_pool_parameters.bound == bound, 'Bad ekubo bound'
+            );
         },
-        LiquidityParameters::Jediswap(jediswap_liquidity_parameters) => panic_with_felt252('wrong liquidity parameters type'),
+        LiquidityParameters::Jediswap(jediswap_liquidity_parameters) => panic_with_felt252(
+            'wrong liquidity parameters type'
+        ),
     }
 }
 

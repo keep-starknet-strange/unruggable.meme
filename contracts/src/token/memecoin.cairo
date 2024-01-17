@@ -44,8 +44,8 @@ mod UnruggableMemecoin {
         IERC20, IERC20Metadata, ERC20ABIDispatcher, ERC20ABIDispatcherTrait
     };
     use starknet::{
-        ContractAddress, contract_address_const, get_caller_address,
-        get_tx_info, get_block_timestamp, get_block_info
+        ContractAddress, contract_address_const, get_caller_address, get_tx_info,
+        get_block_timestamp, get_block_info
     };
     use super::{LiquidityType, LiquidityParameters};
 
@@ -153,8 +153,10 @@ mod UnruggableMemecoin {
             let total_supply = self.total_supply();
 
             match self.launch_liquidity_base_amount.read() {
-                Option::Some(launch_liquidity_base_amount) => total_supply - launch_liquidity_base_amount,
-                Option::None => total_supply - self.balance_of(account: self.factory_contract.read())
+                Option::Some(launch_liquidity_base_amount) => total_supply
+                    - launch_liquidity_base_amount,
+                Option::None => total_supply
+                    - self.balance_of(account: self.factory_contract.read())
             }
         }
 
@@ -185,9 +187,7 @@ mod UnruggableMemecoin {
             self.launch_liquidity_base_amount.write(Option::Some(base_amount));
 
             // save liquidity params and launch block number
-            self
-                .launch_block_number
-                .write(get_block_info().unbox().block_number);
+            self.launch_block_number.write(get_block_info().unbox().block_number);
             self.launch_liquidity_parameters.write(Option::Some(liquidity_params));
 
             self.liquidity_type.write(Option::Some(liquidity_type));
