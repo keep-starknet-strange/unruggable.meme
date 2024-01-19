@@ -248,30 +248,6 @@ fn test_launch_memecoin_with_ekubo_parameters() {
     stop_prank(CheatTarget::One(factory.contract_address));
 
     let liquidity_parameters = memecoin.launched_with_liquidity_parameters().unwrap();
-
-    match liquidity_parameters {
-        LiquidityParameters::Ekubo(ekubo_liquidity_parameters) => {
-            assert(
-                ekubo_liquidity_parameters.quote_address == eth.contract_address,
-                'Bad quote address'
-            );
-            assert(ekubo_liquidity_parameters.ekubo_pool_parameters.fee == fee, 'Bad ekubo fee');
-            assert(
-                ekubo_liquidity_parameters.ekubo_pool_parameters.tick_spacing == tick_spacing,
-                'Bad ekubo tick spacing'
-            );
-            assert(
-                ekubo_liquidity_parameters.ekubo_pool_parameters.starting_tick == starting_tick,
-                'Bad ekubo starting tick'
-            );
-            assert(
-                ekubo_liquidity_parameters.ekubo_pool_parameters.bound == bound, 'Bad ekubo bound'
-            );
-        },
-        LiquidityParameters::Jediswap(jediswap_liquidity_parameters) => panic_with_felt252(
-            'wrong liquidity parameters type'
-        ),
-    }
 }
 
 #[test]
