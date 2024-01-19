@@ -13,8 +13,11 @@ import Section from 'src/components/Section'
 import Slider from 'src/components/Slider'
 import Toggler from 'src/components/Toggler'
 import {
+  LIQUIDITY_LOCK_PERIOD_STEP,
   LiquidityType,
+  MAX_LIQUIDITY_LOCK_PERIOD,
   MAX_TRANSFER_RESTRICTION_DELAY,
+  MIN_LIQUIDITY_LOCK_PERIOD,
   MIN_STARTING_MCAP,
   MIN_TRANSFER_RESTRICTION_DELAY,
   TRANSFER_RESTRICTION_DELAY_STEP,
@@ -26,7 +29,7 @@ import { Column, Row } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
 import { vars } from 'src/theme/css/sprinkles.css'
 import { parseFormatedAmount } from 'src/utils/amount'
-import { parseDuration } from 'src/utils/moment'
+import { parseMinutesDuration, parseMonthsDuration } from 'src/utils/moment'
 import { currencyInput, percentInput } from 'src/utils/zod'
 import { getChecksumAddress } from 'starknet'
 import { z } from 'zod'
@@ -43,7 +46,8 @@ const schema = z.object({
 })
 
 export default function TokenPage() {
-  const [transferRestrictionDelay, setTransferRestrictionDelay] = useState(MIN_TRANSFER_RESTRICTION_DELAY)
+  const [transferRestrictionDelay, setTransferRestrictionDelay] = useState(MAX_TRANSFER_RESTRICTION_DELAY)
+  const [liquidityLockPeriod, setLiquidityLockPeriod] = useState(MAX_LIQUIDITY_LOCK_PERIOD)
   const [liquidityTypeIndex, setLiquidityTypeIndex] = useState(0)
   const [startingMcap, setStartingMcap] = useState('')
 
@@ -77,8 +81,6 @@ export default function TokenPage() {
 
   // eth price
   const ethPrice = useEtherPrice()
-
-  console.log(ethPrice?.toSignificant(18))
 
   // jediswap mcap
   const onStartingMarketCapChange = useCallback((event: FormEvent<HTMLInputElement>) => {
@@ -164,7 +166,11 @@ export default function TokenPage() {
         </Column>
       )
     } else {
-      const parsedTransferRestrictionDelay = parseDuration(moment.duration(transferRestrictionDelay, 'minutes'))
+      const parsedTransferRestrictionDelay = parseMinutesDuration(moment.duration(transferRestrictionDelay, 'minutes'))
+      const parsedLiquidityLockPeriod =
+        liquidityLockPeriod === MAX_LIQUIDITY_LOCK_PERIOD
+          ? 'Forever'
+          : parseMonthsDuration(moment.duration(liquidityLockPeriod, 'months'))
 
       return (
         <Column as="form" onSubmit={handleSubmit(launch)} gap="32">
@@ -175,7 +181,7 @@ export default function TokenPage() {
           </Row>
 
           <Column gap="8">
-            <Text.HeadlineSmall>Anti bot period after launch</Text.HeadlineSmall>
+            <Text.HeadlineSmall>Disable anti bot after</Text.HeadlineSmall>
             <Slider
               value={transferRestrictionDelay}
               min={MIN_TRANSFER_RESTRICTION_DELAY}
@@ -197,6 +203,18 @@ export default function TokenPage() {
             <Box className={styles.errorContainer}>
               {errors.hodlLimit?.message ? <Text.Error>{errors.hodlLimit.message}</Text.Error> : null}
             </Box>
+          </Column>
+
+          <Column gap="8">
+            <Text.HeadlineSmall>Lock liquidity for</Text.HeadlineSmall>
+            <Slider
+              value={liquidityLockPeriod}
+              min={MIN_LIQUIDITY_LOCK_PERIOD}
+              step={LIQUIDITY_LOCK_PERIOD_STEP}
+              max={MAX_LIQUIDITY_LOCK_PERIOD}
+              onSlidingChange={setLiquidityLockPeriod}
+              addon={<Input value={parsedLiquidityLockPeriod} />}
+            />
           </Column>
 
           <Column gap="8">
@@ -226,6 +244,7 @@ export default function TokenPage() {
     memecoinInfos?.isOwner,
     memecoinInfos?.launched,
     transferRestrictionDelay,
+    liquidityLockPeriod,
     handleSubmit,
     launch,
     liquidityTypeIndex,
