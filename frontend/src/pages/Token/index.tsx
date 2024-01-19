@@ -1,8 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Percent } from '@uniswap/sdk-core'
+import { Fraction, Percent } from '@uniswap/sdk-core'
 import { Eye } from 'lucide-react'
 import moment from 'moment'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useMatch } from 'react-router-dom'
 import { PrimaryButton } from 'src/components/Button'
@@ -20,6 +20,7 @@ import {
   TRANSFER_RESTRICTION_DELAY_STEP,
 } from 'src/constants/misc'
 import { useMemecoinInfos } from 'src/hooks/useMemecoin'
+import { useEtherPrice } from 'src/hooks/usePrice'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
@@ -34,20 +35,17 @@ import * as styles from './style.css'
 
 // zod schemes
 
-const ekuboSchema = z.object({
+const schema = z.object({
   hodlLimit: percentInput,
   startingMarketCap: currencyInput.refine((input) => +parseFormatedAmount(input) >= MIN_STARTING_MCAP, {
     message: `Market cap cannot fall behind $${MIN_STARTING_MCAP.toLocaleString()}`,
   }),
 })
 
-const jediswapSchema = z.object({
-  hodlLimit: percentInput,
-})
-
 export default function TokenPage() {
   const [transferRestrictionDelay, setTransferRestrictionDelay] = useState(MIN_TRANSFER_RESTRICTION_DELAY)
   const [liquidityTypeIndex, setLiquidityTypeIndex] = useState(0)
+  const [startingMcap, setStartingMcap] = useState('')
 
   // URL
   const match = useMatch('/token/:address')
@@ -69,26 +67,33 @@ export default function TokenPage() {
   }, [getMemecoinInfos, collectionAddress])
 
   // form
-  const schema = useMemo(() => {
-    const liquidityType = Object.values(LiquidityType)[liquidityTypeIndex] as LiquidityType
-
-    switch (liquidityType) {
-      case LiquidityType.EKUBO: {
-        return ekuboSchema
-      }
-
-      case LiquidityType.JEDISWAP: {
-        return jediswapSchema
-      }
-    }
-  }, [liquidityTypeIndex])
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<z.infer<typeof ekuboSchema> & z.infer<typeof jediswapSchema>>({
+  } = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
   })
+
+  // eth price
+  const ethPrice = useEtherPrice()
+
+  console.log(ethPrice?.toSignificant(18))
+
+  // jediswap mcap
+  const onStartingMarketCapChange = useCallback((event: FormEvent<HTMLInputElement>) => {
+    setStartingMcap(parseFormatedAmount((event.target as HTMLInputElement).value))
+  }, [])
+  const quoteAmount = useMemo(() => {
+    if (!memecoinInfos || Object.values(LiquidityType)[liquidityTypeIndex] !== LiquidityType.JEDISWAP || !ethPrice)
+      return
+
+    // mcap / eth_price * (1 - team_allocation / total_supply)
+    return new Fraction(startingMcap)
+      .divide(ethPrice)
+      .multiply((BigInt(1) - BigInt(memecoinInfos.teamAllocation) / BigInt(memecoinInfos.maxSupply)).toString())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [memecoinInfos?.teamAllocation, memecoinInfos?.maxSupply, startingMcap, liquidityTypeIndex, ethPrice])
 
   // launch
   const launch = useCallback(async (data: z.infer<typeof schema>) => {
@@ -194,30 +199,29 @@ export default function TokenPage() {
             </Box>
           </Column>
 
-          {LiquidityType.EKUBO === Object.values(LiquidityType)[liquidityTypeIndex] && (
-            <Column gap="8">
-              <Text.HeadlineSmall>Starting market cap</Text.HeadlineSmall>
+          <Column gap="8">
+            <Text.HeadlineSmall>Starting market cap</Text.HeadlineSmall>
 
-              <NumericalInput
-                addon={<Text.HeadlineSmall>$</Text.HeadlineSmall>}
-                placeholder="420,000.00"
-                {...register('startingMarketCap')}
-              />
+            <NumericalInput
+              addon={<Text.HeadlineSmall>$</Text.HeadlineSmall>}
+              placeholder="420,000.00"
+              {...register('startingMarketCap', { onChange: onStartingMarketCapChange })}
+            />
 
-              <Box className={styles.errorContainer}>
-                {errors.startingMarketCap?.message ? <Text.Error>{errors.startingMarketCap.message}</Text.Error> : null}
-              </Box>
-            </Column>
-          )}
+            <Box className={styles.errorContainer}>
+              {errors.startingMarketCap?.message ? <Text.Error>{errors.startingMarketCap.message}</Text.Error> : null}
+            </Box>
+          </Column>
 
           <PrimaryButton type="submit" large disabled>
-            {/* Launch */}
-            Coming soon
+            Launch
+            {!!quoteAmount && ` - ${quoteAmount.toSignificant(4)} ETH`}
           </PrimaryButton>
           {onlyVisibleToYou}
         </Column>
       )
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     memecoinInfos?.isOwner,
     memecoinInfos?.launched,
@@ -228,6 +232,8 @@ export default function TokenPage() {
     register,
     errors.startingMarketCap?.message,
     errors.hodlLimit?.message,
+    onStartingMarketCapChange,
+    quoteAmount?.quotient,
   ])
 
   return (

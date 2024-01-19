@@ -1,9 +1,10 @@
-import { starknetChainId, useAccount, useNetwork, useProvider } from '@starknet-react/core'
+import { useAccount, useProvider } from '@starknet-react/core'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { FACTORY_ADDRESSES, MULTICALL_ADDRESS } from 'src/constants/contracts'
 import { Selector } from 'src/constants/misc'
 import { CallData, getChecksumAddress, hash, shortString, uint256 } from 'starknet'
 
+import useChainId from './useChainId'
 import { useDeploymentStore } from './useDeployment'
 
 interface MemecoinInfos {
@@ -26,9 +27,8 @@ export function useMemecoinInfos() {
 
   // starknet
   const { address } = useAccount()
-  const { chain } = useNetwork()
   const { provider } = useProvider()
-  const chainId = useMemo(() => (chain.id ? starknetChainId(chain.id) : undefined), [chain.id])
+  const chainId = useChainId()
 
   // getter
   const getMemecoinInfos = useCallback(

@@ -1,4 +1,4 @@
-import { Percent } from '@uniswap/sdk-core'
+// import { Percent } from '@uniswap/sdk-core'
 
 export const MAX_HOLDERS_PER_DEPLOYMENT = 10
 export const DECIMALS = 18
@@ -27,4 +27,4 @@ export const TRANSFER_RESTRICTION_DELAY_STEP = 15 // 15m
 export const MIN_TRANSFER_RESTRICTION_DELAY = 30 // 30m
 export const MAX_TRANSFER_RESTRICTION_DELAY = 1440 // 24h
 
-const MIN_HODL_LIMIT = new Percent(1, 200) // 0.5%
+// export const MIN_HODL_LIMIT = new Percent(1, 200) // 0.5%
