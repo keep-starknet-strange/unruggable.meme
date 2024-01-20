@@ -15,6 +15,7 @@ import Slider from 'src/components/Slider'
 import Toggler from 'src/components/Toggler'
 import { ETH_ADDRESS, FACTORY_ADDRESSES } from 'src/constants/contracts'
 import {
+  LIQUIDITY_LOCK_FOREVER_TIMESTAMP,
   LIQUIDITY_LOCK_PERIOD_STEP,
   LiquidityType,
   MAX_LIQUIDITY_LOCK_PERIOD,
@@ -135,7 +136,9 @@ export default function TokenPage() {
             +data.hodlLimit * 100, // hodl limit
             ETH_ADDRESS, // quote token
             uin256QuoteAmount, // quote amount
-            moment().add(moment.duration(liquidityLockPeriod, 'months')).unix(), // liquidity lock until
+            liquidityLockPeriod === MAX_LIQUIDITY_LOCK_PERIOD // liquidity lock until
+              ? LIQUIDITY_LOCK_FOREVER_TIMESTAMP
+              : moment().add(moment.duration(liquidityLockPeriod, 'months')).unix(),
           ])
 
           writeAsync({
