@@ -298,9 +298,14 @@ export default function TokenPage() {
             </Box>
           </Column>
 
-          <PrimaryButton type="submit" large>
-            Launch
-            {!!quoteAmount && ` - ${quoteAmount.toSignificant(4)} ETH`}
+          <PrimaryButton
+            type="submit"
+            large
+            disabled={Object.values(LiquidityType)[liquidityTypeIndex] === LiquidityType.EKUBO}
+          >
+            {Object.values(LiquidityType)[liquidityTypeIndex] === LiquidityType.EKUBO
+              ? 'Coming soon'
+              : `Launch${!!quoteAmount && ` - ${quoteAmount.toSignificant(4)} ETH`}`}
           </PrimaryButton>
           {onlyVisibleToYou}
         </Column>
