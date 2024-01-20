@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useContractWrite } from '@starknet-react/core'
 import { Fraction, Percent } from '@uniswap/sdk-core'
 import { Eye } from 'lucide-react'
 import moment from 'moment'
@@ -12,6 +13,7 @@ import PercentInput from 'src/components/Input/PercentInput'
 import Section from 'src/components/Section'
 import Slider from 'src/components/Slider'
 import Toggler from 'src/components/Toggler'
+import { ETH_ADDRESS, FACTORY_ADDRESSES } from 'src/constants/contracts'
 import {
   LIQUIDITY_LOCK_PERIOD_STEP,
   LiquidityType,
@@ -20,8 +22,10 @@ import {
   MIN_LIQUIDITY_LOCK_PERIOD,
   MIN_STARTING_MCAP,
   MIN_TRANSFER_RESTRICTION_DELAY,
+  Selector,
   TRANSFER_RESTRICTION_DELAY_STEP,
 } from 'src/constants/misc'
+import useChainId from 'src/hooks/useChainId'
 import { useMemecoinInfos } from 'src/hooks/useMemecoin'
 import { useEtherPrice } from 'src/hooks/usePrice'
 import Box from 'src/theme/components/Box'
@@ -29,9 +33,10 @@ import { Column, Row } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
 import { vars } from 'src/theme/css/sprinkles.css'
 import { parseFormatedAmount } from 'src/utils/amount'
+import { decimalsScale } from 'src/utils/decimalScale'
 import { parseMinutesDuration, parseMonthsDuration } from 'src/utils/moment'
 import { currencyInput, percentInput } from 'src/utils/zod'
-import { getChecksumAddress } from 'starknet'
+import { CallData, getChecksumAddress, uint256 } from 'starknet'
 import { z } from 'zod'
 
 import * as styles from './style.css'
@@ -53,7 +58,7 @@ export default function TokenPage() {
 
   // URL
   const match = useMatch('/token/:address')
-  const collectionAddress = useMemo(() => {
+  const memecoinAddress = useMemo(() => {
     if (match?.params.address) {
       return getChecksumAddress(match?.params.address)
     } else {
@@ -65,10 +70,10 @@ export default function TokenPage() {
   const [{ data: memecoinInfos, error, indexing }, getMemecoinInfos] = useMemecoinInfos()
 
   useEffect(() => {
-    if (collectionAddress) {
-      getMemecoinInfos(collectionAddress)
+    if (memecoinAddress) {
+      getMemecoinInfos(memecoinAddress)
     }
-  }, [getMemecoinInfos, collectionAddress])
+  }, [getMemecoinInfos, memecoinAddress])
 
   // form
   const {
@@ -97,10 +102,69 @@ export default function TokenPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [memecoinInfos?.teamAllocation, memecoinInfos?.maxSupply, startingMcap, liquidityTypeIndex, ethPrice])
 
+  // starknet
+  const chainId = useChainId()
+  const { writeAsync } = useContractWrite({})
+
   // launch
-  const launch = useCallback(async (data: z.infer<typeof schema>) => {
-    console.log(data)
-  }, [])
+  const launch = useCallback(
+    async (data: z.infer<typeof schema>) => {
+      if (!memecoinAddress || !chainId) return
+
+      switch (Object.values(LiquidityType)[liquidityTypeIndex]) {
+        case LiquidityType.EKUBO: {
+          console.log(data)
+          break
+        }
+
+        case LiquidityType.JEDISWAP: {
+          if (!quoteAmount) return
+
+          const uin256QuoteAmount = uint256.bnToUint256(
+            BigInt(quoteAmount.multiply(decimalsScale(18)).quotient.toString())
+          )
+
+          const approveCalldata = CallData.compile([
+            FACTORY_ADDRESSES[chainId], // spender
+            uin256QuoteAmount,
+          ])
+
+          const launchCalldata = CallData.compile([
+            memecoinAddress, // memecoin address
+            transferRestrictionDelay * 60, // anti bot period in seconds
+            +data.hodlLimit * 100, // hodl limit
+            ETH_ADDRESS, // quote token
+            uin256QuoteAmount, // quote amount
+            moment().add(moment.duration(liquidityLockPeriod, 'months')).unix(), // liquidity lock until
+          ])
+
+          writeAsync({
+            calls: [
+              {
+                contractAddress: ETH_ADDRESS,
+                entrypoint: Selector.APPROVE,
+                calldata: approveCalldata,
+              },
+              {
+                contractAddress: FACTORY_ADDRESSES[chainId],
+                entrypoint: Selector.LAUNCH_ON_JEDISWAP,
+                calldata: launchCalldata,
+              },
+            ],
+          })
+        }
+      }
+    },
+    [
+      liquidityTypeIndex,
+      quoteAmount,
+      transferRestrictionDelay,
+      liquidityLockPeriod,
+      memecoinAddress,
+      chainId,
+      writeAsync,
+    ]
+  )
 
   // page content
   const mainContent = useMemo(() => {
@@ -149,7 +213,7 @@ export default function TokenPage() {
   }, [indexing, error, memecoinInfos])
 
   const ownerContent = useMemo(() => {
-    if (!memecoinInfos?.isOwner) return
+    if (!memecoinInfos?.isOwner || error) return
 
     const onlyVisibleToYou = (
       <Row gap="2">
@@ -231,7 +295,7 @@ export default function TokenPage() {
             </Box>
           </Column>
 
-          <PrimaryButton type="submit" large disabled>
+          <PrimaryButton type="submit" large>
             Launch
             {!!quoteAmount && ` - ${quoteAmount.toSignificant(4)} ETH`}
           </PrimaryButton>
@@ -253,6 +317,7 @@ export default function TokenPage() {
     errors.hodlLimit?.message,
     onStartingMarketCapChange,
     quoteAmount?.quotient,
+    error,
   ])
 
   return (

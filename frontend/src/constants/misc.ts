@@ -14,6 +14,8 @@ export enum Selector {
   TOTAL_SUPPLY = 'total_supply',
   OWNER = 'owner',
   LOCKED_LIQUIDITY = 'locked_liquidity',
+  LAUNCH_ON_JEDISWAP = 'launch_on_jediswap',
+  APPROVE = 'approve',
 }
 
 export enum LiquidityType {

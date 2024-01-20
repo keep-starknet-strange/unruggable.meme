@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { starknetChainId, useAccount, useContractWrite } from '@starknet-react/core'
+import { useAccount, useContractWrite } from '@starknet-react/core'
 import { Wallet, X } from 'lucide-react'
-import { useCallback, useMemo } from 'react'
+import { useCallback } from 'react'
 import { useFieldArray, useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import { IconButton, PrimaryButton, SecondaryButton } from 'src/components/Button'
@@ -10,6 +10,7 @@ import NumericalInput from 'src/components/Input/NumericalInput'
 import Section from 'src/components/Section'
 import { FACTORY_ADDRESSES, TOKEN_CLASS_HASH } from 'src/constants/contracts'
 import { DECIMALS, MAX_HOLDERS_PER_DEPLOYMENT, Selector } from 'src/constants/misc'
+import useChainId from 'src/hooks/useChainId'
 import { useDeploymentStore } from 'src/hooks/useDeployment'
 import Box from 'src/theme/components/Box'
 import { Column } from 'src/theme/components/Flex'
@@ -42,10 +43,10 @@ export default function DeployPage() {
   // navigation
   const navigate = useNavigate()
 
-  const { account, address, chainId } = useAccount()
+  const { account, address } = useAccount()
   const { writeAsync, isPending } = useContractWrite({})
 
-  const accountChainId = useMemo(() => (chainId ? starknetChainId(chainId) : undefined), [chainId])
+  const chainId = useChainId()
 
   // If you need the transaction status, you can use this hook.
   // Notice that RPC providers will take some time to receive the transaction,
@@ -69,7 +70,7 @@ export default function DeployPage() {
 
   const deployToken = useCallback(
     async (data: z.infer<typeof schema>) => {
-      if (!account?.address || !accountChainId) return
+      if (!account?.address || !chainId) return
 
       const salt = stark.randomAddress()
 
@@ -93,7 +94,7 @@ export default function DeployPage() {
 
       // Token address. Used to transfer tokens to initial holders.
       const createMemecoin = {
-        contractAddress: FACTORY_ADDRESSES[accountChainId],
+        contractAddress: FACTORY_ADDRESSES[chainId],
         entrypoint: Selector.CREATE_MEMECOIN,
         calldata: constructorCalldata,
       }
@@ -102,7 +103,7 @@ export default function DeployPage() {
         salt,
         TOKEN_CLASS_HASH,
         constructorCalldata.slice(0, -1),
-        FACTORY_ADDRESSES[accountChainId]
+        FACTORY_ADDRESSES[chainId]
       )
 
       try {
@@ -121,7 +122,7 @@ export default function DeployPage() {
         console.error(err)
       }
     },
-    [account, writeAsync, pushDeployedTokenContracts, accountChainId, navigate]
+    [account, writeAsync, pushDeployedTokenContracts, chainId, navigate]
   )
 
   return (
