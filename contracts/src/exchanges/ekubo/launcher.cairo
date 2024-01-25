@@ -154,10 +154,10 @@ mod EkuboLauncher {
     use alexandria_storage::list::{List, ListTrait};
     use debug::PrintTrait;
     use ekubo::components::clear::{IClearDispatcher, IClearDispatcherTrait};
+    use ekubo::components::shared_locker::{call_core_with_callback, consume_callback_data};
     use ekubo::interfaces::core::{ICoreDispatcher, ICoreDispatcherTrait, ILocker};
     use ekubo::interfaces::core::{PoolKey};
     use ekubo::interfaces::erc20::{IERC20Dispatcher, IERC20DispatcherTrait};
-    use ekubo::components::shared_locker::{call_core_with_callback, consume_callback_data};
     use ekubo::types::bounds::{Bounds};
     use ekubo::types::{i129::i129};
     use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
@@ -270,8 +270,14 @@ mod EkuboLauncher {
             let ekubo_clear = IClearDispatcher {
                 contract_address: self.positions.read().contract_address
             };
-            ekubo_clear.clear_minimum_to_recipient(IERC20Dispatcher{contract_address:params.token_address}, 0, caller);
-            ekubo_clear.clear_minimum_to_recipient(IERC20Dispatcher{contract_address:params.quote_address}, 0, caller);
+            ekubo_clear
+                .clear_minimum_to_recipient(
+                    IERC20Dispatcher { contract_address: params.token_address }, 0, caller
+                );
+            ekubo_clear
+                .clear_minimum_to_recipient(
+                    IERC20Dispatcher { contract_address: params.quote_address }, 0, caller
+                );
 
             self.emit(Launched { params, owner: params.owner, token_id: id });
 
