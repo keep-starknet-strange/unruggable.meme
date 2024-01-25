@@ -11,7 +11,7 @@ starknet = "2.4.3"
 # External dependencies
 openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.8.0" }
 alexandria_storage = { git = "https://github.com/keep-starknet-strange/alexandria.git", rev = "98aadc7e3f12dbb026e853604fe2cc061451cc8a" }
-ekubo = { git = "https://github.com/EkuboProtocol/abis", rev = "4155cbdbcdf27d96849c4cbf3956e68ff1b48c80" }
+ekubo = { git = "https://github.com/EkuboProtocol/abis", rev = "ef7a4076209317bb677846acd3590d990f2ae5a8" }
 
 [[target.starknet-contract]]
 sierra = true
@@ -26,6 +26,5 @@ sort-module-level-items = true
 
 [[tool.snforge.fork]]
 name = "Mainnet"
-url = "https://rpc.nethermind.io/mainnet-juno/"
-block_id.number = "508310"
-# block_id.tag = "Latest"
+url = "https://rpc.nethermind.io/mainnet-juno/?apikey="
+block_id.number = "519354"

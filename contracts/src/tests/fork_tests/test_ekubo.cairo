@@ -1,11 +1,14 @@
 use core::debug::PrintTrait;
 use core::traits::TryInto;
 use ekubo::interfaces::core::{ICoreDispatcher, ICoreDispatcherTrait};
+use ekubo::interfaces::router::{IRouterDispatcher, IRouterDispatcherTrait};
+use ekubo::components::clear::{IClearDispatcher, IClearDispatcherTrait};
 use ekubo::interfaces::router::{Depth, Delta, RouteNode, TokenAmount};
 use ekubo::types::bounds::Bounds;
 use ekubo::types::i129::i129;
 use ekubo::types::keys::PoolKey;
 use openzeppelin::token::erc20::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
+use ekubo::interfaces::erc20::{IERC20Dispatcher, IERC20DispatcherTrait};
 use snforge_std::{
     start_prank, stop_prank, start_spoof, stop_spoof, spy_events, SpyOn, EventSpy, EventAssertions,
     CheatTarget, TxInfoMock
@@ -34,35 +37,6 @@ use unruggable::token::interface::{
 };
 use unruggable::token::memecoin::LiquidityType;
 use unruggable::utils::math::PercentageMath;
-
-//! copy of ekubo's router interface, added the `clear` entrypoint (which is missing from interface)
-#[starknet::interface]
-trait IRouter<TContractState> {
-    // Does a single swap against a single node using tokens held by this contract, and receives the output to this contract
-    fn swap(ref self: TContractState, node: RouteNode, token_amount: TokenAmount) -> Delta;
-
-    // Does a multihop swap, where the output/input of each hop is passed as input/output of the next swap
-    // Note to do exact output swaps, the route must be given in reverse
-    fn multihop_swap(
-        ref self: TContractState, route: Array<RouteNode>, token_amount: TokenAmount
-    ) -> Array<Delta>;
-
-    // Quote the given token amount against the route in the swap
-    fn quote(
-        ref self: TContractState, route: Array<RouteNode>, token_amount: TokenAmount
-    ) -> Array<Delta>;
-
-    // Returns the delta for swapping a pool to the given price
-    fn get_delta_to_sqrt_ratio(self: @TContractState, pool_key: PoolKey, sqrt_ratio: u256) -> Delta;
-
-    // Returns the amount available for purchase for swapping +/- the given percent, expressed as a 0.128 number
-    // Note this is a square root of the percent
-    // e.g. if you want to get the 2% market depth, you'd pass FLOOR((sqrt(1.02) - 1) * 2**128) = 3385977594616997568912048723923598803
-    fn get_market_depth(self: @TContractState, pool_key: PoolKey, sqrt_percent: u128) -> Depth;
-
-    fn clear(ref self: TContractState, token: ContractAddress);
-}
-
 
 fn launch_memecoin_on_ekubo(
     quote_address: ContractAddress, fee: u128, tick_spacing: u128, starting_tick: i129, bound: u128
@@ -113,6 +87,7 @@ fn swap_tokens_on_ekubo(
     // since the pool price is expressend in quote/MEME, the price should move upwards (more quote for 1 meme)
     let router_address = EKUBO_ROUTER_ADDRESS();
     let ekubo_router = IRouterDispatcher { contract_address: router_address };
+    let ekubo_clearer = IClearDispatcher { contract_address: router_address };
     let first_amount_in = amount_in;
 
     let mut tx_info: TxInfoMock = Default::default();
@@ -147,7 +122,7 @@ fn swap_tokens_on_ekubo(
          },
     };
     ekubo_router.swap(route_node, token_amount);
-    ekubo_router.clear(token_out.contract_address);
+    ekubo_clearer.clear(IERC20Dispatcher { contract_address: token_out.contract_address });
 
     // Second swap:
 
@@ -179,7 +154,7 @@ fn swap_tokens_on_ekubo(
     };
 
     ekubo_router.swap(route_node, token_amount);
-    ekubo_router.clear(token_in.contract_address);
+    ekubo_clearer.clear(IERC20Dispatcher { contract_address: token_in.contract_address });
 
     let token_in_received = token_in.balance_of(owner) - balance_token_in_before;
     assert(token_in_received >= second_expected_output, 'swap output too low');
