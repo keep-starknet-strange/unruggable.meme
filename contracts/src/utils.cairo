@@ -24,21 +24,31 @@ impl ContractAddressOrder of PartialOrd<ContractAddress> {
     }
 }
 
-fn unique_count<T, +Copy<T>, +Drop<T>, +PartialEq<T>, +Into<T, felt252>>(mut self: Span<T>) -> u32 {
-    let mut dict: Felt252Dict<felt252> = Default::default();
+fn unique_count<T, +Copy<T>, +Drop<T>, +PartialEq<T>>(mut self: Span<T>) -> u32 {
     let mut counter = 0;
+    let mut result: Array<T> = array![];
     loop {
         match self.pop_front() {
             Option::Some(value) => {
-                let value: felt252 = (*value).into();
-                if dict.get(value).is_one() {
+                if contains(result.span(), *value) {
                     continue;
                 }
-                dict.insert(value, One::one());
+                result.append(*value);
                 counter += 1;
             },
             Option::None => { break; }
         }
     };
     counter
+}
+
+fn contains<T, +Copy<T>, +Drop<T>, +PartialEq<T>>(mut self: Span<T>, value: T) -> bool {
+    loop {
+        match self.pop_front() {
+            Option::Some(current) => { if *current == value {
+                break true;
+            } },
+            Option::None => { break false; }
+        }
+    }
 }
