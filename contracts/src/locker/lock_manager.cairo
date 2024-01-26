@@ -157,7 +157,6 @@ mod LockManager {
 
             assert(amount_to_increase != 0, errors::ZERO_AMOUNT);
             let mut token_lock = self.locks.read(lock_address);
-            self.locks.write(lock_address, token_lock);
 
             ERC20ABIDispatcher { contract_address: token_lock.token }
                 .transferFrom(get_caller_address(), lock_address, amount_to_increase);
