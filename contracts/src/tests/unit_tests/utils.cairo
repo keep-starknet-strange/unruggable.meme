@@ -2,7 +2,7 @@ use core::traits::TryInto;
 use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
 use snforge_std::{
     ContractClass, ContractClassTrait, CheatTarget, declare, start_prank, stop_prank, TxInfoMock,
-    start_warp, stop_warp
+    start_warp, stop_warp, get_class_hash
 };
 use starknet::ContractAddress;
 use unruggable::exchanges::{SupportedExchanges};
@@ -212,6 +212,19 @@ fn deploy_eth_with_owner(owner: ContractAddress) -> (ERC20ABIDispatcher, Contrac
     Serde::serialize(@owner, ref calldata);
 
     let address = token.deploy_at(@calldata, ETH_ADDRESS()).unwrap();
+    let dispatcher = ERC20ABIDispatcher { contract_address: address, };
+    (dispatcher, address)
+}
+
+fn deploy_token_from_class_at_address_with_owner(
+    owner: ContractAddress, address: ContractAddress, class_address: ContractAddress
+) -> (ERC20ABIDispatcher, ContractAddress) {
+    let token = ContractClass { class_hash: get_class_hash(class_address) };
+    let mut calldata = Default::default();
+    Serde::serialize(@DEFAULT_INITIAL_SUPPLY(), ref calldata);
+    Serde::serialize(@owner, ref calldata);
+
+    let address = token.deploy_at(@calldata, address).unwrap();
     let dispatcher = ERC20ABIDispatcher { contract_address: address, };
     (dispatcher, address)
 }
