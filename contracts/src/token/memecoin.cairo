@@ -114,6 +114,7 @@ mod UnruggableMemecoin {
         initial_holders: Span<ContractAddress>,
         initial_holders_amounts: Span<u256>,
     ) {
+        assert(owner.is_non_zero(), errors::OWNER_IS_ZERO);
         self.erc20.initializer(name, symbol);
 
         self.ownable.initializer(owner);
