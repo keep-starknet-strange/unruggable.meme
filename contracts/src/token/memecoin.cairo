@@ -63,6 +63,11 @@ mod UnruggableMemecoin {
     const MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION: u16 = 1_000; // 10%
     /// The minimum maximum percentage of the supply that can be bought at once.
     const MIN_MAX_PERCENTAGE_BUY_LAUNCH: u16 = 50; // 0.5%
+    ///TODO The address of the current Ekubo Router contract
+    //TODO! As this is not an upgradeable contract, it should not be set a constant.
+    // This is only a workaround before working on resolving audits.
+    const EKUBO_ROUTER: felt252 =
+        0x01b6f560def289b32e2a7b0920909615531a4d9d5636ca509045843559dc23d5;
 
     #[storage]
     struct Storage {
@@ -318,7 +323,14 @@ mod UnruggableMemecoin {
                             return;
                         }
                     },
-                    LiquidityType::NFT(_) => {}
+                    LiquidityType::NFT(_) => {
+                        // whitelisting ekubo router will fix one-hop swaps, but might still be problematic for multihop ones.
+                        //TODO: this is a temporary workaround to be able to start working on audit
+                        // resolution.
+                        if (recipient == EKUBO_ROUTER.try_into().unwrap()) {
+                            return;
+                        }
+                    }
                 }
 
                 assert(

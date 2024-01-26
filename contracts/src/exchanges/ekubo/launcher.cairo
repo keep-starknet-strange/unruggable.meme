@@ -153,10 +153,11 @@ trait IEkuboLauncher<T> {
 mod EkuboLauncher {
     use alexandria_storage::list::{List, ListTrait};
     use debug::PrintTrait;
+    use ekubo::components::clear::{IClearDispatcher, IClearDispatcherTrait};
+    use ekubo::components::shared_locker::{call_core_with_callback, consume_callback_data};
     use ekubo::interfaces::core::{ICoreDispatcher, ICoreDispatcherTrait, ILocker};
     use ekubo::interfaces::core::{PoolKey};
-    use ekubo::interfaces::erc20::{IERC20DispatcherTrait};
-    use ekubo::shared_locker::{call_core_with_callback, consume_callback_data};
+    use ekubo::interfaces::erc20::{IERC20Dispatcher, IERC20DispatcherTrait};
     use ekubo::types::bounds::{Bounds};
     use ekubo::types::{i129::i129};
     use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
@@ -265,8 +266,18 @@ mod EkuboLauncher {
 
             // Clear remaining balances. This is done _after_ the callback by core,
             // otherwise the caller in the context would be the core.
-            self.clear(params.token_address);
-            self.clear(params.quote_address);
+            let caller = get_caller_address();
+            let ekubo_clear = IClearDispatcher {
+                contract_address: self.positions.read().contract_address
+            };
+            ekubo_clear
+                .clear_minimum_to_recipient(
+                    IERC20Dispatcher { contract_address: params.token_address }, 0, caller
+                );
+            ekubo_clear
+                .clear_minimum_to_recipient(
+                    IERC20Dispatcher { contract_address: params.quote_address }, 0, caller
+                );
 
             self.emit(Launched { params, owner: params.owner, token_id: id });
 
@@ -483,28 +494,6 @@ mod EkuboLauncher {
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
-        /// Clears the balances of this contract by sending them to the caller.
-        fn clear(ref self: ContractState, token: ContractAddress) {
-            let caller = get_caller_address();
-            let this = get_contract_address();
-            let token = ERC20ABIDispatcher { contract_address: token };
-            let positions = IPositionsDispatcher {
-                contract_address: self.positions.read().contract_address
-            };
-
-            // Clear the position contract and get the tokens back
-            positions.clear(token.contract_address);
-
-            let balance = token.balanceOf(this);
-            if balance == 0 {
-                return;
-            }
-
-            // Clear this contract and send the tokens back to the caller
-            token.transfer(recipient: caller, amount: token.balanceOf(this));
-        }
-
-
         /// Ensures that the caller is the owner of the specified position.
         ///
         /// # Arguments

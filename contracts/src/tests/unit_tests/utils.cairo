@@ -289,13 +289,19 @@ fn deploy_and_launch_memecoin() -> (IUnruggableMemecoinDispatcher, ContractAddre
 impl DefaultTxInfoMock of Default<TxInfoMock> {
     fn default() -> TxInfoMock {
         TxInfoMock {
-            version: Option::None,
-            account_contract_address: Option::None,
-            max_fee: Option::None,
-            signature: Option::None,
-            transaction_hash: Option::None,
-            chain_id: Option::None,
-            nonce: Option::None,
+            version: Option::None(()),
+            account_contract_address: Option::None(()),
+            max_fee: Option::None(()),
+            signature: Option::None(()),
+            transaction_hash: Option::None(()),
+            chain_id: Option::None(()),
+            nonce: Option::None(()),
+            resource_bounds: Option::None(()),
+            tip: Option::None(()),
+            paymaster_data: Option::None(()),
+            nonce_data_availability_mode: Option::None(()),
+            fee_data_availability_mode: Option::None(()),
+            account_deployment_data: Option::None(()),
         }
     }
 }

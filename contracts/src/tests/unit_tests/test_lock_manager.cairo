@@ -64,7 +64,7 @@ mod test_internals {
     use core::starknet::SyscallResultTrait;
     use starknet::contract_address_const;
     use super::{LockManager, OWNER, start_prank, CheatTarget, stop_prank, LOCK_POSITION_ADDRESS};
-    use unruggable::locker::lock_manager::LockManager::token_locks::InternalContractMemberStateTrait;
+    use unruggable::locker::lock_manager::LockManager::token_locksContractMemberStateTrait;
     #[test]
     fn test_assert_only_owner() {
         let mut state = contract_state_for_testing();
