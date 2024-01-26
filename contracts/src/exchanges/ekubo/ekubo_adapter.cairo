@@ -77,18 +77,6 @@ impl EkuboAdapterImpl of unruggable::exchanges::ExchangeAdapter<
         let max_returned_tokens = PercentageMath::percent_mul(total_supply - team_alloc, 9950);
         assert(memecoin.balanceOf(this) < max_returned_tokens, 'ekubo has returned tokens');
 
-        // Any quote tokens that were deposited in this contract must be returned to the caller
-        // as no quote is required to launch a memecoin with Ekubo.
-        clear(quote_address);
-        assert(quote_token.balanceOf(this) == 0, 'quote leftovers');
-
         (id, position)
     }
-}
-
-fn clear(token: ContractAddress) {
-    let caller = starknet::get_caller_address();
-    let this = starknet::get_contract_address();
-    let token = ERC20ABIDispatcher { contract_address: token, };
-    token.transfer(caller, token.balanceOf(this));
 }
