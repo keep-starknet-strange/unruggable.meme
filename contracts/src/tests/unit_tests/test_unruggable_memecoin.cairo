@@ -29,7 +29,7 @@ mod test_constructor {
     use snforge_std::{declare, ContractClassTrait, start_prank, stop_prank, CheatTarget};
     use starknet::{ContractAddress, contract_address_const};
     use unruggable::tests::unit_tests::utils::{
-        deploy_jedi_amm_factory_and_router, deploy_meme_factory_with_owner, deploy_locker,
+        deploy_jedi_amm_factory_and_router, deploy_meme_factory, deploy_locker,
         deploy_eth_with_owner, OWNER, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS,
         INITIAL_HOLDER_1, INITIAL_HOLDER_2, INITIAL_HOLDERS_AMOUNTS, SALT, DefaultTxInfoMock,
         deploy_memecoin_through_factory, ETH_ADDRESS, deploy_memecoin_through_factory_with_owner,
@@ -156,7 +156,7 @@ mod memecoin_entrypoints {
     use unruggable::exchanges::{SupportedExchanges};
     use unruggable::factory::{IFactory, IFactoryDispatcher, IFactoryDispatcherTrait};
     use unruggable::tests::unit_tests::utils::{
-        deploy_jedi_amm_factory_and_router, deploy_meme_factory_with_owner, deploy_locker,
+        deploy_jedi_amm_factory_and_router, deploy_meme_factory, deploy_locker,
         deploy_eth_with_owner, OWNER, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS,
         INITIAL_HOLDER_1, INITIAL_HOLDER_2, INITIAL_HOLDERS_AMOUNTS, SALT, DefaultTxInfoMock,
         deploy_memecoin_through_factory, ETH_ADDRESS, deploy_memecoin_through_factory_with_owner,
@@ -276,7 +276,7 @@ mod memecoin_internals {
     use starknet::{ContractAddress, contract_address_const};
     use super::{TxInfoMock};
     use unruggable::tests::unit_tests::utils::{
-        deploy_jedi_amm_factory_and_router, deploy_meme_factory_with_owner, deploy_locker,
+        deploy_jedi_amm_factory_and_router, deploy_meme_factory, deploy_locker,
         deploy_eth_with_owner, OWNER, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS,
         INITIAL_HOLDER_1, INITIAL_HOLDER_2, INITIAL_HOLDERS_AMOUNTS, SALT, DefaultTxInfoMock,
         deploy_memecoin_through_factory, ETH_ADDRESS, deploy_memecoin_through_factory_with_owner,

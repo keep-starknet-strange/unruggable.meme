@@ -7,8 +7,6 @@ mod Factory {
     use core::starknet::event::EventEmitter;
     use core::zeroable::Zeroable;
     use ekubo::types::i129::i129;
-    use openzeppelin::access::ownable::OwnableComponent;
-    use openzeppelin::access::ownable::ownable::OwnableComponent::InternalTrait;
     use openzeppelin::token::erc20::interface::{
         IERC20, ERC20ABIDispatcher, ERC20ABIDispatcherTrait
     };
@@ -29,17 +27,11 @@ mod Factory {
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
 
-    // Components.
-    component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
-    impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
-
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
         MemecoinCreated: MemecoinCreated,
         MemecoinLaunched: MemecoinLaunched,
-        #[flat]
-        OwnableEvent: OwnableComponent::Event
     }
 
     #[derive(Drop, starknet::Event)]
@@ -64,20 +56,15 @@ mod Factory {
         exchange_configs: LegacyMap<SupportedExchanges, ContractAddress>,
         deployed_memecoins: LegacyMap<ContractAddress, bool>,
         lock_manager_address: ContractAddress,
-        // Components.
-        #[substorage(v0)]
-        ownable: OwnableComponent::Storage,
     }
 
     #[constructor]
     fn constructor(
         ref self: ContractState,
-        owner: ContractAddress,
         memecoin_class_hash: ClassHash,
         lock_manager_address: ContractAddress,
         mut exchanges: Span<(SupportedExchanges, ContractAddress)>
     ) {
-        self.ownable.initializer(owner);
         self.memecoin_class_hash.write(memecoin_class_hash);
         self.lock_manager_address.write(lock_manager_address);
 

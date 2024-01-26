@@ -63,18 +63,11 @@ fn deploy_ekubo_launcher() -> ContractAddress {
 
 // MemeFactory
 fn deploy_meme_factory(exchanges: Span<(SupportedExchanges, ContractAddress)>) -> ContractAddress {
-    deploy_meme_factory_with_owner(OWNER(), exchanges)
-}
-
-fn deploy_meme_factory_with_owner(
-    owner: ContractAddress, exchanges: Span<(SupportedExchanges, ContractAddress)>
-) -> ContractAddress {
     let memecoin_class_hash = declare('UnruggableMemecoin').class_hash;
     let lock_manager_address = deploy_locker();
 
     let contract = declare('Factory');
     let mut calldata = array![];
-    Serde::serialize(@owner, ref calldata);
     Serde::serialize(@memecoin_class_hash, ref calldata);
     Serde::serialize(@lock_manager_address, ref calldata);
     Serde::serialize(@exchanges.into(), ref calldata);
