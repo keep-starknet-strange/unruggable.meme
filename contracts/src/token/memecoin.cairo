@@ -454,9 +454,7 @@ mod UnruggableMemecoin {
         ) {
             // If this is not a mint and the sender will no longer hold tokens after the transfer,
             // decrement the holders count.
-            //TODO(audit): verify whether sender can _actually_ be zero - as this function is called from _transfer,
-            // which is supposedly not called from the zero address.
-            if sender.is_non_zero() && self.balanceOf(sender) == amount {
+            if self.balanceOf(sender) == amount {
                 let current_holders_count = self.pre_launch_holders_count.read();
 
                 self.pre_launch_holders_count.write(current_holders_count - 1);
