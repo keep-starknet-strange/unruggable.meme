@@ -41,6 +41,7 @@ mod UnruggableMemecoin {
         IUnruggableMemecoinSnake, IUnruggableMemecoinCamel, IUnruggableAdditional
     };
     use unruggable::utils::math::PercentageMath;
+    use unruggable::utils::unique_count;
 
     // Components.
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
@@ -408,7 +409,7 @@ mod UnruggableMemecoin {
                 i += 1;
             };
             self.team_allocation.write(team_allocation);
-            self.pre_launch_holders_count.write(initial_holders.len().try_into().unwrap());
+            self.pre_launch_holders_count.write(unique_count(initial_holders).try_into().unwrap());
 
             team_allocation
         }
