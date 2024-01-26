@@ -183,6 +183,7 @@ fn test_launch_memecoin_with_jediswap_parameters() {
     let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
     let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
     let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
+    let locker = ILockManagerDispatcher { contract_address: LOCK_MANAGER_ADDRESS() };
 
     // approve spending of eth by factory
     let eth_amount: u256 = 1 * pow_256(10, 18); // 1 ETHER
@@ -194,10 +195,14 @@ fn test_launch_memecoin_with_jediswap_parameters() {
     start_prank(CheatTarget::One(factory.contract_address), owner);
     let pair_address = factory
         .launch_on_jediswap(
-            memecoin_address,
-            TRANSFER_RESTRICTION_DELAY,
-            MAX_PERCENTAGE_BUY_LAUNCH,
-            eth.contract_address,
+            LaunchParameters {
+                memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address: eth.contract_address,
+                initial_holders: INITIAL_HOLDERS(),
+                initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
+            },
             eth_amount,
             DEFAULT_MIN_LOCKTIME,
         );
@@ -207,12 +212,15 @@ fn test_launch_memecoin_with_jediswap_parameters() {
 
     match liquidity_parameters {
         LiquidityParameters::Ekubo(_) => panic_with_felt252('wrong liquidity parameters type'),
-        LiquidityParameters::Jediswap(jediswap_liquidity_parameters) => {
+        LiquidityParameters::Jediswap((
+            jediswap_liquidity_parameters, lock_position
+        )) => {
             assert(
                 jediswap_liquidity_parameters.quote_address == eth.contract_address,
                 'Bad quote address'
             );
             assert(jediswap_liquidity_parameters.quote_amount == eth_amount, 'Bad quote amount');
+            assert(locker.user_lock_at(owner, 0) == lock_position, 'Bad lock position');
         }
     }
 }
@@ -226,7 +234,7 @@ fn test_launch_memecoin_with_ekubo_parameters() {
 
     let fee = 0xc49ba5e353f7d00000000000000000;
     let tick_spacing = 5982;
-    let starting_tick = i129 { sign: true, mag: 4600158 }; // 0.01ETH/MEME
+    let starting_price = i129 { sign: true, mag: 4600158 }; // 0.01ETH/MEME
     let bound = 88719042;
 
     // approve spending of eth by factory
@@ -239,11 +247,17 @@ fn test_launch_memecoin_with_ekubo_parameters() {
     start_prank(CheatTarget::One(factory.contract_address), owner);
     let pair_address = factory
         .launch_on_ekubo(
-            memecoin_address,
-            TRANSFER_RESTRICTION_DELAY,
-            MAX_PERCENTAGE_BUY_LAUNCH,
-            eth.contract_address,
-            EkuboPoolParameters { fee, tick_spacing, starting_tick, bound }
+            LaunchParameters {
+                memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address: eth.contract_address,
+                initial_holders: INITIAL_HOLDERS(),
+                initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
+            },
+            EkuboPoolParameters {
+                fee, tick_spacing, starting_price, bound,
+            }
         );
     stop_prank(CheatTarget::One(factory.contract_address));
 

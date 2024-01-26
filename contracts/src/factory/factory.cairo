@@ -144,7 +144,7 @@ mod Factory {
                 launch_parameters;
 
             let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
-            let mut pair_address = jediswap_adapter::JediswapAdapterImpl::create_and_add_liquidity(
+            let (pair_address, lock_position) = jediswap_adapter::JediswapAdapterImpl::create_and_add_liquidity(
                 exchange_address: router_address,
                 token_address: memecoin_address,
                 quote_address: quote_address,
@@ -163,7 +163,7 @@ mod Factory {
                 .set_launched(
                     LiquidityType::JediERC20(pair_address),
                     LiquidityParameters::Jediswap(
-                        JediswapLiquidityParameters { quote_address, quote_amount, }
+                        (JediswapLiquidityParameters { quote_address, quote_amount }, lock_position)
                     ),
                     :transfer_restriction_delay,
                     :max_percentage_buy_launch,

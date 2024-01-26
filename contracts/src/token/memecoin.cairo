@@ -24,7 +24,7 @@ struct JediswapLiquidityParameters {
 #[derive(Copy, Drop, starknet::Store, Serde)]
 enum LiquidityParameters {
     Ekubo: EkuboLiquidityParameters,
-    Jediswap: JediswapLiquidityParameters,
+    Jediswap: (JediswapLiquidityParameters, ContractAddress),
 }
 
 #[starknet::contract]

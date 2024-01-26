@@ -62,7 +62,7 @@ struct JediswapAdditionalParameters {
 }
 
 impl JediswapAdapterImpl of unruggable::exchanges::ExchangeAdapter<
-    JediswapAdditionalParameters, ContractAddress
+    JediswapAdditionalParameters, (ContractAddress, ContractAddress)
 > {
     fn create_and_add_liquidity(
         exchange_address: ContractAddress,
@@ -70,7 +70,7 @@ impl JediswapAdapterImpl of unruggable::exchanges::ExchangeAdapter<
         quote_address: ContractAddress,
         lp_supply: u256,
         additional_parameters: JediswapAdditionalParameters,
-    ) -> ContractAddress {
+    ) -> (ContractAddress, ContractAddress) {
         let JediswapAdditionalParameters{lock_manager_address, unlock_time, quote_amount, } =
             additional_parameters;
         let memecoin = IUnruggableMemecoinDispatcher { contract_address: token_address, };
@@ -110,7 +110,7 @@ impl JediswapAdapterImpl of unruggable::exchanges::ExchangeAdapter<
         // Lock LP tokens
         let lock_manager = ILockManagerDispatcher { contract_address: lock_manager_address };
         pair.approve(lock_manager_address, liquidity_received);
-        let locked_address = lock_manager
+        let lock_position = lock_manager
             .lock_tokens(
                 token: pair_address,
                 amount: liquidity_received,
@@ -118,6 +118,6 @@ impl JediswapAdapterImpl of unruggable::exchanges::ExchangeAdapter<
                 withdrawer: caller_address,
             );
 
-        pair.contract_address
+        (pair.contract_address, lock_position)
     }
 }
