@@ -183,10 +183,6 @@ mod LockManager {
             // Effects
             let owner = token_lock.owner;
 
-            // Interactions
-            ERC20ABIDispatcher { contract_address: token_lock.token }
-                .transferFrom(lock_address, owner, amount);
-
             if actual_balance == amount {
                 // Position has been fully withdrawn
                 self
@@ -208,6 +204,11 @@ mod LockManager {
 
                 self.emit(TokenUnlocked { lock_address });
             }
+
+            // Interactions
+            ERC20ABIDispatcher { contract_address: token_lock.token }
+                .transferFrom(lock_address, owner, amount);
+
             self.emit(TokenWithdrawn { lock_address, amount });
         }
 
