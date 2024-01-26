@@ -132,7 +132,7 @@ trait IEkuboLauncher<T> {
     ///
     /// * `Span<u64>` - A span of the IDs of the tokens launched by the owner.
     ///
-    fn launched_tokens(ref self: T, owner: ContractAddress) -> Span<u64>;
+    fn launched_tokens(self: @T, owner: ContractAddress) -> Span<u64>;
     /// Returns the details of a liquidity position.
     ///
     /// This function reads the liquidity position with the given ID from the `liquidity_positions` mapping,
@@ -146,7 +146,7 @@ trait IEkuboLauncher<T> {
     ///
     /// * `EkuboLP` - A struct containing the details of the liquidity position.
     ///
-    fn liquidity_position_details(ref self: T, id: u64) -> EkuboLP;
+    fn liquidity_position_details(self: @T, id: u64) -> EkuboLP;
 }
 
 #[starknet::contract]
@@ -356,11 +356,11 @@ mod EkuboLauncher {
             fee_collected
         }
 
-        fn launched_tokens(ref self: ContractState, owner: ContractAddress) -> Span<u64> {
+        fn launched_tokens(self: @ContractState, owner: ContractAddress) -> Span<u64> {
             self.owner_to_positions.read(owner).array().unwrap_syscall().span()
         }
 
-        fn liquidity_position_details(ref self: ContractState, id: u64) -> EkuboLP {
+        fn liquidity_position_details(self: @ContractState, id: u64) -> EkuboLP {
             let storable_pos = self.liquidity_positions.read(id);
             EkuboLP {
                 owner: storable_pos.owner,
