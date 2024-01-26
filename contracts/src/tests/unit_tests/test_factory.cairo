@@ -281,6 +281,48 @@ fn test_launch_memecoin_not_owner() {
 }
 
 #[test]
+#[should_panic(expected: ('Quote token is memecoin',))]
+fn test_launch_memecoin_quote_memecoin_jedsiwap() {
+    let owner = snforge_std::test_address();
+    let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
+    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
+
+    // Create second memecoin used as quote
+    start_prank(CheatTarget::One(factory.contract_address), owner);
+    let quote_address = factory
+        .create_memecoin(
+            owner: owner,
+            name: NAME(),
+            symbol: SYMBOL(),
+            initial_supply: DEFAULT_INITIAL_SUPPLY(),
+            initial_holders: INITIAL_HOLDERS(),
+            initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
+            contract_address_salt: SALT() + 1,
+        );
+    stop_prank(CheatTarget::One(factory.contract_address));
+    let quote = ERC20ABIDispatcher { contract_address: quote_address }; // actually a memecoin
+
+    // Try to launch again
+    // approve spending of eth by factory
+    let quote_amount: u256 = 1 * pow_256(10, 18); // 1 ETHER
+    let factory_balance_quote = quote.balanceOf(factory.contract_address);
+    start_prank(CheatTarget::One(quote.contract_address), owner);
+    quote.approve(factory.contract_address, quote_amount);
+    stop_prank(CheatTarget::One(quote.contract_address));
+
+    start_prank(CheatTarget::One(factory.contract_address), owner);
+    let pair_address = factory
+        .launch_on_jediswap(
+            memecoin_address,
+            TRANSFER_RESTRICTION_DELAY,
+            MAX_PERCENTAGE_BUY_LAUNCH,
+            quote.contract_address,
+            quote_amount,
+            DEFAULT_MIN_LOCKTIME,
+        );
+}
+
+#[test]
 #[should_panic(expected: ('Exchange address is zero',))]
 //TODO: does this test still make sense?
 fn test_launch_memecoin_amm_not_whitelisted() {
