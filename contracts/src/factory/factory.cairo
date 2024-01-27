@@ -122,6 +122,7 @@ mod Factory {
             let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
             let caller_address = get_caller_address();
             let router_address = self.exchange_address(SupportedExchanges::Jediswap);
+            assert(!self.is_memecoin(quote_address), errors::QUOTE_TOKEN_IS_MEMECOIN);
             assert(!memecoin.is_launched(), errors::ALREADY_LAUNCHED);
             assert(caller_address == memecoin.owner(), errors::CALLER_NOT_OWNER);
             assert(router_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
@@ -164,6 +165,7 @@ mod Factory {
             let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
             let launchpad_address = self.exchange_address(SupportedExchanges::Ekubo);
             let caller_address = get_caller_address();
+            assert(!self.is_memecoin(quote_address), errors::QUOTE_TOKEN_IS_MEMECOIN);
             assert(caller_address == memecoin.owner(), errors::CALLER_NOT_OWNER);
             assert(launchpad_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
             assert(!memecoin.is_launched(), errors::ALREADY_LAUNCHED);
