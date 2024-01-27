@@ -16,7 +16,7 @@ export const useBoundStore = create<StoreState>()(
       ...createContractsSlice(...a),
     })),
     {
-      name: 'unruggable-state-storage-v0.1.1', // bump version after breaking changes
+      name: 'unruggable-state-storage-v0.1.2', // bump version after breaking changes
       partialize: (state: StoreState) =>
         PERSISTING_KEYS.reduce<StoreState>((acc, key) => {
           ;(acc as any)[key] = state[key]
