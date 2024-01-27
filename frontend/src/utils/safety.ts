@@ -1,4 +1,4 @@
-import { Percent } from '@uniswap/sdk-core'
+import { Fraction, Percent } from '@uniswap/sdk-core'
 import moment from 'moment'
 import { LIQUIDITY_LOCK_SAFETY_BOUNDS, Safety, TEAM_ALLOCATION_SAFETY_BOUNDS } from 'src/constants/safety'
 
@@ -14,6 +14,10 @@ export function getLiquidityLockSafety(liquidityLock: moment.Duration) {
   return Safety.DANGEROUS
 }
 
-export function getQuoteTokenSafery(isUnknown: boolean) {
+export function getQuoteTokenSafety(isUnknown: boolean) {
   return isUnknown ? Safety.DANGEROUS : Safety.SAFE
+}
+
+export function getStartingMcapSafety(startingMcap?: Fraction) {
+  return startingMcap ? Safety.SAFE : Safety.DANGEROUS // TODO: check starting mcap value if not undefined
 }

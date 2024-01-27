@@ -20,6 +20,7 @@ export enum Selector {
   LAUNCHED_WITH_LIQUIDITY_PARAMETERS = 'launched_with_liquidity_parameters',
   GET_LOCK_DETAILS = 'get_lock_details',
   LAUNCHED_AT_BLOCK_NUMBER = 'launched_at_block_number',
+  GET_RESERVES = 'get_reserves',
 }
 
 export enum AMM {

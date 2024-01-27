@@ -2,19 +2,21 @@ import { useContractRead, UseContractReadResult } from '@starknet-react/core'
 import { Fraction } from '@uniswap/sdk-core'
 import { useMemo } from 'react'
 import { compiledJediswapPair, JEDISWAP_ETH_USDC } from 'src/constants/contracts'
+import { Selector } from 'src/constants/misc'
 import { decimalsScale } from 'src/utils/decimalScale'
-import { constants, Uint256, uint256 } from 'starknet'
+import { BlockNumber, BlockTag, constants, Uint256, uint256 } from 'starknet'
 
 import useChainId from './useChainId'
 
-export function useEtherPrice() {
+export function useEtherPrice(blockIdentifier: BlockNumber = BlockTag.latest) {
   const chainId = useChainId()
 
   const pairReserves = useContractRead({
     abi: compiledJediswapPair, // call is not send if abi is undefined
     address: chainId ? JEDISWAP_ETH_USDC[chainId] : undefined,
-    functionName: 'get_reserves',
+    functionName: Selector.GET_RESERVES,
     watch: true,
+    blockIdentifier,
   }) as UseContractReadResult & { data?: { reserve0: Uint256; reserve1: Uint256 } }
 
   return useMemo(() => {

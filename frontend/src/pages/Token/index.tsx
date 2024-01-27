@@ -38,7 +38,12 @@ import { vars } from 'src/theme/css/sprinkles.css'
 import { parseFormatedAmount } from 'src/utils/amount'
 import { decimalsScale } from 'src/utils/decimalScale'
 import { parseMinutesDuration, parseMonthsDuration } from 'src/utils/moment'
-import { getLiquidityLockSafety, getQuoteTokenSafery, getTeamAllocationSafety } from 'src/utils/safety'
+import {
+  getLiquidityLockSafety,
+  getQuoteTokenSafety,
+  getStartingMcapSafety,
+  getTeamAllocationSafety,
+} from 'src/utils/safety'
 import { currencyInput, percentInput } from 'src/utils/zod'
 import { CallData, getChecksumAddress, uint256 } from 'starknet'
 import { z } from 'zod'
@@ -97,7 +102,7 @@ export default function TokenPage() {
 
   // eth price
   const ethPrice = useEtherPrice()
-  const ethPriceAtLaunch = useEtherPrice()
+  const ethPriceAtLaunch = useEtherPrice(memecoinInfos?.launch?.blockNumber)
 
   // jediswap mcap
   const onStartingMarketCapChange = useCallback((event: FormEvent<HTMLInputElement>) => {
@@ -200,12 +205,26 @@ export default function TokenPage() {
       const quoteTokenInfos = QUOTE_TOKENS[chainId][memecoinInfos.launch.quoteToken]
       ret.quoteToken = {
         parsedValue: quoteTokenInfos.symbol ?? 'UNKOWN',
-        safety: getQuoteTokenSafery(!quoteTokenInfos),
+        safety: getQuoteTokenSafety(!quoteTokenInfos),
+      }
+    }
+
+    if (memecoinInfos?.launch?.quoteAmount && ethPriceAtLaunch) {
+      const startingMcap = ret.quoteToken
+        ? new Fraction(memecoinInfos?.launch?.quoteAmount)
+            .multiply(new Fraction(memecoinInfos.teamAllocation, memecoinInfos.maxSupply).add(1))
+            .divide(decimalsScale(18))
+            .multiply(ethPriceAtLaunch)
+        : undefined
+
+      ret.startingMcap = {
+        parsedValue: startingMcap ? `$${startingMcap.toFixed(0, { groupSeparator: ',' })}` : 'UNKNOWN',
+        safety: getStartingMcapSafety(startingMcap),
       }
     }
 
     return ret
-  }, [liquidityLockPosition?.unlockTime, memecoinInfos, chainId])
+  }, [liquidityLockPosition?.unlockTime, memecoinInfos, chainId, ethPriceAtLaunch])
 
   // page content
   const mainContent = useMemo(() => {
@@ -258,6 +277,18 @@ export default function TokenPage() {
                 whiteSpace="nowrap"
               >
                 {parsedMemecoinInfos?.quoteToken?.parsedValue ?? 'Not launched'}
+              </Text.HeadlineMedium>
+            </Column>
+          </Box>
+
+          <Box className={styles.card} opacity={memecoinInfos.isLaunched ? '1' : '0.5'}>
+            <Column gap="8" alignItems="flex-start">
+              <Text.Small>Starting Mcap:</Text.Small>
+              <Text.HeadlineMedium
+                color={SAFETY_COLORS[parsedMemecoinInfos?.startingMcap?.safety ?? Safety.UNKNOWN]}
+                whiteSpace="nowrap"
+              >
+                {parsedMemecoinInfos?.startingMcap?.parsedValue ?? 'Not launched'}
               </Text.HeadlineMedium>
             </Column>
           </Box>
