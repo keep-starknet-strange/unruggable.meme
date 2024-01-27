@@ -27,6 +27,7 @@ import {
   Selector,
   TRANSFER_RESTRICTION_DELAY_STEP,
 } from 'src/constants/misc'
+import { SAFETY_COLORS } from 'src/constants/safety'
 import useChainId from 'src/hooks/useChainId'
 import { useMemecoinInfos, useMemecoinliquidityLockPosition } from 'src/hooks/useMemecoin'
 import { useEtherPrice } from 'src/hooks/usePrice'
@@ -38,6 +39,7 @@ import { parseFormatedAmount } from 'src/utils/amount'
 import { decimalsScale } from 'src/utils/decimalScale'
 import { parseMinutesDuration, parseMonthsDuration } from 'src/utils/moment'
 import { getQuoteTokenInfos } from 'src/utils/quote'
+import { getTeamAllocationSafety } from 'src/utils/safety'
 import { currencyInput, percentInput } from 'src/utils/zod'
 import { CallData, getChecksumAddress, uint256 } from 'starknet'
 import { z } from 'zod'
@@ -170,6 +172,23 @@ export default function TokenPage() {
     [AMMIndex, quoteAmount, transferRestrictionDelay, liquidityLockPeriod, memecoinAddress, chainId, writeAsync]
   )
 
+  // parse memecoin infos
+  const parsedMemecoinInfos = useMemo(() => {
+    if (!memecoinInfos) return
+
+    // team allocation
+    const teamAllocationPercentage = new Percent(memecoinInfos.teamAllocation, memecoinInfos.maxSupply)
+    const teamAllocation = `${teamAllocationPercentage.toFixed()}%`
+    const teamAllocationSafety = getTeamAllocationSafety(teamAllocationPercentage)
+
+    return {
+      teamAllocation: {
+        parsedValue: teamAllocation,
+        safety: teamAllocationSafety,
+      },
+    }
+  }, [memecoinInfos])
+
   // page content
   const mainContent = useMemo(() => {
     if (indexing) {
@@ -180,13 +199,12 @@ export default function TokenPage() {
       return <Text.Body textAlign="center">This token is not unruggable</Text.Body>
     }
 
-    if (!memecoinInfos) return
+    if (!parsedMemecoinInfos || !memecoinInfos) return
 
     const quoteTokenInfos = getQuoteTokenInfos(chainId, memecoinInfos?.launch?.quoteToken)
 
     console.log(memecoinInfos?.launch)
 
-    const teamAllocationPercentage = new Percent(memecoinInfos.teamAllocation, memecoinInfos.maxSupply).toFixed()
     const parsedLiquidityLockPeriod = liquidityLockPosition?.unlockTime
       ? liquidityLockPosition.unlockTime === LIQUIDITY_LOCK_FOREVER_TIMESTAMP
         ? FOREVER
@@ -208,8 +226,8 @@ export default function TokenPage() {
           <Box className={styles.card}>
             <Column gap="8" alignItems="flex-start">
               <Text.Small>Team allocation:</Text.Small>
-              <Text.HeadlineMedium color={+teamAllocationPercentage ? 'text1' : 'accent'}>
-                {teamAllocationPercentage}%
+              <Text.HeadlineMedium color={SAFETY_COLORS[parsedMemecoinInfos?.teamAllocation.safety]}>
+                {parsedMemecoinInfos?.teamAllocation.parsedValue}
               </Text.HeadlineMedium>
             </Column>
           </Box>
@@ -252,7 +270,7 @@ export default function TokenPage() {
         </Row>
       </Column>
     )
-  }, [indexing, error, memecoinInfos, chainId, liquidityLockPosition?.unlockTime])
+  }, [indexing, error, memecoinInfos, chainId, liquidityLockPosition?.unlockTime, parsedMemecoinInfos])
 
   const ownerContent = useMemo(() => {
     if (!memecoinInfos?.isOwner || error) return
