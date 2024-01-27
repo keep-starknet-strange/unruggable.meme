@@ -57,7 +57,6 @@ impl EkuboAdapterImpl of unruggable::exchanges::ExchangeAdapter<
         };
 
         let this = get_contract_address();
-        let caller_address = starknet::get_caller_address();
         let memecoin = IUnruggableMemecoinDispatcher { contract_address: token_address, };
         let memecoin_address = memecoin.contract_address;
         let quote_token = ERC20ABIDispatcher { contract_address: quote_address, };

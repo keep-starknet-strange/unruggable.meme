@@ -91,7 +91,6 @@ impl JediswapAdapterImpl of unruggable::exchanges::ExchangeAdapter<
         let memecoin_balance = memecoin.balanceOf(this);
         memecoin.approve(jedi_router.contract_address, memecoin_balance);
         quote_token.approve(jedi_router.contract_address, quote_amount);
-        let quote_balance = quote_token.balanceOf(this);
 
         // As we're supplying the first liquidity for this pool,
         // The expected minimum amounts for each tokens are the amounts we're supplying.
