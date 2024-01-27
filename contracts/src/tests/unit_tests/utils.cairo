@@ -165,12 +165,6 @@ fn deploy_jedi_amm_factory_and_router() -> (ContractAddress, ContractAddress) {
 
 // MemeFactory
 fn deploy_meme_factory(router_address: ContractAddress) -> ContractAddress {
-    deploy_meme_factory_with_owner(OWNER(), router_address)
-}
-
-fn deploy_meme_factory_with_owner(
-    owner: ContractAddress, router_address: ContractAddress
-) -> ContractAddress {
     let locker_address = deploy_locker();
     let memecoin_class_hash = declare('UnruggableMemecoin').class_hash;
 
@@ -181,7 +175,6 @@ fn deploy_meme_factory_with_owner(
 
     let contract = declare('Factory');
     let mut calldata = array![];
-    Serde::serialize(@owner, ref calldata);
     Serde::serialize(@memecoin_class_hash, ref calldata);
     Serde::serialize(@locker_address, ref calldata);
     Serde::serialize(@amms.into(), ref calldata);
