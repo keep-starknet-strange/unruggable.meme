@@ -16,6 +16,7 @@ import Toggler from 'src/components/Toggler'
 import { ETH_ADDRESS, FACTORY_ADDRESSES } from 'src/constants/contracts'
 import {
   AMM,
+  FOREVER,
   LIQUIDITY_LOCK_FOREVER_TIMESTAMP,
   LIQUIDITY_LOCK_PERIOD_STEP,
   MAX_LIQUIDITY_LOCK_PERIOD,
@@ -27,7 +28,7 @@ import {
   TRANSFER_RESTRICTION_DELAY_STEP,
 } from 'src/constants/misc'
 import useChainId from 'src/hooks/useChainId'
-import { useMemecoinInfos, useMemecoinLiquidity } from 'src/hooks/useMemecoin'
+import { useMemecoinInfos, useMemecoinliquidityLockPosition } from 'src/hooks/useMemecoin'
 import { useEtherPrice } from 'src/hooks/usePrice'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
@@ -36,6 +37,7 @@ import { vars } from 'src/theme/css/sprinkles.css'
 import { parseFormatedAmount } from 'src/utils/amount'
 import { decimalsScale } from 'src/utils/decimalScale'
 import { parseMinutesDuration, parseMonthsDuration } from 'src/utils/moment'
+import { getQuoteTokenInfos } from 'src/utils/quote'
 import { currencyInput, percentInput } from 'src/utils/zod'
 import { CallData, getChecksumAddress, uint256 } from 'starknet'
 import { z } from 'zod'
@@ -76,11 +78,11 @@ export default function TokenPage() {
     }
   }, [getMemecoinInfos, memecoinAddress])
 
-  // get memecoin liquidity
-  const liquidityStatus = useMemecoinLiquidity(
-    memecoinInfos?.liquidityType,
-    memecoinInfos?.liquidityLockManager,
-    memecoinInfos?.liquidityLockPosition
+  // get memecoin launch status
+  const liquidityLockPosition = useMemecoinliquidityLockPosition(
+    memecoinInfos?.launch?.liquidityType,
+    memecoinInfos?.launch?.liquidityLockManager,
+    memecoinInfos?.launch?.liquidityLockPosition
   )
 
   // form
@@ -94,6 +96,7 @@ export default function TokenPage() {
 
   // eth price
   const ethPrice = useEtherPrice()
+  const ethPriceAtLaunch = useEtherPrice()
 
   // jediswap mcap
   const onStartingMarketCapChange = useCallback((event: FormEvent<HTMLInputElement>) => {
@@ -179,12 +182,16 @@ export default function TokenPage() {
 
     if (!memecoinInfos) return
 
+    const quoteTokenInfos = getQuoteTokenInfos(chainId, memecoinInfos?.launch?.quoteToken)
+
+    console.log(memecoinInfos?.launch)
+
     const teamAllocationPercentage = new Percent(memecoinInfos.teamAllocation, memecoinInfos.maxSupply).toFixed()
-    const parsedLiquidityLockPeriod = liquidityStatus?.unlockTime
-      ? liquidityStatus.unlockTime === LIQUIDITY_LOCK_FOREVER_TIMESTAMP
-        ? 'Forever'
+    const parsedLiquidityLockPeriod = liquidityLockPosition?.unlockTime
+      ? liquidityLockPosition.unlockTime === LIQUIDITY_LOCK_FOREVER_TIMESTAMP
+        ? FOREVER
         : parseMonthsDuration(
-            moment.duration(moment(moment.unix(liquidityStatus.unlockTime)).diff(moment.now()), 'milliseconds')
+            moment.duration(moment(moment.unix(liquidityLockPosition.unlockTime)).diff(moment.now()), 'milliseconds')
           )
       : undefined
 
@@ -207,18 +214,45 @@ export default function TokenPage() {
             </Column>
           </Box>
 
-          <Box className={styles.card} opacity={memecoinInfos.launched ? '1' : '0.5'}>
+          <Box className={styles.card} opacity={memecoinInfos.isLaunched ? '1' : '0.5'}>
             <Column gap="8" alignItems="flex-start">
               <Text.Small>Liquidity lock:</Text.Small>
-              <Text.HeadlineMedium color={memecoinInfos.launched ? 'accent' : 'text2'} whiteSpace="nowrap">
-                {memecoinInfos.launched ? parsedLiquidityLockPeriod : 'Not launched'}
+              <Text.HeadlineMedium
+                color={
+                  memecoinInfos.isLaunched ? (parsedLiquidityLockPeriod === FOREVER ? 'accent' : 'text1') : 'text2'
+                }
+                whiteSpace="nowrap"
+              >
+                {memecoinInfos.isLaunched ? parsedLiquidityLockPeriod : 'Not launched'}
+              </Text.HeadlineMedium>
+            </Column>
+          </Box>
+
+          <Box className={styles.card} opacity={memecoinInfos.isLaunched ? '1' : '0.5'}>
+            <Column gap="8" alignItems="flex-start">
+              <Text.Small>Quote token:</Text.Small>
+              <Text.HeadlineMedium color={memecoinInfos.isLaunched ? 'accent' : 'text2'} whiteSpace="nowrap">
+                {memecoinInfos.isLaunched
+                  ? quoteTokenInfos?.safe
+                    ? quoteTokenInfos.symbol
+                    : 'UNKNOWN'
+                  : 'Not launched'}
+              </Text.HeadlineMedium>
+            </Column>
+          </Box>
+
+          <Box className={styles.card} opacity={memecoinInfos.isLaunched ? '1' : '0.5'}>
+            <Column gap="8" alignItems="flex-start">
+              <Text.Small>Starting mcap:</Text.Small>
+              <Text.HeadlineMedium color={memecoinInfos.isLaunched ? 'accent' : 'text2'} whiteSpace="nowrap">
+                {memecoinInfos.isLaunched ? parsedLiquidityLockPeriod : 'Not launched'}
               </Text.HeadlineMedium>
             </Column>
           </Box>
         </Row>
       </Column>
     )
-  }, [indexing, error, memecoinInfos, liquidityStatus?.unlockTime])
+  }, [indexing, error, memecoinInfos, chainId, liquidityLockPosition?.unlockTime])
 
   const ownerContent = useMemo(() => {
     if (!memecoinInfos?.isOwner || error) return
@@ -230,7 +264,7 @@ export default function TokenPage() {
       </Row>
     )
 
-    if (memecoinInfos.launched) {
+    if (memecoinInfos.isLaunched) {
       return (
         <Column gap="32">
           {onlyVisibleToYou}
@@ -241,7 +275,7 @@ export default function TokenPage() {
       const parsedTransferRestrictionDelay = parseMinutesDuration(moment.duration(transferRestrictionDelay, 'minutes'))
       const parsedLiquidityLockPeriod =
         liquidityLockPeriod === MAX_LIQUIDITY_LOCK_PERIOD
-          ? 'Forever'
+          ? FOREVER
           : parseMonthsDuration(moment.duration(liquidityLockPeriod, 'months'))
 
       return (
@@ -315,7 +349,7 @@ export default function TokenPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     memecoinInfos?.isOwner,
-    memecoinInfos?.launched,
+    memecoinInfos?.isLaunched,
     transferRestrictionDelay,
     liquidityLockPeriod,
     handleSubmit,

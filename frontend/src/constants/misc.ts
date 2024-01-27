@@ -19,6 +19,7 @@ export enum Selector {
   GET_REMAINING_TIME = 'get_remaining_time',
   LAUNCHED_WITH_LIQUIDITY_PARAMETERS = 'launched_with_liquidity_parameters',
   GET_LOCK_DETAILS = 'get_lock_details',
+  LAUNCHED_AT_BLOCK_NUMBER = 'launched_at_block_number',
 }
 
 export enum AMM {
@@ -42,5 +43,6 @@ export const MIN_LIQUIDITY_LOCK_PERIOD = 6 // 6 months
 export const MAX_LIQUIDITY_LOCK_PERIOD = 25 // 2 years and 1 month
 
 export const LIQUIDITY_LOCK_FOREVER_TIMESTAMP = 9999999999 // 20/11/2286
+export const FOREVER = 'Forever'
 
 // export const MIN_HODL_LIMIT = new Percent(1, 200) // 0.5%
