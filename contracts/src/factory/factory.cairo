@@ -118,6 +118,7 @@ mod Factory {
             quote_amount: u256,
             unlock_time: u64,
         ) -> ContractAddress {
+            assert(self.is_memecoin(memecoin_address), errors::NOT_UNRUGGABLE);
             let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
             let caller_address = get_caller_address();
             let router_address = self.exchange_address(SupportedExchanges::Jediswap);
@@ -159,6 +160,7 @@ mod Factory {
             quote_address: ContractAddress,
             ekubo_parameters: EkuboPoolParameters,
         ) -> (u64, EkuboLP) {
+            assert(self.is_memecoin(memecoin_address), errors::NOT_UNRUGGABLE);
             let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
             let launchpad_address = self.exchange_address(SupportedExchanges::Ekubo);
             let caller_address = get_caller_address();

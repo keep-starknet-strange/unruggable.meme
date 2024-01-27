@@ -19,8 +19,9 @@ use unruggable::tests::unit_tests::utils::{
     deploy_jedi_amm_factory_and_router, deploy_meme_factory, deploy_locker, deploy_eth, OWNER, NAME,
     SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS, INITIAL_HOLDERS_AMOUNTS, SALT,
     deploy_memecoin_through_factory, MEMEFACTORY_ADDRESS,
-    deploy_memecoin_through_factory_with_owner, pow_256, LOCK_MANAGER_ADDRESS, DEFAULT_MIN_LOCKTIME,
-    deploy_and_launch_memecoin, TRANSFER_RESTRICTION_DELAY, MAX_PERCENTAGE_BUY_LAUNCH
+    deploy_token_from_class_at_address_with_owner, deploy_memecoin_through_factory_with_owner,
+    pow_256, LOCK_MANAGER_ADDRESS, DEFAULT_MIN_LOCKTIME, deploy_and_launch_memecoin,
+    TRANSFER_RESTRICTION_DELAY, MAX_PERCENTAGE_BUY_LAUNCH
 };
 use unruggable::token::interface::{
     IUnruggableMemecoin, IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -203,6 +204,38 @@ fn test_launch_memecoin_already_launched() {
             DEFAULT_MIN_LOCKTIME,
         );
 }
+
+
+#[test]
+#[should_panic(expected: ('Token not deployed by factory',))]
+fn test_launch_memecoin_not_unruggable_jediswap() {
+    let (eth, eth_address) = deploy_eth();
+    let (other_token, other_token_address) = deploy_token_from_class_at_address_with_owner(
+        OWNER(), 'random'.try_into().unwrap(), eth_address
+    );
+    let (_, router_address) = deploy_jedi_amm_factory_and_router();
+    let factory = IFactoryDispatcher { contract_address: deploy_meme_factory(router_address) };
+
+    // Try to launch again
+    // approve spending of eth by factory
+    let eth_amount: u256 = 1 * pow_256(10, 18); // 1 ETHER
+    let factory_balance_other_token = other_token.balanceOf(factory.contract_address);
+    start_prank(CheatTarget::One(eth.contract_address), OWNER());
+    eth.approve(factory.contract_address, eth_amount);
+    stop_prank(CheatTarget::One(eth.contract_address));
+
+    start_prank(CheatTarget::One(factory.contract_address), OWNER());
+    let pair_address = factory
+        .launch_on_jediswap(
+            other_token_address,
+            TRANSFER_RESTRICTION_DELAY,
+            MAX_PERCENTAGE_BUY_LAUNCH,
+            eth.contract_address,
+            eth_amount,
+            DEFAULT_MIN_LOCKTIME,
+        );
+}
+
 
 #[test]
 #[should_panic(expected: ('Max percentage buy too low',))]

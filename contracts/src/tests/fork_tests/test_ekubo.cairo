@@ -30,7 +30,9 @@ use unruggable::tests::fork_tests::utils::{
 };
 use unruggable::tests::unit_tests::utils::{
     OWNER, DEFAULT_MIN_LOCKTIME, pow_256, LOCK_MANAGER_ADDRESS, MEMEFACTORY_ADDRESS, RECIPIENT,
-    ALICE, DefaultTxInfoMock, TRANSFER_RESTRICTION_DELAY, MAX_PERCENTAGE_BUY_LAUNCH
+    JEDI_ROUTER_ADDRESS, ALICE, DefaultTxInfoMock, TRANSFER_RESTRICTION_DELAY,
+    MAX_PERCENTAGE_BUY_LAUNCH, deploy_token_from_class_at_address_with_owner,
+    deploy_jedi_amm_factory_and_router, deploy_meme_factory
 };
 use unruggable::token::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -618,6 +620,38 @@ fn test_cant_launch_twice() {
     let (id, position) = factory
         .launch_on_ekubo(
             memecoin_address,
+            TRANSFER_RESTRICTION_DELAY,
+            MAX_PERCENTAGE_BUY_LAUNCH,
+            quote_address,
+            EkuboPoolParameters {
+                fee: 0xc49ba5e353f7d00000000000000000,
+                tick_spacing: 5982,
+                starting_tick,
+                bound: 88719042
+            }
+        );
+}
+
+#[test]
+#[fork("Mainnet")]
+#[should_panic(expected: ('Token not deployed by factory',))]
+fn test_launch_memecoin_not_unruggable_ekubo() {
+    let owner = snforge_std::test_address();
+    let (quote, quote_address) = deploy_eth_with_owner(owner);
+    let (_, fake_memecoin_address) = deploy_token_from_class_at_address_with_owner(
+        OWNER(), 'random'.try_into().unwrap(), quote_address
+    );
+    let starting_tick = i129 { sign: true, mag: 4600158 }; // 0.01ETH/MEME
+
+    let factory = IFactoryDispatcher {
+        contract_address: deploy_meme_factory(JEDI_ROUTER_ADDRESS())
+    };
+    let ekubo_launcher = IEkuboLauncherDispatcher { contract_address: EKUBO_LAUNCHER_ADDRESS() };
+    start_prank(CheatTarget::One(factory.contract_address), owner);
+    // This will fail as the ownership of the memecoin has been renounced.
+    let (id, position) = factory
+        .launch_on_ekubo(
+            fake_memecoin_address,
             TRANSFER_RESTRICTION_DELAY,
             MAX_PERCENTAGE_BUY_LAUNCH,
             quote_address,
