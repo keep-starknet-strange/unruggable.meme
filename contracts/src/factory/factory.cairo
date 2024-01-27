@@ -138,7 +138,6 @@ mod Factory {
             assert(!memecoin.is_launched(), errors::ALREADY_LAUNCHED);
             assert(caller_address == memecoin.owner(), errors::CALLER_NOT_OWNER);
             assert(router_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
-            assert(!memecoin.is_launched(), errors::ALREADY_LAUNCHED);
 
             let mut pair_address = jediswap_adapter::JediswapAdapterImpl::create_and_add_liquidity(
                 exchange_address: router_address,
