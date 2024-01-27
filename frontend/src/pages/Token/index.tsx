@@ -15,9 +15,9 @@ import Slider from 'src/components/Slider'
 import Toggler from 'src/components/Toggler'
 import { ETH_ADDRESS, FACTORY_ADDRESSES } from 'src/constants/contracts'
 import {
+  AMM,
   LIQUIDITY_LOCK_FOREVER_TIMESTAMP,
   LIQUIDITY_LOCK_PERIOD_STEP,
-  LiquidityType,
   MAX_LIQUIDITY_LOCK_PERIOD,
   MAX_TRANSFER_RESTRICTION_DELAY,
   MIN_LIQUIDITY_LOCK_PERIOD,
@@ -27,7 +27,7 @@ import {
   TRANSFER_RESTRICTION_DELAY_STEP,
 } from 'src/constants/misc'
 import useChainId from 'src/hooks/useChainId'
-import { useMemecoinInfos } from 'src/hooks/useMemecoin'
+import { useMemecoinInfos, useMemecoinLiquidity } from 'src/hooks/useMemecoin'
 import { useEtherPrice } from 'src/hooks/usePrice'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
@@ -54,7 +54,7 @@ const schema = z.object({
 export default function TokenPage() {
   const [transferRestrictionDelay, setTransferRestrictionDelay] = useState(MAX_TRANSFER_RESTRICTION_DELAY)
   const [liquidityLockPeriod, setLiquidityLockPeriod] = useState(MAX_LIQUIDITY_LOCK_PERIOD)
-  const [liquidityTypeIndex, setLiquidityTypeIndex] = useState(0)
+  const [AMMIndex, setAMMIndex] = useState(0)
   const [startingMcap, setStartingMcap] = useState('')
 
   // URL
@@ -76,6 +76,13 @@ export default function TokenPage() {
     }
   }, [getMemecoinInfos, memecoinAddress])
 
+  // get memecoin liquidity
+  const liquidityStatus = useMemecoinLiquidity(
+    memecoinInfos?.liquidityType,
+    memecoinInfos?.liquidityLockManager,
+    memecoinInfos?.liquidityLockPosition
+  )
+
   // form
   const {
     register,
@@ -93,15 +100,14 @@ export default function TokenPage() {
     setStartingMcap(parseFormatedAmount((event.target as HTMLInputElement).value))
   }, [])
   const quoteAmount = useMemo(() => {
-    if (!memecoinInfos || Object.values(LiquidityType)[liquidityTypeIndex] !== LiquidityType.JEDISWAP || !ethPrice)
-      return
+    if (!memecoinInfos || Object.values(AMM)[AMMIndex] !== AMM.JEDISWAP || !ethPrice) return
 
     // mcap / eth_price * (1 - team_allocation / total_supply)
     return new Fraction(startingMcap)
       .divide(ethPrice)
       .multiply((BigInt(1) - BigInt(memecoinInfos.teamAllocation) / BigInt(memecoinInfos.maxSupply)).toString())
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [memecoinInfos?.teamAllocation, memecoinInfos?.maxSupply, startingMcap, liquidityTypeIndex, ethPrice])
+  }, [memecoinInfos?.teamAllocation, memecoinInfos?.maxSupply, startingMcap, AMMIndex, ethPrice])
 
   // starknet
   const chainId = useChainId()
@@ -112,13 +118,13 @@ export default function TokenPage() {
     async (data: z.infer<typeof schema>) => {
       if (!memecoinAddress || !chainId) return
 
-      switch (Object.values(LiquidityType)[liquidityTypeIndex]) {
-        case LiquidityType.EKUBO: {
+      switch (Object.values(AMM)[AMMIndex]) {
+        case AMM.EKUBO: {
           console.log(data)
           break
         }
 
-        case LiquidityType.JEDISWAP: {
+        case AMM.JEDISWAP: {
           if (!quoteAmount) return
 
           const uin256QuoteAmount = uint256.bnToUint256(
@@ -158,15 +164,7 @@ export default function TokenPage() {
         }
       }
     },
-    [
-      liquidityTypeIndex,
-      quoteAmount,
-      transferRestrictionDelay,
-      liquidityLockPeriod,
-      memecoinAddress,
-      chainId,
-      writeAsync,
-    ]
+    [AMMIndex, quoteAmount, transferRestrictionDelay, liquidityLockPeriod, memecoinAddress, chainId, writeAsync]
   )
 
   // page content
@@ -182,6 +180,13 @@ export default function TokenPage() {
     if (!memecoinInfos) return
 
     const teamAllocationPercentage = new Percent(memecoinInfos.teamAllocation, memecoinInfos.maxSupply).toFixed()
+    const parsedLiquidityLockPeriod = liquidityStatus?.unlockTime
+      ? liquidityStatus.unlockTime === LIQUIDITY_LOCK_FOREVER_TIMESTAMP
+        ? 'Forever'
+        : parseMonthsDuration(
+            moment.duration(moment(moment.unix(liquidityStatus.unlockTime)).diff(moment.now()), 'milliseconds')
+          )
+      : undefined
 
     return (
       <Column gap="16">
@@ -206,14 +211,14 @@ export default function TokenPage() {
             <Column gap="8" alignItems="flex-start">
               <Text.Small>Liquidity lock:</Text.Small>
               <Text.HeadlineMedium color={memecoinInfos.launched ? 'accent' : 'text2'} whiteSpace="nowrap">
-                {memecoinInfos.launched ? 'Forever' : 'Not launched'}
+                {memecoinInfos.launched ? parsedLiquidityLockPeriod : 'Not launched'}
               </Text.HeadlineMedium>
             </Column>
           </Box>
         </Row>
       </Column>
     )
-  }, [indexing, error, memecoinInfos])
+  }, [indexing, error, memecoinInfos, liquidityStatus?.unlockTime])
 
   const ownerContent = useMemo(() => {
     if (!memecoinInfos?.isOwner || error) return
@@ -244,7 +249,7 @@ export default function TokenPage() {
           <Row gap="12" justifyContent="space-between">
             <Text.HeadlineMedium>Launch token</Text.HeadlineMedium>
 
-            <Toggler index={liquidityTypeIndex} setIndex={setLiquidityTypeIndex} modes={Object.values(LiquidityType)} />
+            <Toggler index={AMMIndex} setIndex={setAMMIndex} modes={Object.values(AMM)} />
           </Row>
 
           <Column gap="8">
@@ -298,12 +303,8 @@ export default function TokenPage() {
             </Box>
           </Column>
 
-          <PrimaryButton
-            type="submit"
-            large
-            disabled={Object.values(LiquidityType)[liquidityTypeIndex] === LiquidityType.EKUBO}
-          >
-            {Object.values(LiquidityType)[liquidityTypeIndex] === LiquidityType.EKUBO
+          <PrimaryButton type="submit" large disabled={Object.values(AMM)[AMMIndex] === AMM.EKUBO}>
+            {Object.values(AMM)[AMMIndex] === AMM.EKUBO
               ? 'Coming soon'
               : `Launch${!!quoteAmount && ` - ${quoteAmount.toSignificant(4)} ETH`}`}
           </PrimaryButton>
@@ -319,7 +320,7 @@ export default function TokenPage() {
     liquidityLockPeriod,
     handleSubmit,
     launch,
-    liquidityTypeIndex,
+    AMMIndex,
     register,
     errors.startingMarketCap?.message,
     errors.hodlLimit?.message,

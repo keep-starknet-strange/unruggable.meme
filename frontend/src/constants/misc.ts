@@ -16,11 +16,19 @@ export enum Selector {
   LOCKED_LIQUIDITY = 'locked_liquidity',
   LAUNCH_ON_JEDISWAP = 'launch_on_jediswap',
   APPROVE = 'approve',
+  GET_REMAINING_TIME = 'get_remaining_time',
+  LAUNCHED_WITH_LIQUIDITY_PARAMETERS = 'launched_with_liquidity_parameters',
+  GET_LOCK_DETAILS = 'get_lock_details',
+}
+
+export enum AMM {
+  EKUBO = 'Ekubo',
+  JEDISWAP = 'Jediswap',
 }
 
 export enum LiquidityType {
-  EKUBO = 'Ekubo',
-  JEDISWAP = 'Jediswap',
+  ERC20 = 'ERC20',
+  NFT = 'NFT',
 }
 
 export const MIN_STARTING_MCAP = 10_000 // $10k

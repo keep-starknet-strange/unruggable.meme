@@ -1,7 +1,7 @@
 import { useAccount, useProvider } from '@starknet-react/core'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { FACTORY_ADDRESSES, MULTICALL_ADDRESS } from 'src/constants/contracts'
-import { Selector } from 'src/constants/misc'
+import { AMM, LIQUIDITY_LOCK_FOREVER_TIMESTAMP, LiquidityType, Selector } from 'src/constants/misc'
 import { CallData, getChecksumAddress, hash, shortString, uint256 } from 'starknet'
 
 import useChainId from './useChainId'
@@ -16,6 +16,13 @@ interface MemecoinInfos {
   launched: boolean
   isOwner: boolean
   owner: string
+  liquidityType?: LiquidityType
+  liquidityLockManager?: string
+  liquidityLockPosition?: string
+}
+
+interface LockPosition {
+  unlockTime: number
 }
 
 export function useMemecoinInfos() {
@@ -85,12 +92,18 @@ export function useMemecoinInfos() {
         calldata: [tokenAddress],
       })
 
+      const launchParams = CallData.compile({
+        to: tokenAddress,
+        selector: hash.getSelector(Selector.LAUNCHED_WITH_LIQUIDITY_PARAMETERS),
+        calldata: [],
+      })
+
       try {
         const res = await provider?.callContract({
           contractAddress: MULTICALL_ADDRESS,
           entrypoint: Selector.AGGREGATE,
           calldata: [
-            8,
+            9,
             ...isMemecoinCalldata,
             ...nameCalldata,
             ...symbolCalldata,
@@ -99,6 +112,7 @@ export function useMemecoinInfos() {
             ...teamAllocationCalldata,
             ...ownerCalldata,
             ...lockedLiquidity,
+            ...launchParams,
           ],
         })
 
@@ -106,7 +120,12 @@ export function useMemecoinInfos() {
 
         if (!isUnruggable) {
           setError('Not unruggable')
+          return
         }
+
+        const hasLiquidity = !+res.result[19] // even more beautiful
+        const hasLaunchParams = !+res.result[24] // I'm delighted
+        const launchedOn = hasLaunchParams ? Object.values(AMM)[+res.result[25]] : null
 
         const memecoinInfos = {
           address: tokenAddress,
@@ -116,6 +135,18 @@ export function useMemecoinInfos() {
           maxSupply: uint256.uint256ToBN({ low: res.result[11], high: res.result[12] }).toString(),
           teamAllocation: uint256.uint256ToBN({ low: res.result[14], high: res.result[15] }).toString(),
           owner: getChecksumAddress(res.result[17]),
+          launchedOn,
+          ...(hasLiquidity
+            ? {
+                liquidityLockManager: res.result[20] as string,
+                liquidityType: Object.values(LiquidityType)[+res.result[21]] as LiquidityType,
+              }
+            : {}),
+          ...(launchedOn === AMM.JEDISWAP
+            ? {
+                liquidityLockPosition: res.result[29],
+              }
+            : {}),
         }
 
         setMemecoinInfos(memecoinInfos)
@@ -156,4 +187,50 @@ export function useMemecoinInfos() {
     { data: memecoinInfos ? { ...memecoinInfos, isOwner } : undefined, error, indexing },
     getMemecoinInfos,
   ] as const
+}
+
+export function useMemecoinLiquidity(liquidityType?: LiquidityType, lockManager?: string, lockPosition?: string) {
+  const [liquidity, setLiquidity] = useState<LockPosition | undefined>()
+
+  // starknet
+  const { provider } = useProvider()
+  const chainId = useChainId()
+
+  useEffect(() => {
+    if (!lockManager || liquidityType === undefined || !chainId) {
+      setLiquidity(undefined)
+      return
+    }
+
+    switch (liquidityType) {
+      case LiquidityType.ERC20: {
+        if (!lockPosition) {
+          setLiquidity(undefined)
+          return
+        }
+
+        provider
+          ?.callContract({
+            contractAddress: lockManager,
+            entrypoint: Selector.GET_LOCK_DETAILS,
+            calldata: [lockPosition],
+          })
+          .then((res) => {
+            setLiquidity({
+              unlockTime: +res?.result[4],
+            })
+          })
+
+        break
+      }
+
+      case LiquidityType.NFT: {
+        setLiquidity({
+          unlockTime: LIQUIDITY_LOCK_FOREVER_TIMESTAMP,
+        })
+      }
+    }
+  }, [lockManager, lockPosition, liquidityType, chainId, provider])
+
+  return liquidity
 }
