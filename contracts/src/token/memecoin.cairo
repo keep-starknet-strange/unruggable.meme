@@ -352,7 +352,7 @@ mod UnruggableMemecoin {
         ///
         /// * `bool` - True if the current time is after the launch period, false otherwise.
         ///
-        fn is_after_time_restrictions(ref self: ContractState) -> bool {
+        fn is_after_time_restrictions(self: @ContractState) -> bool {
             let current_time = get_block_timestamp();
             self.is_launched()
                 && current_time >= (self.launch_time.read()
