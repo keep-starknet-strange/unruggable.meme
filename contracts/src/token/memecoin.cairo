@@ -4,8 +4,8 @@ use starknet::ContractAddress;
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 enum LiquidityType {
-    ERC20: ContractAddress,
-    NFT: u64
+    JediERC20: ContractAddress,
+    EkuboNFT: u64
 }
 
 #[starknet::contract]
@@ -64,11 +64,6 @@ mod UnruggableMemecoin {
     const MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION: u16 = 1_000; // 10%
     /// The minimum maximum percentage of the supply that can be bought at once.
     const MIN_MAX_PERCENTAGE_BUY_LAUNCH: u16 = 50; // 0.5%
-    ///TODO The address of the current Ekubo Router contract
-    //TODO! As this is not an upgradeable contract, it should not be set a constant.
-    // This is only a workaround before working on resolving audits.
-    const EKUBO_ROUTER: felt252 =
-        0x01b6f560def289b32e2a7b0920909615531a4d9d5636ca509045843559dc23d5;
 
     #[storage]
     struct Storage {
@@ -297,6 +292,11 @@ mod UnruggableMemecoin {
         /// - After launch, the transfer amount does not exceed a certain percentage of the total supply.
         /// and the recipient has not already received tokens in the current transaction.
         ///
+        /// By returning early if the transaction performed is not a direct buy from the pair / ekubo core,
+        /// we ensure that the restrictions only trigger once, when the coin is moved from pools.
+        /// As such, this keeps compatibility with aggregators and routers that perform multiple transfers
+        /// when swapping tokens.
+        ///
         /// # Arguments
         ///
         /// * `sender` - The address of the sender.
@@ -314,37 +314,40 @@ mod UnruggableMemecoin {
 
             if !self.is_launched() {
                 self.enforce_prelaunch_holders_limit(sender, recipient, amount);
-            } else {
-                //TODO(audit): make sure restrictions are compatible with ekubo and aggregators
-                let liquidity_type = self.liquidity_type.read().unwrap();
+                return;
+            }
 
-                // The LP pair must be whitelisted from transfer restrictions
-                match liquidity_type {
-                    LiquidityType::ERC20(pair) => {
-                        if (get_caller_address() != pair) {
-                            // If it's not a buy transaction, we return early
-                            return;
-                        }
-                    },
-                    LiquidityType::NFT(_) => {
-                        // whitelisting ekubo router will fix one-hop swaps, but might still be problematic for multihop ones.
-                        //TODO: this is a temporary workaround to be able to start working on audit
-                        // resolution.
-                        if (recipient == EKUBO_ROUTER.try_into().unwrap()) {
-                            return;
-                        }
+            // Safe unwrap as we already checked that the coin is launched,
+            // thus the liquidity type is not none.
+            match self.liquidity_type.read().unwrap() {
+                LiquidityType::JediERC20(pair) => {
+                    if (get_caller_address() != pair) {
+                        // When buying from jediswap, the caller_address is the pair,
+                        // so we return early if the caller is not the pair to not apply restricitons.
+                        return;
+                    }
+                },
+                LiquidityType::EkuboNFT(_) => {
+                    let factory = IFactoryDispatcher {
+                        contract_address: self.factory_contract.read()
+                    };
+                    let ekubo_core_address = factory.ekubo_core_address();
+                    if (get_caller_address() != ekubo_core_address) {
+                        // When buying from Ekubo, the token is transferred from Ekubo Core
+                        // to the recipient, so we return early if the caller is not Ekubo Core.
+                        return;
                     }
                 }
-
-                assert(
-                    amount <= self
-                        .total_supply()
-                        .percent_mul(self.max_percentage_buy_launch.read().into()),
-                    'Max buy cap reached'
-                );
-
-                self.ensure_not_multicall();
             }
+
+            assert(
+                amount <= self
+                    .total_supply()
+                    .percent_mul(self.max_percentage_buy_launch.read().into()),
+                'Max buy cap reached'
+            );
+
+            self.ensure_not_multicall();
         }
 
         /// Checks if the current time is after the launch period.

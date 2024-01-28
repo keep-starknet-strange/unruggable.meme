@@ -110,6 +110,7 @@ fn deploy_memecoin_through_factory_with_owner(
     // occured in the same tx. Rather than adding these lines in each test, we make it a default.
     let mut tx_info: TxInfoMock = Default::default();
     tx_info.transaction_hash = Option::Some(1234);
+    tx_info.account_contract_address = Option::Some(snforge_std::test_address());
     start_spoof(CheatTarget::One(memecoin_address), tx_info);
 
     (IUnruggableMemecoinDispatcher { contract_address: memecoin_address }, memecoin_address)

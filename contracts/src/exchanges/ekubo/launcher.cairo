@@ -147,6 +147,9 @@ trait IEkuboLauncher<T> {
     /// * `EkuboLP` - A struct containing the details of the liquidity position.
     ///
     fn liquidity_position_details(self: @T, id: u64) -> EkuboLP;
+
+    /// Returns the address of the ekubo core contract.
+    fn ekubo_core_address(self: @T) -> ContractAddress;
 }
 
 #[starknet::contract]
@@ -158,6 +161,7 @@ mod EkuboLauncher {
     use ekubo::interfaces::core::{ICoreDispatcher, ICoreDispatcherTrait, ILocker};
     use ekubo::interfaces::core::{PoolKey};
     use ekubo::interfaces::erc20::{IERC20Dispatcher, IERC20DispatcherTrait};
+    use ekubo::interfaces::positions::{IPositionsDispatcher, IPositionsDispatcherTrait};
     use ekubo::types::bounds::{Bounds};
     use ekubo::types::{i129::i129};
     use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
@@ -168,8 +172,7 @@ mod EkuboLauncher {
     use unruggable::errors;
     use unruggable::exchanges::ekubo::errors::{NOT_POSITION_OWNER};
     use unruggable::exchanges::ekubo::interfaces::{
-        ITokenRegistryDispatcher, IPositionsDispatcher, IPositionsDispatcherTrait,
-        IOwnedNFTDispatcher, IOwnedNFTDispatcherTrait,
+        ITokenRegistryDispatcher, IOwnedNFTDispatcher, IOwnedNFTDispatcherTrait,
     };
     use unruggable::token::interface::{
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -377,6 +380,10 @@ mod EkuboLauncher {
                 }
             }
         }
+
+        fn ekubo_core_address(self: @ContractState) -> ContractAddress {
+            self.core.read().contract_address
+        }
     }
 
     #[external(v0)]
@@ -398,7 +405,7 @@ mod EkuboLauncher {
                         extension: pool_key.extension,
                     };
                     let bounds = Bounds { lower: bounds.lower, upper: bounds.upper, };
-                    positions.withdraw(id, pool_key, bounds, 0, 0, 0, true);
+                    positions.collect_fees(id, pool_key, bounds);
 
                     // Transfer to recipient
                     let mut return_data = Default::default();

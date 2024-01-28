@@ -147,4 +147,7 @@ trait IFactory<TContractState> {
     ///
     /// * `bool` - Returns true if the address is a memecoin, false otherwise.
     fn is_memecoin(self: @TContractState, address: ContractAddress) -> bool;
+
+    /// Returns the address of Ekubo Core, registered inside the EkuboLauncher contract.
+    fn ekubo_core_address(self: @TContractState) -> ContractAddress;
 }

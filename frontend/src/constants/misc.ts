@@ -29,8 +29,8 @@ export enum AMM {
 }
 
 export enum LiquidityType {
-  ERC20 = 'ERC20',
-  NFT = 'NFT',
+  ERC20 = 'JediERC20',
+  NFT = 'EkuboNFT',
 }
 
 export const MIN_STARTING_MCAP = 5_000 // $5k
