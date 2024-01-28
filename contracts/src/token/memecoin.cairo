@@ -454,6 +454,10 @@ mod UnruggableMemecoin {
             recipient: ContractAddress,
             amount: u256
         ) {
+            if amount.is_zero() {
+                return;
+            }
+
             // If this is not a mint and the sender will no longer hold tokens after the transfer,
             // decrement the holders count.
             if self.balanceOf(sender) == amount {
