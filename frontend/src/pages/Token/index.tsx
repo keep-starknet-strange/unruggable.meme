@@ -187,6 +187,7 @@ export default function TokenPage() {
 
     // team allocation
     const teamAllocation = new Percent(memecoinInfos.teamAllocation, memecoinInfos.maxSupply)
+
     ret.teamAllocation = {
       parsedValue: `${teamAllocation.toFixed()}%`,
       safety: getTeamAllocationSafety(teamAllocation),
@@ -198,27 +199,33 @@ export default function TokenPage() {
         moment(moment.unix(liquidityLockPosition.unlockTime)).diff(moment.now()),
         'milliseconds'
       )
+      const safety = getLiquidityLockSafety(liquidityLock)
+
       ret.liquidityLock = {
-        parsedValue: parseMonthsDuration(liquidityLock),
-        safety: getLiquidityLockSafety(liquidityLock),
+        parsedValue: safety === Safety.SAFE ? FOREVER : parseMonthsDuration(liquidityLock),
+        safety,
       }
     }
 
+    // quote token
     if (chainId && memecoinInfos?.launch) {
       const quoteTokenInfos = QUOTE_TOKENS[chainId][memecoinInfos.launch.quoteToken]
+
       ret.quoteToken = {
-        parsedValue: quoteTokenInfos.symbol ?? 'UNKOWN',
+        parsedValue: quoteTokenInfos?.symbol ?? 'UNKOWN',
         safety: getQuoteTokenSafety(!quoteTokenInfos),
       }
     }
 
+    // starting mcap
     if (memecoinInfos?.launch?.quoteAmount && ethPriceAtLaunch) {
-      const startingMcap = ret.quoteToken
-        ? new Fraction(memecoinInfos?.launch?.quoteAmount)
-            .multiply(new Fraction(memecoinInfos.teamAllocation, memecoinInfos.maxSupply).add(1))
-            .divide(decimalsScale(18))
-            .multiply(ethPriceAtLaunch)
-        : undefined
+      const startingMcap =
+        ret.quoteToken.safety === Safety.SAFE
+          ? new Fraction(memecoinInfos?.launch?.quoteAmount)
+              .multiply(new Fraction(memecoinInfos.teamAllocation, memecoinInfos.maxSupply).add(1))
+              .divide(decimalsScale(18))
+              .multiply(ethPriceAtLaunch)
+          : undefined
 
       ret.startingMcap = {
         parsedValue: startingMcap ? `$${startingMcap.toFixed(0, { groupSeparator: ',' })}` : 'UNKNOWN',
@@ -286,7 +293,7 @@ export default function TokenPage() {
 
           <Box className={styles.card} opacity={memecoinInfos.isLaunched ? '1' : '0.5'}>
             <Column gap="8" alignItems="flex-start">
-              <Text.Small>Starting Mcap:</Text.Small>
+              <Text.Small>Starting market cap:</Text.Small>
               <Text.HeadlineMedium
                 color={SAFETY_COLORS[parsedMemecoinInfos?.startingMcap?.safety ?? Safety.UNKNOWN]}
                 whiteSpace="nowrap"
