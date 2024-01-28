@@ -321,7 +321,8 @@ mod UnruggableMemecoin {
                 // The LP pair must be whitelisted from transfer restrictions
                 match liquidity_type {
                     LiquidityType::ERC20(pair) => {
-                        if (get_caller_address() == pair || recipient == pair) {
+                        if (get_caller_address() != pair) {
+                            // If it's not a buy transaction, we return early
                             return;
                         }
                     },
