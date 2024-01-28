@@ -82,7 +82,13 @@ impl JediswapAdapterImpl of unruggable::exchanges::ExchangeAdapter<
         let jedi_router = IJediswapRouterDispatcher { contract_address: exchange_address };
         assert(jedi_router.contract_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
         let jedi_factory = IJediswapFactoryDispatcher { contract_address: jedi_router.factory(), };
-        let pair_address = jedi_factory.create_pair(quote_address, memecoin_address);
+
+        let existing_pair_address = jedi_factory.get_pair(memecoin_address, quote_address);
+        let pair_address = if existing_pair_address.is_non_zero() {
+            existing_pair_address
+        } else {
+            jedi_factory.create_pair(memecoin_address, quote_address)
+        };
 
         // Add liquidity - approve the entirety of the memecoin and quote token balances
         // to supply as liquidity

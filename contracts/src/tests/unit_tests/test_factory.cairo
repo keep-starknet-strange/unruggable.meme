@@ -14,7 +14,7 @@ use unruggable::exchanges::{SupportedExchanges};
 use unruggable::factory::{IFactory, IFactoryDispatcher, IFactoryDispatcherTrait};
 use unruggable::locker::interface::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
 use unruggable::locker::{LockPosition};
-use unruggable::tests::addresses::{ETH_ADDRESS};
+use unruggable::tests::addresses::{ETH_ADDRESS, JEDI_FACTORY_ADDRESS};
 use unruggable::tests::unit_tests::utils::{
     deploy_jedi_amm_factory_and_router, deploy_meme_factory, deploy_locker, deploy_eth, OWNER, NAME,
     SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS, INITIAL_HOLDERS_AMOUNTS, SALT,
@@ -177,6 +177,69 @@ fn test_launch_memecoin_happy_path() {
     // Check ownership renounced
     assert(memecoin.owner().is_zero(), 'Still an owner');
 }
+
+#[test]
+fn test_launch_memecoin_pair_exists_should_succeed() {
+    // Given
+    let owner = snforge_std::test_address();
+    let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
+    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
+    let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
+    let jediswap_factory = IJediswapFactoryDispatcher { contract_address: JEDI_FACTORY_ADDRESS() };
+
+    // When a pair already exists
+    jediswap_factory.create_pair(memecoin_address, eth.contract_address);
+
+    // Then the launch should be successful
+
+    let eth_amount: u256 = 1 * pow_256(10, 18); // 1 ETHER
+    let factory_balance_meme = memecoin.balanceOf(factory.contract_address);
+    start_prank(CheatTarget::One(eth.contract_address), owner);
+    eth.approve(factory.contract_address, eth_amount);
+    stop_prank(CheatTarget::One(eth.contract_address));
+
+    start_prank(CheatTarget::One(factory.contract_address), owner);
+    start_warp(CheatTarget::One(memecoin_address), 1);
+    let pair_address = factory
+        .launch_on_jediswap(
+            memecoin_address,
+            TRANSFER_RESTRICTION_DELAY,
+            MAX_PERCENTAGE_BUY_LAUNCH,
+            eth.contract_address,
+            eth_amount,
+            DEFAULT_MIN_LOCKTIME,
+        );
+    stop_prank(CheatTarget::One(factory.contract_address));
+    stop_warp(CheatTarget::One(memecoin_address));
+
+    assert(memecoin.is_launched(), 'should be launched');
+
+    // Check pair creation
+    let pair = IJediswapPairDispatcher { contract_address: pair_address };
+    let (token_0_reserves, token_1_reserves, _) = pair.get_reserves();
+    assert(pair.token0() == memecoin_address, 'wrong token 0 address');
+    assert(pair.token1() == eth.contract_address, 'wrong token 1 address');
+    assert(token_0_reserves == factory_balance_meme, 'wrong pool token reserves');
+    assert(token_1_reserves == eth_amount, 'wrong pool memecoin reserves');
+    let lp_token = ERC20ABIDispatcher { contract_address: pair_address };
+    assert(lp_token.balanceOf(memecoin_address) == 0, 'shouldnt have lp tokens');
+
+    // Check token lock
+    let locker = ILockManagerDispatcher { contract_address: LOCK_MANAGER_ADDRESS() };
+    let lock_address = locker.user_lock_at(owner, 0);
+    let token_lock = locker.get_lock_details(lock_address);
+    let expected_lock = LockPosition {
+        token: pair_address,
+        amount: pair.totalSupply() - 1000,
+        unlock_time: starknet::get_block_timestamp() + DEFAULT_MIN_LOCKTIME,
+        owner: owner,
+    };
+    assert(token_lock == expected_lock, 'wrong lock');
+
+    // Check ownership renounced
+    assert(memecoin.owner().is_zero(), 'Still an owner');
+}
+
 
 #[test]
 #[should_panic(expected: ('Already launched',))]
