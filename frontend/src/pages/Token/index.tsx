@@ -13,9 +13,10 @@ import PercentInput from 'src/components/Input/PercentInput'
 import Section from 'src/components/Section'
 import Slider from 'src/components/Slider'
 import Toggler from 'src/components/Toggler'
-import { ETH_ADDRESS, FACTORY_ADDRESSES } from 'src/constants/contracts'
+import { ETH_ADDRESS, FACTORY_ADDRESSES, QUOTE_TOKENS } from 'src/constants/contracts'
 import {
   AMM,
+  FOREVER,
   LIQUIDITY_LOCK_FOREVER_TIMESTAMP,
   LIQUIDITY_LOCK_PERIOD_STEP,
   MAX_LIQUIDITY_LOCK_PERIOD,
@@ -23,11 +24,13 @@ import {
   MIN_LIQUIDITY_LOCK_PERIOD,
   MIN_STARTING_MCAP,
   MIN_TRANSFER_RESTRICTION_DELAY,
+  RECOMMENDED_STARTING_MCAP,
   Selector,
   TRANSFER_RESTRICTION_DELAY_STEP,
 } from 'src/constants/misc'
+import { Safety, SAFETY_COLORS } from 'src/constants/safety'
 import useChainId from 'src/hooks/useChainId'
-import { useMemecoinInfos, useMemecoinLiquidity } from 'src/hooks/useMemecoin'
+import { useMemecoinInfos, useMemecoinliquidityLockPosition } from 'src/hooks/useMemecoin'
 import { useEtherPrice } from 'src/hooks/usePrice'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
@@ -36,6 +39,12 @@ import { vars } from 'src/theme/css/sprinkles.css'
 import { parseFormatedAmount } from 'src/utils/amount'
 import { decimalsScale } from 'src/utils/decimalScale'
 import { parseMinutesDuration, parseMonthsDuration } from 'src/utils/moment'
+import {
+  getLiquidityLockSafety,
+  getQuoteTokenSafety,
+  getStartingMcapSafety,
+  getTeamAllocationSafety,
+} from 'src/utils/safety'
 import { currencyInput, percentInput } from 'src/utils/zod'
 import { CallData, getChecksumAddress, uint256 } from 'starknet'
 import { z } from 'zod'
@@ -76,11 +85,11 @@ export default function TokenPage() {
     }
   }, [getMemecoinInfos, memecoinAddress])
 
-  // get memecoin liquidity
-  const liquidityStatus = useMemecoinLiquidity(
-    memecoinInfos?.liquidityType,
-    memecoinInfos?.liquidityLockManager,
-    memecoinInfos?.liquidityLockPosition
+  // get memecoin launch status
+  const liquidityLockPosition = useMemecoinliquidityLockPosition(
+    memecoinInfos?.launch?.liquidityType,
+    memecoinInfos?.launch?.liquidityLockManager,
+    memecoinInfos?.launch?.liquidityLockPosition
   )
 
   // form
@@ -94,6 +103,9 @@ export default function TokenPage() {
 
   // eth price
   const ethPrice = useEtherPrice()
+  const ethPriceAtLaunch = useEtherPrice(
+    memecoinInfos?.launch?.blockNumber ? memecoinInfos?.launch?.blockNumber - 1 : undefined
+  )
 
   // jediswap mcap
   const onStartingMarketCapChange = useCallback((event: FormEvent<HTMLInputElement>) => {
@@ -167,6 +179,63 @@ export default function TokenPage() {
     [AMMIndex, quoteAmount, transferRestrictionDelay, liquidityLockPeriod, memecoinAddress, chainId, writeAsync]
   )
 
+  // parse memecoin infos
+  const parsedMemecoinInfos = useMemo(() => {
+    if (!memecoinInfos) return
+
+    const ret: Record<string, { parsedValue: string; safety: Safety }> = {}
+
+    // team allocation
+    const teamAllocation = new Percent(memecoinInfos.teamAllocation, memecoinInfos.maxSupply)
+
+    ret.teamAllocation = {
+      parsedValue: `${teamAllocation.toFixed()}%`,
+      safety: getTeamAllocationSafety(teamAllocation),
+    }
+
+    // liquidity lock
+    if (liquidityLockPosition?.unlockTime) {
+      const liquidityLock = moment.duration(
+        moment(moment.unix(liquidityLockPosition.unlockTime)).diff(moment.now()),
+        'milliseconds'
+      )
+      const safety = getLiquidityLockSafety(liquidityLock)
+
+      ret.liquidityLock = {
+        parsedValue: safety === Safety.SAFE ? FOREVER : parseMonthsDuration(liquidityLock),
+        safety,
+      }
+    }
+
+    // quote token
+    if (chainId && memecoinInfos?.launch) {
+      const quoteTokenInfos = QUOTE_TOKENS[chainId][memecoinInfos.launch.quoteToken]
+
+      ret.quoteToken = {
+        parsedValue: quoteTokenInfos?.symbol ?? 'UNKOWN',
+        safety: getQuoteTokenSafety(!quoteTokenInfos),
+      }
+    }
+
+    // starting mcap
+    if (memecoinInfos?.launch?.quoteAmount && ethPriceAtLaunch) {
+      const startingMcap =
+        ret.quoteToken.safety === Safety.SAFE
+          ? new Fraction(memecoinInfos?.launch?.quoteAmount)
+              .multiply(new Fraction(memecoinInfos.teamAllocation, memecoinInfos.maxSupply).add(1))
+              .divide(decimalsScale(18))
+              .multiply(ethPriceAtLaunch)
+          : undefined
+
+      ret.startingMcap = {
+        parsedValue: startingMcap ? `$${startingMcap.toFixed(0, { groupSeparator: ',' })}` : 'UNKNOWN',
+        safety: getStartingMcapSafety(teamAllocation, startingMcap),
+      }
+    }
+
+    return ret
+  }, [liquidityLockPosition?.unlockTime, memecoinInfos, chainId, ethPriceAtLaunch])
+
   // page content
   const mainContent = useMemo(() => {
     if (indexing) {
@@ -177,16 +246,7 @@ export default function TokenPage() {
       return <Text.Body textAlign="center">This token is not unruggable</Text.Body>
     }
 
-    if (!memecoinInfos) return
-
-    const teamAllocationPercentage = new Percent(memecoinInfos.teamAllocation, memecoinInfos.maxSupply).toFixed()
-    const parsedLiquidityLockPeriod = liquidityStatus?.unlockTime
-      ? liquidityStatus.unlockTime === LIQUIDITY_LOCK_FOREVER_TIMESTAMP
-        ? 'Forever'
-        : parseMonthsDuration(
-            moment.duration(moment(moment.unix(liquidityStatus.unlockTime)).diff(moment.now()), 'milliseconds')
-          )
-      : undefined
+    if (!parsedMemecoinInfos || !memecoinInfos) return
 
     return (
       <Column gap="16">
@@ -201,24 +261,51 @@ export default function TokenPage() {
           <Box className={styles.card}>
             <Column gap="8" alignItems="flex-start">
               <Text.Small>Team allocation:</Text.Small>
-              <Text.HeadlineMedium color={+teamAllocationPercentage ? 'text1' : 'accent'}>
-                {teamAllocationPercentage}%
+              <Text.HeadlineMedium color={SAFETY_COLORS[parsedMemecoinInfos?.teamAllocation?.safety ?? Safety.UNKNOWN]}>
+                {parsedMemecoinInfos?.teamAllocation?.parsedValue ?? 'Loading...'}
               </Text.HeadlineMedium>
             </Column>
           </Box>
 
-          <Box className={styles.card} opacity={memecoinInfos.launched ? '1' : '0.5'}>
+          <Box className={styles.card} opacity={memecoinInfos.isLaunched ? '1' : '0.5'}>
             <Column gap="8" alignItems="flex-start">
               <Text.Small>Liquidity lock:</Text.Small>
-              <Text.HeadlineMedium color={memecoinInfos.launched ? 'accent' : 'text2'} whiteSpace="nowrap">
-                {memecoinInfos.launched ? parsedLiquidityLockPeriod : 'Not launched'}
+              <Text.HeadlineMedium
+                color={SAFETY_COLORS[parsedMemecoinInfos?.liquidityLock?.safety ?? Safety.UNKNOWN]}
+                whiteSpace="nowrap"
+              >
+                {parsedMemecoinInfos?.liquidityLock?.parsedValue ?? 'Not launched'}
+              </Text.HeadlineMedium>
+            </Column>
+          </Box>
+
+          <Box className={styles.card} opacity={memecoinInfos.isLaunched ? '1' : '0.5'}>
+            <Column gap="8" alignItems="flex-start">
+              <Text.Small>Quote token:</Text.Small>
+              <Text.HeadlineMedium
+                color={SAFETY_COLORS[parsedMemecoinInfos?.quoteToken?.safety ?? Safety.UNKNOWN]}
+                whiteSpace="nowrap"
+              >
+                {parsedMemecoinInfos?.quoteToken?.parsedValue ?? 'Not launched'}
+              </Text.HeadlineMedium>
+            </Column>
+          </Box>
+
+          <Box className={styles.card} opacity={memecoinInfos.isLaunched ? '1' : '0.5'}>
+            <Column gap="8" alignItems="flex-start">
+              <Text.Small>Starting market cap:</Text.Small>
+              <Text.HeadlineMedium
+                color={SAFETY_COLORS[parsedMemecoinInfos?.startingMcap?.safety ?? Safety.UNKNOWN]}
+                whiteSpace="nowrap"
+              >
+                {parsedMemecoinInfos?.startingMcap?.parsedValue ?? 'Not launched'}
               </Text.HeadlineMedium>
             </Column>
           </Box>
         </Row>
       </Column>
     )
-  }, [indexing, error, memecoinInfos, liquidityStatus?.unlockTime])
+  }, [indexing, error, memecoinInfos, parsedMemecoinInfos])
 
   const ownerContent = useMemo(() => {
     if (!memecoinInfos?.isOwner || error) return
@@ -230,7 +317,7 @@ export default function TokenPage() {
       </Row>
     )
 
-    if (memecoinInfos.launched) {
+    if (memecoinInfos.isLaunched) {
       return (
         <Column gap="32">
           {onlyVisibleToYou}
@@ -241,7 +328,7 @@ export default function TokenPage() {
       const parsedTransferRestrictionDelay = parseMinutesDuration(moment.duration(transferRestrictionDelay, 'minutes'))
       const parsedLiquidityLockPeriod =
         liquidityLockPeriod === MAX_LIQUIDITY_LOCK_PERIOD
-          ? 'Forever'
+          ? FOREVER
           : parseMonthsDuration(moment.duration(liquidityLockPeriod, 'months'))
 
       return (
@@ -294,7 +381,7 @@ export default function TokenPage() {
 
             <NumericalInput
               addon={<Text.HeadlineSmall>$</Text.HeadlineSmall>}
-              placeholder="420,000.00"
+              placeholder={`${RECOMMENDED_STARTING_MCAP.toLocaleString()} (recommended)`}
               {...register('startingMarketCap', { onChange: onStartingMarketCapChange })}
             />
 
@@ -315,7 +402,7 @@ export default function TokenPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     memecoinInfos?.isOwner,
-    memecoinInfos?.launched,
+    memecoinInfos?.isLaunched,
     transferRestrictionDelay,
     liquidityLockPeriod,
     handleSubmit,
