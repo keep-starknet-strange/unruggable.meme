@@ -2,7 +2,7 @@ import JediswapPair from 'src/abis/JediswapPair.json'
 import Multicall from 'src/abis/Multicall.json'
 import { constants, getChecksumAddress, json } from 'starknet'
 
-export interface TokenInfos {
+interface TokenInfos {
   name: string
   symbol: string
 }

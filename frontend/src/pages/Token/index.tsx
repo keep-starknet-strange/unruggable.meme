@@ -24,6 +24,7 @@ import {
   MIN_LIQUIDITY_LOCK_PERIOD,
   MIN_STARTING_MCAP,
   MIN_TRANSFER_RESTRICTION_DELAY,
+  RECOMMENDED_STARTING_MCAP,
   Selector,
   TRANSFER_RESTRICTION_DELAY_STEP,
 } from 'src/constants/misc'
@@ -102,7 +103,9 @@ export default function TokenPage() {
 
   // eth price
   const ethPrice = useEtherPrice()
-  const ethPriceAtLaunch = useEtherPrice(memecoinInfos?.launch?.blockNumber)
+  const ethPriceAtLaunch = useEtherPrice(
+    memecoinInfos?.launch?.blockNumber ? memecoinInfos?.launch?.blockNumber - 1 : undefined
+  )
 
   // jediswap mcap
   const onStartingMarketCapChange = useCallback((event: FormEvent<HTMLInputElement>) => {
@@ -219,7 +222,7 @@ export default function TokenPage() {
 
       ret.startingMcap = {
         parsedValue: startingMcap ? `$${startingMcap.toFixed(0, { groupSeparator: ',' })}` : 'UNKNOWN',
-        safety: getStartingMcapSafety(startingMcap),
+        safety: getStartingMcapSafety(teamAllocation, startingMcap),
       }
     }
 
@@ -371,7 +374,7 @@ export default function TokenPage() {
 
             <NumericalInput
               addon={<Text.HeadlineSmall>$</Text.HeadlineSmall>}
-              placeholder="420,000.00"
+              placeholder={`${RECOMMENDED_STARTING_MCAP.toLocaleString()} (recommended)`}
               {...register('startingMarketCap', { onChange: onStartingMarketCapChange })}
             />
 

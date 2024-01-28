@@ -33,7 +33,8 @@ export enum LiquidityType {
   NFT = 'NFT',
 }
 
-export const MIN_STARTING_MCAP = 10_000 // $10k
+export const MIN_STARTING_MCAP = 5_000 // $5k
+export const RECOMMENDED_STARTING_MCAP = 10_000 // $12k
 
 export const TRANSFER_RESTRICTION_DELAY_STEP = 15 // 15m
 export const MIN_TRANSFER_RESTRICTION_DELAY = 30 // 30m

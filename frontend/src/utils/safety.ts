@@ -1,6 +1,11 @@
 import { Fraction, Percent } from '@uniswap/sdk-core'
 import moment from 'moment'
-import { LIQUIDITY_LOCK_SAFETY_BOUNDS, Safety, TEAM_ALLOCATION_SAFETY_BOUNDS } from 'src/constants/safety'
+import {
+  LIQUIDITY_LOCK_SAFETY_BOUNDS,
+  Safety,
+  STARTING_MCAP_SAFETY_BOUNDS,
+  TEAM_ALLOCATION_SAFETY_BOUNDS,
+} from 'src/constants/safety'
 
 export function getTeamAllocationSafety(teamAllocation: Percent) {
   if (teamAllocation.greaterThan(TEAM_ALLOCATION_SAFETY_BOUNDS[Safety.CORRECT])) return Safety.DANGEROUS
@@ -18,6 +23,22 @@ export function getQuoteTokenSafety(isUnknown: boolean) {
   return isUnknown ? Safety.DANGEROUS : Safety.SAFE
 }
 
-export function getStartingMcapSafety(startingMcap?: Fraction) {
-  return startingMcap ? Safety.SAFE : Safety.DANGEROUS // TODO: check starting mcap value if not undefined
+export function getStartingMcapSafety(teamAllocation: Percent, startingMcap?: Fraction) {
+  if (!startingMcap) return Safety.DANGEROUS
+
+  if (
+    startingMcap?.lessThan(STARTING_MCAP_SAFETY_BOUNDS[Safety.CORRECT].mcap) ||
+    startingMcap.multiply(teamAllocation).greaterThan(STARTING_MCAP_SAFETY_BOUNDS[Safety.CORRECT].teamAllocatoion)
+  ) {
+    return Safety.DANGEROUS
+  }
+
+  if (
+    startingMcap?.lessThan(STARTING_MCAP_SAFETY_BOUNDS[Safety.SAFE].mcap) ||
+    startingMcap.multiply(teamAllocation).greaterThan(STARTING_MCAP_SAFETY_BOUNDS[Safety.SAFE].teamAllocatoion)
+  ) {
+    return Safety.CORRECT
+  }
+
+  return Safety.SAFE
 }
