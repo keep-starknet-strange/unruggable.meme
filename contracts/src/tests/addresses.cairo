@@ -41,7 +41,7 @@ fn EKUBO_NFT_CLASS_HASH() -> ClassHash {
     0x034a6f8fbc43c018805c0d73486f7c8e819c12116e6fbaf846e58b9b8b63c27e.try_into().unwrap()
 }
 
-fn STARKDEFI_ADDRESS() -> ContractAddress {
+fn STARKDEFI_ROUTER_ADDRESS() -> ContractAddress {
     0x07eeE624919FAE668387D0d34D86d67795e5C919bc994841581144977Ef21c32.try_into().unwrap()
 }
 
