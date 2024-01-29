@@ -10,7 +10,7 @@ use unruggable::exchanges::SupportedExchanges;
 use unruggable::factory::interface::{IFactoryDispatcher, IFactoryDispatcherTrait};
 use unruggable::tests::addresses::{
     JEDI_FACTORY_ADDRESS, JEDI_ROUTER_ADDRESS, EKUBO_CORE, EKUBO_POSITIONS, EKUBO_REGISTRY,
-    EKUBO_NFT_CLASS_HASH, ETH_ADDRESS
+    EKUBO_NFT_CLASS_HASH, ETH_ADDRESS, STARKDEFI_ROUTER_ADDRESS
 };
 use unruggable::tests::unit_tests::utils::{
     deploy_locker, deploy_eth_with_owner, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS,
@@ -86,7 +86,8 @@ fn deploy_memecoin_through_factory_with_owner(
     let ekubo_launchpad = deploy_ekubo_launcher();
     let supported_exchanges = array![
         (SupportedExchanges::Jediswap, JEDI_ROUTER_ADDRESS()),
-        (SupportedExchanges::Ekubo, ekubo_launchpad)
+        (SupportedExchanges::Ekubo, ekubo_launchpad),
+        (SupportedExchanges::Starkdefi, STARKDEFI_ROUTER_ADDRESS())
     ]
         .span();
     let memecoin_factory_address = deploy_meme_factory(supported_exchanges);
