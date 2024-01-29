@@ -194,8 +194,7 @@ mod memecoin_entrypoints {
     }
 
     #[test]
-    #[should_panic(expected: ('Max buy cap reached',))]
-    fn test_transfer_max_percentage() {
+    fn test_transfer_max_percentage_not_pair_should_succeed() {
         let (memecoin, memecoin_address) = deploy_and_launch_memecoin();
 
         // Transfer slightly more than 2% of 21M stokens from owner to ALICE().
@@ -205,22 +204,21 @@ mod memecoin_entrypoints {
     }
 
     #[test]
-    #[should_panic(expected: ('Max buy cap reached',))]
-    fn test_transfer_from_max_percentage() {
+    fn test_transfer_from_max_percentage_not_pair_should_succeed() {
         let (memecoin, memecoin_address) = deploy_and_launch_memecoin();
 
+        let this_address = snforge_std::test_address();
         let amount = 420_001 * pow_256(10, 18);
 
-        start_prank(CheatTarget::One(memecoin.contract_address), OWNER());
-        memecoin.approve(snforge_std::test_address(), amount);
+        start_prank(CheatTarget::One(memecoin.contract_address), INITIAL_HOLDER_1());
+        memecoin.approve(this_address, amount);
         stop_prank(CheatTarget::One(memecoin.contract_address));
 
-        memecoin.transfer_from(OWNER(), ALICE(), amount);
+        memecoin.transfer_from(INITIAL_HOLDER_1(), ALICE(), amount);
     }
 
     #[test]
-    #[should_panic(expected: ('Multi calls not allowed',))]
-    fn test_transfer_from_multi_call() {
+    fn test_transfer_from_multi_call_not_pair_should_succeed() {
         let (memecoin, memecoin_address) = deploy_and_launch_memecoin();
 
         let this_address = snforge_std::test_address();
