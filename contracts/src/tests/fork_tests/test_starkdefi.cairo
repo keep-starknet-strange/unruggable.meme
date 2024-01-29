@@ -140,7 +140,6 @@ fn test_buy_above_max_limit_should_fail() {
     let pair = IStarkDPairDispatcher { contract_address: pair_address };
 
     // * Test
-
     // Approve required token amounts
     start_prank(CheatTarget::One(quote.contract_address), owner);
     quote.approve(STARKDEFI_ROUTER_ADDRESS(), 1 * pow_256(10, 18));
