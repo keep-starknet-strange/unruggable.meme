@@ -39,8 +39,6 @@ impl StarkDeFiAdapterImpl of unruggable::exchanges::ExchangeAdapter<
         let starkdefi_factory = IStarkDFactoryDispatcher {
             contract_address: starkdefi_router.factory(),
         };
-        let pair_address = starkdefi_factory
-            .create_pair(quote_address, memecoin_address, stable, fee);
 
         // Add liquidity 
         quote_token.transferFrom(caller_address, this, quote_amount,);
@@ -63,19 +61,8 @@ impl StarkDeFiAdapterImpl of unruggable::exchanges::ExchangeAdapter<
                 this, // locked
                 deadline: get_block_timestamp()
             );
-        assert(
-            memecoin.balanceOf(pair_address) == memecoin_balance,
-            starkdefi_errors::ADD_LIQUIDITY_BASE_FAILED
-        );
-        assert(
-            quote_token.balanceOf(pair_address) == quote_amount,
-            starkdefi_errors::ADD_LIQUIDITY_QUOTE_FAILED
-        );
+        let pair_address = starkdefi_factory.get_pair(quote_address, memecoin_address, stable, fee);
         let pair = ERC20ABIDispatcher { contract_address: pair_address, };
-
-        assert(
-            pair.balanceOf(this) == liquidity_received, starkdefi_errors::INVALID_LP_TOKEN_AMOUNT
-        );
 
         // Lock LP tokens
         let lock_manager = ILockManagerDispatcher { contract_address: lock_manager_address };
@@ -87,7 +74,6 @@ impl StarkDeFiAdapterImpl of unruggable::exchanges::ExchangeAdapter<
                 unlock_time: unlock_time,
                 withdrawer: caller_address,
             );
-        assert(pair.balanceOf(locked_address) == liquidity_received, starkdefi_errors::LOCK_FAILED);
 
         pair.contract_address
     }
