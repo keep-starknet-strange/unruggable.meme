@@ -109,6 +109,43 @@ trait IFactory<TContractState> {
         ekubo_parameters: EkuboPoolParameters,
     ) -> (u64, EkuboLP);
 
+    /// Launches the memecoin on StarkDeFi by creating a liquidity pair and adding liquidity to it.
+    ///
+    /// This function can only be called by the owner of the memecoin and only if the memecoin has not been launched yet.
+    /// The launch is set to be a volatile pool with a 1% fee.
+    /// Launching on StarkDeFi requires `quote_amount` quote tokens to be approved for transfer to the factory.
+    /// It creates a liquidity pair for the memecoin and the quote token on StarkDeFi, adds liquidity to it, and sets the memecoin as launched.
+    ///
+    /// # Arguments
+    ///
+    /// * `memecoin_address` - The address of the memecoin contract.
+    /// * `transfer_restriction_delay` - The delay in seconds during which transfers will be limited to a % of max supply after launch.
+    /// * `max_percentage_buy_launch` - The max buyable amount in % of the max supply after launch and during the transfer restriction delay.
+    /// * `quote_address` - The address of the quote token contract.
+    /// * `quote_amount` - The amount of quote tokens to add as liquidity.
+    /// * `unlock_time` - The timestamp when the liquidity can be unlocked.
+    ///
+    /// # Returns
+    ///
+    /// * `ContractAddress` - The address of the created liquidity pair.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if:
+    ///
+    /// * The caller's address is not the same as the `owner` of the memecoin (error code: `errors::CALLER_NOT_OWNER`).
+    /// * The memecoin has already been launched (error code: `errors::ALREADY_LAUNCHED`).
+    ///
+    fn launch_on_starkdefi(
+        ref self: TContractState,
+        memecoin_address: ContractAddress,
+        transfer_restriction_delay: u64,
+        max_percentage_buy_launch: u16,
+        quote_address: ContractAddress,
+        quote_amount: u256,
+        unlock_time: u64,
+    ) -> ContractAddress;
+
     /// Returns the address for a given Exchange, provided that this Exchange
     /// was registered in the factory upon initialization.
     ///

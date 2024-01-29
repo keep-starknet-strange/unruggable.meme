@@ -19,7 +19,8 @@ mod Factory {
     use unruggable::errors;
     use unruggable::exchanges::{
         SupportedExchanges, ekubo_adapter, ekubo_adapter::EkuboPoolParameters, jediswap_adapter,
-        jediswap_adapter::JediswapAdditionalParameters, ekubo::launcher::EkuboLP
+        jediswap_adapter::JediswapAdditionalParameters, ekubo::launcher::EkuboLP, starkdefi_adapter,
+        starkdefi::interfaces::StarkDeFiAdditionalParameters
     };
     use unruggable::factory::IFactory;
     use unruggable::token::UnruggableMemecoin::LiquidityType;
@@ -74,7 +75,9 @@ mod Factory {
                 Option::Some((exchange, address)) => self
                     .exchange_configs
                     .write(*exchange, *address),
-                Option::None => { break; }
+                Option::None => {
+                    break;
+                }
             }
         };
     }
@@ -191,13 +194,59 @@ mod Factory {
             (id, position)
         }
 
+        fn launch_on_starkdefi(
+            ref self: ContractState,
+            memecoin_address: ContractAddress,
+            transfer_restriction_delay: u64,
+            max_percentage_buy_launch: u16,
+            quote_address: ContractAddress,
+            quote_amount: u256,
+            unlock_time: u64,
+        ) -> ContractAddress {
+            assert(self.is_memecoin(memecoin_address), errors::NOT_UNRUGGABLE);
+            let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
+            let caller_address = get_caller_address();
+            let router_address = self.exchange_address(SupportedExchanges::Starkdefi);
+            assert(!self.is_memecoin(quote_address), errors::QUOTE_TOKEN_IS_MEMECOIN);
+            assert(!memecoin.is_launched(), errors::ALREADY_LAUNCHED);
+            assert(caller_address == memecoin.owner(), errors::CALLER_NOT_OWNER);
+            assert(router_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
+
+            let mut pair_address = starkdefi_adapter::StarkDeFiAdapterImpl::create_and_add_liquidity(
+                exchange_address: router_address,
+                token_address: memecoin_address,
+                quote_address: quote_address,
+                additional_parameters: StarkDeFiAdditionalParameters {
+                    lock_manager_address: self.lock_manager_address.read(),
+                    unlock_time,
+                    quote_amount
+                }
+            );
+
+            memecoin
+                .set_launched(
+                    LiquidityType::ERC20(pair_address),
+                    :transfer_restriction_delay,
+                    :max_percentage_buy_launch
+                );
+            self
+                .emit(
+                    MemecoinLaunched {
+                        memecoin_address, quote_token: quote_address, exchange_name: 'StarkDeFi'
+                    }
+                );
+            pair_address
+        }
+
         fn locked_liquidity(
             self: @ContractState, token: ContractAddress
         ) -> Option<(ContractAddress, LiquidityType)> {
             let memecoin = IUnruggableMemecoinDispatcher { contract_address: token };
             let liquidity_type = match memecoin.liquidity_type() {
                 Option::Some(liquidity_type) => liquidity_type,
-                Option::None => { return Option::None; },
+                Option::None => {
+                    return Option::None;
+                },
             };
             let locker_address = match liquidity_type {
                 LiquidityType::ERC20(pair_address) => {
