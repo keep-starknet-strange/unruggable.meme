@@ -75,9 +75,7 @@ mod Factory {
                 Option::Some((exchange, address)) => self
                     .exchange_configs
                     .write(*exchange, *address),
-                Option::None => {
-                    break;
-                }
+                Option::None => { break; }
             }
         };
     }
@@ -212,7 +210,8 @@ mod Factory {
             assert(caller_address == memecoin.owner(), errors::CALLER_NOT_OWNER);
             assert(router_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
 
-            let mut pair_address = starkdefi_adapter::StarkDeFiAdapterImpl::create_and_add_liquidity(
+            let mut pair_address =
+                starkdefi_adapter::StarkDeFiAdapterImpl::create_and_add_liquidity(
                 exchange_address: router_address,
                 token_address: memecoin_address,
                 quote_address: quote_address,
@@ -244,9 +243,7 @@ mod Factory {
             let memecoin = IUnruggableMemecoinDispatcher { contract_address: token };
             let liquidity_type = match memecoin.liquidity_type() {
                 Option::Some(liquidity_type) => liquidity_type,
-                Option::None => {
-                    return Option::None;
-                },
+                Option::None => { return Option::None; },
             };
             let locker_address = match liquidity_type {
                 LiquidityType::ERC20(pair_address) => {
