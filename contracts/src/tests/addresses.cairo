@@ -45,7 +45,7 @@ fn EKUBO_ROUTER() -> ContractAddress {
     0x01b6f560def289b32e2a7b0920909615531a4d9d5636ca509045843559dc23d5.try_into().unwrap()
 }
 
-fn STARKDEFI_ADDRESS() -> ContractAddress {
+fn STARKDEFI_ROUTER_ADDRESS() -> ContractAddress {
     0x07eeE624919FAE668387D0d34D86d67795e5C919bc994841581144977Ef21c32.try_into().unwrap()
 }
 
