@@ -1,13 +1,16 @@
 mod ekubo;
 
 mod jediswap_adapter;
+mod starkdefi;
 use ekubo::ekubo_adapter;
+use starkdefi::starkdefi_adapter;
 use starknet::ContractAddress;
 
 #[derive(Drop, Copy, Serde, Hash)]
 enum SupportedExchanges {
     Jediswap,
-    Ekubo
+    Ekubo,
+    Starkdefi,
 }
 
 trait ExchangeAdapter<A, R> {
