@@ -38,15 +38,6 @@ struct EkuboLP {
     bounds: Bounds,
 }
 
-fn sort_tokens(
-    tokenA: ContractAddress, tokenB: ContractAddress
-) -> (ContractAddress, ContractAddress) {
-    if tokenA < tokenB {
-        (tokenA, tokenB)
-    } else {
-        (tokenB, tokenA)
-    }
-}
 
 #[starknet::interface]
 trait IEkuboLauncher<T> {
@@ -164,7 +155,7 @@ mod EkuboLauncher {
     use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
     use starknet::SyscallResultTrait;
     use starknet::{ContractAddress, ClassHash, get_contract_address, get_caller_address, Store};
-    use super::{IEkuboLauncher, EkuboLaunchParameters, sort_tokens};
+    use super::{IEkuboLauncher, EkuboLaunchParameters};
     use super::{StorableBounds, StorablePoolKey, StorableEkuboLP, EkuboLP};
     use unruggable::errors;
     use unruggable::exchanges::ekubo::errors::{NOT_POSITION_OWNER};
@@ -175,6 +166,7 @@ mod EkuboLauncher {
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
     use unruggable::utils::math::PercentageMath;
+    use unruggable::utils::sort_tokens;
 
 
     #[storage]

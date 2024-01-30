@@ -52,3 +52,13 @@ fn contains<T, +Copy<T>, +Drop<T>, +PartialEq<T>>(mut self: Span<T>, value: T) -
         }
     }
 }
+
+fn sort_tokens(
+    tokenA: ContractAddress, tokenB: ContractAddress
+) -> (ContractAddress, ContractAddress) {
+    if tokenA < tokenB {
+        (tokenA, tokenB)
+    } else {
+        (tokenB, tokenA)
+    }
+}

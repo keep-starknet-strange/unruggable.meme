@@ -82,7 +82,6 @@ impl JediswapAdapterImpl of unruggable::exchanges::ExchangeAdapter<
         let jedi_router = IJediswapRouterDispatcher { contract_address: exchange_address };
         assert(jedi_router.contract_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
         let jedi_factory = IJediswapFactoryDispatcher { contract_address: jedi_router.factory(), };
-        let pair_address = jedi_factory.create_pair(quote_address, memecoin_address);
 
         // Add liquidity - approve the entirety of the memecoin and quote token balances
         // to supply as liquidity
@@ -105,11 +104,8 @@ impl JediswapAdapterImpl of unruggable::exchanges::ExchangeAdapter<
                 this, // receiver of LP tokens is the factory, that instantly locks them
                 deadline: get_block_timestamp()
             );
-        assert(memecoin.balanceOf(pair_address) == memecoin_balance, 'add liquidity meme failed');
-        assert(quote_token.balanceOf(pair_address) == quote_amount, 'add liq quote failed');
+        let pair_address = jedi_factory.get_pair(memecoin_address, quote_address);
         let pair = ERC20ABIDispatcher { contract_address: pair_address, };
-
-        assert(pair.balanceOf(this) == liquidity_received, 'wrong LP tkns amount');
 
         // Lock LP tokens
         let lock_manager = ILockManagerDispatcher { contract_address: lock_manager_address };
@@ -121,7 +117,6 @@ impl JediswapAdapterImpl of unruggable::exchanges::ExchangeAdapter<
                 unlock_time: unlock_time,
                 withdrawer: caller_address,
             );
-        assert(pair.balanceOf(locked_address) == liquidity_received, 'lock failed');
 
         pair.contract_address
     }
