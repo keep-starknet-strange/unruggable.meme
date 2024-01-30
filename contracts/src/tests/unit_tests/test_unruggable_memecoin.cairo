@@ -283,7 +283,63 @@ mod memecoin_internals {
     use unruggable::token::interface::{
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
-    use unruggable::token::memecoin::UnruggableMemecoin;
+    use unruggable::token::memecoin::{
+        UnruggableMemecoin, UnruggableMemecoin::pre_launch_holders_countContractMemberStateTrait
+    };
+
+    #[test]
+    fn test_transfer_zero_value_doesnt_increment_holders() {
+        // Given
+        let mut memecoin = UnruggableMemecoin::contract_state_for_testing();
+        start_prank(CheatTarget::One(snforge_std::test_address()), MEMEFACTORY_ADDRESS());
+        UnruggableMemecoin::constructor(
+            ref memecoin,
+            OWNER(),
+            NAME(),
+            SYMBOL(),
+            DEFAULT_INITIAL_SUPPLY(),
+            INITIAL_HOLDERS(),
+            INITIAL_HOLDERS_AMOUNTS()
+        );
+        assert_eq!(memecoin.pre_launch_holders_count.read().into(), INITIAL_HOLDERS().len(),);
+
+        // When someone does a zero value transfer there should still be 2 holder
+        let unknown_person = contract_address_const::<'unknown'>();
+        start_prank(CheatTarget::One(snforge_std::test_address()), unknown_person);
+        memecoin.transfer_from(INITIAL_HOLDER_1(), unknown_person, 0);
+
+        // Then the holder count should remain the same
+        assert_eq!(memecoin.pre_launch_holders_count.read().into(), (INITIAL_HOLDERS().len()),);
+    }
+
+    #[test]
+    fn test_transfer_zero_value_doesnt_decrement_holders() {
+        // Given
+        let mut memecoin = UnruggableMemecoin::contract_state_for_testing();
+        start_prank(CheatTarget::One(snforge_std::test_address()), MEMEFACTORY_ADDRESS());
+
+        UnruggableMemecoin::constructor(
+            ref memecoin,
+            OWNER(),
+            NAME(),
+            SYMBOL(),
+            DEFAULT_INITIAL_SUPPLY(),
+            INITIAL_HOLDERS(),
+            INITIAL_HOLDERS_AMOUNTS()
+        );
+        assert_eq!(memecoin.pre_launch_holders_count.read().into(), INITIAL_HOLDERS().len(),);
+
+        // When the sender (the unknown person in this case) has 0 token balance
+        // and the recipient has a non zero token balance
+
+        let unknown_person = contract_address_const::<'unknown'>();
+        start_prank(CheatTarget::One(snforge_std::test_address()), unknown_person);
+        memecoin.transfer(MEMEFACTORY_ADDRESS(), 0);
+
+        // Then the pre launch holders count should not reduces by 1
+        // Then the holder count should remain the same
+        assert_eq!(memecoin.pre_launch_holders_count.read().into(), (INITIAL_HOLDERS().len()),);
+    }
 
     #[test]
     fn test__transfer_recipients_equal_holder_cap() {
