@@ -13,7 +13,8 @@ use unruggable::tests::addresses::{JEDI_FACTORY_ADDRESS, JEDI_ROUTER_ADDRESS, ET
 use unruggable::tests::fork_tests::utils::{deploy_memecoin_through_factory_with_owner, sort_tokens};
 use unruggable::tests::unit_tests::utils::{
     OWNER, DEFAULT_MIN_LOCKTIME, pow_256, LOCK_MANAGER_ADDRESS, MEMEFACTORY_ADDRESS,
-    deploy_eth_with_owner, TRANSFER_RESTRICTION_DELAY, MAX_PERCENTAGE_BUY_LAUNCH
+    deploy_eth_with_owner, TRANSFER_RESTRICTION_DELAY, MAX_PERCENTAGE_BUY_LAUNCH, INITIAL_HOLDERS,
+    INITIAL_HOLDERS_AMOUNTS
 };
 use unruggable::token::interface::{IUnruggableMemecoinDispatcherTrait};
 use unruggable::token::memecoin::LiquidityType;
@@ -44,17 +45,19 @@ use unruggable::utils::math::PercentageMath;
 //     quote.approve(factory.contract_address, amount);
 //     stop_prank(CheatTarget::One(quote.contract_address));
 
-    // let pair_address = factory
-    //     .launch_on_jediswap(
-    //         LaunchParameters {
-    //             memecoin_address,
-    //             transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
-    //             max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
-    //             quote_address,
-    //         },
-    //         amount,
-    //         unlock_time
-    //     );
+// let pair_address = factory
+//     .launch_on_jediswap(
+//         LaunchParameters {
+//             memecoin_address,
+//             transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+//             max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+//             quote_address,
+//             initial_holders: INITIAL_HOLDERS(),
+//             initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
+//         },
+//         amount,
+//         unlock_time
+//     );
 
 //     let pair = IJediswapPairDispatcher { contract_address: pair_address };
 
@@ -131,6 +134,8 @@ fn test_buy_above_max_limit_should_fail() {
                 transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
                 max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
                 quote_address,
+                initial_holders: INITIAL_HOLDERS(),
+                initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
             },
             amount,
             unlock_time

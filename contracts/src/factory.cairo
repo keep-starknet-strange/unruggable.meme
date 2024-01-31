@@ -10,4 +10,6 @@ struct LaunchParameters {
     transfer_restriction_delay: u64,
     max_percentage_buy_launch: u16,
     quote_address: starknet::ContractAddress,
+    initial_holders: Span<starknet::ContractAddress>,
+    initial_holders_amounts: Span<u256>,
 }

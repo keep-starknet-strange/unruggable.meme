@@ -99,8 +99,6 @@ fn deploy_memecoin_through_factory_with_owner(
             name: NAME(),
             symbol: SYMBOL(),
             initial_supply: DEFAULT_INITIAL_SUPPLY(),
-            initial_holders: INITIAL_HOLDERS(),
-            initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
             contract_address_salt: SALT(),
         );
     stop_prank(CheatTarget::One(memecoin_factory.contract_address));

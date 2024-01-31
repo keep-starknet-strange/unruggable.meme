@@ -29,6 +29,17 @@ mod Factory {
     use unruggable::token::interface::{
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
+    use unruggable::utils::math::PercentageMath;
+    use unruggable::utils::unique_count;
+
+    /// The maximum percentage of the total supply that can be allocated to the team.
+    /// This is to prevent the team from having too much control over the supply.
+    const MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION: u16 = 1_000; // 10%
+
+    /// The maximum number of holders one can specify when launching.
+    /// This is to prevent the contract from being is_launched with a large number of holders.
+    /// Once reached, transfers are disabled until the memecoin is is_launched.
+    const MAX_HOLDERS_LAUNCH: u8 = 10;
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -91,14 +102,10 @@ mod Factory {
             name: felt252,
             symbol: felt252,
             initial_supply: u256,
-            initial_holders: Span<ContractAddress>,
-            initial_holders_amounts: Span<u256>,
             contract_address_salt: felt252,
         ) -> ContractAddress {
             let mut calldata = array![owner.into(), name.into(), symbol.into()];
             Serde::serialize(@initial_supply, ref calldata);
-            Serde::serialize(@initial_holders.into(), ref calldata);
-            Serde::serialize(@initial_holders_amounts.into(), ref calldata);
 
             let (memecoin_address, _) = deploy_syscall(
                 self.memecoin_class_hash.read(), contract_address_salt, calldata.span(), false
@@ -119,14 +126,18 @@ mod Factory {
             quote_amount: u256,
             unlock_time: u64,
         ) -> ContractAddress {
-            assert_common_launch_parameters(@self, launch_parameters);
+            let (team_alloc, pre_holders) = check_common_launch_parameters(
+                @self, launch_parameters
+            );
             let router_address = self.exchange_address(SupportedExchanges::Jediswap);
             assert(router_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
 
             let LaunchParameters{memecoin_address,
             transfer_restriction_delay,
             max_percentage_buy_launch,
-            quote_address } =
+            quote_address,
+            initial_holders,
+            initial_holders_amounts } =
                 launch_parameters;
 
             let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
@@ -140,6 +151,10 @@ mod Factory {
                     quote_amount
                 }
             );
+
+            // Write the team alloc in storage of the memecoin.
+            // self.team_allocation.write(team_allocation);
+            // self.pre_launch_holders_count.write(unique_count(initial_holders).try_into().unwrap());
 
             memecoin
                 .set_launched(
@@ -161,12 +176,16 @@ mod Factory {
             launch_parameters: LaunchParameters,
             ekubo_parameters: EkuboPoolParameters,
         ) -> (u64, EkuboLP) {
-            assert_common_launch_parameters(@self, launch_parameters);
+            let (team_alloc, pre_holders) = check_common_launch_parameters(
+                @self, launch_parameters
+            );
 
             let LaunchParameters{memecoin_address,
             transfer_restriction_delay,
             max_percentage_buy_launch,
-            quote_address } =
+            quote_address,
+            initial_holders,
+            initial_holders_amounts } =
                 launch_parameters;
 
             let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
@@ -182,6 +201,7 @@ mod Factory {
                 additional_parameters: ekubo_parameters
             );
 
+            // TODO: write team alloc and unique holders in memecoin
             memecoin
                 .set_launched(
                     LiquidityType::EkuboNFT(id),
@@ -236,17 +256,76 @@ mod Factory {
         }
     }
 
-    fn assert_common_launch_parameters(self: @ContractState, launch_parameters: LaunchParameters) {
+
+    /// Checks the launch parameters and calculates the team allocation.
+    ///
+    /// This function checks that the memecoin and quote addresses are valid,
+    /// that the caller is the owner of the memecoin,
+    /// that the memecoin has not been launched,
+    /// and that the lengths of the initial holders and their amounts are equal and do not exceed the maximum allowed.
+    /// It then calculates the maximum team allocation as a percentage of the total supply,
+    /// and iteratively adds the amounts of the initial holders to the team allocation,
+    /// ensuring that the total allocation does not exceed the maximum.
+    /// It finally returns the total team allocation and the count of unique initial holders.
+    ///
+    /// # Arguments
+    ///
+    /// * `self` - A reference to the ContractState struct.
+    /// * `launch_parameters` - The parameters for the token launch.
+    ///
+    /// # Returns
+    ///
+    /// * `(u256, u8)` - The total amount of memecoin allocated to the team and the count of unique initial holders.
+    ///
+    /// # Panics
+    ///
+    /// * If the memecoin address is not a memecoin.
+    /// * If the quote address is a memecoin.
+    /// * If the caller is not the owner of the memecoin.
+    /// * If the memecoin has been launched.
+    /// * If the lengths of the initial holders and their amounts are not equal.
+    /// * If the number of initial holders exceeds the maximum allowed.
+    /// * If the total team allocation exceeds the maximum allowed.
+    ///
+    fn check_common_launch_parameters(
+        self: @ContractState, launch_parameters: LaunchParameters
+    ) -> (u256, u8) {
         let LaunchParameters{memecoin_address,
         transfer_restriction_delay,
         max_percentage_buy_launch,
-        quote_address } =
+        quote_address,
+        initial_holders,
+        initial_holders_amounts } =
             launch_parameters;
         let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
 
         assert(self.is_memecoin(memecoin_address), errors::NOT_UNRUGGABLE);
         assert(!self.is_memecoin(quote_address), errors::QUOTE_TOKEN_IS_MEMECOIN);
-        assert(get_caller_address() == memecoin.owner(), errors::CALLER_NOT_OWNER);
         assert(!memecoin.is_launched(), errors::ALREADY_LAUNCHED);
+        assert(get_caller_address() == memecoin.owner(), errors::CALLER_NOT_OWNER);
+        assert(initial_holders.len() == initial_holders_amounts.len(), errors::ARRAYS_LEN_DIF);
+        assert(initial_holders.len() <= MAX_HOLDERS_LAUNCH.into(), errors::MAX_HOLDERS_REACHED);
+
+        let initial_supply = memecoin.total_supply();
+
+        // Check that the sum of the amounts of initial holders does not exceed the max allocatable supply for a team.
+        let max_team_allocation = initial_supply
+            .percent_mul(MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION.into());
+        let mut team_allocation: u256 = 0;
+        let mut i: usize = 0;
+        loop {
+            if i == initial_holders.len() {
+                break;
+            }
+
+            let address = *initial_holders.at(i);
+            let amount = *initial_holders_amounts.at(i);
+
+            team_allocation += amount;
+            assert(team_allocation <= max_team_allocation, errors::MAX_TEAM_ALLOCATION_REACHED);
+            i += 1;
+        };
+
+        (team_allocation, unique_count(initial_holders).try_into().unwrap())
     }
 }

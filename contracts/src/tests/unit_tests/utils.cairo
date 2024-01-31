@@ -108,8 +108,6 @@ fn deploy_standalone_memecoin() -> (IUnruggableMemecoinDispatcher, ContractAddre
     let contract = declare('UnruggableMemecoin');
     let mut calldata = array![OWNER().into(), NAME().into(), SYMBOL().into(),];
     Serde::serialize(@DEFAULT_INITIAL_SUPPLY(), ref calldata);
-    Serde::serialize(@INITIAL_HOLDERS(), ref calldata);
-    Serde::serialize(@INITIAL_HOLDERS_AMOUNTS(), ref calldata);
     let contract_address = contract.deploy(@calldata).expect('failed to deploy memecoin');
     let memecoin = IUnruggableMemecoinDispatcher { contract_address };
 
@@ -240,8 +238,6 @@ fn deploy_memecoin_through_factory_with_owner(
             name: NAME(),
             symbol: SYMBOL(),
             initial_supply: DEFAULT_INITIAL_SUPPLY(),
-            initial_holders: INITIAL_HOLDERS(),
-            initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
             contract_address_salt: SALT(),
         );
     stop_prank(CheatTarget::One(memecoin_factory.contract_address));
@@ -283,7 +279,9 @@ fn deploy_and_launch_memecoin() -> (IUnruggableMemecoinDispatcher, ContractAddre
                 memecoin_address,
                 transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
                 max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
-                quote_address: eth.contract_address
+                quote_address: eth.contract_address,
+                initial_holders: INITIAL_HOLDERS(),
+                initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
             },
             eth_amount,
             DEFAULT_MIN_LOCKTIME,

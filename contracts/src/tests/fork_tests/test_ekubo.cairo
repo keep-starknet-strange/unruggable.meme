@@ -55,6 +55,8 @@ fn launch_memecoin_on_ekubo(
                 transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
                 max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
                 quote_address,
+                initial_holders: INITIAL_HOLDERS(),
+                initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
             },
             EkuboPoolParameters { fee, tick_spacing, starting_tick, bound }
         );
@@ -619,6 +621,8 @@ fn test_cant_launch_twice() {
                 transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
                 max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
                 quote_address,
+                initial_holders: INITIAL_HOLDERS(),
+                initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
             },
             EkuboPoolParameters {
                 fee: 0xc49ba5e353f7d00000000000000000,
@@ -653,6 +657,8 @@ fn test_launch_memecoin_not_unruggable_ekubo() {
                 transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
                 max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
                 quote_address,
+                initial_holders: INITIAL_HOLDERS(),
+                initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
             },
             EkuboPoolParameters {
                 fee: 0xc49ba5e353f7d00000000000000000,
@@ -680,8 +686,6 @@ fn test_launch_memecoin_quote_memecoin_ekubo() {
             name: NAME(),
             symbol: SYMBOL(),
             initial_supply: DEFAULT_INITIAL_SUPPLY(),
-            initial_holders: INITIAL_HOLDERS(),
-            initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
             contract_address_salt: SALT() + 1,
         );
     stop_prank(CheatTarget::One(factory.contract_address));
@@ -703,6 +707,8 @@ fn test_launch_memecoin_quote_memecoin_ekubo() {
                 transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
                 max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
                 quote_address: quote.contract_address,
+                initial_holders: INITIAL_HOLDERS(),
+                initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
             },
             quote_amount,
             DEFAULT_MIN_LOCKTIME,

@@ -32,8 +32,6 @@ trait IFactory<TContractState> {
         name: felt252,
         symbol: felt252,
         initial_supply: u256,
-        initial_holders: Span<ContractAddress>,
-        initial_holders_amounts: Span<u256>,
         contract_address_salt: felt252
     ) -> ContractAddress;
 

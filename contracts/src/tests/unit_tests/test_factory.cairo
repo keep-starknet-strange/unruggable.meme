@@ -96,8 +96,6 @@ fn test_create_memecoin() {
             name: NAME(),
             symbol: SYMBOL(),
             initial_supply: DEFAULT_INITIAL_SUPPLY(),
-            initial_holders: INITIAL_HOLDERS(),
-            initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
             contract_address_salt: SALT(),
         );
     stop_prank(CheatTarget::One(memecoin_factory.contract_address));
@@ -106,20 +104,7 @@ fn test_create_memecoin() {
 
     assert(memecoin.name() == NAME(), 'wrong memecoin name');
     assert(memecoin.symbol() == SYMBOL(), 'wrong memecoin symbol');
-    // initial supply - initial holder balance
-    let holders_sum = *INITIAL_HOLDERS_AMOUNTS()[0] + *INITIAL_HOLDERS_AMOUNTS()[1];
-    assert(
-        memecoin.balanceOf(memecoin_factory_address) == DEFAULT_INITIAL_SUPPLY() - holders_sum,
-        'wrong initial supply'
-    );
-    assert(
-        memecoin.balanceOf(*INITIAL_HOLDERS()[0]) == *INITIAL_HOLDERS_AMOUNTS()[0],
-        'wrong initial_holder_1 balance'
-    );
-    assert(
-        memecoin.balanceOf(*INITIAL_HOLDERS()[1]) == *INITIAL_HOLDERS_AMOUNTS()[1],
-        'wrong initial_holder_2 balance'
-    );
+    assert_eq!(memecoin.balanceOf(memecoin_factory_address), DEFAULT_INITIAL_SUPPLY(),);
 }
 
 #[test]
@@ -145,6 +130,8 @@ fn test_launch_memecoin_happy_path() {
                 transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
                 max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
                 quote_address: eth.contract_address,
+                initial_holders: INITIAL_HOLDERS(),
+                initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
             },
             eth_amount,
             DEFAULT_MIN_LOCKTIME,
@@ -209,6 +196,8 @@ fn test_launch_memecoin_pair_exists_should_succeed() {
                 transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
                 max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
                 quote_address: eth.contract_address,
+                initial_holders: INITIAL_HOLDERS(),
+                initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
             },
             eth_amount,
             DEFAULT_MIN_LOCKTIME,
@@ -268,6 +257,8 @@ fn test_launch_memecoin_already_launched() {
                 transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
                 max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
                 quote_address: eth.contract_address,
+                initial_holders: INITIAL_HOLDERS(),
+                initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
             },
             eth_amount,
             DEFAULT_MIN_LOCKTIME,
@@ -301,6 +292,8 @@ fn test_launch_memecoin_not_unruggable_jediswap() {
                 transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
                 max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
                 quote_address: eth.contract_address,
+                initial_holders: INITIAL_HOLDERS(),
+                initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
             },
             eth_amount,
             DEFAULT_MIN_LOCKTIME,
@@ -331,6 +324,8 @@ fn test_launch_memecoin_with_percentage_buy_launch_too_low() {
                 transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
                 max_percentage_buy_launch: 49, // 0.49%
                 quote_address: eth.contract_address,
+                initial_holders: INITIAL_HOLDERS(),
+                initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
             },
             eth_amount,
             DEFAULT_MIN_LOCKTIME,
@@ -348,7 +343,9 @@ fn test_launch_memecoin_not_owner() {
                 memecoin_address,
                 transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
                 max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
-                quote_address: ETH_ADDRESS()
+                quote_address: ETH_ADDRESS(),
+                initial_holders: INITIAL_HOLDERS(),
+                initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
             },
             1,
             DEFAULT_MIN_LOCKTIME,
@@ -370,8 +367,6 @@ fn test_launch_memecoin_quote_memecoin_jedsiwap() {
             name: NAME(),
             symbol: SYMBOL(),
             initial_supply: DEFAULT_INITIAL_SUPPLY(),
-            initial_holders: INITIAL_HOLDERS(),
-            initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
             contract_address_salt: SALT() + 1,
         );
     stop_prank(CheatTarget::One(factory.contract_address));
@@ -392,7 +387,9 @@ fn test_launch_memecoin_quote_memecoin_jedsiwap() {
                 memecoin_address,
                 transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
                 max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
-                quote_address: quote.contract_address
+                quote_address: quote.contract_address,
+                initial_holders: INITIAL_HOLDERS(),
+                initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
             },
             quote_amount,
             DEFAULT_MIN_LOCKTIME,
@@ -416,7 +413,9 @@ fn test_launch_memecoin_amm_not_whitelisted() {
                 memecoin_address,
                 transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
                 max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
-                quote_address: eth.contract_address
+                quote_address: eth.contract_address,
+                initial_holders: INITIAL_HOLDERS(),
+                initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
             },
             EkuboPoolParameters {
                 fee: 0, tick_spacing: 0, starting_tick: i129 { sign: false, mag: 0 }, bound: 0
