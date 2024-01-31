@@ -11,7 +11,7 @@ use unruggable::exchanges::jediswap_adapter::{
     IJediswapPairDispatcherTrait
 };
 use unruggable::exchanges::{SupportedExchanges};
-use unruggable::factory::{IFactory, IFactoryDispatcher, IFactoryDispatcherTrait};
+use unruggable::factory::{IFactory, IFactoryDispatcher, IFactoryDispatcherTrait, LaunchParameters};
 use unruggable::locker::interface::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
 use unruggable::locker::{LockPosition};
 use unruggable::tests::addresses::{ETH_ADDRESS, JEDI_FACTORY_ADDRESS};
@@ -140,10 +140,12 @@ fn test_launch_memecoin_happy_path() {
     start_warp(CheatTarget::One(memecoin_address), 1);
     let pair_address = factory
         .launch_on_jediswap(
-            memecoin_address,
-            TRANSFER_RESTRICTION_DELAY,
-            MAX_PERCENTAGE_BUY_LAUNCH,
-            eth.contract_address,
+            LaunchParameters {
+                memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address: eth.contract_address,
+            },
             eth_amount,
             DEFAULT_MIN_LOCKTIME,
         );
@@ -202,10 +204,12 @@ fn test_launch_memecoin_pair_exists_should_succeed() {
     start_warp(CheatTarget::One(memecoin_address), 1);
     let pair_address = factory
         .launch_on_jediswap(
-            memecoin_address,
-            TRANSFER_RESTRICTION_DELAY,
-            MAX_PERCENTAGE_BUY_LAUNCH,
-            eth.contract_address,
+            LaunchParameters {
+                memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address: eth.contract_address,
+            },
             eth_amount,
             DEFAULT_MIN_LOCKTIME,
         );
@@ -259,10 +263,12 @@ fn test_launch_memecoin_already_launched() {
     start_prank(CheatTarget::One(factory.contract_address), OWNER());
     let pair_address = factory
         .launch_on_jediswap(
-            memecoin_address,
-            TRANSFER_RESTRICTION_DELAY,
-            MAX_PERCENTAGE_BUY_LAUNCH,
-            eth.contract_address,
+            LaunchParameters {
+                memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address: eth.contract_address,
+            },
             eth_amount,
             DEFAULT_MIN_LOCKTIME,
         );
@@ -290,10 +296,12 @@ fn test_launch_memecoin_not_unruggable_jediswap() {
     start_prank(CheatTarget::One(factory.contract_address), OWNER());
     let pair_address = factory
         .launch_on_jediswap(
-            other_token_address,
-            TRANSFER_RESTRICTION_DELAY,
-            MAX_PERCENTAGE_BUY_LAUNCH,
-            eth.contract_address,
+            LaunchParameters {
+                memecoin_address: other_token_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address: eth.contract_address,
+            },
             eth_amount,
             DEFAULT_MIN_LOCKTIME,
         );
@@ -318,10 +326,12 @@ fn test_launch_memecoin_with_percentage_buy_launch_too_low() {
     start_prank(CheatTarget::One(factory.contract_address), owner);
     let pair_address = factory
         .launch_on_jediswap(
-            memecoin_address,
-            TRANSFER_RESTRICTION_DELAY,
-            49, // 0.49%
-            eth.contract_address,
+            LaunchParameters {
+                memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: 49, // 0.49%
+                quote_address: eth.contract_address,
+            },
             eth_amount,
             DEFAULT_MIN_LOCKTIME,
         );
@@ -334,10 +344,12 @@ fn test_launch_memecoin_not_owner() {
     let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
     let pair_address = factory
         .launch_on_jediswap(
-            memecoin_address,
-            TRANSFER_RESTRICTION_DELAY,
-            MAX_PERCENTAGE_BUY_LAUNCH,
-            ETH_ADDRESS(),
+            LaunchParameters {
+                memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address: ETH_ADDRESS()
+            },
             1,
             DEFAULT_MIN_LOCKTIME,
         );
@@ -376,10 +388,12 @@ fn test_launch_memecoin_quote_memecoin_jedsiwap() {
     start_prank(CheatTarget::One(factory.contract_address), owner);
     let pair_address = factory
         .launch_on_jediswap(
-            memecoin_address,
-            TRANSFER_RESTRICTION_DELAY,
-            MAX_PERCENTAGE_BUY_LAUNCH,
-            quote.contract_address,
+            LaunchParameters {
+                memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address: quote.contract_address
+            },
             quote_amount,
             DEFAULT_MIN_LOCKTIME,
         );
@@ -398,10 +412,12 @@ fn test_launch_memecoin_amm_not_whitelisted() {
 
     let pool_address = factory
         .launch_on_ekubo(
-            memecoin_address,
-            TRANSFER_RESTRICTION_DELAY,
-            MAX_PERCENTAGE_BUY_LAUNCH,
-            eth.contract_address,
+            LaunchParameters {
+                memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address: eth.contract_address
+            },
             EkuboPoolParameters {
                 fee: 0, tick_spacing: 0, starting_tick: i129 { sign: false, mag: 0 }, bound: 0
             }

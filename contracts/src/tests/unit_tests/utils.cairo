@@ -6,7 +6,7 @@ use snforge_std::{
 };
 use starknet::ContractAddress;
 use unruggable::exchanges::{SupportedExchanges};
-use unruggable::factory::{IFactoryDispatcher, IFactoryDispatcherTrait};
+use unruggable::factory::{IFactoryDispatcher, IFactoryDispatcherTrait, LaunchParameters};
 use unruggable::tests::addresses::{
     JEDI_ROUTER_ADDRESS, JEDI_FACTORY_ADDRESS, ETH_ADDRESS, EKUBO_CORE, EKUBO_POSITIONS,
     EKUBO_REGISTRY, EKUBO_NFT_CLASS_HASH, TOKEN0_ADDRESS
@@ -279,10 +279,12 @@ fn deploy_and_launch_memecoin() -> (IUnruggableMemecoinDispatcher, ContractAddre
     start_warp(CheatTarget::One(memecoin_address), 1);
     let pool_address = factory
         .launch_on_jediswap(
-            memecoin_address,
-            TRANSFER_RESTRICTION_DELAY,
-            MAX_PERCENTAGE_BUY_LAUNCH,
-            eth.contract_address,
+            LaunchParameters {
+                memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address: eth.contract_address
+            },
             eth_amount,
             DEFAULT_MIN_LOCKTIME,
         );

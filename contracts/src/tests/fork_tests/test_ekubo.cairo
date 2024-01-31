@@ -19,8 +19,7 @@ use unruggable::exchanges::ekubo::launcher::{
     IEkuboLauncherDispatcher, IEkuboLauncherDispatcherTrait, EkuboLP
 };
 use unruggable::exchanges::ekubo_adapter::EkuboPoolParameters;
-use unruggable::factory::interface::{IFactoryDispatcher, IFactoryDispatcherTrait};
-use unruggable::factory::{Factory};
+use unruggable::factory::{IFactoryDispatcher, IFactoryDispatcherTrait, Factory, LaunchParameters};
 use unruggable::locker::LockPosition;
 use unruggable::locker::interface::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
 use unruggable::tests::addresses::{EKUBO_CORE};
@@ -51,10 +50,12 @@ fn launch_memecoin_on_ekubo(
 
     let (id, position) = factory
         .launch_on_ekubo(
-            memecoin_address,
-            TRANSFER_RESTRICTION_DELAY,
-            MAX_PERCENTAGE_BUY_LAUNCH,
-            quote_address,
+            LaunchParameters {
+                memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address,
+            },
             EkuboPoolParameters { fee, tick_spacing, starting_tick, bound }
         );
 
@@ -613,10 +614,12 @@ fn test_cant_launch_twice() {
     // This will fail as the ownership of the memecoin has been renounced.
     let (id, position) = factory
         .launch_on_ekubo(
-            memecoin_address,
-            TRANSFER_RESTRICTION_DELAY,
-            MAX_PERCENTAGE_BUY_LAUNCH,
-            quote_address,
+            LaunchParameters {
+                memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address,
+            },
             EkuboPoolParameters {
                 fee: 0xc49ba5e353f7d00000000000000000,
                 tick_spacing: 5982,
@@ -645,10 +648,12 @@ fn test_launch_memecoin_not_unruggable_ekubo() {
     // This will fail as the ownership of the memecoin has been renounced.
     let (id, position) = factory
         .launch_on_ekubo(
-            fake_memecoin_address,
-            TRANSFER_RESTRICTION_DELAY,
-            MAX_PERCENTAGE_BUY_LAUNCH,
-            quote_address,
+            LaunchParameters {
+                memecoin_address: fake_memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address,
+            },
             EkuboPoolParameters {
                 fee: 0xc49ba5e353f7d00000000000000000,
                 tick_spacing: 5982,
@@ -693,10 +698,12 @@ fn test_launch_memecoin_quote_memecoin_ekubo() {
     start_prank(CheatTarget::One(factory.contract_address), owner);
     let pair_address = factory
         .launch_on_jediswap(
-            memecoin_address,
-            TRANSFER_RESTRICTION_DELAY,
-            MAX_PERCENTAGE_BUY_LAUNCH,
-            quote.contract_address,
+            LaunchParameters {
+                memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address: quote.contract_address,
+            },
             quote_amount,
             DEFAULT_MIN_LOCKTIME,
         );

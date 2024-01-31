@@ -24,7 +24,7 @@ mod Factory {
         SupportedExchanges, ekubo_adapter, ekubo_adapter::EkuboPoolParameters, jediswap_adapter,
         jediswap_adapter::JediswapAdditionalParameters, ekubo::launcher::EkuboLP
     };
-    use unruggable::factory::IFactory;
+    use unruggable::factory::{IFactory, LaunchParameters};
     use unruggable::token::UnruggableMemecoin::LiquidityType;
     use unruggable::token::interface::{
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -52,6 +52,7 @@ mod Factory {
         quote_token: ContractAddress,
         exchange_name: felt252,
     }
+
 
     #[storage]
     struct Storage {
@@ -114,22 +115,21 @@ mod Factory {
 
         fn launch_on_jediswap(
             ref self: ContractState,
-            memecoin_address: ContractAddress,
-            transfer_restriction_delay: u64,
-            max_percentage_buy_launch: u16,
-            quote_address: ContractAddress,
+            launch_parameters: LaunchParameters,
             quote_amount: u256,
             unlock_time: u64,
         ) -> ContractAddress {
-            assert(self.is_memecoin(memecoin_address), errors::NOT_UNRUGGABLE);
-            let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
-            let caller_address = get_caller_address();
+            assert_common_launch_parameters(@self, launch_parameters);
             let router_address = self.exchange_address(SupportedExchanges::Jediswap);
-            assert(!self.is_memecoin(quote_address), errors::QUOTE_TOKEN_IS_MEMECOIN);
-            assert(!memecoin.is_launched(), errors::ALREADY_LAUNCHED);
-            assert(caller_address == memecoin.owner(), errors::CALLER_NOT_OWNER);
             assert(router_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
 
+            let LaunchParameters{memecoin_address,
+            transfer_restriction_delay,
+            max_percentage_buy_launch,
+            quote_address } =
+                launch_parameters;
+
+            let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
             let mut pair_address = jediswap_adapter::JediswapAdapterImpl::create_and_add_liquidity(
                 exchange_address: router_address,
                 token_address: memecoin_address,
@@ -158,20 +158,21 @@ mod Factory {
 
         fn launch_on_ekubo(
             ref self: ContractState,
-            memecoin_address: ContractAddress,
-            transfer_restriction_delay: u64,
-            max_percentage_buy_launch: u16,
-            quote_address: ContractAddress,
+            launch_parameters: LaunchParameters,
             ekubo_parameters: EkuboPoolParameters,
         ) -> (u64, EkuboLP) {
-            assert(self.is_memecoin(memecoin_address), errors::NOT_UNRUGGABLE);
+            assert_common_launch_parameters(@self, launch_parameters);
+
+            let LaunchParameters{memecoin_address,
+            transfer_restriction_delay,
+            max_percentage_buy_launch,
+            quote_address } =
+                launch_parameters;
+
             let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
             let launchpad_address = self.exchange_address(SupportedExchanges::Ekubo);
-            let caller_address = get_caller_address();
-            assert(!self.is_memecoin(quote_address), errors::QUOTE_TOKEN_IS_MEMECOIN);
-            assert(caller_address == memecoin.owner(), errors::CALLER_NOT_OWNER);
+
             assert(launchpad_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
-            assert(!memecoin.is_launched(), errors::ALREADY_LAUNCHED);
             assert(ekubo_parameters.starting_tick.mag.is_non_zero(), errors::PRICE_ZERO);
 
             let (id, position) = ekubo_adapter::EkuboAdapterImpl::create_and_add_liquidity(
@@ -233,5 +234,19 @@ mod Factory {
 
             launcher.ekubo_core_address()
         }
+    }
+
+    fn assert_common_launch_parameters(self: @ContractState, launch_parameters: LaunchParameters) {
+        let LaunchParameters{memecoin_address,
+        transfer_restriction_delay,
+        max_percentage_buy_launch,
+        quote_address } =
+            launch_parameters;
+        let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
+
+        assert(self.is_memecoin(memecoin_address), errors::NOT_UNRUGGABLE);
+        assert(!self.is_memecoin(quote_address), errors::QUOTE_TOKEN_IS_MEMECOIN);
+        assert(get_caller_address() == memecoin.owner(), errors::CALLER_NOT_OWNER);
+        assert(!memecoin.is_launched(), errors::ALREADY_LAUNCHED);
     }
 }

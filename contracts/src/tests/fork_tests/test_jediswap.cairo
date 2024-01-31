@@ -6,7 +6,7 @@ use unruggable::exchanges::jediswap_adapter::{
     IJediswapFactoryDispatcher, IJediswapFactoryDispatcherTrait, IJediswapRouterDispatcher,
     IJediswapRouterDispatcherTrait, IJediswapPairDispatcher, IJediswapPairDispatcherTrait,
 };
-use unruggable::factory::interface::{IFactoryDispatcher, IFactoryDispatcherTrait};
+use unruggable::factory::{IFactoryDispatcher, IFactoryDispatcherTrait, LaunchParameters};
 use unruggable::locker::LockPosition;
 use unruggable::locker::interface::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
 use unruggable::tests::addresses::{JEDI_FACTORY_ADDRESS, JEDI_ROUTER_ADDRESS, ETH_ADDRESS};
@@ -44,15 +44,17 @@ use unruggable::utils::math::PercentageMath;
 //     quote.approve(factory.contract_address, amount);
 //     stop_prank(CheatTarget::One(quote.contract_address));
 
-//     let pair_address = factory
-//         .launch_on_jediswap(
-//             memecoin_address,
-//             TRANSFER_RESTRICTION_DELAY,
-//             MAX_PERCENTAGE_BUY_LAUNCH,
-//             quote_address,
-//             amount,
-//             unlock_time
-//         );
+    // let pair_address = factory
+    //     .launch_on_jediswap(
+    //         LaunchParameters {
+    //             memecoin_address,
+    //             transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+    //             max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+    //             quote_address,
+    //         },
+    //         amount,
+    //         unlock_time
+    //     );
 
 //     let pair = IJediswapPairDispatcher { contract_address: pair_address };
 
@@ -124,10 +126,12 @@ fn test_buy_above_max_limit_should_fail() {
 
     let pair_address = factory
         .launch_on_jediswap(
-            memecoin_address,
-            TRANSFER_RESTRICTION_DELAY,
-            MAX_PERCENTAGE_BUY_LAUNCH,
-            quote_address,
+            LaunchParameters {
+                memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address,
+            },
             amount,
             unlock_time
         );
