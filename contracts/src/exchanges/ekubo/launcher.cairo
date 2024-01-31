@@ -138,6 +138,9 @@ trait IEkuboLauncher<T> {
     /// * `EkuboLP` - A struct containing the details of the liquidity position.
     ///
     fn liquidity_position_details(self: @T, id: u64) -> EkuboLP;
+
+    /// Returns the address of the ekubo core contract.
+    fn ekubo_core_address(self: @T) -> ContractAddress;
 }
 
 #[starknet::contract]
@@ -368,6 +371,10 @@ mod EkuboLauncher {
                     lower: storable_pos.bounds.lower, upper: storable_pos.bounds.upper,
                 }
             }
+        }
+
+        fn ekubo_core_address(self: @ContractState) -> ContractAddress {
+            self.core.read().contract_address
         }
     }
 

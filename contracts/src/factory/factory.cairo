@@ -17,6 +17,9 @@ mod Factory {
         ContractAddress, ClassHash, get_caller_address, get_contract_address, contract_address_const
     };
     use unruggable::errors;
+    use unruggable::exchanges::ekubo::launcher::{
+        IEkuboLauncherDispatcher, IEkuboLauncherDispatcherTrait
+    };
     use unruggable::exchanges::{
         SupportedExchanges, ekubo_adapter, ekubo_adapter::EkuboPoolParameters, jediswap_adapter,
         jediswap_adapter::JediswapAdditionalParameters, ekubo::launcher::EkuboLP
@@ -140,7 +143,7 @@ mod Factory {
 
             memecoin
                 .set_launched(
-                    LiquidityType::ERC20(pair_address),
+                    LiquidityType::JediERC20(pair_address),
                     :transfer_restriction_delay,
                     :max_percentage_buy_launch
                 );
@@ -180,7 +183,9 @@ mod Factory {
 
             memecoin
                 .set_launched(
-                    LiquidityType::NFT(id), :transfer_restriction_delay, :max_percentage_buy_launch
+                    LiquidityType::EkuboNFT(id),
+                    :transfer_restriction_delay,
+                    :max_percentage_buy_launch
                 );
             self
                 .emit(
@@ -200,11 +205,11 @@ mod Factory {
                 Option::None => { return Option::None; },
             };
             let locker_address = match liquidity_type {
-                LiquidityType::ERC20(pair_address) => {
+                LiquidityType::JediERC20(pair_address) => {
                     // ERC20 tokens are locked inside an ERC20Tokens-Locker
                     self.lock_manager_address.read()
                 },
-                LiquidityType::NFT(id) => {
+                LiquidityType::EkuboNFT(id) => {
                     // Ekubo NFTs are locked inside the EkuboLauncher contract
                     self.exchange_address(SupportedExchanges::Ekubo)
                 }
@@ -219,6 +224,14 @@ mod Factory {
 
         fn is_memecoin(self: @ContractState, address: ContractAddress) -> bool {
             self.deployed_memecoins.read(address)
+        }
+
+        fn ekubo_core_address(self: @ContractState) -> ContractAddress {
+            let launcher = IEkuboLauncherDispatcher {
+                contract_address: self.exchange_address(SupportedExchanges::Ekubo)
+            };
+
+            launcher.ekubo_core_address()
         }
     }
 }

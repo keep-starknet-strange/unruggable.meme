@@ -7,7 +7,6 @@ use starknet::ClassHash;
 
 use starknet::ContractAddress;
 
-
 #[starknet::interface]
 trait IJediswapPair<T> {
     fn get_reserves(self: @T) -> (u256, u256, u64);
@@ -31,10 +30,25 @@ trait IFactory<T> {
 //
 #[starknet::interface]
 trait IJediswapRouter<TContractState> {
+    // view functions
     fn factory(self: @TContractState) -> ContractAddress;
     fn sort_tokens(
         self: @TContractState, tokenA: ContractAddress, tokenB: ContractAddress
     ) -> (ContractAddress, ContractAddress);
+    fn quote(self: @TContractState, amountA: u256, reserveA: u256, reserveB: u256) -> u256;
+    fn get_amount_out(
+        self: @TContractState, amountIn: u256, reserveIn: u256, reserveOut: u256
+    ) -> u256;
+    fn get_amount_in(
+        self: @TContractState, amountOut: u256, reserveIn: u256, reserveOut: u256
+    ) -> u256;
+    fn get_amounts_out(
+        self: @TContractState, amountIn: u256, path: Array::<ContractAddress>
+    ) -> Array::<u256>;
+    fn get_amounts_in(
+        self: @TContractState, amountOut: u256, path: Array::<ContractAddress>
+    ) -> Array::<u256>;
+    // external functions
     fn add_liquidity(
         ref self: TContractState,
         tokenA: ContractAddress,
@@ -46,18 +60,49 @@ trait IJediswapRouter<TContractState> {
         to: ContractAddress,
         deadline: u64
     ) -> (u256, u256, u256);
+    fn remove_liquidity(
+        ref self: TContractState,
+        tokenA: ContractAddress,
+        tokenB: ContractAddress,
+        liquidity: u256,
+        amountAMin: u256,
+        amountBMin: u256,
+        to: ContractAddress,
+        deadline: u64
+    ) -> (u256, u256);
+    fn swap_exact_tokens_for_tokens(
+        ref self: TContractState,
+        amountIn: u256,
+        amountOutMin: u256,
+        path: Array::<ContractAddress>,
+        to: ContractAddress,
+        deadline: u64
+    ) -> Array::<u256>;
+    fn swap_tokens_for_exact_tokens(
+        ref self: TContractState,
+        amountOut: u256,
+        amountInMax: u256,
+        path: Array::<ContractAddress>,
+        to: ContractAddress,
+        deadline: u64
+    ) -> Array::<u256>;
+    fn replace_implementation_class(ref self: TContractState, new_implementation_class: ClassHash);
+}
+
+#[starknet::interface]
+trait IERC20<T> {
+    fn transfer_from(
+        ref self: T, sender: ContractAddress, recipient: ContractAddress, amount: u256
+    ) -> bool;
+    fn transferFrom(
+        ref self: T, sender: ContractAddress, recipient: ContractAddress, amount: u256
+    ) -> bool; // TODO Remove after regenesis
 }
 
 #[starknet::contract]
 mod RouterC1 {
     use array::{ArrayTrait, SpanTrait};
-
-    use debug::PrintTrait;
     use integer::u256_from_felt252;
-    use openzeppelin::token::erc20::interface::{
-        IERC20CamelDispatcher, IERC20CamelDispatcherTrait, ERC20ABIDispatcher,
-        ERC20ABIDispatcherTrait
-    };
     use result::ResultTrait;
     use starknet::syscalls::{replace_class_syscall, call_contract_syscall};
     use starknet::{
@@ -66,9 +111,11 @@ mod RouterC1 {
     };
 
     use super::{
-        IJediswapPairDispatcher, IJediswapPairDispatcherTrait, IFactoryDispatcher,
-        IFactoryDispatcherTrait
+        IERC20Dispatcher, IERC20DispatcherTrait, IJediswapPairDispatcher,
+        IJediswapPairDispatcherTrait, IFactoryDispatcher, IFactoryDispatcherTrait
     };
+    use traits::Into;
+    use zeroable::Zeroable;
 
     //
     // Storage
@@ -93,6 +140,10 @@ mod RouterC1 {
 
     #[external(v0)]
     impl RouterC1 of super::IJediswapRouter<ContractState> {
+        //
+        // Getters
+        //
+
         // @notice factory address
         // @return address
         fn factory(self: @ContractState) -> ContractAddress {
@@ -109,6 +160,63 @@ mod RouterC1 {
         ) -> (ContractAddress, ContractAddress) {
             _sort_tokens(tokenA, tokenB)
         }
+
+        // @notice Given some amount of an asset and pair reserves, returns an equivalent amount of the other asset
+        // @param amountA Amount of tokenA
+        // @param reserveA Reserves for tokenA
+        // @param reserveB Reserves for tokenB
+        // @return amountB Amount of tokenB
+        fn quote(self: @ContractState, amountA: u256, reserveA: u256, reserveB: u256) -> u256 {
+            _quote(amountA, reserveA, reserveB)
+        }
+
+        // @notice Given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
+        // @param amountIn Input Amount
+        // @param reserveIn Reserves for input token
+        // @param reserveOut Reserves for output token
+        // @return amountOut Maximum output amount
+        fn get_amount_out(
+            self: @ContractState, amountIn: u256, reserveIn: u256, reserveOut: u256
+        ) -> u256 {
+            _get_amount_out(amountIn, reserveIn, reserveOut)
+        }
+
+        // @notice Given an output amount of an asset and pair reserves, returns a required input amount of the other asset
+        // @param amountOut Output Amount
+        // @param reserveIn Reserves for input token
+        // @param reserveOut Reserves for output token
+        // @return amountIn Required input amount
+        fn get_amount_in(
+            self: @ContractState, amountOut: u256, reserveIn: u256, reserveOut: u256
+        ) -> u256 {
+            _get_amount_in(amountOut, reserveIn, reserveOut)
+        }
+
+        // @notice Performs chained get_amount_out calculations on any number of pairs
+        // @param amountIn Input Amount
+        // @param path Array of pair addresses through which swaps are chained
+        // @return amounts Required output amount array
+        fn get_amounts_out(
+            self: @ContractState, amountIn: u256, path: Array::<ContractAddress>
+        ) -> Array::<u256> {
+            let factory = self._factory.read();
+            _get_amounts_out(factory, amountIn, path.span())
+        }
+
+        // @notice Performs chained get_amount_in calculations on any number of pairs
+        // @param amountOut Output Amount
+        // @param path Array of pair addresses through which swaps are chained
+        // @return amounts Required input amount array
+        fn get_amounts_in(
+            self: @ContractState, amountOut: u256, path: Array::<ContractAddress>
+        ) -> Array::<u256> {
+            let factory = self._factory.read();
+            _get_amounts_in(factory, amountOut, path.span())
+        }
+
+        //
+        // Externals
+        //
 
         // @notice Add liquidity to a pool
         // @dev `caller` should have already given the router an allowance of at least amountADesired/amountBDesired on tokenA/tokenB
@@ -147,6 +255,118 @@ mod RouterC1 {
             let liquidity = pairDispatcher.mint(to);
             (amountA, amountB, liquidity)
         }
+
+        // @notice Remove liquidity from a pool
+        // @dev `caller` should have already given the router an allowance of at least liquidity on the pool
+        // @param tokenA Address of tokenA
+        // @param tokenB Address of tokenB
+        // @param liquidity The amount of liquidity tokens to remove
+        // @param amountAMin The minimum amount of tokenA that must be received for the transaction not to revert
+        // @param amountBMin The minimum amount of tokenB that must be received for the transaction not to revert
+        // @param to Recipient of the underlying tokens
+        // @param deadline Timestamp after which the transaction will revert
+        // @return amountA The amount of tokenA received
+        // @return amountB The amount of tokenB received
+        fn remove_liquidity(
+            ref self: ContractState,
+            tokenA: ContractAddress,
+            tokenB: ContractAddress,
+            liquidity: u256,
+            amountAMin: u256,
+            amountBMin: u256,
+            to: ContractAddress,
+            deadline: u64
+        ) -> (u256, u256) {
+            _ensure_deadline(deadline);
+            let factory = self._factory.read();
+            let pair = _pair_for(factory, tokenA, tokenB);
+            let sender = get_caller_address();
+            _transfer_token(pair, sender, pair, liquidity);
+            let pairDispatcher = IJediswapPairDispatcher { contract_address: pair };
+            let (amount0, amount1) = pairDispatcher.burn(to);
+            let (token0, _) = _sort_tokens(tokenA, tokenB);
+            let mut amountA = 0.into();
+            let mut amountB = 0.into();
+            if tokenA == token0 {
+                amountA = amount0;
+                amountB = amount1;
+            } else {
+                amountA = amount1;
+                amountB = amount0;
+            }
+
+            assert(amountA >= amountAMin, 'insufficient A amount');
+            assert(amountB >= amountBMin, 'insufficient B amount');
+
+            (amountA, amountB)
+        }
+
+        // @notice Swaps an exact amount of input tokens for as many output tokens as possible, along the route determined by the path
+        // @dev `caller` should have already given the router an allowance of at least amountIn on the input token
+        // @param amountIn The amount of input tokens to send
+        // @param amountOutMin The minimum amount of output tokens that must be received for the transaction not to revert
+        // @param path Array of pair addresses through which swaps are chained
+        // @param to Recipient of the output tokens
+        // @param deadline Timestamp after which the transaction will revert
+        // @return amounts The input token amount and all subsequent output token amounts
+        fn swap_exact_tokens_for_tokens(
+            ref self: ContractState,
+            amountIn: u256,
+            amountOutMin: u256,
+            path: Array::<ContractAddress>,
+            to: ContractAddress,
+            deadline: u64
+        ) -> Array::<u256> {
+            _ensure_deadline(deadline);
+            let factory = self._factory.read();
+            let mut amounts = _get_amounts_out(factory, amountIn, path.span());
+            assert(*amounts[amounts.len() - 1] >= amountOutMin, 'insufficient output amount');
+            let pair = _pair_for(factory, *path[0], *path[1]);
+            let sender = get_caller_address();
+            _transfer_token(*path[0], sender, pair, *amounts[0]);
+            InternalImpl::_swap(ref self, 0, path.len(), ref amounts, path.span(), to);
+            amounts
+        }
+
+        // @notice Receive an exact amount of output tokens for as few input tokens as possible, along the route determined by the path
+        // @dev `caller` should have already given the router an allowance of at least amountInMax on the input token
+        // @param amountOut The amount of output tokens to receive
+        // @param amountInMax The maximum amount of input tokens that can be required before the transaction reverts
+        // @param path Array of pair addresses through which swaps are chained
+        // @param to Recipient of the output tokens
+        // @param deadline Timestamp after which the transaction will revert
+        // @return amounts The input token amount and all subsequent output token amounts
+        fn swap_tokens_for_exact_tokens(
+            ref self: ContractState,
+            amountOut: u256,
+            amountInMax: u256,
+            path: Array::<ContractAddress>,
+            to: ContractAddress,
+            deadline: u64
+        ) -> Array::<u256> {
+            _ensure_deadline(deadline);
+            let factory = self._factory.read();
+            let mut amounts = _get_amounts_in(factory, amountOut, path.span());
+            assert(*amounts[0] <= amountInMax, 'excessive input amount');
+            let pair = _pair_for(factory, *path[0], *path[1]);
+            let sender = get_caller_address();
+            _transfer_token(*path[0], sender, pair, *amounts[0]);
+            InternalImpl::_swap(ref self, 0, path.len(), ref amounts, path.span(), to);
+            amounts
+        }
+
+        // @notice This is used upgrade (Will push a upgrade without this to finalize)
+        // @dev Only Proxy_admin can call
+        // @param new_implementation_class New implementation hash
+        fn replace_implementation_class(
+            ref self: ContractState, new_implementation_class: ClassHash
+        ) {
+            let sender = get_caller_address();
+            let proxy_admin = self.Proxy_admin.read();
+            assert(sender == proxy_admin, 'must be admin');
+            assert(!new_implementation_class.is_zero(), 'must be non zero');
+            replace_class_syscall(new_implementation_class);
+        }
     }
 
     #[generate_trait]
@@ -154,7 +374,7 @@ mod RouterC1 {
         //
         // Internals
         //
-        // used
+
         fn _add_liquidity(
             ref self: ContractState,
             tokenA: ContractAddress,
@@ -236,9 +456,24 @@ mod RouterC1 {
     fn _transfer_token(
         token: ContractAddress, sender: ContractAddress, recipient: ContractAddress, amount: u256
     ) {
-        let tokenDispatcher = IERC20CamelDispatcher { contract_address: token };
-        tokenDispatcher
-            .transferFrom(sender, recipient, amount); // TODO dispatcher with error handling
+        // let tokenDispatcher = IERC20Dispatcher { contract_address: token };
+        // tokenDispatcher.transfer_from(sender, recipient, amount) // TODO dispatcher with error handling
+
+        let mut calldata = Default::default();
+        Serde::serialize(@sender, ref calldata);
+        Serde::serialize(@recipient, ref calldata);
+        Serde::serialize(@amount, ref calldata);
+
+        let selector_for_transfer_from =
+            1555377517929037318987687899825758707538299441176447799544473656894800517992;
+        let selector_for_transferFrom =
+            116061167288211781254449158074459916871457383008289084697957612485591092000;
+
+        let mut result = call_contract_syscall(token, selector_for_transfer_from, calldata.span());
+        if (result.is_err()) {
+            result = call_contract_syscall(token, selector_for_transferFrom, calldata.span());
+        }
+        result.unwrap_syscall(); // Additional error handling
     }
 
     fn _sort_tokens(
@@ -292,5 +527,75 @@ mod RouterC1 {
 
         let amountB = (amountA * reserveB) / reserveA;
         amountB
+    }
+
+    fn _get_amount_out(amountIn: u256, reserveIn: u256, reserveOut: u256) -> u256 {
+        assert(amountIn > 0.into(), 'insufficient input amount');
+        assert(reserveIn > 0.into() && reserveOut > 0.into(), 'insufficient liquidity');
+
+        let amountIn_with_fee = amountIn * 997.into();
+        let numerator = amountIn_with_fee * reserveOut;
+        let denominator = (reserveIn * 1000.into()) + amountIn_with_fee;
+
+        numerator / denominator
+    }
+
+    fn _get_amount_in(amountOut: u256, reserveIn: u256, reserveOut: u256) -> u256 {
+        assert(amountOut > 0.into(), 'insufficient output amount');
+        assert(reserveIn > 0.into() && reserveOut > 0.into(), 'insufficient liquidity');
+
+        let numerator = reserveIn * amountOut * 1000.into();
+        let denominator = (reserveOut - amountOut) * 997.into();
+
+        (numerator / denominator) + 1.into()
+    }
+
+    fn _get_amounts_out(
+        factory: ContractAddress, amountIn: u256, path: Span::<ContractAddress>
+    ) -> Array::<u256> {
+        assert(path.len() >= 2, 'invalid path');
+        let mut amounts = ArrayTrait::<u256>::new();
+        amounts.append(amountIn);
+        let mut current_index = 0;
+        loop {
+            if (current_index == path.len() - 1) {
+                break true;
+            }
+            let (reserveIn, reserveOut) = _get_reserves(
+                factory, *path[current_index], *path[current_index + 1]
+            );
+            amounts.append(_get_amount_out(*amounts[current_index], reserveIn, reserveOut));
+            current_index += 1;
+        };
+        amounts
+    }
+
+    fn _get_amounts_in(
+        factory: ContractAddress, amountOut: u256, path: Span::<ContractAddress>
+    ) -> Array::<u256> {
+        assert(path.len() >= 2, 'invalid path');
+        let mut amounts = ArrayTrait::<u256>::new();
+        amounts.append(amountOut);
+        let mut current_index = path.len() - 1;
+        loop {
+            if (current_index == 0) {
+                break true;
+            }
+            let (reserveIn, reserveOut) = _get_reserves(
+                factory, *path[current_index - 1], *path[current_index]
+            );
+            amounts.append(_get_amount_in(*amounts[amounts.len() - 1], reserveIn, reserveOut));
+            current_index -= 1;
+        };
+        let mut final_amounts = ArrayTrait::<u256>::new();
+        current_index = 0;
+        loop { // reversing array, TODO remove when set comes.
+            if (current_index == amounts.len()) {
+                break true;
+            }
+            final_amounts.append(*amounts[amounts.len() - 1 - current_index]);
+            current_index += 1;
+        };
+        final_amounts
     }
 }

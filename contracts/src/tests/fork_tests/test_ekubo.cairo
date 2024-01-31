@@ -93,18 +93,12 @@ fn swap_tokens_on_ekubo(
     let ekubo_clearer = IClearDispatcher { contract_address: router_address };
     let first_amount_in = amount_in;
 
-    let mut tx_info: TxInfoMock = Default::default();
-    tx_info.transaction_hash = Option::Some(123);
-    start_spoof(CheatTarget::One(token_in.contract_address), tx_info);
-
     // We transfer tokens to the swapper contract, which performs the swap
     // This is required the way the swapper contract is coded.
     // It then sends back the funds to the caller
     start_prank(CheatTarget::One(token_in.contract_address), owner);
     token_in.transfer(router_address, first_amount_in);
     stop_prank(CheatTarget::One(token_in.contract_address));
-
-    stop_spoof(CheatTarget::One(token_in.contract_address));
 
     // If MEME/quote > 1 and we swap token1 for token0,
     // OR if MEME/quote < 1 and we swap token0 for token1,
@@ -136,15 +130,9 @@ fn swap_tokens_on_ekubo(
     let second_expected_output = PercentageMath::percent_mul(first_amount_in, 9940);
     let balance_token_in_before = token_in.balance_of(owner);
 
-    let mut tx_info: TxInfoMock = Default::default();
-    tx_info.transaction_hash = Option::Some(456);
-    start_spoof(CheatTarget::One(token_out.contract_address), tx_info);
-
     start_prank(CheatTarget::One(token_out.contract_address), owner);
     token_out.transfer(router_address, second_amount_in);
     stop_prank(CheatTarget::One(token_out.contract_address));
-
-    stop_spoof(CheatTarget::One(token_out.contract_address));
 
     let route_node = RouteNode {
         pool_key: pool_key, sqrt_ratio_limit: sqrt_limit_swap2, skip_ahead: 0
@@ -155,6 +143,10 @@ fn swap_tokens_on_ekubo(
         amount: i129 { mag: second_amount_in.low, sign: false // exact input
          },
     };
+
+    let mut tx_info: TxInfoMock = Default::default();
+    tx_info.transaction_hash = Option::Some(456);
+    start_spoof(CheatTarget::One(token_out.contract_address), tx_info);
 
     ekubo_router.swap(route_node, token_amount);
     ekubo_clearer.clear(IERC20Dispatcher { contract_address: token_in.contract_address });
@@ -178,8 +170,8 @@ fn test_locked_liquidity_ekubo() {
     let (locker_address, locked_type) = factory.locked_liquidity(memecoin_address).unwrap();
     assert(locker_address == EKUBO_LAUNCHER_ADDRESS(), 'wrong locker address');
     match locked_type {
-        LiquidityType::ERC20(_) => panic_with_felt252('wrong liquidity type'),
-        LiquidityType::NFT(id) => ()
+        LiquidityType::JediERC20(_) => panic_with_felt252('wrong liquidity type'),
+        LiquidityType::EkuboNFT(id) => ()
     }
 }
 
@@ -450,7 +442,8 @@ fn test_launch_meme_token0_price_above_1() {
         pool_key: pool_key
     );
 
-    // Change tx hash to avoid multicall detection
+    // Change tx hash to avoid multicall detection, as the fee collection
+    // sends memecoins to the EkuboLauncher contract
     let mut tx_info: TxInfoMock = Default::default();
     tx_info.transaction_hash = Option::Some(1);
     start_spoof(CheatTarget::One(memecoin_address), tx_info);

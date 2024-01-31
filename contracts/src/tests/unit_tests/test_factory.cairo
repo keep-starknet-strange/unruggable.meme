@@ -45,8 +45,8 @@ fn test_locked_liquidity_jediswap() {
     let (locker_address, locked_type) = factory.locked_liquidity(memecoin_address).unwrap();
     assert(locker_address == LOCK_MANAGER_ADDRESS(), 'wrong locker address');
     match locked_type {
-        LiquidityType::ERC20(_) => (),
-        LiquidityType::NFT(_) => panic_with_felt252('wrong liquidity type')
+        LiquidityType::JediERC20(_) => (),
+        LiquidityType::EkuboNFT(_) => panic_with_felt252('wrong liquidity type')
     }
 }
 
