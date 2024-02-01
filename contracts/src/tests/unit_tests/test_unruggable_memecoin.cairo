@@ -379,7 +379,7 @@ mod memecoin_internals {
         /// pre launch holder number should not change when
         /// transfer is done to recipient(s) who already have tokens
 
-        /// to test this, we are going to continously self transfer tokens
+        /// to test this, we are going to continuously self transfer tokens
         /// and ensure that we can transfer more than `MAX_HOLDERS_BEFORE_LAUNCH` times
 
         let (memecoin, memecoin_address) = deploy_memecoin_through_factory();

@@ -9,7 +9,7 @@
 - [ ] Initial holders distribution safeguards
   - [ ] Limit initial holders to X addresses (with X small)
   - [ ] Limit the percentage of the total supply that can be distributed to initial holders
-- [ ] Inital buys safeguards
+- [ ] Initial buys safeguards
   - [ ] Limit the percentage of the total supply that can be bought in the first X blocks
 
 ## 🛠️ Build
