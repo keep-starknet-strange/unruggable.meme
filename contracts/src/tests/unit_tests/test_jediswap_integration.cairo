@@ -10,7 +10,7 @@ use unruggable::exchanges::jediswap_adapter::{
     IJediswapFactoryDispatcher, IJediswapFactoryDispatcherTrait, IJediswapRouterDispatcher,
     IJediswapRouterDispatcherTrait, IJediswapPairDispatcher, IJediswapPairDispatcherTrait,
 };
-use unruggable::factory::interface::{IFactoryDispatcher, IFactoryDispatcherTrait};
+use unruggable::factory::{LaunchParameters, IFactoryDispatcher, IFactoryDispatcherTrait};
 use unruggable::locker::interface::{
     ILockManagerDispatcher, ILockManagerDispatcherTrait, LockPosition
 };
@@ -19,7 +19,7 @@ use unruggable::tests::unit_tests::utils::{
     deploy_memecoin_through_factory_with_owner, TRANSFER_RESTRICTION_DELAY,
     MAX_PERCENTAGE_BUY_LAUNCH, deploy_eth_with_owner, MEMEFACTORY_ADDRESS, LOCK_MANAGER_ADDRESS,
     DEFAULT_MIN_LOCKTIME, pow_256, deploy_jedi_amm_factory_and_router, deploy_meme_factory,
-    deploy_eth, ETH_ADDRESS
+    deploy_eth, ETH_ADDRESS, INITIAL_HOLDERS, INITIAL_HOLDERS_AMOUNTS
 };
 use unruggable::token::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -45,10 +45,14 @@ fn test_jediswap_integration() {
     start_warp(CheatTarget::One(memecoin_address), 1);
     let pair_address = factory
         .launch_on_jediswap(
-            memecoin_address,
-            TRANSFER_RESTRICTION_DELAY,
-            MAX_PERCENTAGE_BUY_LAUNCH,
-            eth.contract_address,
+            LaunchParameters {
+                memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address: eth.contract_address,
+                initial_holders: INITIAL_HOLDERS(),
+                initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
+            },
             eth_amount,
             DEFAULT_MIN_LOCKTIME,
         );

@@ -145,6 +145,7 @@ mod Factory {
                 exchange_address: router_address,
                 token_address: memecoin_address,
                 quote_address: quote_address,
+                lp_supply: memecoin.total_supply() - team_alloc,
                 additional_parameters: JediswapAdditionalParameters {
                     lock_manager_address: self.lock_manager_address.read(),
                     unlock_time,
@@ -152,9 +153,12 @@ mod Factory {
                 }
             );
 
-            // Write the team alloc in storage of the memecoin.
+            //TODO Write the team alloc in storage of the memecoin.
             // self.team_allocation.write(team_allocation);
             // self.pre_launch_holders_count.write(unique_count(initial_holders).try_into().unwrap());
+
+            // Transfer the team's alloc
+            distribute_team_alloc(memecoin, initial_holders, initial_holders_amounts);
 
             memecoin
                 .set_launched(
@@ -188,20 +192,21 @@ mod Factory {
             initial_holders_amounts } =
                 launch_parameters;
 
-            let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
             let launchpad_address = self.exchange_address(SupportedExchanges::Ekubo);
-
             assert(launchpad_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
             assert(ekubo_parameters.starting_tick.mag.is_non_zero(), errors::PRICE_ZERO);
 
+            let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
             let (id, position) = ekubo_adapter::EkuboAdapterImpl::create_and_add_liquidity(
                 exchange_address: launchpad_address,
                 token_address: memecoin_address,
                 quote_address: quote_address,
+                lp_supply: memecoin.total_supply() - team_alloc,
                 additional_parameters: ekubo_parameters
             );
 
             // TODO: write team alloc and unique holders in memecoin
+            distribute_team_alloc(memecoin, initial_holders, initial_holders_amounts);
             memecoin
                 .set_launched(
                     LiquidityType::EkuboNFT(id),
@@ -327,5 +332,24 @@ mod Factory {
         };
 
         (team_allocation, unique_count(initial_holders).try_into().unwrap())
+    }
+
+    fn distribute_team_alloc(
+        memecoin: IUnruggableMemecoinDispatcher,
+        mut initial_holders: Span<ContractAddress>,
+        mut initial_holders_amounts: Span<u256>
+    ) {
+        loop {
+            match initial_holders.pop_front() {
+                Option::Some(holder) => {
+                    match initial_holders_amounts.pop_front() {
+                        Option::Some(amount) => { memecoin.transfer(*holder, *amount); },
+                        // Should never happen as the lengths of the spans are equal.
+                        Option::None => { break; }
+                    }
+                },
+                Option::None => { break; }
+            }
+        }
     }
 }

@@ -15,6 +15,7 @@ trait ExchangeAdapter<A, R> {
         exchange_address: ContractAddress,
         token_address: ContractAddress,
         quote_address: ContractAddress,
+        lp_supply: u256,
         additional_parameters: A,
     ) -> R;
 }

@@ -1,5 +1,5 @@
 mod math;
-use core::num::traits::{One};
+use core::num::traits::{Zero, One};
 use integer::u256_from_felt252;
 use starknet::ContractAddress;
 
@@ -40,6 +40,17 @@ fn unique_count<T, +Copy<T>, +Drop<T>, +PartialEq<T>>(mut self: Span<T>) -> u32 
         }
     };
     counter
+}
+
+fn sum<T, +Copy<T>, +Drop<T>, +PartialEq<T>, +Zero<T>, +AddEq<T>>(mut self: Span<T>) -> T {
+    let mut result = Zero::zero();
+    loop {
+        match self.pop_front() {
+            Option::Some(value) => { result += *value; },
+            Option::None => { break; }
+        }
+    };
+    result
 }
 
 fn contains<T, +Copy<T>, +Drop<T>, +PartialEq<T>>(mut self: Span<T>, value: T) -> bool {
