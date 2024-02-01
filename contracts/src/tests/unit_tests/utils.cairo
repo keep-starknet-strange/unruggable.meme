@@ -74,6 +74,10 @@ fn DEFAULT_INITIAL_SUPPLY() -> u256 {
     21_000_000 * pow_256(10, 18)
 }
 
+fn ETH_INITIAL_SUPPLY() -> u256 {
+    500_000_000 * pow_256(10, 18)
+}
+
 fn LOCK_MANAGER_ADDRESS() -> ContractAddress {
     'lock_manager'.try_into().unwrap()
 }
@@ -199,7 +203,7 @@ fn deploy_eth() -> (ERC20ABIDispatcher, ContractAddress) {
 fn deploy_eth_with_owner(owner: ContractAddress) -> (ERC20ABIDispatcher, ContractAddress) {
     let token = declare('ERC20Token');
     let mut calldata = Default::default();
-    Serde::serialize(@DEFAULT_INITIAL_SUPPLY(), ref calldata);
+    Serde::serialize(@ETH_INITIAL_SUPPLY(), ref calldata);
     Serde::serialize(@owner, ref calldata);
 
     let address = token.deploy_at(@calldata, ETH_ADDRESS()).unwrap();

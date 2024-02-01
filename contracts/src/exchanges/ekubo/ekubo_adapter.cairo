@@ -38,7 +38,7 @@ struct EkuboPoolParameters {
     fee: u128,
     tick_spacing: u128,
     // the sign of the starting tick is positive (false) if quote/token < 1 and negative (true) otherwise
-    starting_tick: i129,
+    starting_price: i129,
     // The LP providing bound, upper/lower determined by the address of the LPed tokens
     bound: u128,
 }
@@ -61,7 +61,7 @@ impl EkuboAdapterImpl of unruggable::exchanges::ExchangeAdapter<
             pool_params: EkuboPoolParameters {
                 fee: additional_parameters.fee,
                 tick_spacing: additional_parameters.tick_spacing,
-                starting_tick: additional_parameters.starting_tick,
+                starting_price: additional_parameters.starting_price,
                 bound: additional_parameters.bound,
             }
         };
@@ -93,13 +93,13 @@ impl EkuboAdapterImpl of unruggable::exchanges::ExchangeAdapter<
             tick_spacing: ekubo_launch_params.pool_params.tick_spacing,
             extension: 0.try_into().unwrap(),
         };
-        let team_alloc = total_supply - lp_supply;
+        let team_allocation = total_supply - lp_supply;
         buy_tokens_from_pool(
-            ekubo_launchpad, pool_key, team_alloc, memecoin_address, quote_address
+            ekubo_launchpad, pool_key, team_allocation, memecoin_address, quote_address
         );
 
         println!("received {} tokens", memecoin.balanceOf(this));
-        assert(memecoin.balanceOf(this) >= team_alloc, 'failed buying team tokens');
+        assert(memecoin.balanceOf(this) >= team_allocation, 'failed buying team tokens');
         // Allocation to the holders is done in the next step.
 
         (id, position)

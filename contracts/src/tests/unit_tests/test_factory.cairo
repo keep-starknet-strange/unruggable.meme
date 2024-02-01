@@ -143,12 +143,12 @@ fn test_launch_memecoin_happy_path() {
     assert(memecoin.is_launched(), 'should be launched');
 
     // Check pair creation
-    let team_alloc = sum(INITIAL_HOLDERS_AMOUNTS());
+    let team_allocation = sum(INITIAL_HOLDERS_AMOUNTS());
     let pair = IJediswapPairDispatcher { contract_address: pair_address };
     let (token_0_reserves, token_1_reserves, _) = pair.get_reserves();
     assert(pair.token0() == memecoin_address, 'wrong token 0 address');
     assert(pair.token1() == eth.contract_address, 'wrong token 1 address');
-    assert(token_0_reserves == factory_balance_meme - team_alloc, 'wrong pool token reserves');
+    assert(token_0_reserves == factory_balance_meme - team_allocation, 'wrong pool token reserves');
     assert(token_1_reserves == eth_amount, 'wrong pool memecoin reserves');
     let lp_token = ERC20ABIDispatcher { contract_address: pair_address };
     assert(lp_token.balanceOf(memecoin_address) == 0, 'shouldnt have lp tokens');
@@ -395,7 +395,7 @@ fn test_launch_memecoin_amm_not_whitelisted() {
                 initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
             },
             EkuboPoolParameters {
-                fee: 0, tick_spacing: 0, starting_tick: i129 { sign: false, mag: 0 }, bound: 0
+                fee: 0, tick_spacing: 0, starting_price: i129 { sign: false, mag: 0 }, bound: 0
             }
         );
 }

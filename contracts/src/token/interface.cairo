@@ -55,7 +55,8 @@ trait IUnruggableMemecoin<TState> {
         ref self: TState,
         liquidity_type: LiquidityType,
         transfer_restriction_delay: u64,
-        max_percentage_buy_launch: u16
+        max_percentage_buy_launch: u16,
+        team_allocation: u256,
     );
 }
 
@@ -119,6 +120,7 @@ trait IUnruggableAdditional<TState> {
         ref self: TState,
         liquidity_type: LiquidityType,
         transfer_restriction_delay: u64,
-        max_percentage_buy_launch: u16
+        max_percentage_buy_launch: u16,
+        team_allocation: u256,
     );
 }

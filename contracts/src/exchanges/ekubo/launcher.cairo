@@ -46,12 +46,12 @@ trait IEkuboLauncher<T> {
     /// This function calls the core contract with a callback to deposit and mint
     /// the LP tokens. The core of the launch logic is actually performed during the
     /// callback in the `locked` function, where the pool is initialized.
-    /// 
+    ///
     /// The LP providing is done in two steps:
-    /// 1. Provide liq between [starting_tick, stating_tick+1], corresponding to the amount
-    /// that the team can buy at the starting_tick price. This ensures that the amount of liquidity in the pool
+    /// 1. Provide liq between [starting_price, stating_tick+1], corresponding to the amount
+    /// that the team can buy at the starting_price price. This ensures that the amount of liquidity in the pool
     /// never goes to zero, as all the tokens were initially in the pool.
-    /// 2. Provide the rest of the liquidity in the pool, in the interval [starting_tick+1, +inf].
+    /// 2. Provide the rest of the liquidity in the pool, in the interval [starting_price+1, +inf].
     /// the tokens are transferred to the pool, and the Ekubo LP position is minted and
     /// transferred to this contract.  It then tracks the new ekubo position id with
     /// the position parameters in the `liquidity_positions` mapping in the
@@ -172,6 +172,9 @@ mod EkuboLauncher {
     use super::{StorableBounds, StorablePoolKey, StorableEkuboLP, EkuboLP};
     use unruggable::errors;
     use unruggable::exchanges::ekubo::errors::{NOT_POSITION_OWNER};
+    use unruggable::exchanges::ekubo::helpers::{
+        get_next_tick_bounds, get_initial_tick_from_starting_price
+    };
     use unruggable::exchanges::ekubo::interfaces::{
         ITokenRegistryDispatcher, IOwnedNFTDispatcher, IOwnedNFTDispatcherTrait,
     };
@@ -440,76 +443,20 @@ mod EkuboLauncher {
                     // The initial_tick must correspond to the wanted initial price in quote/MEME
                     // The ekubo prices are always in TOKEN1/TOKEN0.
                     // The initial_tick is the lower bound if the quote is token1, the upper bound otherwise.
-                    //TODO: can there be undefined behavior if the one tick bound flips the sign?
-                    let (initial_tick, bounds, one_tick_bound) = if is_token1_quote {
-                        let next_tick = i129 {
-                            sign: launch_params.pool_params.starting_tick.sign,
-                            mag: launch_params.pool_params.starting_tick.mag
-                        }
-                            - i129 {
-                                sign: launch_params.pool_params.starting_tick.sign,
-                                mag: launch_params.pool_params.tick_spacing
-                            };
-                        (
-                            i129 {
-                                sign: launch_params.pool_params.starting_tick.sign,
-                                mag: launch_params.pool_params.starting_tick.mag
-                            },
-                            Bounds {
-                                lower: i129 {
-                                    sign: launch_params.pool_params.starting_tick.sign,
-                                    mag: launch_params.pool_params.starting_tick.mag
-                                },
-                                upper: i129 { sign: false, mag: launch_params.pool_params.bound }
-                            },
-                            Bounds {
-                                lower: i129 {
-                                    sign: launch_params.pool_params.starting_tick.sign,
-                                    mag: launch_params.pool_params.starting_tick.mag
-                                },
-                                upper: next_tick
-                            }
-                        )
-                    } else {
-                        // The initial tick sign is reversed if the quote is token0.
-                        // as the price provided was expressed in token1/token0.
-                        let next_tick = i129 {
-                            sign: !launch_params.pool_params.starting_tick.sign,
-                            mag: launch_params.pool_params.starting_tick.mag
-                        }
-                            - i129 {
-                                sign: !launch_params.pool_params.starting_tick.sign,
-                                mag: launch_params.pool_params.tick_spacing
-                            };
-                        (
-                            i129 {
-                                sign: !launch_params.pool_params.starting_tick.sign,
-                                mag: launch_params.pool_params.starting_tick.mag
-                            },
-                            Bounds {
-                                lower: i129 { sign: true, mag: launch_params.pool_params.bound },
-                                upper: i129 {
-                                    sign: !launch_params.pool_params.starting_tick.sign,
-                                    mag: launch_params.pool_params.starting_tick.mag
-                                }
-                            },
-                            Bounds {
-                                lower: next_tick,
-                                upper: i129 {
-                                    sign: !launch_params.pool_params.starting_tick.sign,
-                                    mag: launch_params.pool_params.starting_tick.mag
-                                }
-                            }
-                        )
-                    };
+                    let (initial_tick, full_range_bounds) = get_initial_tick_from_starting_price(
+                        launch_params.pool_params.starting_price,
+                        launch_params.pool_params.bound,
+                        is_token1_quote
+                    );
 
                     // Initialize the pool at the initial tick.
                     //TODO: check if this can be frontran
+                    //TODO: how to fix frontrunning possibilities by disabling create -> launch?
                     core.maybe_initialize_pool(:pool_key, :initial_tick);
 
                     // 1. Provide liq that must be put in the pool by the creator, equal
                     // to the percentage of the total supply allocated to the team,
-                    // only at the starting_tick price.
+                    // only at the starting_price price.
                     let launched_token = IUnruggableMemecoinDispatcher {
                         contract_address: launch_params.token_address
                     };
@@ -517,37 +464,38 @@ mod EkuboLauncher {
                     let liquidity_for_team = launched_token.balanceOf(this)
                         - launch_params.lp_supply;
                     println!("liquidity_for_team: {}", liquidity_for_team);
-                    let positions = self.positions.read();
-                    // The token must be transferred to the positions contract before calling mint.
-                    launched_token
-                        .transfer(
-                            recipient: positions.contract_address, amount: liquidity_for_team
-                        );
-
-                    let one_tick_bound3 = super::get_next_tick_bounds(
-                        launch_params.pool_params.starting_tick,
+                    let single_tick_bound = get_next_tick_bounds(
+                        launch_params.pool_params.starting_price,
                         launch_params.pool_params.tick_spacing,
                         is_token1_quote
                     );
-                    let (_, _) = positions
-                        .mint_and_deposit(pool_key, one_tick_bound3, min_liquidity: 0);
-
-                    // 2. Provide the liquidity to actually initialize the public pool with
-                    // Transfer the balance of the launched token to be used in the LP.
-                    launched_token
-                        .transfer(
-                            recipient: positions.contract_address, amount: launch_params.lp_supply
+                    self
+                        .supply_liquidity(
+                            pool_key,
+                            launch_params.token_address,
+                            liquidity_for_team,
+                            single_tick_bound
                         );
                     println!("First LP done");
 
+                    // 2. Provide the liquidity to actually initialize the public pool with
+                    // Transfer the balance of the launched token to be used in the LP.
+
                     // The pool bounds must be set according to the tick spacing.
                     // The bounds were previously computed to provide yield covering the entire interval
-                    // [lower_bound, starting_tick]  or [starting_tick, upper_bound] depending on the quote.
-                    let (id, _) = positions.mint_and_deposit(pool_key, bounds, min_liquidity: 0);
+                    // [lower_bound, starting_price]  or [starting_price, upper_bound] depending on the quote.
+                    let id = self
+                        .supply_liquidity(
+                            pool_key,
+                            launch_params.token_address,
+                            launch_params.lp_supply,
+                            full_range_bounds
+                        );
+                    println!("Second LP done");
 
                     // At this point, the pool is composed by:
                     // n% of liquidity at precise starting tick, reserved for the team to buy
-                    // the rest of the liquidity, in bounds [starting_tick, +inf];
+                    // the rest of the liquidity, in bounds [starting_price, +inf];
 
                     let mut return_data: Array<felt252> = Default::default();
                     Serde::serialize(@id, ref return_data);
@@ -556,7 +504,7 @@ mod EkuboLauncher {
                             owner: launch_params.owner,
                             quote_address: launch_params.quote_address,
                             pool_key,
-                            bounds
+                            bounds: full_range_bounds
                         },
                         ref return_data
                     );
@@ -610,66 +558,21 @@ mod EkuboLauncher {
                 break;
             }
         }
-    }
-}
 
+        fn supply_liquidity(
+            ref self: ContractState,
+            pool_key: PoolKey,
+            token: ContractAddress,
+            amount: u256,
+            bounds: Bounds
+        ) -> u64 {
+            let positions = self.positions.read();
+            // The token must be transferred to the positions contract before calling mint.
+            ERC20ABIDispatcher { contract_address: token }
+                .transfer(recipient: positions.contract_address, :amount);
 
-/// Calculates the next tick bounds based on the starting tick, tick spacing, and whether token1 is the quote token.
-///
-/// The starting tick is always expressed in terms of MEME/QUOTE. The conversion is done internally to the contract.
-/// The bounds are calculated differently depending on whether token1 is the quote token and whether the starting tick is positive or negative.
-///
-/// If token1 is the quote token and the starting tick is negative, buying makes the price go up,
-/// so the upper bound is the starting tick - tick spacing and the lower bound is the starting tick.
-///
-/// If token1 is the quote token and the starting tick is positive, buying makes the price go down.
-/// so the lower bound is the starting tick - tick spacing and the upper bound is the starting tick.
-///
-/// If token1 is not the quote token and the starting tick is negative, buying makes the price go down.
-/// so the lower bound is the starting tick and the upper bound is the starting tick + tick spacing.
-
-/// If token1 is not the quote token and the starting tick is negative, buying makes the price go up.
-/// so the upper bound is the starting tick + tick spacing and the lower bound is the starting tick.
-///
-/// # Arguments
-///
-/// * `starting_tick` - The starting tick.
-/// * `tick_spacing` - The spacing between ticks.
-/// * `is_token1_quote` - Whether token1 is the quote token.
-///
-/// # Returns
-///
-/// * `Bounds` - The lower and upper bounds for the next tick.
-///
-fn get_next_tick_bounds(starting_tick: i129, tick_spacing: u128, is_token1_quote: bool) -> Bounds {
-    if is_token1_quote {
-        if starting_tick.sign {
-            // Case 1 -> price meme/quote > 0, pool price < 0, buying makes price go up
-            Bounds {
-                lower: i129 { sign: true, mag: starting_tick.mag },
-                upper: i129 { sign: true, mag: starting_tick.mag - tick_spacing }
-            }
-        // Case 2 -> price meme/quote < 0, pool price > 0, buying makes price go down
-        } else {
-            // Case 2 -> price meme/quote < 0, pool price > 0, buying makes price go down
-            Bounds {
-                lower: i129 { sign: false, mag: starting_tick.mag - tick_spacing },
-                upper: i129 { sign: false, mag: starting_tick.mag }
-            }
-        }
-    } else {
-        if starting_tick.sign {
-            // Case 3 -> price meme/quote < 0, pool price < 0, buying makes price go down
-            Bounds {
-                lower: i129 { sign: true, mag: starting_tick.mag + tick_spacing },
-                upper: i129 { sign: true, mag: starting_tick.mag }
-            }
-        } else {
-            // Case 4 -> price meme/quote > 0, pool price > 0, buying makes price go up
-            Bounds {
-                lower: i129 { sign: false, mag: starting_tick.mag },
-                upper: i129 { sign: false, mag: starting_tick.mag + tick_spacing }
-            }
+            let (id, liquidity) = positions.mint_and_deposit(pool_key, bounds, min_liquidity: 0);
+            id
         }
     }
 }

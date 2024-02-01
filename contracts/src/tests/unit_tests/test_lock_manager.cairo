@@ -10,7 +10,7 @@ use starknet::{ContractAddress, contract_address_const};
 use unruggable::locker::{errors, LockManager, ILockManagerDispatcher, ILockManagerDispatcherTrait};
 use unruggable::tests::unit_tests::utils::{
     OWNER, deploy_eth, deploy_locker, DEFAULT_MIN_LOCKTIME, LOCK_POSITION_ADDRESS,
-    DEFAULT_INITIAL_SUPPLY, DEFAULT_LOCK_AMOUNT
+    DEFAULT_INITIAL_SUPPLY, DEFAULT_LOCK_AMOUNT, ETH_INITIAL_SUPPLY
 };
 use unruggable::token::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -124,7 +124,7 @@ mod test_lock {
         setup, setup_and_lock, ILockManagerDispatcher, ILockManagerDispatcherTrait, OWNER,
         deploy_locker, start_prank, stop_prank, CheatTarget, ERC20ABIDispatcherTrait,
         DEFAULT_LOCK_AMOUNT, DEFAULT_MIN_LOCKTIME, spy_events, SpyOn, EventSpy, EventAssertions,
-        LockManager, DEFAULT_INITIAL_SUPPLY
+        LockManager, DEFAULT_INITIAL_SUPPLY, ETH_INITIAL_SUPPLY
     };
 
     #[test]
@@ -153,7 +153,7 @@ mod test_lock {
         // Check token balances
         let owner_balance = token.balanceOf(OWNER());
         assert(
-            owner_balance == DEFAULT_INITIAL_SUPPLY() - DEFAULT_LOCK_AMOUNT,
+            owner_balance == ETH_INITIAL_SUPPLY() - DEFAULT_LOCK_AMOUNT,
             'owner balance is incorrect'
         );
         let locker_balance = token.balanceOf(lock_address);
@@ -420,7 +420,7 @@ mod test_withdrawal {
         LockManager,
     };
     use unruggable::locker::{LockPosition, TokenLock};
-    use unruggable::tests::unit_tests::utils::DEFAULT_INITIAL_SUPPLY;
+    use unruggable::tests::unit_tests::utils::{ETH_INITIAL_SUPPLY, DEFAULT_INITIAL_SUPPLY};
 
     #[test]
     fn test_withdraw() {
@@ -558,7 +558,7 @@ mod test_withdrawal {
         // Check token balances
         let owner_balance = token.balanceOf(OWNER());
         assert(
-            owner_balance == DEFAULT_INITIAL_SUPPLY() - DEFAULT_LOCK_AMOUNT + partial_amount,
+            owner_balance == ETH_INITIAL_SUPPLY() - DEFAULT_LOCK_AMOUNT + partial_amount,
             'owner balance is incorrect'
         );
         let locker_balance = token.balanceOf(lock_address);

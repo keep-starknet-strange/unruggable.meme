@@ -14,7 +14,8 @@ use unruggable::tests::addresses::{
 };
 use unruggable::tests::unit_tests::utils::{
     deploy_locker, deploy_eth_with_owner, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS,
-    INITIAL_HOLDERS_AMOUNTS, SALT, DefaultTxInfoMock, OWNER, TOKEN0_ADDRESS, MEMEFACTORY_ADDRESS
+    INITIAL_HOLDERS_AMOUNTS, SALT, DefaultTxInfoMock, OWNER, TOKEN0_ADDRESS, MEMEFACTORY_ADDRESS,
+    ETH_INITIAL_SUPPLY
 };
 use unruggable::token::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -35,7 +36,7 @@ fn EKUBO_ROUTER_ADDRESS() -> ContractAddress {
 fn deploy_token0_with_owner(owner: ContractAddress) -> (ERC20ABIDispatcher, ContractAddress) {
     let token = declare('ERC20Token');
     let mut calldata = Default::default();
-    Serde::serialize(@DEFAULT_INITIAL_SUPPLY(), ref calldata);
+    Serde::serialize(@ETH_INITIAL_SUPPLY(), ref calldata);
     Serde::serialize(@owner, ref calldata);
 
     let address = token.deploy_at(@calldata, TOKEN0_ADDRESS()).unwrap();

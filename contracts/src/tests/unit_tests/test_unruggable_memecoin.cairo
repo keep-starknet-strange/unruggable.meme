@@ -154,9 +154,9 @@ mod memecoin_entrypoints {
         let (memecoin, memecoin_address) = deploy_memecoin_through_factory();
         store(memecoin_address, selector!("team_allocation"), array![2_100_000].span());
 
-        let team_alloc = memecoin.get_team_allocation();
+        let team_allocation = memecoin.get_team_allocation();
         // Team alloc is set to 10% in test utils
-        assert_eq!(team_alloc, 2_100_000);
+        assert_eq!(team_allocation, 2_100_000);
     }
 
     #[test]

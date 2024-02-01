@@ -83,7 +83,7 @@ trait IFactory<TContractState> {
     /// * `ekubo_parameters` - The parameters for the ekubo liquidity pool, including:
     ///     - `fee` - The fee for the liquidity pair.
     ///     - `tick_spacing` - The spacing between ticks for the liquidity pool.
-    ///     - `starting_tick` - The starting tick for the liquidity pool.
+    ///     - `starting_price` - The starting tick for the liquidity pool.
     ///     - `bound` - The bound for the liquidity pool - should be set to the max tick for this pool (the sign is determined in the contract).
     ///
     /// # Returns

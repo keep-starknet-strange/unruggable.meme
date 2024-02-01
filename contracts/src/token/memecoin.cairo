@@ -134,7 +134,8 @@ mod UnruggableMemecoin {
             ref self: ContractState,
             liquidity_type: LiquidityType,
             transfer_restriction_delay: u64,
-            max_percentage_buy_launch: u16
+            max_percentage_buy_launch: u16,
+            team_allocation: u256,
         ) {
             self.assert_only_factory();
             assert(!self.is_launched(), errors::ALREADY_LAUNCHED);
@@ -145,6 +146,7 @@ mod UnruggableMemecoin {
 
             self.liquidity_type.write(Option::Some(liquidity_type));
             self.launch_time.write(get_block_timestamp());
+            self.team_allocation.write(team_allocation);
 
             // Enable a transfer limit - until this time has passed,
             // transfers are limited to a certain amount.

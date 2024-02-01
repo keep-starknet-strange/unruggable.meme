@@ -126,7 +126,7 @@ mod Factory {
             quote_amount: u256,
             unlock_time: u64,
         ) -> ContractAddress {
-            let (team_alloc, pre_holders) = check_common_launch_parameters(
+            let (team_allocation, pre_holders) = check_common_launch_parameters(
                 @self, launch_parameters
             );
             let router_address = self.exchange_address(SupportedExchanges::Jediswap);
@@ -145,7 +145,7 @@ mod Factory {
                 exchange_address: router_address,
                 token_address: memecoin_address,
                 quote_address: quote_address,
-                lp_supply: memecoin.total_supply() - team_alloc,
+                lp_supply: memecoin.total_supply() - team_allocation,
                 additional_parameters: JediswapAdditionalParameters {
                     lock_manager_address: self.lock_manager_address.read(),
                     unlock_time,
@@ -164,7 +164,8 @@ mod Factory {
                 .set_launched(
                     LiquidityType::JediERC20(pair_address),
                     :transfer_restriction_delay,
-                    :max_percentage_buy_launch
+                    :max_percentage_buy_launch,
+                    :team_allocation
                 );
             self
                 .emit(
@@ -180,7 +181,7 @@ mod Factory {
             launch_parameters: LaunchParameters,
             ekubo_parameters: EkuboPoolParameters,
         ) -> (u64, EkuboLP) {
-            let (team_alloc, pre_holders) = check_common_launch_parameters(
+            let (team_allocation, pre_holders) = check_common_launch_parameters(
                 @self, launch_parameters
             );
 
@@ -194,14 +195,14 @@ mod Factory {
 
             let launchpad_address = self.exchange_address(SupportedExchanges::Ekubo);
             assert(launchpad_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
-            assert(ekubo_parameters.starting_tick.mag.is_non_zero(), errors::PRICE_ZERO);
+            assert(ekubo_parameters.starting_price.mag.is_non_zero(), errors::PRICE_ZERO);
 
             let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
             let (id, position) = ekubo_adapter::EkuboAdapterImpl::create_and_add_liquidity(
                 exchange_address: launchpad_address,
                 token_address: memecoin_address,
                 quote_address: quote_address,
-                lp_supply: memecoin.total_supply() - team_alloc,
+                lp_supply: memecoin.total_supply() - team_allocation,
                 additional_parameters: ekubo_parameters
             );
 
@@ -211,7 +212,8 @@ mod Factory {
                 .set_launched(
                     LiquidityType::EkuboNFT(id),
                     :transfer_restriction_delay,
-                    :max_percentage_buy_launch
+                    :max_percentage_buy_launch,
+                    :team_allocation
                 );
             self
                 .emit(
