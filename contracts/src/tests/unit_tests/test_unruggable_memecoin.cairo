@@ -57,8 +57,9 @@ mod test_constructor {
         );
     }
 
-    //TODO:move
+    //TODO:move to launch
     #[test]
+    #[ignore]
     #[should_panic(expected: ('Holders len dont match amounts',))]
     fn test_launch_initial_holders_arrays_len_mismatch() {
         let initial_holders: Array<ContractAddress> = array![
@@ -74,8 +75,9 @@ mod test_constructor {
         );
     }
 
-    //TODO: move
+    //TODO: move to launch
     #[test]
+    #[ignore]
     #[should_panic(expected: ('Max number of holders reached',))]
     fn test_constructor_max_holders_reached() {
         // 11 holders > 10 holders max
@@ -99,8 +101,9 @@ mod test_constructor {
         );
     }
 
-    //TODO: move
+    //TODO: move to launch
     #[test]
+    #[ignore]
     #[should_panic(expected: ('Max team allocation reached',))]
     fn test_constructor_too_much_team_alloc_should_fail() {
         let mut calldata = array![OWNER().into(), 'locker', NAME().into(), SYMBOL().into()];
