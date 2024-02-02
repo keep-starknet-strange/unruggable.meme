@@ -150,7 +150,7 @@ mod erc20_entrypoints {
         let recipient_balance = memecoin.balanceOf(RECIPIENT());
         assert(recipient_balance == 20, 'Invalid balance recipient');
 
-        // Check allowance. Should be equal to initial supply - transfered amount.
+        // Check allowance. Should be equal to initial supply - transferred amount.
         let allowance = memecoin.allowance(*INITIAL_HOLDERS()[0], SPENDER());
         assert(allowance == (DEFAULT_INITIAL_SUPPLY() - 20), 'Invalid allowance');
     }
@@ -205,7 +205,7 @@ mod erc20_entrypoints {
         let recipient_balance = memecoin.balanceOf(RECIPIENT());
         assert(recipient_balance == 20, 'Invalid balance recipient');
 
-        // Check allowance. Should be equal to initial supply - transfered amount.
+        // Check allowance. Should be equal to initial supply - transferred amount.
         let allowance = memecoin.allowance(*INITIAL_HOLDERS()[0], SPENDER());
         assert(allowance == (DEFAULT_INITIAL_SUPPLY() - 20), 'Invalid allowance');
     }

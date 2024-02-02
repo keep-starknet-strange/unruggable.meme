@@ -323,7 +323,7 @@ mod UnruggableMemecoin {
                 LiquidityType::JediERC20(pair) => {
                     if (get_caller_address() != pair) {
                         // When buying from jediswap, the caller_address is the pair,
-                        // so we return early if the caller is not the pair to not apply restricitons.
+                        // so we return early if the caller is not the pair to not apply restrictions.
                         return;
                     }
                 },
