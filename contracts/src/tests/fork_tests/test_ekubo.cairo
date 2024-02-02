@@ -62,7 +62,6 @@ fn launch_memecoin_on_ekubo(
     ERC20ABIDispatcher { contract_address: quote_address }
         .transfer(factory.contract_address, quote_to_deposit);
     stop_prank(CheatTarget::One(quote_address));
-    println!("quote_address");
 
     let (id, position) = factory
         .launch_on_ekubo(
@@ -318,7 +317,7 @@ fn test_launch_meme_token0_price_below_1() {
     let (quote, quote_address) = deploy_eth_with_owner(owner);
     let starting_price = i129 { sign: true, mag: 4600158 }; // 0.01ETH/MEME
     let quote_to_deposit = PercentageMath::percent_mul(
-        21_000 * pow_256(10, 18), 10_150
+        2_100_000 * pow_256(10, 16), 10_120
     ); // 10% of the total supply at a price of 0.01ETH/MEME
     // accounting for the 0.6% tick spacing
 

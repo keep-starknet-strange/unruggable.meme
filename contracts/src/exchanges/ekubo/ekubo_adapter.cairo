@@ -76,7 +76,6 @@ impl EkuboAdapterImpl of unruggable::exchanges::ExchangeAdapter<
 
         // Launch the token, which creates two positions: one concentrated at initial_tick
         // for the team allocation and one on the range [initial_tick, inf] for the initial LP.
-        println!("Launching token on Ekubo");
         let (id, position) = ekubo_launchpad.launch_token(ekubo_launch_params);
 
         // Ensure that the LPing operation has not returned more than 0.5% of the provided liquidity to the caller.
@@ -165,11 +164,9 @@ fn buy_tokens_from_pool(
 
     // We transfer quote tokens to the swapper contract, which performs the swap
     // It then sends back the funds to the caller once cleared.
-    println!("Transferring quote tokens to the router contract");
     quote_token.transfer(ekubo_router.contract_address, quote_token.balanceOf(this));
     // Swap and clear the tokens to finalize.
     ekubo_router.swap(route_node, token_amount);
-    println!("Clearing tokens");
     ekubo_clearer.clear(IERC20Dispatcher { contract_address: token_to_buy.contract_address });
     ekubo_clearer
         .clear_minimum_to_recipient(

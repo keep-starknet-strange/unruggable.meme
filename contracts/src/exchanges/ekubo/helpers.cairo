@@ -1,5 +1,5 @@
-use ekubo::types::i129::i129;
 use ekubo::types::bounds::Bounds;
+use ekubo::types::i129::i129;
 
 /// Calculates the initial tick and bounds for a liquidity pool from the starting price and the magnitude of the single bound delimiting the range [starting_price, upper_bound] or [lower_bound, starting_price].
 ///

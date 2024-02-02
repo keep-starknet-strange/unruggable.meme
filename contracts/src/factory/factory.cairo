@@ -153,7 +153,6 @@ mod Factory {
                 }
             );
 
-
             // Transfer the team's alloc
             distribute_team_alloc(memecoin, initial_holders, initial_holders_amounts);
 
