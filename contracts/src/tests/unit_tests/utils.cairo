@@ -248,7 +248,7 @@ fn deploy_memecoin_through_factory_with_owner(
 
     // Upon deployment, we mock the transaction_hash of the current tx.
     // This is because for each tx, we check during transfers whether a transfer already
-    // occured in the same tx. Rather than adding these lines in each test, we make it a default.
+    // occurred in the same tx. Rather than adding these lines in each test, we make it a default.
     let mut tx_info: TxInfoMock = Default::default();
     tx_info.transaction_hash = Option::Some(1234);
     snforge_std::start_spoof(CheatTarget::One(memecoin_address), tx_info);
@@ -261,7 +261,7 @@ fn deploy_memecoin_through_factory() -> (IUnruggableMemecoinDispatcher, Contract
     deploy_memecoin_through_factory_with_owner(OWNER())
 }
 
-// Sets the env block timestamp to 1 and launchs the memecoin - so that launched_at is 1
+// Sets the env block timestamp to 1 and launches the memecoin - so that launched_at is 1
 // In this context, the owner of the factory is the address of the snforge test
 fn deploy_and_launch_memecoin() -> (IUnruggableMemecoinDispatcher, ContractAddress) {
     let owner = OWNER();

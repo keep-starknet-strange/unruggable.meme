@@ -255,7 +255,7 @@ mod EkuboLauncher {
                 );
 
             // Append the owner's position to storage. It can only be removed if the ownership
-            // is transfered.
+            // is transferred.
             let mut owner_positions = self.owner_to_positions.read(params.owner);
             owner_positions.append(id);
 

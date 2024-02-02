@@ -107,7 +107,7 @@ fn deploy_memecoin_through_factory_with_owner(
 
     // Upon deployment, we mock the transaction_hash of the current tx.
     // This is because for each tx, we check during transfers whether a transfer already
-    // occured in the same tx. Rather than adding these lines in each test, we make it a default.
+    // occurred in the same tx. Rather than adding these lines in each test, we make it a default.
     let mut tx_info: TxInfoMock = Default::default();
     tx_info.transaction_hash = Option::Some(1234);
     tx_info.account_contract_address = Option::Some(snforge_std::test_address());
