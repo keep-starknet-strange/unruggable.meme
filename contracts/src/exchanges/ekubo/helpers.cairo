@@ -25,6 +25,9 @@ fn get_initial_tick_from_starting_price(
     starting_price: i129, bound_mag: u128, is_token1_quote: bool
 ) -> (i129, Bounds) {
     let (initial_tick, bounds) = if is_token1_quote {
+        // the price is always supplied in quote/meme. if token 1 is quote,
+        // then the upper bound expressed in quote/meme is +inf
+        // and the lower bound is the starting price.
         (
             i129 { sign: starting_price.sign, mag: starting_price.mag },
             Bounds {
@@ -47,62 +50,34 @@ fn get_initial_tick_from_starting_price(
 }
 
 
-/// Calculates the next tick bounds based on the starting tick, tick spacing, and whether token1 is the quote token.
-///
-/// The starting tick is always expressed in terms of MEME/QUOTE. The conversion is done internally to the contract.
-/// The bounds are calculated differently depending on whether token1 is the quote token and whether the starting tick is positive or negative.
-///
-/// If token1 is the quote token and the starting tick is negative, buying makes the price go up,
-/// so the upper bound is the starting tick - tick spacing and the lower bound is the starting tick.
-///
-/// If token1 is the quote token and the starting tick is positive, buying makes the price go down.
-/// so the lower bound is the starting tick - tick spacing and the upper bound is the starting tick.
-///
-/// If token1 is not the quote token and the starting tick is negative, buying makes the price go down.
-/// so the lower bound is the starting tick and the upper bound is the starting tick + tick spacing.
-
-/// If token1 is not the quote token and the starting tick is negative, buying makes the price go up.
-/// so the upper bound is the starting tick + tick spacing and the lower bound is the starting tick.
-///
-/// # Arguments
-///
-/// * `starting_price` - The starting tick.
-/// * `tick_spacing` - The spacing between ticks.
-/// * `is_token1_quote` - Whether token1 is the quote token.
-///
-/// # Returns
-///
-/// * `Bounds` - The lower and upper bounds for the next tick.
-///
 fn get_next_tick_bounds(starting_price: i129, tick_spacing: u128, is_token1_quote: bool) -> Bounds {
-    if is_token1_quote {
-        if starting_price.sign {
-            // Case 1 -> price meme/quote > 0, pool price < 0, buying makes price go up
-            Bounds {
-                lower: i129 { sign: true, mag: starting_price.mag },
-                upper: i129 { sign: true, mag: starting_price.mag - tick_spacing }
-            }
-        // Case 2 -> price meme/quote < 0, pool price > 0, buying makes price go down
-        } else {
-            // Case 2 -> price meme/quote < 0, pool price > 0, buying makes price go down
-            Bounds {
-                lower: i129 { sign: false, mag: starting_price.mag - tick_spacing },
-                upper: i129 { sign: false, mag: starting_price.mag }
-            }
-        }
+    // The sign of the next bound is the same as the sign of the starting tick.
+    // If the token1 is the quote token, the price is expressed in the correct token1/token 0 order
+    // and the sign of the starting tick is the same as the sign of the price.
+    // otherwise, it's flipped.
+    let bound_sign = if is_token1_quote {
+        starting_price.sign
     } else {
-        if starting_price.sign {
-            // Case 3 -> price meme/quote < 0, pool price < 0, buying makes price go down
-            Bounds {
-                lower: i129 { sign: true, mag: starting_price.mag + tick_spacing },
-                upper: i129 { sign: true, mag: starting_price.mag }
-            }
-        } else {
-            // Case 4 -> price meme/quote > 0, pool price > 0, buying makes price go up
-            Bounds {
-                lower: i129 { sign: false, mag: starting_price.mag },
-                upper: i129 { sign: false, mag: starting_price.mag + tick_spacing }
-            }
-        }
+        !starting_price.sign
+    };
+
+    // The magnitude of the next bound is the starting tick magnitude plus or minus the tick spacing.
+    // If the starting sign is negative, then the next bound is the starting tick minus the tick spacing.
+    // If the starting sign is positive, then the next bound is the starting tick plus the tick spacing.
+    let bound_mag = if starting_price.sign {
+        starting_price.mag - tick_spacing
+    } else {
+        starting_price.mag + tick_spacing
+    };
+
+    let (lower_mag, upper_mag) = if (is_token1_quote) {
+        (starting_price.mag, bound_mag)
+    } else {
+        (bound_mag, starting_price.mag)
+    };
+
+    Bounds {
+        lower: i129 { sign: bound_sign, mag: lower_mag },
+        upper: i129 { sign: bound_sign, mag: upper_mag }
     }
 }

@@ -71,20 +71,24 @@ impl EkuboAdapterImpl of unruggable::exchanges::ExchangeAdapter<
         // Transfer all tokens to the launchpad contract.
         // The team will buyback the tokens from the pool after the LPing operation to earn their initial allocation.
         let memecoin = IUnruggableMemecoinDispatcher { contract_address: token_address, };
-        let memecoin_address = memecoin.contract_address;
         let this = get_contract_address();
         memecoin.transfer(ekubo_launchpad.contract_address, memecoin.balance_of(this));
 
+        // Launch the token, which creates two positions: one concentrated at initial_tick
+        // for the team allocation and one on the range [initial_tick, inf] for the initial LP.
+        println!("Launching token on Ekubo");
         let (id, position) = ekubo_launchpad.launch_token(ekubo_launch_params);
 
         // Ensure that the LPing operation has not returned more than 0.5% of the provided liquidity to the caller.
         // Otherwise, there was an error in the LP parameters.
         let total_supply = memecoin.total_supply();
-        let max_returned_tokens = PercentageMath::percent_mul(total_supply, 9950);
+        let max_returned_tokens = PercentageMath::percent_mul(total_supply, 50);
         assert(memecoin.balanceOf(this) < max_returned_tokens, 'ekubo has returned tokens');
 
         // Finally, buy the reserved team tokens from the pool.
-        // As the pool was created with a fixed price for these n% allocated to the team, there should be no slippage.
+        // This requires having transferred the quote tokens to the factory before.
+        // As the pool was created with a fixed price for these n% allocated to the team,
+        // the required amount should be (%alloc * total_supply) * price.
         let (token0, token1) = sort_tokens(token_address, ekubo_launch_params.quote_address);
         let pool_key = PoolKey {
             token0: token0,
@@ -95,12 +99,11 @@ impl EkuboAdapterImpl of unruggable::exchanges::ExchangeAdapter<
         };
         let team_allocation = total_supply - lp_supply;
         buy_tokens_from_pool(
-            ekubo_launchpad, pool_key, team_allocation, memecoin_address, quote_address
+            ekubo_launchpad, pool_key, team_allocation, token_address, quote_address
         );
 
-        println!("received {} tokens", memecoin.balanceOf(this));
         assert(memecoin.balanceOf(this) >= team_allocation, 'failed buying team tokens');
-        // Allocation to the holders is done in the next step.
+        // Distribution to the holders is done in the next step.
 
         (id, position)
     }
@@ -153,8 +156,6 @@ fn buy_tokens_from_pool(
 
     let quote_token = IERC20Dispatcher { contract_address: quote_address };
     let this = get_contract_address();
-    println!("factory buying {} tokens", amount.low);
-    println!("factory quote balance is {}", quote_token.balanceOf(this));
     // Buy tokens from the pool, with an exact output amount.
     let token_amount = TokenAmount {
         token: token_to_buy.contract_address,
@@ -164,11 +165,11 @@ fn buy_tokens_from_pool(
 
     // We transfer quote tokens to the swapper contract, which performs the swap
     // It then sends back the funds to the caller once cleared.
+    println!("Transferring quote tokens to the router contract");
     quote_token.transfer(ekubo_router.contract_address, quote_token.balanceOf(this));
-    println!("transfer successful");
     // Swap and clear the tokens to finalize.
     ekubo_router.swap(route_node, token_amount);
-    println!("Swap successful");
+    println!("Clearing tokens");
     ekubo_clearer.clear(IERC20Dispatcher { contract_address: token_to_buy.contract_address });
     ekubo_clearer
         .clear_minimum_to_recipient(

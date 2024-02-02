@@ -153,9 +153,6 @@ mod Factory {
                 }
             );
 
-            //TODO Write the team alloc in storage of the memecoin.
-            // self.team_allocation.write(team_allocation);
-            // self.pre_launch_holders_count.write(unique_count(initial_holders).try_into().unwrap());
 
             // Transfer the team's alloc
             distribute_team_alloc(memecoin, initial_holders, initial_holders_amounts);
@@ -206,7 +203,6 @@ mod Factory {
                 additional_parameters: ekubo_parameters
             );
 
-            // TODO: write team alloc and unique holders in memecoin
             distribute_team_alloc(memecoin, initial_holders, initial_holders_amounts);
             memecoin
                 .set_launched(

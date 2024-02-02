@@ -58,16 +58,11 @@ fn launch_memecoin_on_ekubo(
     let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
     let ekubo_launcher = IEkuboLauncherDispatcher { contract_address: EKUBO_LAUNCHER_ADDRESS() };
 
-    println!("quote to deposit: {}", quote_to_deposit);
-    println!(
-        "quote balance: {}",
-        ERC20ABIDispatcher { contract_address: quote_address }.balance_of(owner)
-    );
     start_prank(CheatTarget::One(quote_address), owner);
     ERC20ABIDispatcher { contract_address: quote_address }
         .transfer(factory.contract_address, quote_to_deposit);
     stop_prank(CheatTarget::One(quote_address));
-    println!("Starting launch");
+    println!("quote_address");
 
     let (id, position) = factory
         .launch_on_ekubo(
@@ -374,9 +369,6 @@ fn test_launch_meme_token0_price_below_1() {
     ekubo_launcher.withdraw_fees(id, recipient);
     let balance_of_memecoin = memecoin.balance_of(recipient);
     let post_balance_quote = quote.balance_of(recipient);
-    println!("balance of memecoin: {}", balance_of_memecoin);
-    println!("post balance quote: {}", post_balance_quote);
-    println!("pre balance quote: {}", pre_balance_quote);
     let balance_quote_diff = post_balance_quote - pre_balance_quote;
     assert(balance_of_memecoin == 0, 'memecoin shouldnt collect fees');
 //TODO: restore this check
@@ -477,9 +469,8 @@ fn test_launch_meme_token0_price_above_1() {
     let owner = snforge_std::test_address();
     let (quote, quote_address) = deploy_eth_with_owner(owner);
     let starting_price = i129 { sign: false, mag: 4600158 }; // 100quote/MEME
-    //TODO: fix
-    let quote_to_deposit = 400_250_000
-        * pow_256(10, 18); // 10% of the total supply at a price of 100quote/MEME
+    let quote_to_deposit = 2_112_600
+        * pow_256(10, 20); // (10%)*1.006 of the total supply at a price of 100quote/MEME
     let (memecoin_address, id, position) = launch_memecoin_on_ekubo(
         quote_address,
         0xc49ba5e353f7d00000000000000000,
@@ -565,8 +556,8 @@ fn test_launch_meme_token1_price_above_1() {
     let owner = snforge_std::test_address();
     let (quote, quote_address) = deploy_token0_with_owner(owner);
     let starting_price = i129 { sign: false, mag: 4600158 }; // 100quote/MEME
-    let quote_to_deposit = 400_000_000
-        * pow_256(10, 18); // 10% of the total supply at a price of 0.01ETH/MEME
+    let quote_to_deposit = 2_112_600
+        * pow_256(10, 20); // (10%)*1.006 of the total supply at a price of 100quote/MEME
     let (memecoin_address, id, position) = launch_memecoin_on_ekubo(
         quote_address,
         0xc49ba5e353f7d00000000000000000,

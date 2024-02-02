@@ -60,7 +60,6 @@ mod UnruggableMemecoin {
     #[storage]
     struct Storage {
         marker_v_0: (),
-        pre_launch_holders_count: u8,
         team_allocation: u256,
         tx_hash_tracker: LegacyMap<ContractAddress, felt252>,
         transfer_restriction_delay: u64,

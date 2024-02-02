@@ -438,11 +438,10 @@ mod EkuboLauncher {
                         extension: 0.try_into().unwrap(),
                     };
 
-                    let is_token1_quote = launch_params.quote_address == token1;
-
                     // The initial_tick must correspond to the wanted initial price in quote/MEME
                     // The ekubo prices are always in TOKEN1/TOKEN0.
                     // The initial_tick is the lower bound if the quote is token1, the upper bound otherwise.
+                    let is_token1_quote = launch_params.quote_address == token1;
                     let (initial_tick, full_range_bounds) = get_initial_tick_from_starting_price(
                         launch_params.pool_params.starting_price,
                         launch_params.pool_params.bound,
@@ -463,7 +462,6 @@ mod EkuboLauncher {
                     let this = get_contract_address();
                     let liquidity_for_team = launched_token.balanceOf(this)
                         - launch_params.lp_supply;
-                    println!("liquidity_for_team: {}", liquidity_for_team);
                     let single_tick_bound = get_next_tick_bounds(
                         launch_params.pool_params.starting_price,
                         launch_params.pool_params.tick_spacing,
@@ -476,11 +474,12 @@ mod EkuboLauncher {
                             liquidity_for_team,
                             single_tick_bound
                         );
-                    println!("First LP done");
+
+                    let ekubo_router = self.router.read();
+                    // let market_depth = ekubo_router
+                    //     .get_market_depth(pool_key, 985392111309755760868507187842908160);
 
                     // 2. Provide the liquidity to actually initialize the public pool with
-                    // Transfer the balance of the launched token to be used in the LP.
-
                     // The pool bounds must be set according to the tick spacing.
                     // The bounds were previously computed to provide yield covering the entire interval
                     // [lower_bound, starting_price]  or [starting_price, upper_bound] depending on the quote.
@@ -491,7 +490,6 @@ mod EkuboLauncher {
                             launch_params.lp_supply,
                             full_range_bounds
                         );
-                    println!("Second LP done");
 
                     // At this point, the pool is composed by:
                     // n% of liquidity at precise starting tick, reserved for the team to buy

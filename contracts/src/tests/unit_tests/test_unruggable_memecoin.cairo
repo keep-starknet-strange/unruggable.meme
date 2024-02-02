@@ -19,7 +19,6 @@ use unruggable::token::interface::{
 
 mod test_constructor {
     use UnruggableMemecoin::{
-        pre_launch_holders_countContractMemberStateTrait,
         transfer_restriction_delayContractMemberStateTrait, team_allocationContractMemberStateTrait,
         IUnruggableAdditional, IUnruggableMemecoinCamel, IUnruggableMemecoinSnake
     };
