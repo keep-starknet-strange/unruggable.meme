@@ -3,7 +3,7 @@ use openzeppelin::utils::serde::SerializedAppend;
 
 use snforge_std::{
     declare, ContractClassTrait, start_prank, stop_prank, RevertedTransaction, CheatTarget,
-    TxInfoMock
+    TxInfoMock, store, map_entry_address
 };
 use starknet::{ContractAddress, contract_address_const};
 use unruggable::exchanges::{SupportedExchanges};
@@ -54,7 +54,8 @@ mod erc20_entrypoints {
     use core::debug::PrintTrait;
     use core::traits::Into;
     use snforge_std::{
-        declare, ContractClassTrait, start_prank, stop_prank, start_warp, CheatTarget, TxInfoMock
+        declare, ContractClassTrait, start_prank, stop_prank, start_warp, CheatTarget, TxInfoMock,
+        store, map_entry_address
     };
     use starknet::{ContractAddress, contract_address_const};
     use super::{
@@ -70,28 +71,21 @@ mod erc20_entrypoints {
     #[test]
     fn test_total_supply() {
         let (memecoin, memecoin_address) = deploy_standalone_memecoin();
-        assert(memecoin.total_supply() == DEFAULT_INITIAL_SUPPLY(), 'Invalid total supply');
+        assert_eq!(memecoin.total_supply(), DEFAULT_INITIAL_SUPPLY())
     }
 
     #[test]
     fn test_balance_of() {
         let (memecoin, memecoin_address) = deploy_standalone_memecoin();
-        let holders_sum = *INITIAL_HOLDERS_AMOUNTS()[0] + *INITIAL_HOLDERS_AMOUNTS()[1];
+        store(
+            memecoin_address,
+            map_entry_address(selector!("ERC20_balances"), array![123].span()),
+            array![2_100_000].span()
+        );
 
         // Check initial contract balance and initial holders balances.
-        assert(
-            memecoin.balance_of(snforge_std::test_address()) == DEFAULT_INITIAL_SUPPLY()
-                - holders_sum,
-            'Invalid balance memecoin'
-        );
-        assert(
-            memecoin.balance_of(*INITIAL_HOLDERS()[0]) == *INITIAL_HOLDERS_AMOUNTS()[0],
-            'Invalid balance holder1'
-        );
-        assert(
-            memecoin.balance_of(*INITIAL_HOLDERS()[1]) == *INITIAL_HOLDERS_AMOUNTS()[1],
-            'Invalid balance holder2'
-        );
+        assert_eq!(memecoin.balance_of(snforge_std::test_address()), DEFAULT_INITIAL_SUPPLY());
+        assert_eq!(memecoin.balance_of(contract_address_const::<123>()), 2_100_000)
     }
 
     #[test]
@@ -114,14 +108,20 @@ mod erc20_entrypoints {
     #[test]
     fn test_transfer() {
         let (memecoin, memecoin_address) = deploy_standalone_memecoin();
+        let sender = contract_address_const::<'sender'>();
+        store(
+            memecoin_address,
+            map_entry_address(selector!("ERC20_balances"), array![sender.into()].span()),
+            array![2_100_000].span()
+        );
 
         // Transfer 20 tokens to recipient.
-        let pre_sender_balance = memecoin.balance_of(*INITIAL_HOLDERS()[0]);
-        start_prank(CheatTarget::One(memecoin.contract_address), *INITIAL_HOLDERS()[0]);
+        let pre_sender_balance = memecoin.balance_of(sender);
+        start_prank(CheatTarget::One(memecoin.contract_address), sender);
         memecoin.transfer(RECIPIENT(), 20);
 
         // Check balance. Should be equal to initial balance - 20.
-        let post_sender_balance = memecoin.balance_of(*INITIAL_HOLDERS()[0]);
+        let post_sender_balance = memecoin.balance_of(sender);
         assert(post_sender_balance == pre_sender_balance - 20, 'Invalid sender balance update');
 
         // Check recipient balance. Should be equal to 20.
@@ -132,26 +132,32 @@ mod erc20_entrypoints {
     #[test]
     fn test_transfer_from() {
         let (memecoin, memecoin_address) = deploy_standalone_memecoin();
-        let pre_sender_balance = memecoin.balance_of(*INITIAL_HOLDERS()[0]);
+        let sender = contract_address_const::<'sender'>();
+        store(
+            memecoin_address,
+            map_entry_address(selector!("ERC20_balances"), array![sender.into()].span()),
+            array![2_100_000].span()
+        );
+        let pre_sender_balance = memecoin.balance_of(sender);
 
         // Approve initial supply tokens.
-        start_prank(CheatTarget::One(memecoin.contract_address), *INITIAL_HOLDERS()[0]);
+        start_prank(CheatTarget::One(memecoin.contract_address), sender);
         memecoin.approve(SPENDER(), DEFAULT_INITIAL_SUPPLY());
 
         // Transfer 20 tokens to recipient.
         start_prank(CheatTarget::One(memecoin.contract_address), SPENDER());
-        memecoin.transfer_from(*INITIAL_HOLDERS()[0], RECIPIENT(), 20);
+        memecoin.transfer_from(sender, RECIPIENT(), 20);
 
         // Check balance. Should be equal to initial balance - 20.
-        let post_sender_balance = memecoin.balance_of(*INITIAL_HOLDERS()[0]);
+        let post_sender_balance = memecoin.balance_of(sender);
         assert(post_sender_balance == pre_sender_balance - 20, 'Invalid sender balance update');
 
         // Check recipient balance. Should be equal to 20.
         let recipient_balance = memecoin.balanceOf(RECIPIENT());
         assert(recipient_balance == 20, 'Invalid balance recipient');
 
-        // Check allowance. Should be equal to initial supply - transferred amount.
-        let allowance = memecoin.allowance(*INITIAL_HOLDERS()[0], SPENDER());
+        // Check allowance. Should be equal to initial supply - transfered amount.
+        let allowance = memecoin.allowance(sender, SPENDER());
         assert(allowance == (DEFAULT_INITIAL_SUPPLY() - 20), 'Invalid allowance');
     }
 
@@ -160,53 +166,52 @@ mod erc20_entrypoints {
     #[test]
     fn test_totalSupply() {
         let (memecoin, memecoin_address) = deploy_standalone_memecoin();
-        assert(memecoin.totalSupply() == DEFAULT_INITIAL_SUPPLY(), 'Invalid total supply');
+        assert_eq!(memecoin.totalSupply(), DEFAULT_INITIAL_SUPPLY())
     }
 
     #[test]
     fn test_balanceOf() {
         let (memecoin, memecoin_address) = deploy_standalone_memecoin();
-        let holders_sum = *INITIAL_HOLDERS_AMOUNTS()[0] + *INITIAL_HOLDERS_AMOUNTS()[1];
+        store(
+            memecoin_address,
+            map_entry_address(selector!("ERC20_balances"), array![123].span()),
+            array![2_100_000].span()
+        );
 
-        // Check initial contract balance and initial holders balances.
-        assert(
-            memecoin.balanceOf(snforge_std::test_address()) == DEFAULT_INITIAL_SUPPLY()
-                - holders_sum,
-            'Invalid balance memecoin'
-        );
-        assert(
-            memecoin.balance_of(*INITIAL_HOLDERS()[0]) == *INITIAL_HOLDERS_AMOUNTS()[0],
-            'Invalid balance holder1'
-        );
-        assert(
-            memecoin.balance_of(*INITIAL_HOLDERS()[1]) == *INITIAL_HOLDERS_AMOUNTS()[1],
-            'Invalid balance holder2'
-        );
+        // Check initial contract balance
+        assert_eq!(memecoin.balanceOf(snforge_std::test_address()), DEFAULT_INITIAL_SUPPLY());
+        assert_eq!(memecoin.balanceOf(contract_address_const::<123>()), 2_100_000)
     }
 
     #[test]
     fn test_transferFrom() {
         let (memecoin, memecoin_address) = deploy_standalone_memecoin();
-        let pre_sender_balance = memecoin.balance_of(*INITIAL_HOLDERS()[0]);
+        let sender = contract_address_const::<'sender'>();
+        store(
+            memecoin_address,
+            map_entry_address(selector!("ERC20_balances"), array![sender.into()].span()),
+            array![2_100_000].span()
+        );
+        let pre_sender_balance = memecoin.balance_of(sender);
 
         // Approve initial supply tokens.
-        start_prank(CheatTarget::One(memecoin.contract_address), *INITIAL_HOLDERS()[0]);
+        start_prank(CheatTarget::One(memecoin.contract_address), sender);
         memecoin.approve(SPENDER(), DEFAULT_INITIAL_SUPPLY());
 
         // Transfer 20 tokens to recipient.
         start_prank(CheatTarget::One(memecoin.contract_address), SPENDER());
-        memecoin.transferFrom(*INITIAL_HOLDERS()[0], RECIPIENT(), 20);
+        memecoin.transferFrom(sender, RECIPIENT(), 20);
 
         // Check balance. Should be equal to initial balance - 20.
-        let post_sender_balance = memecoin.balance_of(*INITIAL_HOLDERS()[0]);
+        let post_sender_balance = memecoin.balance_of(sender);
         assert(post_sender_balance == pre_sender_balance - 20, 'Invalid sender balance update');
 
         // Check recipient balance. Should be equal to 20.
         let recipient_balance = memecoin.balanceOf(RECIPIENT());
         assert(recipient_balance == 20, 'Invalid balance recipient');
 
-        // Check allowance. Should be equal to initial supply - transferred amount.
-        let allowance = memecoin.allowance(*INITIAL_HOLDERS()[0], SPENDER());
+        // Check allowance. Should be equal to initial supply - transfered amount.
+        let allowance = memecoin.allowance(sender, SPENDER());
         assert(allowance == (DEFAULT_INITIAL_SUPPLY() - 20), 'Invalid allowance');
     }
 }
