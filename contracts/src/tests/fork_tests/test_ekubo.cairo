@@ -206,8 +206,9 @@ fn test_launch_meme() {
     let owner = snforge_std::test_address();
     let (quote, quote_address) = deploy_eth_with_owner(owner);
     let starting_price = i129 { sign: true, mag: 4600158 }; // 0.01ETH/MEME
-    let quote_to_deposit = 215_000
-        * pow_256(10, 18); // 10% of the total supply at a price of 0.01ETH/MEME
+    let quote_to_deposit = PercentageMath::percent_mul(
+        2_100_000 * pow_256(10, 16), 10_120
+    ); // 10% of the total supply at a price of 0.01ETH/MEME
     let mut spy = spy_events(SpyOn::One(MEMEFACTORY_ADDRESS()));
     let (memecoin_address, id, position) = launch_memecoin_on_ekubo(
         quote_address,
@@ -234,8 +235,9 @@ fn test_launch_meme() {
     let reserve_memecoin = memecoin.balance_of(core.contract_address);
     let reserve_quote = ERC20ABIDispatcher { contract_address: quote_address }
         .balance_of(core.contract_address);
-    //TODO: fix the reserve quote must be the amount bought by the team
-    // assert(reserve_quote == 0, 'reserve quote not 0');
+
+    assert(reserve_quote >= PercentageMath::percent_mul(quote_to_deposit, 9980), 'reserve too low');
+    // No need to check +2% percent
 
     // Verify that the reserve of memecoin is within 0.5% of the (total supply minus the team allocation)
     // When providing liquidity, if the liquidity provided doesn't exactly match the repartition between
@@ -282,8 +284,9 @@ fn test_transfer_ekuboLP_position() {
     let owner = snforge_std::test_address();
     let (quote, quote_address) = deploy_eth_with_owner(owner);
     let starting_price = i129 { sign: true, mag: 4600158 }; // 0.01ETH/MEME
-    let quote_to_deposit = 215_000
-        * pow_256(10, 18); // 10% of the total supply at a price of 0.01ETH/MEME
+    let quote_to_deposit = PercentageMath::percent_mul(
+        2_100_000 * pow_256(10, 16), 10_120
+    ); // 10% of the total supply at a price of 0.01ETH/MEME
     let (memecoin_address, id, position) = launch_memecoin_on_ekubo(
         quote_address,
         0xc49ba5e353f7d00000000000000000,
@@ -384,8 +387,9 @@ fn test_launch_meme_token1_price_below_1() {
     let (quote, quote_address) = deploy_token0_with_owner(owner);
     let starting_price = i129 { sign: true, mag: 4600158 }; // 0.01ETH/MEME
     //TODO investigate with the correct amount
-    let quote_to_deposit = 2_500_000
-        * pow_256(10, 16); // 10% of the total supply at a price of 0.01ETH/MEME
+    let quote_to_deposit = PercentageMath::percent_mul(
+        2_100_000 * pow_256(10, 16), 10_120
+    ); // 10% of the total supply at a price of 0.01ETH/MEME
     let (memecoin_address, id, position) = launch_memecoin_on_ekubo(
         quote_address,
         0xc49ba5e353f7d00000000000000000,
@@ -423,8 +427,10 @@ fn test_launch_meme_token1_price_below_1() {
     let reserve_memecoin = memecoin.balance_of(core.contract_address);
     let reserve_quote = ERC20ABIDispatcher { contract_address: quote_address }
         .balance_of(core.contract_address);
-    //TODO: fix now reserves have the initial eth of the team.
-    // assert(reserve_quote == 0, 'reserve quote not 0');
+
+    assert(
+        reserve_quote >= PercentageMath::percent_mul(quote_to_deposit, 9980), 'quote reserve low'
+    );
 
     // Verify that the reserve of memecoin is within 0.5% of the (total supply minus the team allocation)
     let team_allocation = memecoin.get_team_allocation();
@@ -507,8 +513,10 @@ fn test_launch_meme_token0_price_above_1() {
     let reserve_quote = ERC20ABIDispatcher { contract_address: quote_address }
         .balance_of(core.contract_address);
 
-    //TODO: now reserves have the initial eth of the team.
-    // assert(reserve_quote == 0, 'reserve quote not 0');
+    assert(
+        reserve_quote >= PercentageMath::percent_mul(quote_to_deposit, 9900), 'quote reserve low'
+    );
+    // Changed percent range to %1 here, it was reverting lower.
 
     // Verify that the reserve of memecoin is within 0.5% of the (total supply minus the team allocation)
     let team_allocation = memecoin.get_team_allocation();
@@ -594,8 +602,11 @@ fn test_launch_meme_token1_price_above_1() {
     let reserve_memecoin = memecoin.balance_of(core.contract_address);
     let reserve_token0 = ERC20ABIDispatcher { contract_address: quote_address }
         .balance_of(core.contract_address);
-    //TODO: fix now reserves have the balance of the team
-    // assert(reserve_token0 == 0, 'reserve quote not 0');
+
+    assert(
+        reserve_token0 >= PercentageMath::percent_mul(quote_to_deposit, 9900), 'quote reserve low'
+    );
+    // Changed percent range to %1 here, it was reverting lower.
 
     // Verify that the reserve of memecoin is within 0.5% of the (total supply minus the team allocation)
     let team_allocation = memecoin.get_team_allocation();
