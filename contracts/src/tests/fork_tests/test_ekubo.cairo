@@ -839,3 +839,123 @@ fn test_launch_memecoin_quote_memecoin_ekubo() {
             DEFAULT_MIN_LOCKTIME,
         );
 }
+
+#[test]
+#[fork("Mainnet")]
+#[should_panic(expected: ('Holders len dont match amounts',))]
+fn test_launch_memecoin_ekubo_initial_holders_len_mismatch() {
+    let owner = snforge_std::test_address();
+    let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
+    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
+
+    let (quote, quote_address) = deploy_token0_with_owner(owner);
+    // approve spending of eth by factory
+    let quote_amount: u256 = 1 * pow_256(10, 18); // 1 ETHER
+    let factory_balance_quote = quote.balanceOf(factory.contract_address);
+    start_prank(CheatTarget::One(quote.contract_address), owner);
+    quote.approve(factory.contract_address, quote_amount);
+    stop_prank(CheatTarget::One(quote.contract_address));
+
+    start_prank(CheatTarget::One(factory.contract_address), owner);
+    let pair_address = factory
+        .launch_on_jediswap(
+            LaunchParameters {
+                memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address: quote.contract_address,
+                initial_holders: array![
+                    'initial_holder_1'.try_into().unwrap(), 'initial_holder_2'.try_into().unwrap()
+                ]
+                    .span(),
+                initial_holders_amounts: array![50_u256, 20_u256, 10_u256].span(),
+            },
+            quote_amount,
+            DEFAULT_MIN_LOCKTIME,
+        );
+}
+
+#[test]
+#[fork("Mainnet")]
+#[should_panic(expected: ('Max number of holders reached',))]
+fn test_launch_memecoin_ekubo_max_holders_reached() {
+    let owner = snforge_std::test_address();
+    let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
+    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
+
+    let initial_holders: Array<ContractAddress> = array![
+        'initial_holder_1'.try_into().unwrap(),
+        'initial_holder_2'.try_into().unwrap(),
+        'initial_holder_3'.try_into().unwrap(),
+        'initial_holder_4'.try_into().unwrap(),
+        'initial_holder_5'.try_into().unwrap(),
+        'initial_holder_6'.try_into().unwrap(),
+        'initial_holder_7'.try_into().unwrap(),
+        'initial_holder_8'.try_into().unwrap(),
+        'initial_holder_9'.try_into().unwrap(),
+        'initial_holder_10'.try_into().unwrap(),
+        'initial_holder_11'.try_into().unwrap()
+    ];
+    let initial_holders_amounts: Array<u256> = array![1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+
+    let (quote, quote_address) = deploy_token0_with_owner(owner);
+    // approve spending of eth by factory
+    let quote_amount: u256 = 1 * pow_256(10, 18); // 1 ETHER
+    let factory_balance_quote = quote.balanceOf(factory.contract_address);
+    start_prank(CheatTarget::One(quote.contract_address), owner);
+    quote.approve(factory.contract_address, quote_amount);
+    stop_prank(CheatTarget::One(quote.contract_address));
+
+    start_prank(CheatTarget::One(factory.contract_address), owner);
+    let pair_address = factory
+        .launch_on_jediswap(
+            LaunchParameters {
+                memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address: quote.contract_address,
+                initial_holders: initial_holders.span(),
+                initial_holders_amounts: initial_holders_amounts.span(),
+            },
+            quote_amount,
+            DEFAULT_MIN_LOCKTIME,
+        );
+}
+
+#[test]
+#[fork("Mainnet")]
+#[should_panic(expected: ('Max team allocation reached',))]
+fn test_launch_memecoin_ekubo_too_much_team_alloc() {
+    let owner = snforge_std::test_address();
+    let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
+    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
+
+    let alloc_holder_1 = 1_050_000 * pow_256(10, 18);
+    let alloc_holder_2 = 1_050_001 * pow_256(10, 18);
+
+    let (quote, quote_address) = deploy_token0_with_owner(owner);
+    // approve spending of eth by factory
+    let quote_amount: u256 = 1 * pow_256(10, 18); // 1 ETHER
+    let factory_balance_quote = quote.balanceOf(factory.contract_address);
+    start_prank(CheatTarget::One(quote.contract_address), owner);
+    quote.approve(factory.contract_address, quote_amount);
+    stop_prank(CheatTarget::One(quote.contract_address));
+
+    start_prank(CheatTarget::One(factory.contract_address), owner);
+    let pair_address = factory
+        .launch_on_jediswap(
+            LaunchParameters {
+                memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address: quote.contract_address,
+                initial_holders: array![
+                    'initial_holder_1'.try_into().unwrap(), 'initial_holder_2'.try_into().unwrap()
+                ]
+                    .span(),
+                initial_holders_amounts: array![alloc_holder_1, alloc_holder_2].span(),
+            },
+            quote_amount,
+            DEFAULT_MIN_LOCKTIME,
+        );
+}
