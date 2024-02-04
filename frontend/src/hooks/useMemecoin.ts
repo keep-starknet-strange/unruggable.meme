@@ -1,21 +1,44 @@
 import { useAccount, useProvider } from '@starknet-react/core'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { FACTORY_ADDRESSES, MULTICALL_ADDRESS } from 'src/constants/contracts'
-import { Selector } from 'src/constants/misc'
+import { AMM, LIQUIDITY_LOCK_FOREVER_TIMESTAMP, LiquidityType, Selector } from 'src/constants/misc'
 import { CallData, getChecksumAddress, hash, shortString, uint256 } from 'starknet'
 
 import useChainId from './useChainId'
 import { useDeploymentStore } from './useDeployment'
 
-interface MemecoinInfos {
+interface BaseMemecoinInfos {
   address: string
   name: string
   symbol: string
   maxSupply: string
   teamAllocation: string
-  launched: boolean
+  isLaunched: boolean
   isOwner: boolean
   owner: string
+}
+
+interface LaunchedMemecoin extends BaseMemecoinInfos {
+  isLaunched: true
+  launch: {
+    blockNumber: number
+    liquidityType: LiquidityType
+    liquidityLockManager: string
+    liquidityLockPosition?: string
+    quoteToken: string
+    quoteAmount?: string
+  }
+}
+
+interface NotLaunchedMemecoin extends BaseMemecoinInfos {
+  isLaunched: false
+  launch: undefined
+}
+
+type MemecoinInfos = LaunchedMemecoin | NotLaunchedMemecoin
+
+interface LockPosition {
+  unlockTime: number
 }
 
 export function useMemecoinInfos() {
@@ -85,12 +108,24 @@ export function useMemecoinInfos() {
         calldata: [tokenAddress],
       })
 
+      const launchBlock = CallData.compile({
+        to: tokenAddress,
+        selector: hash.getSelector(Selector.LAUNCHED_AT_BLOCK_NUMBER),
+        calldata: [],
+      })
+
+      const launchParams = CallData.compile({
+        to: tokenAddress,
+        selector: hash.getSelector(Selector.LAUNCHED_WITH_LIQUIDITY_PARAMETERS),
+        calldata: [],
+      })
+
       try {
         const res = await provider?.callContract({
           contractAddress: MULTICALL_ADDRESS,
           entrypoint: Selector.AGGREGATE,
           calldata: [
-            8,
+            10,
             ...isMemecoinCalldata,
             ...nameCalldata,
             ...symbolCalldata,
@@ -99,6 +134,8 @@ export function useMemecoinInfos() {
             ...teamAllocationCalldata,
             ...ownerCalldata,
             ...lockedLiquidity,
+            ...launchBlock,
+            ...launchParams,
           ],
         })
 
@@ -106,19 +143,50 @@ export function useMemecoinInfos() {
 
         if (!isUnruggable) {
           setError('Not unruggable')
+          return
         }
 
-        const memecoinInfos = {
+        const hasLiquidity = !+res.result[19] // even more beautiful
+        const hasLaunchParams = !+res.result[26] // I'm delighted
+        const launchedOn = hasLaunchParams ? Object.values(AMM)[+res.result[27]] : null
+
+        const isLaunched = !!+res.result[9] && !!launchedOn && hasLiquidity && hasLaunchParams // meh...
+
+        const launchInfos = isLaunched
+          ? {
+              liquidityLockManager: res.result[20] as string,
+              liquidityType: Object.values(LiquidityType)[+res.result[21]] as LiquidityType,
+              blockNumber: +res.result[24],
+
+              ...(() => {
+                switch (launchedOn) {
+                  case AMM.JEDISWAP:
+                    return {
+                      liquidityLockPosition: res.result[31],
+                      quoteToken: getChecksumAddress(res.result[28]),
+                      quoteAmount: uint256.uint256ToBN({ low: res.result[29], high: res.result[30] }).toString(),
+                    }
+
+                  case AMM.EKUBO:
+                    return {
+                      quoteToken: '0xdead',
+                    }
+                }
+              })(),
+            }
+          : undefined
+
+        const baseMemecoinInfos = {
           address: tokenAddress,
           name: shortString.decodeShortString(res.result[5]),
           symbol: shortString.decodeShortString(res.result[7]),
-          launched: !!+res.result[9],
           maxSupply: uint256.uint256ToBN({ low: res.result[11], high: res.result[12] }).toString(),
           teamAllocation: uint256.uint256ToBN({ low: res.result[14], high: res.result[15] }).toString(),
           owner: getChecksumAddress(res.result[17]),
+          isLaunched,
         }
 
-        setMemecoinInfos(memecoinInfos)
+        setMemecoinInfos({ ...baseMemecoinInfos, launch: launchInfos })
 
         return memecoinInfos // still return memecoin infos
       } catch (err) {
@@ -156,4 +224,54 @@ export function useMemecoinInfos() {
     { data: memecoinInfos ? { ...memecoinInfos, isOwner } : undefined, error, indexing },
     getMemecoinInfos,
   ] as const
+}
+
+export function useMemecoinliquidityLockPosition(
+  liquidityType?: LiquidityType,
+  lockManager?: string,
+  lockPosition?: string
+) {
+  const [liquidity, setLiquidity] = useState<LockPosition | undefined>()
+
+  // starknet
+  const { provider } = useProvider()
+  const chainId = useChainId()
+
+  useEffect(() => {
+    if (!lockManager || liquidityType === undefined || !chainId) {
+      setLiquidity(undefined)
+      return
+    }
+
+    switch (liquidityType) {
+      case LiquidityType.ERC20: {
+        if (!lockPosition) {
+          setLiquidity(undefined)
+          return
+        }
+
+        provider
+          ?.callContract({
+            contractAddress: lockManager,
+            entrypoint: Selector.GET_LOCK_DETAILS,
+            calldata: [lockPosition],
+          })
+          .then((res) => {
+            setLiquidity({
+              unlockTime: +res?.result[4],
+            })
+          })
+
+        break
+      }
+
+      case LiquidityType.NFT: {
+        setLiquidity({
+          unlockTime: LIQUIDITY_LOCK_FOREVER_TIMESTAMP,
+        })
+      }
+    }
+  }, [lockManager, lockPosition, liquidityType, chainId, provider])
+
+  return liquidity
 }

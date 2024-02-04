@@ -1,14 +1,18 @@
 import JediswapPair from 'src/abis/JediswapPair.json'
 import Multicall from 'src/abis/Multicall.json'
-import { constants, json } from 'starknet'
+import { constants, getChecksumAddress, json } from 'starknet'
 
-// Class hashes
+interface TokenInfos {
+  name: string
+  symbol: string
+}
 
-// eslint-disable-next-line import/no-unused-modules
-export const TOKEN_CLASS_HASH = '0x016261bfec15670ecc794d922fe87b6c1a250090d489811debf1b9c8cfac1225'
+type QuoteTokens = { [chainId in constants.StarknetChainId]: Record<string, TokenInfos> }
+
+export const TOKEN_CLASS_HASH = '0x03cbe04b8aed45144483a11c3d9186fc7665bd04e87911d15c678a40c8a81ba1'
 
 export const FACTORY_ADDRESSES = {
-  [constants.StarknetChainId.SN_GOERLI]: '0x00fc328c366f0e1eebb1c105f4ec595403e995eac84ea92588f44254d15f1f9b',
+  [constants.StarknetChainId.SN_GOERLI]: '0x029f4dec8c99597153b323fb5dacf8286b42ba41a7b5ca6e048a826f0b7ea027',
   [constants.StarknetChainId.SN_MAIN]: '0xdead',
 }
 
@@ -19,6 +23,20 @@ export const MULTICALL_ADDRESS = '0x01a33330996310a1e3fa1df5b16c1e07f0491fdd20c4
 export const JEDISWAP_ETH_USDC = {
   [constants.StarknetChainId.SN_GOERLI]: '0x05a2b2b37f66157f767ea711cb4e034c40d41f2f5acf9ff4a19049fa11c1a884',
   [constants.StarknetChainId.SN_MAIN]: '0x04d0390b777b424e43839cd1e744799f3de6c176c7e32c1812a41dbd9c19db6a',
+}
+
+const ETH_INFOS: TokenInfos = {
+  name: 'Ether',
+  symbol: 'ETH',
+}
+
+export const QUOTE_TOKENS: QuoteTokens = {
+  [constants.StarknetChainId.SN_GOERLI]: {
+    [getChecksumAddress(ETH_ADDRESS)]: ETH_INFOS,
+  },
+  [constants.StarknetChainId.SN_MAIN]: {
+    [getChecksumAddress(ETH_ADDRESS)]: ETH_INFOS,
+  },
 }
 
 export const compiledMulticall = json.parse(JSON.stringify(Multicall))

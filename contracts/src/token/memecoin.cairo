@@ -4,8 +4,8 @@ use starknet::ContractAddress;
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 enum LiquidityType {
-    ERC20: ContractAddress,
-    NFT: u64
+    JediERC20: ContractAddress,
+    EkuboNFT: u64
 }
 
 #[starknet::contract]
@@ -54,20 +54,12 @@ mod UnruggableMemecoin {
     impl ERC20InternalImpl = ERC20Component::InternalImpl<ContractState>;
 
     // Constants.
-    /// The maximum number of holders allowed before launch.
-    /// This is to prevent the contract from being is_launched with a large number of holders.
-    /// Once reached, transfers are disabled until the memecoin is is_launched.
-    const MAX_HOLDERS_BEFORE_LAUNCH: u8 = 10;
-    /// The maximum percentage of the total supply that can be allocated to the team.
-    /// This is to prevent the team from having too much control over the supply.
-    const MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION: u16 = 1_000; // 10%
     /// The minimum maximum percentage of the supply that can be bought at once.
     const MIN_MAX_PERCENTAGE_BUY_LAUNCH: u16 = 50; // 0.5%
 
     #[storage]
     struct Storage {
         marker_v_0: (),
-        pre_launch_holders_count: u8,
         team_allocation: u256,
         tx_hash_tracker: LegacyMap<ContractAddress, felt252>,
         transfer_restriction_delay: u64,
@@ -106,9 +98,8 @@ mod UnruggableMemecoin {
         name: felt252,
         symbol: felt252,
         initial_supply: u256,
-        initial_holders: Span<ContractAddress>,
-        initial_holders_amounts: Span<u256>,
     ) {
+        assert(owner.is_non_zero(), errors::OWNER_IS_ZERO);
         self.erc20.initializer(name, symbol);
 
         self.ownable.initializer(owner);
@@ -116,13 +107,7 @@ mod UnruggableMemecoin {
         self.liquidity_type.write(Option::None);
 
         // Initialize the token / internal logic
-        self
-            .initializer(
-                factory_address: get_caller_address(),
-                :initial_supply,
-                :initial_holders,
-                :initial_holders_amounts
-            );
+        self.initializer(factory_address: get_caller_address(), :initial_supply,);
     }
 
     #[abi(embed_v0)]
@@ -148,7 +133,8 @@ mod UnruggableMemecoin {
             ref self: ContractState,
             liquidity_type: LiquidityType,
             transfer_restriction_delay: u64,
-            max_percentage_buy_launch: u16
+            max_percentage_buy_launch: u16,
+            team_allocation: u256,
         ) {
             self.assert_only_factory();
             assert(!self.is_launched(), errors::ALREADY_LAUNCHED);
@@ -159,6 +145,7 @@ mod UnruggableMemecoin {
 
             self.liquidity_type.write(Option::Some(liquidity_type));
             self.launch_time.write(get_block_timestamp());
+            self.team_allocation.write(team_allocation);
 
             // Enable a transfer limit - until this time has passed,
             // transfers are limited to a certain amount.
@@ -251,22 +238,13 @@ mod UnruggableMemecoin {
         /// # Returns
         /// * `u256` - The total amount of memecoin allocated to the team.
         fn initializer(
-            ref self: ContractState,
-            factory_address: ContractAddress,
-            initial_supply: u256,
-            initial_holders: Span<ContractAddress>,
-            initial_holders_amounts: Span<u256>
+            ref self: ContractState, factory_address: ContractAddress, initial_supply: u256,
         ) {
             // Internal Registry
             self.factory_contract.write(factory_address);
 
-            let team_allocation = self
-                .check_and_allocate_team_supply(
-                    :initial_supply, :initial_holders, :initial_holders_amounts
-                );
-
             // Mint remaining supply to the contract
-            self.erc20._mint(recipient: factory_address, amount: initial_supply - team_allocation);
+            self.erc20._mint(recipient: factory_address, amount: initial_supply);
         }
 
         /// Transfers tokens from the sender to the recipient, by applying relevant restrictions.
@@ -290,6 +268,11 @@ mod UnruggableMemecoin {
         /// - After launch, the transfer amount does not exceed a certain percentage of the total supply.
         /// and the recipient has not already received tokens in the current transaction.
         ///
+        /// By returning early if the transaction performed is not a direct buy from the pair / ekubo core,
+        /// we ensure that the restrictions only trigger once, when the coin is moved from pools.
+        /// As such, this keeps compatibility with aggregators and routers that perform multiple transfers
+        /// when swapping tokens.
+        ///
         /// # Arguments
         ///
         /// * `sender` - The address of the sender.
@@ -305,31 +288,41 @@ mod UnruggableMemecoin {
                 return;
             }
 
+            //TODO(audit): shouldnt ever happen since factory has all the supply
             if !self.is_launched() {
-                self.enforce_prelaunch_holders_limit(sender, recipient, amount);
-            } else {
-                //TODO(audit): make sure restrictions are compatible with ekubo and aggregators
-                let liquidity_type = self.liquidity_type.read().unwrap();
-
-                // The LP pair must be whitelisted from transfer restrictions
-                match liquidity_type {
-                    LiquidityType::ERC20(pair) => {
-                        if (get_caller_address() == pair || recipient == pair) {
-                            return;
-                        }
-                    },
-                    LiquidityType::NFT(_) => {}
-                }
-
-                assert(
-                    amount <= self
-                        .total_supply()
-                        .percent_mul(self.max_percentage_buy_launch.read().into()),
-                    'Max buy cap reached'
-                );
-
-                self.ensure_not_multicall();
+                return;
             }
+            // Safe unwrap as we already checked that the coin is launched,
+            // thus the liquidity type is not none.
+            match self.liquidity_type.read().unwrap() {
+                LiquidityType::JediERC20(pair) => {
+                    if (get_caller_address() != pair) {
+                        // When buying from jediswap, the caller_address is the pair,
+                        // so we return early if the caller is not the pair to not apply restrictions.
+                        return;
+                    }
+                },
+                LiquidityType::EkuboNFT(_) => {
+                    let factory = IFactoryDispatcher {
+                        contract_address: self.factory_contract.read()
+                    };
+                    let ekubo_core_address = factory.ekubo_core_address();
+                    if (get_caller_address() != ekubo_core_address) {
+                        // When buying from Ekubo, the token is transferred from Ekubo Core
+                        // to the recipient, so we return early if the caller is not Ekubo Core.
+                        return;
+                    }
+                }
+            }
+
+            assert(
+                amount <= self
+                    .total_supply()
+                    .percent_mul(self.max_percentage_buy_launch.read().into()),
+                'Max buy cap reached'
+            );
+
+            self.ensure_not_multicall();
         }
 
         /// Checks if the current time is after the launch period.
@@ -338,68 +331,13 @@ mod UnruggableMemecoin {
         ///
         /// * `bool` - True if the current time is after the launch period, false otherwise.
         ///
-        fn is_after_time_restrictions(ref self: ContractState) -> bool {
+        fn is_after_time_restrictions(self: @ContractState) -> bool {
             let current_time = get_block_timestamp();
             self.is_launched()
                 && current_time >= (self.launch_time.read()
                     + self.transfer_restriction_delay.read())
         }
 
-        /// Checks and allocates the team supply of the memecoin.
-        ///
-        /// Checks that the number of initial holders and their corresponding amounts are equal,
-        /// and that the number of initial holders does not exceed the maximum allowed.
-        /// It then calculates the maximum team allocation as a percentage of the initial supply,
-        /// and iteratively allocates the supply to each initial holder, ensuring that the total allocation does not exceed the maximu authorized.
-        /// The function then updates the `team_allocation` and `pre_launch_holders_count` in the contract state.
-        ///
-        /// # Arguments
-        ///
-        /// * `initial_supply` - The initial supply of the memecoin.
-        /// * `initial_holders` - A span of addresses that will hold the memecoin initially.
-        /// * `initial_holders_amounts` - A span of amounts corresponding to the initial holders.
-        ///
-        /// # Returns
-        ///
-        /// * `u256` - The total amount of memecoin allocated to the team.
-        ///
-        fn check_and_allocate_team_supply(
-            ref self: ContractState,
-            initial_supply: u256,
-            initial_holders: Span<ContractAddress>,
-            initial_holders_amounts: Span<u256>
-        ) -> u256 {
-            assert(initial_holders.len() == initial_holders_amounts.len(), errors::ARRAYS_LEN_DIF);
-            assert(
-                initial_holders.len() <= MAX_HOLDERS_BEFORE_LAUNCH.into(),
-                errors::MAX_HOLDERS_REACHED
-            );
-
-            let max_team_allocation = initial_supply
-                .percent_mul(MAX_SUPPLY_PERCENTAGE_TEAM_ALLOCATION.into());
-            let mut team_allocation: u256 = 0;
-            let mut i: usize = 0;
-            loop {
-                if i == initial_holders.len() {
-                    break;
-                }
-
-                let address = *initial_holders.at(i);
-                let amount = *initial_holders_amounts.at(i);
-
-                team_allocation += amount;
-                assert(team_allocation <= max_team_allocation, errors::MAX_TEAM_ALLOCATION_REACHED);
-
-                // Mint token to the holder
-                self.erc20._mint(recipient: address, :amount);
-
-                i += 1;
-            };
-            self.team_allocation.write(team_allocation);
-            self.pre_launch_holders_count.write(initial_holders.len().try_into().unwrap());
-
-            team_allocation
-        }
 
         /// Ensures that the current call is not a part of a multicall.
         ///
@@ -416,50 +354,6 @@ mod UnruggableMemecoin {
             let tx_origin = tx_info.account_contract_address;
             assert(self.tx_hash_tracker.read(tx_origin) != tx_hash, 'Multi calls not allowed');
             self.tx_hash_tracker.write(tx_origin, tx_hash);
-        }
-
-
-        /// Enforces that the number of holders does not exceed the maximum allowed.
-        ///
-        /// When transfers are done between addresses that already
-        /// own tokens, we do not increment the number of holders.
-        /// It only gets incremented when the recipient holds no tokens.
-        /// If the sender will no longer hold tokens after the transfer, the
-        /// number of holders is decremented.
-        ///
-        /// # Arguments
-        ///
-        /// * `sender` - The sender of the tokens being transferred.
-        /// * `recipient` - The recipient of the tokens being transferred.
-        /// * `amount` - The amount of tokens being transferred.
-        ///
-        #[inline(always)]
-        fn enforce_prelaunch_holders_limit(
-            ref self: ContractState,
-            sender: ContractAddress,
-            recipient: ContractAddress,
-            amount: u256
-        ) {
-            // If this is not a mint and the sender will no longer hold tokens after the transfer,
-            // decrement the holders count.
-            //TODO(audit): verify whether sender can _actually_ be zero - as this function is called from _transfer,
-            // which is supposedly not called from the zero address.
-            if sender.is_non_zero() && self.balanceOf(sender) == amount {
-                let current_holders_count = self.pre_launch_holders_count.read();
-
-                self.pre_launch_holders_count.write(current_holders_count - 1);
-            }
-
-            // If the recipient doesn't hold tokens yet - increment the holders count
-            if self.balanceOf(recipient).is_zero() {
-                let current_holders_count = self.pre_launch_holders_count.read();
-
-                assert(
-                    current_holders_count < MAX_HOLDERS_BEFORE_LAUNCH, errors::MAX_HOLDERS_REACHED
-                );
-
-                self.pre_launch_holders_count.write(current_holders_count + 1);
-            }
         }
     }
 }

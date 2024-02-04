@@ -2,11 +2,11 @@ use core::traits::TryInto;
 use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
 use snforge_std::{
     ContractClass, ContractClassTrait, CheatTarget, declare, start_prank, stop_prank, TxInfoMock,
-    start_warp, stop_warp
+    start_warp, stop_warp, get_class_hash
 };
 use starknet::ContractAddress;
 use unruggable::exchanges::{SupportedExchanges};
-use unruggable::factory::{IFactoryDispatcher, IFactoryDispatcherTrait};
+use unruggable::factory::{IFactoryDispatcher, IFactoryDispatcherTrait, LaunchParameters};
 use unruggable::tests::addresses::{
     JEDI_ROUTER_ADDRESS, JEDI_FACTORY_ADDRESS, ETH_ADDRESS, EKUBO_CORE, EKUBO_POSITIONS,
     EKUBO_REGISTRY, EKUBO_NFT_CLASS_HASH, TOKEN0_ADDRESS
@@ -74,6 +74,10 @@ fn DEFAULT_INITIAL_SUPPLY() -> u256 {
     21_000_000 * pow_256(10, 18)
 }
 
+fn ETH_INITIAL_SUPPLY() -> u256 {
+    500_000_000 * pow_256(10, 18)
+}
+
 fn LOCK_MANAGER_ADDRESS() -> ContractAddress {
     'lock_manager'.try_into().unwrap()
 }
@@ -108,8 +112,6 @@ fn deploy_standalone_memecoin() -> (IUnruggableMemecoinDispatcher, ContractAddre
     let contract = declare('UnruggableMemecoin');
     let mut calldata = array![OWNER().into(), NAME().into(), SYMBOL().into(),];
     Serde::serialize(@DEFAULT_INITIAL_SUPPLY(), ref calldata);
-    Serde::serialize(@INITIAL_HOLDERS(), ref calldata);
-    Serde::serialize(@INITIAL_HOLDERS_AMOUNTS(), ref calldata);
     let contract_address = contract.deploy(@calldata).expect('failed to deploy memecoin');
     let memecoin = IUnruggableMemecoinDispatcher { contract_address };
 
@@ -165,12 +167,6 @@ fn deploy_jedi_amm_factory_and_router() -> (ContractAddress, ContractAddress) {
 
 // MemeFactory
 fn deploy_meme_factory(router_address: ContractAddress) -> ContractAddress {
-    deploy_meme_factory_with_owner(OWNER(), router_address)
-}
-
-fn deploy_meme_factory_with_owner(
-    owner: ContractAddress, router_address: ContractAddress
-) -> ContractAddress {
     let locker_address = deploy_locker();
     let memecoin_class_hash = declare('UnruggableMemecoin').class_hash;
 
@@ -181,7 +177,6 @@ fn deploy_meme_factory_with_owner(
 
     let contract = declare('Factory');
     let mut calldata = array![];
-    Serde::serialize(@owner, ref calldata);
     Serde::serialize(@memecoin_class_hash, ref calldata);
     Serde::serialize(@locker_address, ref calldata);
     Serde::serialize(@amms.into(), ref calldata);
@@ -208,10 +203,23 @@ fn deploy_eth() -> (ERC20ABIDispatcher, ContractAddress) {
 fn deploy_eth_with_owner(owner: ContractAddress) -> (ERC20ABIDispatcher, ContractAddress) {
     let token = declare('ERC20Token');
     let mut calldata = Default::default();
-    Serde::serialize(@DEFAULT_INITIAL_SUPPLY(), ref calldata);
+    Serde::serialize(@ETH_INITIAL_SUPPLY(), ref calldata);
     Serde::serialize(@owner, ref calldata);
 
     let address = token.deploy_at(@calldata, ETH_ADDRESS()).unwrap();
+    let dispatcher = ERC20ABIDispatcher { contract_address: address, };
+    (dispatcher, address)
+}
+
+fn deploy_token_from_class_at_address_with_owner(
+    owner: ContractAddress, address: ContractAddress, class_address: ContractAddress
+) -> (ERC20ABIDispatcher, ContractAddress) {
+    let token = ContractClass { class_hash: get_class_hash(class_address) };
+    let mut calldata = Default::default();
+    Serde::serialize(@DEFAULT_INITIAL_SUPPLY(), ref calldata);
+    Serde::serialize(@owner, ref calldata);
+
+    let address = token.deploy_at(@calldata, address).unwrap();
     let dispatcher = ERC20ABIDispatcher { contract_address: address, };
     (dispatcher, address)
 }
@@ -234,15 +242,13 @@ fn deploy_memecoin_through_factory_with_owner(
             name: NAME(),
             symbol: SYMBOL(),
             initial_supply: DEFAULT_INITIAL_SUPPLY(),
-            initial_holders: INITIAL_HOLDERS(),
-            initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
             contract_address_salt: SALT(),
         );
     stop_prank(CheatTarget::One(memecoin_factory.contract_address));
 
     // Upon deployment, we mock the transaction_hash of the current tx.
     // This is because for each tx, we check during transfers whether a transfer already
-    // occured in the same tx. Rather than adding these lines in each test, we make it a default.
+    // occurred in the same tx. Rather than adding these lines in each test, we make it a default.
     let mut tx_info: TxInfoMock = Default::default();
     tx_info.transaction_hash = Option::Some(1234);
     snforge_std::start_spoof(CheatTarget::One(memecoin_address), tx_info);
@@ -255,7 +261,7 @@ fn deploy_memecoin_through_factory() -> (IUnruggableMemecoinDispatcher, Contract
     deploy_memecoin_through_factory_with_owner(OWNER())
 }
 
-// Sets the env block timestamp to 1 and launchs the memecoin - so that launched_at is 1
+// Sets the env block timestamp to 1 and launches the memecoin - so that launched_at is 1
 // In this context, the owner of the factory is the address of the snforge test
 fn deploy_and_launch_memecoin() -> (IUnruggableMemecoinDispatcher, ContractAddress) {
     let owner = OWNER();
@@ -273,10 +279,14 @@ fn deploy_and_launch_memecoin() -> (IUnruggableMemecoinDispatcher, ContractAddre
     start_warp(CheatTarget::One(memecoin_address), 1);
     let pool_address = factory
         .launch_on_jediswap(
-            memecoin_address,
-            TRANSFER_RESTRICTION_DELAY,
-            MAX_PERCENTAGE_BUY_LAUNCH,
-            eth.contract_address,
+            LaunchParameters {
+                memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address: eth.contract_address,
+                initial_holders: INITIAL_HOLDERS(),
+                initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
+            },
             eth_amount,
             DEFAULT_MIN_LOCKTIME,
         );
@@ -289,13 +299,19 @@ fn deploy_and_launch_memecoin() -> (IUnruggableMemecoinDispatcher, ContractAddre
 impl DefaultTxInfoMock of Default<TxInfoMock> {
     fn default() -> TxInfoMock {
         TxInfoMock {
-            version: Option::None,
-            account_contract_address: Option::None,
-            max_fee: Option::None,
-            signature: Option::None,
-            transaction_hash: Option::None,
-            chain_id: Option::None,
-            nonce: Option::None,
+            version: Option::None(()),
+            account_contract_address: Option::None(()),
+            max_fee: Option::None(()),
+            signature: Option::None(()),
+            transaction_hash: Option::None(()),
+            chain_id: Option::None(()),
+            nonce: Option::None(()),
+            resource_bounds: Option::None(()),
+            tip: Option::None(()),
+            paymaster_data: Option::None(()),
+            nonce_data_availability_mode: Option::None(()),
+            fee_data_availability_mode: Option::None(()),
+            account_deployment_data: Option::None(()),
         }
     }
 }

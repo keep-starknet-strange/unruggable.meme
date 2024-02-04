@@ -5,13 +5,13 @@ version = "0.1.0"
 # See more keys and their definitions at https://docs.swmansion.com/scarb/docs/reference/manifest.html
 
 [dependencies]
-snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.12.0" }
-starknet = "2.3.1"
+snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.14.0" }
+starknet = "2.4.3"
 
 # External dependencies
 openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.8.0" }
-alexandria_storage = { git = "https://github.com/keep-starknet-strange/alexandria.git", rev = "e3af7edb130aa376fb2435820788c7bba2e4593a" }
-ekubo = { git = "https://github.com/EkuboProtocol/abis" }
+alexandria_storage = { git = "https://github.com/keep-starknet-strange/alexandria.git", rev = "98aadc7e3f12dbb026e853604fe2cc061451cc8a" }
+ekubo = { git = "https://github.com/EkuboProtocol/abis", rev = "ef7a4076209317bb677846acd3590d990f2ae5a8" }
 
 [[target.starknet-contract]]
 sierra = true
@@ -26,5 +26,5 @@ sort-module-level-items = true
 
 [[tool.snforge.fork]]
 name = "Mainnet"
-url = ""
-block_id.tag = "Latest"
+url = "https://rpc.nethermind.io/mainnet-juno/?apikey="
+block_id.number = "519354"

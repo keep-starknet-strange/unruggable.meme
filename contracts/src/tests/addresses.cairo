@@ -40,3 +40,7 @@ fn EKUBO_REGISTRY() -> ContractAddress {
 fn EKUBO_NFT_CLASS_HASH() -> ClassHash {
     0x034a6f8fbc43c018805c0d73486f7c8e819c12116e6fbaf846e58b9b8b63c27e.try_into().unwrap()
 }
+
+fn EKUBO_ROUTER() -> ContractAddress {
+    0x01b6f560def289b32e2a7b0920909615531a4d9d5636ca509045843559dc23d5.try_into().unwrap()
+}

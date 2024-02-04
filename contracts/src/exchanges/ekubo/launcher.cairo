@@ -1,5 +1,5 @@
 use ekubo::types::bounds::Bounds;
-use ekubo::types::i129::i129;
+use ekubo::types::i129::{i129, i129Add};
 use ekubo::types::keys::PoolKey;
 use starknet::ContractAddress;
 use unruggable::exchanges::ekubo::ekubo_adapter::{EkuboLaunchParameters};
@@ -38,15 +38,6 @@ struct EkuboLP {
     bounds: Bounds,
 }
 
-fn sort_tokens(
-    tokenA: ContractAddress, tokenB: ContractAddress
-) -> (ContractAddress, ContractAddress) {
-    if tokenA < tokenB {
-        (tokenA, tokenB)
-    } else {
-        (tokenB, tokenA)
-    }
-}
 
 #[starknet::interface]
 trait IEkuboLauncher<T> {
@@ -54,8 +45,14 @@ trait IEkuboLauncher<T> {
     ///
     /// This function calls the core contract with a callback to deposit and mint
     /// the LP tokens. The core of the launch logic is actually performed during the
-    /// callback in the `locked` function, where the pool is initialized, the tokens
-    /// are transferred to the pool, and the Ekubo LP position is minted and
+    /// callback in the `locked` function, where the pool is initialized.
+    ///
+    /// The LP providing is done in two steps:
+    /// 1. Provide liq between [starting_price, stating_tick+1], corresponding to the amount
+    /// that the team can buy at the starting_price price. This ensures that the amount of liquidity in the pool
+    /// never goes to zero, as all the tokens were initially in the pool.
+    /// 2. Provide the rest of the liquidity in the pool, in the interval [starting_price+1, +inf].
+    /// the tokens are transferred to the pool, and the Ekubo LP position is minted and
     /// transferred to this contract.  It then tracks the new ekubo position id with
     /// the position parameters in the `liquidity_positions` mapping in the
     /// contract, appends the owner's position to the `owner_to_positions` mapping,
@@ -132,7 +129,7 @@ trait IEkuboLauncher<T> {
     ///
     /// * `Span<u64>` - A span of the IDs of the tokens launched by the owner.
     ///
-    fn launched_tokens(ref self: T, owner: ContractAddress) -> Span<u64>;
+    fn launched_tokens(self: @T, owner: ContractAddress) -> Span<u64>;
     /// Returns the details of a liquidity position.
     ///
     /// This function reads the liquidity position with the given ID from the `liquidity_positions` mapping,
@@ -146,34 +143,46 @@ trait IEkuboLauncher<T> {
     ///
     /// * `EkuboLP` - A struct containing the details of the liquidity position.
     ///
-    fn liquidity_position_details(ref self: T, id: u64) -> EkuboLP;
+    fn liquidity_position_details(self: @T, id: u64) -> EkuboLP;
+
+    /// Returns the address of the ekubo core contract.
+    fn ekubo_core_address(self: @T) -> ContractAddress;
+
+    /// Returns the address of the ekubo router contract.
+    fn ekubo_router_address(self: @T) -> ContractAddress;
 }
 
 #[starknet::contract]
 mod EkuboLauncher {
     use alexandria_storage::list::{List, ListTrait};
     use debug::PrintTrait;
+    use ekubo::components::clear::{IClearDispatcher, IClearDispatcherTrait};
+    use ekubo::components::shared_locker::{call_core_with_callback, consume_callback_data};
     use ekubo::interfaces::core::{ICoreDispatcher, ICoreDispatcherTrait, ILocker};
     use ekubo::interfaces::core::{PoolKey};
-    use ekubo::interfaces::erc20::{IERC20DispatcherTrait};
-    use ekubo::shared_locker::{call_core_with_callback, consume_callback_data};
+    use ekubo::interfaces::erc20::{IERC20Dispatcher, IERC20DispatcherTrait};
+    use ekubo::interfaces::positions::{IPositionsDispatcher, IPositionsDispatcherTrait};
+    use ekubo::interfaces::router::{IRouterDispatcher, IRouterDispatcherTrait};
     use ekubo::types::bounds::{Bounds};
     use ekubo::types::{i129::i129};
     use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
     use starknet::SyscallResultTrait;
     use starknet::{ContractAddress, ClassHash, get_contract_address, get_caller_address, Store};
-    use super::{IEkuboLauncher, EkuboLaunchParameters, sort_tokens};
+    use super::{IEkuboLauncher, EkuboLaunchParameters};
     use super::{StorableBounds, StorablePoolKey, StorableEkuboLP, EkuboLP};
     use unruggable::errors;
     use unruggable::exchanges::ekubo::errors::{NOT_POSITION_OWNER};
+    use unruggable::exchanges::ekubo::helpers::{
+        get_next_tick_bounds, get_initial_tick_from_starting_price
+    };
     use unruggable::exchanges::ekubo::interfaces::{
-        ITokenRegistryDispatcher, IPositionsDispatcher, IPositionsDispatcherTrait,
-        IOwnedNFTDispatcher, IOwnedNFTDispatcherTrait,
+        ITokenRegistryDispatcher, IOwnedNFTDispatcher, IOwnedNFTDispatcherTrait,
     };
     use unruggable::token::interface::{
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
     use unruggable::utils::math::PercentageMath;
+    use unruggable::utils::sort_tokens;
 
 
     #[storage]
@@ -181,6 +190,7 @@ mod EkuboLauncher {
         core: ICoreDispatcher,
         registry: ITokenRegistryDispatcher,
         positions: IPositionsDispatcher,
+        router: IRouterDispatcher,
         factory: ContractAddress,
         liquidity_positions: LegacyMap<u64, StorableEkuboLP>,
         owner_to_positions: LegacyMap<ContractAddress, List<u64>>
@@ -224,10 +234,12 @@ mod EkuboLauncher {
         core: ICoreDispatcher,
         registry: ITokenRegistryDispatcher,
         positions: IPositionsDispatcher,
+        router: IRouterDispatcher,
     ) {
         self.core.write(core);
         self.registry.write(registry);
         self.positions.write(positions);
+        self.router.write(router);
     }
 
     #[external(v0)]
@@ -259,14 +271,24 @@ mod EkuboLauncher {
                 );
 
             // Append the owner's position to storage. It can only be removed if the ownership
-            // is transfered.
+            // is transferred.
             let mut owner_positions = self.owner_to_positions.read(params.owner);
             owner_positions.append(id);
 
             // Clear remaining balances. This is done _after_ the callback by core,
             // otherwise the caller in the context would be the core.
-            self.clear(params.token_address);
-            self.clear(params.quote_address);
+            let caller = get_caller_address();
+            let ekubo_clear = IClearDispatcher {
+                contract_address: self.positions.read().contract_address
+            };
+            ekubo_clear
+                .clear_minimum_to_recipient(
+                    IERC20Dispatcher { contract_address: params.token_address }, 0, caller
+                );
+            ekubo_clear
+                .clear_minimum_to_recipient(
+                    IERC20Dispatcher { contract_address: params.quote_address }, 0, caller
+                );
 
             self.emit(Launched { params, owner: params.owner, token_id: id });
 
@@ -345,11 +367,11 @@ mod EkuboLauncher {
             fee_collected
         }
 
-        fn launched_tokens(ref self: ContractState, owner: ContractAddress) -> Span<u64> {
+        fn launched_tokens(self: @ContractState, owner: ContractAddress) -> Span<u64> {
             self.owner_to_positions.read(owner).array().unwrap_syscall().span()
         }
 
-        fn liquidity_position_details(ref self: ContractState, id: u64) -> EkuboLP {
+        fn liquidity_position_details(self: @ContractState, id: u64) -> EkuboLP {
             let storable_pos = self.liquidity_positions.read(id);
             EkuboLP {
                 owner: storable_pos.owner,
@@ -365,6 +387,14 @@ mod EkuboLauncher {
                     lower: storable_pos.bounds.lower, upper: storable_pos.bounds.upper,
                 }
             }
+        }
+
+        fn ekubo_core_address(self: @ContractState) -> ContractAddress {
+            self.core.read().contract_address
+        }
+
+        fn ekubo_router_address(self: @ContractState) -> ContractAddress {
+            self.router.read().contract_address
         }
     }
 
@@ -387,7 +417,7 @@ mod EkuboLauncher {
                         extension: pool_key.extension,
                     };
                     let bounds = Bounds { lower: bounds.lower, upper: bounds.upper, };
-                    positions.withdraw(id, pool_key, bounds, 0, 0, 0, true);
+                    positions.collect_fees(id, pool_key, bounds);
 
                     // Transfer to recipient
                     let mut return_data = Default::default();
@@ -400,11 +430,6 @@ mod EkuboLauncher {
                     let (token0, token1) = sort_tokens(
                         launch_params.token_address, launch_params.quote_address
                     );
-                    let launched_token = IUnruggableMemecoinDispatcher {
-                        contract_address: launch_params.token_address
-                    };
-                    let positions = self.positions.read();
-                    let this = get_contract_address();
                     let pool_key = PoolKey {
                         token0: token0,
                         token1: token1,
@@ -413,56 +438,62 @@ mod EkuboLauncher {
                         extension: 0.try_into().unwrap(),
                     };
 
-                    let is_token1_quote = launch_params.quote_address == token1;
-
                     // The initial_tick must correspond to the wanted initial price in quote/MEME
                     // The ekubo prices are always in TOKEN1/TOKEN0.
                     // The initial_tick is the lower bound if the quote is token1, the upper bound otherwise.
-                    let (initial_tick, bounds) = if is_token1_quote {
-                        (
-                            i129 {
-                                sign: launch_params.pool_params.starting_tick.sign,
-                                mag: launch_params.pool_params.starting_tick.mag
-                            },
-                            Bounds {
-                                lower: i129 {
-                                    sign: launch_params.pool_params.starting_tick.sign,
-                                    mag: launch_params.pool_params.starting_tick.mag
-                                },
-                                upper: i129 { sign: false, mag: launch_params.pool_params.bound }
-                            }
-                        )
-                    } else {
-                        // The initial tick sign is reversed if the quote is token0.
-                        // as the price provided was expressed in token1/token0.
-                        (
-                            i129 {
-                                sign: !launch_params.pool_params.starting_tick.sign,
-                                mag: launch_params.pool_params.starting_tick.mag
-                            },
-                            Bounds {
-                                lower: i129 { sign: true, mag: launch_params.pool_params.bound },
-                                upper: i129 {
-                                    sign: !launch_params.pool_params.starting_tick.sign,
-                                    mag: launch_params.pool_params.starting_tick.mag
-                                }
-                            }
-                        )
-                    };
+                    let is_token1_quote = launch_params.quote_address == token1;
+                    let (initial_tick, full_range_bounds) = get_initial_tick_from_starting_price(
+                        launch_params.pool_params.starting_price,
+                        launch_params.pool_params.bound,
+                        is_token1_quote
+                    );
 
+                    // Initialize the pool at the initial tick.
+                    //TODO: check if this can be frontran
+                    //TODO: how to fix frontrunning possibilities by disabling create -> launch?
                     core.maybe_initialize_pool(:pool_key, :initial_tick);
 
-                    // Transfer the entire balance of the launched token to be used in the LP.
-                    launched_token
-                        .transfer(
-                            recipient: positions.contract_address,
-                            amount: launched_token.balanceOf(get_contract_address())
+                    // 1. Provide liq that must be put in the pool by the creator, equal
+                    // to the percentage of the total supply allocated to the team,
+                    // only at the starting_price price.
+                    let launched_token = IUnruggableMemecoinDispatcher {
+                        contract_address: launch_params.token_address
+                    };
+                    let this = get_contract_address();
+                    let liquidity_for_team = launched_token.balanceOf(this)
+                        - launch_params.lp_supply;
+                    let single_tick_bound = get_next_tick_bounds(
+                        launch_params.pool_params.starting_price,
+                        launch_params.pool_params.tick_spacing,
+                        is_token1_quote
+                    );
+                    self
+                        .supply_liquidity(
+                            pool_key,
+                            launch_params.token_address,
+                            liquidity_for_team,
+                            single_tick_bound
                         );
 
+                    let ekubo_router = self.router.read();
+                    // let market_depth = ekubo_router
+                    //     .get_market_depth(pool_key, 985392111309755760868507187842908160);
+
+                    // 2. Provide the liquidity to actually initialize the public pool with
                     // The pool bounds must be set according to the tick spacing.
                     // The bounds were previously computed to provide yield covering the entire interval
-                    // [lower_bound, starting_tick]  or [starting_tick, upper_bound] depending on the quote.
-                    let (id, _) = positions.mint_and_deposit(pool_key, bounds, min_liquidity: 0);
+                    // [lower_bound, starting_price]  or [starting_price, upper_bound] depending on the quote.
+                    let id = self
+                        .supply_liquidity(
+                            pool_key,
+                            launch_params.token_address,
+                            launch_params.lp_supply,
+                            full_range_bounds
+                        );
+
+                    // At this point, the pool is composed by:
+                    // n% of liquidity at precise starting tick, reserved for the team to buy
+                    // the rest of the liquidity, in bounds [starting_price, +inf];
 
                     let mut return_data: Array<felt252> = Default::default();
                     Serde::serialize(@id, ref return_data);
@@ -471,7 +502,7 @@ mod EkuboLauncher {
                             owner: launch_params.owner,
                             quote_address: launch_params.quote_address,
                             pool_key,
-                            bounds
+                            bounds: full_range_bounds
                         },
                         ref return_data
                     );
@@ -483,28 +514,6 @@ mod EkuboLauncher {
 
     #[generate_trait]
     impl InternalImpl of InternalTrait {
-        /// Clears the balances of this contract by sending them to the caller.
-        fn clear(ref self: ContractState, token: ContractAddress) {
-            let caller = get_caller_address();
-            let this = get_contract_address();
-            let token = ERC20ABIDispatcher { contract_address: token };
-            let positions = IPositionsDispatcher {
-                contract_address: self.positions.read().contract_address
-            };
-
-            // Clear the position contract and get the tokens back
-            positions.clear(token.contract_address);
-
-            let balance = token.balanceOf(this);
-            if balance == 0 {
-                return;
-            }
-
-            // Clear this contract and send the tokens back to the caller
-            token.transfer(recipient: caller, amount: token.balanceOf(this));
-        }
-
-
         /// Ensures that the caller is the owner of the specified position.
         ///
         /// # Arguments
@@ -546,6 +555,22 @@ mod EkuboLauncher {
                 Store::write(list.address_domain, list.base, list.len).unwrap_syscall();
                 break;
             }
+        }
+
+        fn supply_liquidity(
+            ref self: ContractState,
+            pool_key: PoolKey,
+            token: ContractAddress,
+            amount: u256,
+            bounds: Bounds
+        ) -> u64 {
+            let positions = self.positions.read();
+            // The token must be transferred to the positions contract before calling mint.
+            ERC20ABIDispatcher { contract_address: token }
+                .transfer(recipient: positions.contract_address, :amount);
+
+            let (id, liquidity) = positions.mint_and_deposit(pool_key, bounds, min_liquidity: 0);
+            id
         }
     }
 }
