@@ -29,8 +29,8 @@ use unruggable::tests::unit_tests::utils::{
 use unruggable::token::interface::{
     IUnruggableMemecoin, IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
 };
-use unruggable::utils::sum;
 use unruggable::token::memecoin::{LiquidityType, LiquidityParameters};
+use unruggable::utils::sum;
 
 
 #[test]
@@ -255,9 +255,7 @@ fn test_launch_memecoin_with_ekubo_parameters() {
                 initial_holders: INITIAL_HOLDERS(),
                 initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
             },
-            EkuboPoolParameters {
-                fee, tick_spacing, starting_price, bound,
-            }
+            EkuboPoolParameters { fee, tick_spacing, starting_price, bound, }
         );
     stop_prank(CheatTarget::One(factory.contract_address));
 

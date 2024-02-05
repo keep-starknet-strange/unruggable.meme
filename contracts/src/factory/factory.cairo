@@ -28,12 +28,12 @@ mod Factory {
     use unruggable::token::interface::{
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
     };
-    use unruggable::utils::math::PercentageMath;
-    use unruggable::utils::unique_count;
     use unruggable::token::memecoin::{
         UnruggableMemecoin::LiquidityType, UnruggableMemecoin::LiquidityParameters,
         JediswapLiquidityParameters, EkuboLiquidityParameters
     };
+    use unruggable::utils::math::PercentageMath;
+    use unruggable::utils::unique_count;
 
     /// The maximum percentage of the total supply that can be allocated to the team.
     /// This is to prevent the team from having too much control over the supply.
@@ -144,7 +144,8 @@ mod Factory {
                 launch_parameters;
 
             let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
-            let (pair_address, lock_position) = jediswap_adapter::JediswapAdapterImpl::create_and_add_liquidity(
+            let (pair_address, lock_position) =
+                jediswap_adapter::JediswapAdapterImpl::create_and_add_liquidity(
                 exchange_address: router_address,
                 token_address: memecoin_address,
                 quote_address: quote_address,
