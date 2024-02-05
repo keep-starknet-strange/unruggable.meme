@@ -373,11 +373,6 @@ fn test_launch_meme_token0_price_below_1() {
     let post_balance_quote = quote.balance_of(recipient);
     let balance_quote_diff = post_balance_quote - pre_balance_quote;
     assert(balance_of_memecoin == 0, 'memecoin shouldnt collect fees');
-//TODO: restore this check
-//    assert(
-//      balance_quote_diff == PercentageMath::percent_mul(amount_in, 0030),
-//    'should collect 0.3% of eth'
-//);
 }
 
 #[test]
@@ -386,7 +381,6 @@ fn test_launch_meme_token1_price_below_1() {
     let owner = snforge_std::test_address();
     let (quote, quote_address) = deploy_token0_with_owner(owner);
     let starting_price = i129 { sign: true, mag: 4600158 }; // 0.01ETH/MEME
-    //TODO investigate with the correct amount
     let quote_to_deposit = PercentageMath::percent_mul(
         2_100_000 * pow_256(10, 16), 10_120
     ); // 10% of the total supply at a price of 0.01ETH/MEME
@@ -461,11 +455,6 @@ fn test_launch_meme_token1_price_below_1() {
     let post_balance_quote = quote.balance_of(recipient);
     let balance_quote_diff = post_balance_quote - pre_balance_quote;
     assert(balance_of_memecoin == 0, 'memecoin shouldnt collect fees');
-//TODO: restore this check
-//    assert(
-//      balance_quote_diff == PercentageMath::percent_mul(amount_in, 0030),
-//    'should collect 0.3% of eth'
-//);
 }
 
 #[test]
@@ -549,12 +538,6 @@ fn test_launch_meme_token0_price_above_1() {
     let post_balance_quote = quote.balance_of(recipient);
     let balance_quote_diff = post_balance_quote - pre_balance_quote;
     assert(balance_of_memecoin == 0, 'memecoin shouldnt collect fees');
-//TODO: restore this check
-//TODO: restore this check
-//    assert(
-//      balance_quote_diff == PercentageMath::percent_mul(amount_in, 0030),
-//    'should collect 0.3% of eth'
-//);
 }
 
 #[test]
@@ -638,12 +621,6 @@ fn test_launch_meme_token1_price_above_1() {
     let post_balance_quote = quote.balance_of(recipient);
     let balance_quote_diff = post_balance_quote - pre_balance_quote;
     assert(balance_of_memecoin == 0, 'memecoin shouldnt collect fees');
-//TODO: restore this check
-//TODO: restore this check
-//    assert(
-//      balance_quote_diff == PercentageMath::percent_mul(amount_in, 0030),
-//    'should collect 0.3% of eth'
-//);
 }
 
 #[test]
@@ -678,7 +655,7 @@ fn test_launch_meme_with_pool_1percent() {
     let reserve_memecoin = memecoin.balance_of(core.contract_address);
     let reserve_token0 = ERC20ABIDispatcher { contract_address: quote_address }
         .balance_of(core.contract_address);
-    //TODO:Fix because its too low it should be 0.5%
+    //TODO:This assertion should be correctified.
     // assert(reserve_token0 == 0, 'reserve quote not 0');
 
     // Verify that the reserve of memecoin is within 0.5% of the (total supply minus the team allocation)
