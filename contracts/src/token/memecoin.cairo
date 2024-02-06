@@ -81,7 +81,6 @@ mod UnruggableMemecoin {
     struct Storage {
         marker_v_0: (),
         team_allocation: u256,
-        pre_launch_holders_count: u8,
         tx_hash_tracker: LegacyMap<ContractAddress, felt252>,
         transfer_restriction_delay: u64,
         launch_time: u64,
@@ -90,7 +89,6 @@ mod UnruggableMemecoin {
         factory_contract: ContractAddress,
         liquidity_type: Option<LiquidityType>,
         max_percentage_buy_launch: u16,
-        launch_liquidity_base_amount: Option<u256>,
         // Components.
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
@@ -168,7 +166,6 @@ mod UnruggableMemecoin {
             transfer_restriction_delay: u64,
             max_percentage_buy_launch: u16,
             team_allocation: u256,
-            base_amount: u256
         ) {
             self.assert_only_factory();
             assert(!self.is_launched(), errors::ALREADY_LAUNCHED);
@@ -176,8 +173,6 @@ mod UnruggableMemecoin {
                 max_percentage_buy_launch >= MIN_MAX_PERCENTAGE_BUY_LAUNCH,
                 errors::MAX_PERCENTAGE_BUY_LAUNCH_TOO_LOW
             );
-
-            self.launch_liquidity_base_amount.write(Option::Some(base_amount));
 
             // save liquidity params and launch block number
             self.launch_block_number.write(get_block_info().unbox().block_number);

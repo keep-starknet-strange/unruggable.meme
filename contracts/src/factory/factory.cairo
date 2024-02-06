@@ -129,7 +129,7 @@ mod Factory {
             quote_amount: u256,
             unlock_time: u64,
         ) -> ContractAddress {
-            let (base_amount, team_allocation, pre_holders) = check_common_launch_parameters(
+            let (team_allocation, pre_holders) = check_common_launch_parameters(
                 @self, launch_parameters
             );
             let router_address = self.exchange_address(SupportedExchanges::Jediswap);
@@ -169,7 +169,6 @@ mod Factory {
                     :transfer_restriction_delay,
                     :max_percentage_buy_launch,
                     :team_allocation,
-                    :base_amount
                 );
 
             self
@@ -186,7 +185,7 @@ mod Factory {
             launch_parameters: LaunchParameters,
             ekubo_parameters: EkuboPoolParameters,
         ) -> (u64, EkuboLP) {
-            let (base_amount, team_allocation, pre_holders) = check_common_launch_parameters(
+            let (team_allocation, pre_holders) = check_common_launch_parameters(
                 @self, launch_parameters
             );
 
@@ -223,7 +222,6 @@ mod Factory {
                     :transfer_restriction_delay,
                     :max_percentage_buy_launch,
                     :team_allocation,
-                    :base_amount
                 );
             self
                 .emit(
@@ -306,7 +304,7 @@ mod Factory {
     ///
     fn check_common_launch_parameters(
         self: @ContractState, launch_parameters: LaunchParameters
-    ) -> (u256, u256, u8) {
+    ) -> (u256, u8) {
         let LaunchParameters{memecoin_address,
         transfer_restriction_delay,
         max_percentage_buy_launch,
@@ -324,11 +322,6 @@ mod Factory {
         assert(initial_holders.len() <= MAX_HOLDERS_LAUNCH.into(), errors::MAX_HOLDERS_REACHED);
 
         let initial_supply = memecoin.total_supply();
-
-        // Get base amount
-        let this = get_contract_address();
-        let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
-        let base_amount = memecoin.balance_of(account: this);
 
         // Check that the sum of the amounts of initial holders does not exceed the max allocatable supply for a team.
         let max_team_allocation = initial_supply
@@ -348,7 +341,7 @@ mod Factory {
             i += 1;
         };
 
-        (base_amount, team_allocation, unique_count(initial_holders).try_into().unwrap())
+        (team_allocation, unique_count(initial_holders).try_into().unwrap())
     }
 
     fn distribute_team_alloc(
