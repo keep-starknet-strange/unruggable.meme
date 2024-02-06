@@ -12,3 +12,6 @@ const PRICE_ZERO: felt252 = 'Starting tick cannot be 0';
 const MAX_PERCENTAGE_BUY_LAUNCH_TOO_LOW: felt252 = 'Max percentage buy too low';
 const NOT_UNRUGGABLE: felt252 = 'Token not deployed by factory';
 const QUOTE_TOKEN_IS_MEMECOIN: felt252 = 'Quote token is memecoin';
+const TICK_SPACING_TOO_LOW: felt252 = 'Tick spacing low';
+const TICK_SPACING_TOO_HIGH: felt252 = 'Tick spacing high';
+const FEE_TOO_HIGH: felt252 = 'Fee too high';

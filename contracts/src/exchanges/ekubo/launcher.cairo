@@ -419,7 +419,7 @@ mod EkuboLauncher {
                     let bounds = Bounds { lower: bounds.lower, upper: bounds.upper, };
                     positions.collect_fees(id, pool_key, bounds);
 
-                    // Transfer to recipient
+                    // Transfer to recipient is done after the callback
                     let mut return_data = Default::default();
                     Serde::serialize(@pool_key.token0, ref return_data);
                     Serde::serialize(@pool_key.token1, ref return_data);
@@ -449,8 +449,6 @@ mod EkuboLauncher {
                     );
 
                     // Initialize the pool at the initial tick.
-                    //TODO: check if this can be frontran
-                    //TODO: how to fix frontrunning possibilities by disabling create -> launch?
                     core.maybe_initialize_pool(:pool_key, :initial_tick);
 
                     // 1. Provide liq that must be put in the pool by the creator, equal

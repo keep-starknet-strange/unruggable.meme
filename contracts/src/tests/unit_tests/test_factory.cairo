@@ -451,7 +451,88 @@ fn test_launch_memecoin_amm_not_whitelisted() {
                 initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
             },
             EkuboPoolParameters {
-                fee: 0, tick_spacing: 0, starting_price: i129 { sign: false, mag: 0 }, bound: 0
+                fee: 0, tick_spacing: 5982, starting_price: i129 { sign: false, mag: 0 }, bound: 0
+            }
+        );
+}
+
+#[test]
+#[should_panic(expected: ('Fee too high',))]
+fn test_launch_memecoin_ekubo_fee_high() {
+    let owner = starknet::get_contract_address();
+    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
+    let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
+    let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
+
+    let pool_address = factory
+        .launch_on_ekubo(
+            LaunchParameters {
+                memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address: eth.contract_address,
+                initial_holders: INITIAL_HOLDERS(),
+                initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
+            },
+            EkuboPoolParameters {
+                fee: 0x5604189374bc6c00000000000000000,
+                tick_spacing: 5982,
+                starting_price: i129 { sign: false, mag: 0 },
+                bound: 0
+            } // Fee : 2.1
+        );
+}
+
+#[test]
+#[should_panic(expected: ('Tick spacing high',))]
+fn test_launch_memecoin_ekubo_tick_spacing_too_high() {
+    let owner = starknet::get_contract_address();
+    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
+    let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
+    let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
+
+    let pool_address = factory
+        .launch_on_ekubo(
+            LaunchParameters {
+                memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address: eth.contract_address,
+                initial_holders: INITIAL_HOLDERS(),
+                initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
+            },
+            EkuboPoolParameters {
+                fee: 0x51eb851eb851ec00000000000000000,
+                tick_spacing: 19850,
+                starting_price: i129 { sign: false, mag: 0 },
+                bound: 0
+            }
+        );
+}
+
+#[test]
+#[should_panic(expected: ('Tick spacing low',))]
+fn test_launch_memecoin_ekubo_tick_spacing_too_low() {
+    let owner = starknet::get_contract_address();
+    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
+    let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
+    let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
+
+    let pool_address = factory
+        .launch_on_ekubo(
+            LaunchParameters {
+                memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address: eth.contract_address,
+                initial_holders: INITIAL_HOLDERS(),
+                initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
+            },
+            EkuboPoolParameters {
+                fee: 0x51eb851eb851ec00000000000000000,
+                tick_spacing: 5900,
+                starting_price: i129 { sign: false, mag: 0 },
+                bound: 0
             }
         );
 }

@@ -239,12 +239,15 @@ fn test_launch_meme() {
     assert(reserve_quote >= PercentageMath::percent_mul(quote_to_deposit, 9980), 'reserve too low');
     // No need to check +2% percent
 
-    // Verify that the reserve of memecoin is within 0.5% of the (total supply minus the team allocation)
+    assert(reserve_quote >= PercentageMath::percent_mul(quote_to_deposit, 9980), 'reserve too low');
+    // No need to check +2% percent
+
+    // Verify that the reserve of memecoin is within 0.1% of the (total supply minus the team allocation)
     // When providing liquidity, if the liquidity provided doesn't exactly match the repartition between
     // bounds, a very small amount is returned.
     let team_allocation = memecoin.get_team_allocation();
     let expected_reserve_lower_bound = PercentageMath::percent_mul(
-        memecoin.totalSupply() - team_allocation, 9950,
+        memecoin.totalSupply() - team_allocation, 9990,
     );
     assert(reserve_memecoin > expected_reserve_lower_bound, 'reserves holds too few token');
 
@@ -382,7 +385,7 @@ fn test_launch_meme_token0_price_below_1() {
     };
 
     // Check that swaps work correctly
-    let amount_in = MAX_PERCENTAGE_BUY_LAUNCH.into() * pow_256(10, 14);
+    let amount_in = 4200 * pow_256(10, 18); // swapping ~ 2% of the total supply
     swap_tokens_on_ekubo(
         token_in_address: quote_address,
         :amount_in,
@@ -404,6 +407,11 @@ fn test_launch_meme_token0_price_below_1() {
     let post_balance_quote = quote.balance_of(recipient);
     let balance_quote_diff = post_balance_quote - pre_balance_quote;
     assert(balance_of_memecoin == 0, 'memecoin shouldnt collect fees');
+    // should get ~ 0.2% of the fees on that swap, since there is still remaining liquidity of the initial position.
+    assert(
+        balance_quote_diff >= PercentageMath::percent_mul(amount_in, 20),
+        'not enough fees not collected'
+    );
 }
 
 #[test]
@@ -457,14 +465,14 @@ fn test_launch_meme_token1_price_below_1() {
         reserve_quote >= PercentageMath::percent_mul(quote_to_deposit, 9980), 'quote reserve low'
     );
 
-    // Verify that the reserve of memecoin is within 0.5% of the (total supply minus the team allocation)
+    // Verify that the reserve of memecoin is within 0.1% of the (total supply minus the team allocation)
     let team_allocation = memecoin.get_team_allocation();
     let expected_reserve_lower_bound = PercentageMath::percent_mul(
-        memecoin.totalSupply() - team_allocation, 9950,
+        memecoin.totalSupply() - team_allocation, 9990,
     );
     assert(reserve_memecoin > expected_reserve_lower_bound, 'reserves holds too few token');
 
-    let amount_in = MAX_PERCENTAGE_BUY_LAUNCH.into() * pow_256(10, 14);
+    let amount_in = 4200 * pow_256(10, 18); // swapping ~ 2% of the total supply
     swap_tokens_on_ekubo(
         token_in_address: quote_address,
         :amount_in,
@@ -486,6 +494,11 @@ fn test_launch_meme_token1_price_below_1() {
     let post_balance_quote = quote.balance_of(recipient);
     let balance_quote_diff = post_balance_quote - pre_balance_quote;
     assert(balance_of_memecoin == 0, 'memecoin shouldnt collect fees');
+    // should get ~ 0.2% of the fees on that swap, since there is still remaining liquidity of the initial position.
+    assert(
+        balance_quote_diff >= PercentageMath::percent_mul(amount_in, 20),
+        'not enough fees not collected'
+    );
 }
 
 #[test]
@@ -538,15 +551,15 @@ fn test_launch_meme_token0_price_above_1() {
     );
     // Changed percent range to %1 here, it was reverting lower.
 
-    // Verify that the reserve of memecoin is within 0.5% of the (total supply minus the team allocation)
+    // Verify that the reserve of memecoin is within 0.1% of the (total supply minus the team allocation)
     let team_allocation = memecoin.get_team_allocation();
     let expected_reserve_lower_bound = PercentageMath::percent_mul(
-        memecoin.totalSupply() - team_allocation, 9950,
+        memecoin.totalSupply() - team_allocation, 9990,
     );
     assert(reserve_memecoin > expected_reserve_lower_bound, 'reserves holds too few token');
 
     // Test that swaps work correctly
-    let amount_in = MAX_PERCENTAGE_BUY_LAUNCH.into() * pow_256(10, 14);
+    let amount_in = 42_000_000 * pow_256(10, 18); // swapping ~ 2% of the total supply
     swap_tokens_on_ekubo(
         token_in_address: quote_address,
         :amount_in,
@@ -569,6 +582,11 @@ fn test_launch_meme_token0_price_above_1() {
     let post_balance_quote = quote.balance_of(recipient);
     let balance_quote_diff = post_balance_quote - pre_balance_quote;
     assert(balance_of_memecoin == 0, 'memecoin shouldnt collect fees');
+    // should get ~ 0.2% of the fees on that swap, since there is still remaining liquidity of the initial position.
+    assert(
+        balance_quote_diff >= PercentageMath::percent_mul(amount_in, 20),
+        'not enough fees not collected'
+    );
 }
 
 #[test]
@@ -622,15 +640,15 @@ fn test_launch_meme_token1_price_above_1() {
     );
     // Changed percent range to %1 here, it was reverting lower.
 
-    // Verify that the reserve of memecoin is within 0.5% of the (total supply minus the team allocation)
+    // Verify that the reserve of memecoin is within 0.1% of the (total supply minus the team allocation)
     let team_allocation = memecoin.get_team_allocation();
     let expected_reserve_lower_bound = PercentageMath::percent_mul(
-        memecoin.totalSupply() - team_allocation, 9950,
+        memecoin.totalSupply() - team_allocation, 9990,
     );
     assert(reserve_memecoin > expected_reserve_lower_bound, 'reserves holds too few token');
 
     // Check that swaps work correctly
-    let amount_in = MAX_PERCENTAGE_BUY_LAUNCH.into() * pow_256(10, 14);
+    let amount_in = 42_000_000 * pow_256(10, 18); // swapping ~ 2% of the total supply
     swap_tokens_on_ekubo(
         token_in_address: quote_address,
         :amount_in,
@@ -652,6 +670,11 @@ fn test_launch_meme_token1_price_above_1() {
     let post_balance_quote = quote.balance_of(recipient);
     let balance_quote_diff = post_balance_quote - pre_balance_quote;
     assert(balance_of_memecoin == 0, 'memecoin shouldnt collect fees');
+    // should get ~ 0.2% of the fees on that swap, since there is still remaining liquidity of the initial position.
+    assert(
+        balance_quote_diff >= PercentageMath::percent_mul(amount_in, 20),
+        'not enough fees not collected'
+    );
 }
 
 #[test]
@@ -660,8 +683,9 @@ fn test_launch_meme_with_pool_1percent() {
     let owner = snforge_std::test_address();
     let (quote, quote_address) = deploy_eth_with_owner(owner);
     let starting_price = i129 { sign: true, mag: 4600158 }; // 0.01ETH/MEME
-    let quote_to_deposit = 215_000
-        * pow_256(10, 18); // 10% of the total supply at a price of 0.01ETH/MEME
+    let quote_to_deposit = PercentageMath::percent_mul(
+        2_100_000 * pow_256(10, 16), 10_200 //2% extra quote
+    ); // 10% of the total supply at a price of 0.01ETH/MEME
     let (memecoin_address, id, position) = launch_memecoin_on_ekubo(
         quote_address,
         0x28f5c28f5c28f600000000000000000,
@@ -684,17 +708,16 @@ fn test_launch_meme_with_pool_1percent() {
     let liquidity = core.get_pool_liquidity(pool_key);
     let price = core.get_pool_price(pool_key);
     let reserve_memecoin = memecoin.balance_of(core.contract_address);
-    let reserve_token0 = ERC20ABIDispatcher { contract_address: quote_address }
+    let reserve_quote = ERC20ABIDispatcher { contract_address: quote_address }
         .balance_of(core.contract_address);
-    //TODO:This assertion should be correctified.
-    // assert(reserve_token0 == 0, 'reserve quote not 0');
+    assert(reserve_quote >= PercentageMath::percent_mul(quote_to_deposit, 9980), 'reserve too low');
 
-    // Verify that the reserve of memecoin is within 0.5% of the (total supply minus the team allocation)
+    // Verify that the reserve of memecoin is within 0.1% of the (total supply minus the team allocation)
+    // because there can be slight imprecisions when swapping with ekubo
     let team_allocation = memecoin.get_team_allocation();
     let expected_reserve_lower_bound = PercentageMath::percent_mul(
-        memecoin.totalSupply() - team_allocation, 9900,
+        memecoin.totalSupply() - team_allocation, 9990,
     );
-    //TODO:Fix because its too low it should be 0.5%
     assert(reserve_memecoin > expected_reserve_lower_bound, 'reserves holds too few token');
 }
 
