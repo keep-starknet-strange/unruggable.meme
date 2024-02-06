@@ -150,14 +150,7 @@ mod UnruggableMemecoin {
 
         /// Returns the team allocation in tokens.
         fn get_team_allocation(self: @ContractState) -> u256 {
-            let total_supply = self.total_supply();
-
-            match self.launch_liquidity_base_amount.read() {
-                Option::Some(launch_liquidity_base_amount) => total_supply
-                    - launch_liquidity_base_amount,
-                Option::None => total_supply
-                    - self.balance_of(account: self.factory_contract.read())
-            }
+            self.team_allocation.read()
         }
 
         fn memecoin_factory_address(self: @ContractState) -> ContractAddress {

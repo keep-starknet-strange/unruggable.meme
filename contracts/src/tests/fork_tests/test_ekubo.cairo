@@ -280,7 +280,7 @@ fn test_launch_meme() {
                 'Bad ekubo tick spacing'
             );
             assert(
-                ekubo_liquidity_parameters.ekubo_pool_parameters.starting_tick == starting_tick,
+                ekubo_liquidity_parameters.ekubo_pool_parameters.starting_price == starting_price,
                 'Bad ekubo starting tick'
             );
             assert(

@@ -226,43 +226,6 @@ fn test_launch_memecoin_with_jediswap_parameters() {
 }
 
 #[test]
-fn test_launch_memecoin_with_ekubo_parameters() {
-    let owner = snforge_std::test_address();
-    let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
-    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
-    let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
-
-    let fee = 0xc49ba5e353f7d00000000000000000;
-    let tick_spacing = 5982;
-    let starting_price = i129 { sign: true, mag: 4600158 }; // 0.01ETH/MEME
-    let bound = 88719042;
-
-    // approve spending of eth by factory
-    let eth_amount: u256 = 1 * pow_256(10, 18); // 1 ETHER
-    let factory_balance_meme = memecoin.balanceOf(factory.contract_address);
-    start_prank(CheatTarget::One(eth.contract_address), owner);
-    eth.approve(factory.contract_address, eth_amount);
-    stop_prank(CheatTarget::One(eth.contract_address));
-
-    start_prank(CheatTarget::One(factory.contract_address), owner);
-    let pair_address = factory
-        .launch_on_ekubo(
-            LaunchParameters {
-                memecoin_address,
-                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
-                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
-                quote_address: eth.contract_address,
-                initial_holders: INITIAL_HOLDERS(),
-                initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
-            },
-            EkuboPoolParameters { fee, tick_spacing, starting_price, bound, }
-        );
-    stop_prank(CheatTarget::One(factory.contract_address));
-
-    let liquidity_parameters = memecoin.launched_with_liquidity_parameters().unwrap();
-}
-
-#[test]
 fn test_launch_memecoin_pair_exists_should_succeed() {
     // Given
     let owner = snforge_std::test_address();
