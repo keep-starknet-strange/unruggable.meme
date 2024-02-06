@@ -1,6 +1,7 @@
 //! `UnruggableMemecoin` is an ERC20 token has additional features to prevent rug pulls.
 use starknet::ContractAddress;
 
+use unruggable::exchanges::ekubo_adapter::EkuboPoolParameters;
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
 enum LiquidityType {
@@ -8,8 +9,27 @@ enum LiquidityType {
     EkuboNFT: u64
 }
 
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct EkuboLiquidityParameters {
+    ekubo_pool_parameters: EkuboPoolParameters,
+    quote_address: ContractAddress,
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+struct JediswapLiquidityParameters {
+    quote_address: ContractAddress,
+    quote_amount: u256,
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
+enum LiquidityParameters {
+    Ekubo: EkuboLiquidityParameters,
+    Jediswap: (JediswapLiquidityParameters, ContractAddress),
+}
+
 #[starknet::contract]
 mod UnruggableMemecoin {
+    use core::box::BoxTrait;
     use core::traits::TryInto;
     use core::zeroable::Zeroable;
     use debug::PrintTrait;
@@ -24,10 +44,10 @@ mod UnruggableMemecoin {
         IERC20, IERC20Metadata, ERC20ABIDispatcher, ERC20ABIDispatcherTrait
     };
     use starknet::{
-        ContractAddress, contract_address_const, get_contract_address, get_caller_address,
-        get_tx_info, get_block_timestamp
+        ContractAddress, contract_address_const, get_caller_address, get_tx_info,
+        get_block_timestamp, get_block_info
     };
-    use super::LiquidityType;
+    use super::{LiquidityType, LiquidityParameters};
 
     use unruggable::errors;
     use unruggable::exchanges::jediswap_adapter::{
@@ -64,6 +84,8 @@ mod UnruggableMemecoin {
         tx_hash_tracker: LegacyMap<ContractAddress, felt252>,
         transfer_restriction_delay: u64,
         launch_time: u64,
+        launch_block_number: u64,
+        launch_liquidity_parameters: Option<LiquidityParameters>,
         factory_contract: ContractAddress,
         liquidity_type: Option<LiquidityType>,
         max_percentage_buy_launch: u16,
@@ -116,6 +138,14 @@ mod UnruggableMemecoin {
             self.launch_time.read().is_non_zero()
         }
 
+        fn launched_at_block_number(self: @ContractState) -> u64 {
+            self.launch_block_number.read()
+        }
+
+        fn launched_with_liquidity_parameters(self: @ContractState) -> Option<LiquidityParameters> {
+            self.launch_liquidity_parameters.read()
+        }
+
         /// Returns the team allocation in tokens.
         fn get_team_allocation(self: @ContractState) -> u256 {
             self.team_allocation.read()
@@ -132,6 +162,7 @@ mod UnruggableMemecoin {
         fn set_launched(
             ref self: ContractState,
             liquidity_type: LiquidityType,
+            liquidity_params: LiquidityParameters,
             transfer_restriction_delay: u64,
             max_percentage_buy_launch: u16,
             team_allocation: u256,
@@ -142,6 +173,10 @@ mod UnruggableMemecoin {
                 max_percentage_buy_launch >= MIN_MAX_PERCENTAGE_BUY_LAUNCH,
                 errors::MAX_PERCENTAGE_BUY_LAUNCH_TOO_LOW
             );
+
+            // save liquidity params and launch block number
+            self.launch_block_number.write(get_block_info().unbox().block_number);
+            self.launch_liquidity_parameters.write(Option::Some(liquidity_params));
 
             self.liquidity_type.write(Option::Some(liquidity_type));
             self.launch_time.write(get_block_timestamp());
@@ -337,7 +372,6 @@ mod UnruggableMemecoin {
                 && current_time >= (self.launch_time.read()
                     + self.transfer_restriction_delay.read())
         }
-
 
         /// Ensures that the current call is not a part of a multicall.
         ///

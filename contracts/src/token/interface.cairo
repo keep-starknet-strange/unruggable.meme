@@ -1,6 +1,6 @@
 use openzeppelin::token::erc20::interface::{IERC20Metadata, IERC20, IERC20Camel};
 use starknet::ContractAddress;
-use super::memecoin::LiquidityType;
+use super::memecoin::{LiquidityType, LiquidityParameters};
 use unruggable::exchanges::SupportedExchanges;
 
 #[starknet::interface]
@@ -48,12 +48,15 @@ trait IUnruggableMemecoin<TState> {
     /// # Returns
     ///     bool: whether token has launched
     fn is_launched(self: @TState) -> bool;
+    fn launched_at_block_number(self: @TState) -> u64;
+    fn launched_with_liquidity_parameters(self: @TState) -> Option<LiquidityParameters>;
     fn liquidity_type(self: @TState) -> Option<LiquidityType>;
     fn get_team_allocation(self: @TState) -> u256;
     fn memecoin_factory_address(self: @TState) -> ContractAddress;
     fn set_launched(
         ref self: TState,
         liquidity_type: LiquidityType,
+        liquidity_params: LiquidityParameters,
         transfer_restriction_delay: u64,
         max_percentage_buy_launch: u16,
         team_allocation: u256,
@@ -90,6 +93,13 @@ trait IUnruggableAdditional<TState> {
     /// * `bool` - True if the memecoin has been launched, false otherwise.
     fn is_launched(self: @TState) -> bool;
 
+    /// Returns the number of the block during which the token has been launched,
+    /// or 0 if not launched yet.
+    fn launched_at_block_number(self: @TState) -> u64;
+
+    /// Returns the liquidity parameters used to launch the memecoin.
+    fn launched_with_liquidity_parameters(self: @TState) -> Option<LiquidityParameters>;
+
     /// Returns the type of liquidity the memecoin was launched with,
     /// along with either the LP tokens addresses or the NFT ID.
     fn liquidity_type(self: @TState) -> Option<LiquidityType>;
@@ -119,6 +129,7 @@ trait IUnruggableAdditional<TState> {
     fn set_launched(
         ref self: TState,
         liquidity_type: LiquidityType,
+        liquidity_params: LiquidityParameters,
         transfer_restriction_delay: u64,
         max_percentage_buy_launch: u16,
         team_allocation: u256,

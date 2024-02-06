@@ -21,7 +21,6 @@ use unruggable::token::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
 };
 
-
 fn EKUBO_LAUNCHER_ADDRESS() -> ContractAddress {
     'ekubo_launchpad'.try_into().unwrap()
 }
@@ -29,7 +28,6 @@ fn EKUBO_LAUNCHER_ADDRESS() -> ContractAddress {
 fn EKUBO_ROUTER_ADDRESS() -> ContractAddress {
     0x01b6f560def289b32e2a7b0920909615531a4d9d5636ca509045843559dc23d5.try_into().unwrap()
 }
-
 
 // quote token ensured to be token0
 

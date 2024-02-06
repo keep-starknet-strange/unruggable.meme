@@ -37,7 +37,7 @@ use unruggable::tests::unit_tests::utils::{
 use unruggable::token::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
 };
-use unruggable::token::memecoin::LiquidityType;
+use unruggable::token::memecoin::{LiquidityType, LiquidityParameters};
 use unruggable::utils::math::PercentageMath;
 use unruggable::utils::sum;
 
@@ -264,6 +264,37 @@ fn test_launch_meme() {
             .bounds == Bounds { lower: starting_price, upper: i129 { sign: false, mag: 88719042 } },
         'wrong bounds '
     );
+
+    let liquidity_parameters = memecoin.launched_with_liquidity_parameters().unwrap();
+
+    match liquidity_parameters {
+        LiquidityParameters::Ekubo(ekubo_liquidity_parameters) => {
+            assert(ekubo_liquidity_parameters.quote_address == quote_address, 'Bad quote address');
+            assert(
+                ekubo_liquidity_parameters.ekubo_pool_parameters.fee == position.pool_key.fee,
+                'Bad ekubo fee'
+            );
+            assert(
+                ekubo_liquidity_parameters
+                    .ekubo_pool_parameters
+                    .tick_spacing == position
+                    .pool_key
+                    .tick_spacing,
+                'Bad ekubo tick spacing'
+            );
+            assert(
+                ekubo_liquidity_parameters.ekubo_pool_parameters.starting_price == starting_price,
+                'Bad ekubo starting tick'
+            );
+            assert(
+                ekubo_liquidity_parameters.ekubo_pool_parameters.bound == 88719042,
+                'Bad ekubo bound'
+            );
+        },
+        LiquidityParameters::Jediswap(jediswap_liquidity_parameters) => panic_with_felt252(
+            'wrong liquidity parameters type'
+        ),
+    }
 
     // Check events
     spy
