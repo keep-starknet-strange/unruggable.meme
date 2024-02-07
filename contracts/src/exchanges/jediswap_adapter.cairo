@@ -2,7 +2,10 @@ use array::ArrayTrait;
 use debug::PrintTrait;
 use integer::BoundedInt;
 use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
-use starknet::{get_block_timestamp, ContractAddress, contract_address_const, get_contract_address, get_caller_address};
+use starknet::{
+    get_block_timestamp, ContractAddress, contract_address_const, get_contract_address,
+    get_caller_address
+};
 use unruggable::errors;
 use unruggable::locker::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
 use unruggable::token::interface::{
