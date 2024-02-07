@@ -7,6 +7,9 @@ use unruggable::locker::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
 use unruggable::token::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait,
 };
+use unruggable::utils::math::{
+    pow_64,
+};
 
 #[starknet::interface]
 trait IJediswapRouter<T> {
@@ -107,16 +110,22 @@ impl JediswapAdapterImpl of unruggable::exchanges::ExchangeAdapter<
         let pair_address = jedi_factory.get_pair(memecoin_address, quote_address);
         let pair = ERC20ABIDispatcher { contract_address: pair_address, };
 
-        // Lock LP tokens
-        let lock_manager = ILockManagerDispatcher { contract_address: lock_manager_address };
-        pair.approve(lock_manager_address, liquidity_received);
-        let locked_address = lock_manager
-            .lock_tokens(
-                token: pair_address,
-                amount: liquidity_received,
-                unlock_time: unlock_time,
-                withdrawer: caller_address,
-            );
+        // Burn LP if unlock_time is max u64
+        let maxValue: u64 = 1 * pow_64(2, 64);
+        if (maxValue == unlock_time) {
+            //pair.transfer(pair.contract_address.zero(), liquidity_received);
+        } else {
+            // Lock LP tokens
+            let lock_manager = ILockManagerDispatcher { contract_address: lock_manager_address };
+            pair.approve(lock_manager_address, liquidity_received);
+            let locked_address = lock_manager
+                .lock_tokens(
+                    token: pair_address,
+                    amount: liquidity_received,
+                    unlock_time: unlock_time,
+                    withdrawer: caller_address,
+                );
+        }
 
         pair.contract_address
     }
