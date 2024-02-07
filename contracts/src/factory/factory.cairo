@@ -22,7 +22,8 @@ mod Factory {
     };
     use unruggable::exchanges::{
         SupportedExchanges, ekubo_adapter, ekubo_adapter::EkuboPoolParameters, jediswap_adapter,
-        jediswap_adapter::JediswapAdditionalParameters, ekubo::launcher::EkuboLP
+        jediswap_adapter::JediswapAdditionalParameters, ekubo::launcher::EkuboLP, starkdefi_adapter,
+        starkdefi::interfaces::StarkDeFiAdditionalParameters
     };
     use unruggable::factory::{IFactory, LaunchParameters};
     use unruggable::token::interface::{
@@ -30,7 +31,7 @@ mod Factory {
     };
     use unruggable::token::memecoin::{
         UnruggableMemecoin::LiquidityType, UnruggableMemecoin::LiquidityParameters,
-        JediswapLiquidityParameters, EkuboLiquidityParameters
+        JediswapLiquidityParameters, StarkDeFiLiquidityParameters, EkuboLiquidityParameters
     };
     use unruggable::utils::math::PercentageMath;
     use unruggable::utils::unique_count;
@@ -236,6 +237,65 @@ mod Factory {
             (id, position)
         }
 
+        fn launch_on_starkdefi(
+            ref self: ContractState,
+            launch_parameters: LaunchParameters,
+            quote_amount: u256,
+            unlock_time: u64,
+        ) -> ContractAddress {
+            let (team_allocation, pre_holders) = check_common_launch_parameters(
+                @self, launch_parameters
+            );
+            let router_address = self.exchange_address(SupportedExchanges::Starkdefi);
+            assert(router_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
+
+            let LaunchParameters{memecoin_address,
+            transfer_restriction_delay,
+            max_percentage_buy_launch,
+            quote_address,
+            initial_holders,
+            initial_holders_amounts } =
+                launch_parameters;
+
+            let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
+            let (pair_address, lock_position) =
+                starkdefi_adapter::StarkDeFiAdapterImpl::create_and_add_liquidity(
+                exchange_address: router_address,
+                token_address: memecoin_address,
+                quote_address: quote_address,
+                lp_supply: memecoin.total_supply() - team_allocation,
+                additional_parameters: StarkDeFiAdditionalParameters {
+                    lock_manager_address: self.lock_manager_address.read(),
+                    unlock_time,
+                    quote_amount
+                }
+            );
+
+            // Transfer the team's alloc
+            distribute_team_alloc(memecoin, initial_holders, initial_holders_amounts);
+
+            memecoin
+                .set_launched(
+                    LiquidityType::StarkDeFiERC20(pair_address),
+                    LiquidityParameters::StarkDeFi(
+                        (
+                            StarkDeFiLiquidityParameters { quote_address, quote_amount },
+                            lock_position
+                        )
+                    ),
+                    :transfer_restriction_delay,
+                    :max_percentage_buy_launch,
+                    :team_allocation,
+                );
+            self
+                .emit(
+                    MemecoinLaunched {
+                        memecoin_address, quote_token: quote_address, exchange_name: 'StarkDeFi'
+                    }
+                );
+            pair_address
+        }
+
         fn locked_liquidity(
             self: @ContractState, token: ContractAddress
         ) -> Option<(ContractAddress, LiquidityType)> {
@@ -247,6 +307,10 @@ mod Factory {
             let locker_address = match liquidity_type {
                 LiquidityType::JediERC20(pair_address) => {
                     // ERC20 tokens are locked inside an ERC20Tokens-Locker
+                    self.lock_manager_address.read()
+                },
+                LiquidityType::StarkDeFiERC20(pair_address) => {
+                    // same as above
                     self.lock_manager_address.read()
                 },
                 LiquidityType::EkuboNFT(id) => {

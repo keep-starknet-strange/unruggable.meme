@@ -51,6 +51,7 @@ fn test_locked_liquidity_jediswap() {
     assert(locker_address == LOCK_MANAGER_ADDRESS(), 'wrong locker address');
     match locked_type {
         LiquidityType::JediERC20(_) => (),
+        LiquidityType::StarkDeFiERC20(_) => panic_with_felt252('wrong liquidity type'),
         LiquidityType::EkuboNFT(_) => panic_with_felt252('wrong liquidity type')
     }
 }
@@ -221,7 +222,8 @@ fn test_launch_memecoin_with_jediswap_parameters() {
             );
             assert(jediswap_liquidity_parameters.quote_amount == eth_amount, 'Bad quote amount');
             assert(locker.user_lock_at(owner, 0) == lock_position, 'Bad lock position');
-        }
+        },
+        LiquidityParameters::StarkDeFi(_) => panic_with_felt252('wrong liquidity parameters type'),
     }
 }
 
