@@ -1,7 +1,11 @@
 use array::ArrayTrait;
 use debug::PrintTrait;
+use integer::BoundedInt;
 use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
-use starknet::{get_block_timestamp, ContractAddress, get_contract_address, get_caller_address};
+use starknet::{
+    get_block_timestamp, ContractAddress, contract_address_const, get_contract_address,
+    get_caller_address
+};
 use unruggable::errors;
 use unruggable::locker::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
 use unruggable::token::interface::{
@@ -106,6 +110,12 @@ impl JediswapAdapterImpl of unruggable::exchanges::ExchangeAdapter<
             );
         let pair_address = jedi_factory.get_pair(memecoin_address, quote_address);
         let pair = ERC20ABIDispatcher { contract_address: pair_address, };
+
+        // Burn LP if unlock_time is max u64
+        if (BoundedInt::<u64>::max() == unlock_time) {
+            pair.transfer(contract_address_const::<0xdead>(), liquidity_received);
+            return (pair.contract_address, contract_address_const::<0xdead>());
+        }
 
         // Lock LP tokens
         let lock_manager = ILockManagerDispatcher { contract_address: lock_manager_address };
