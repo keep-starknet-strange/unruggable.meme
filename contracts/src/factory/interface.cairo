@@ -104,6 +104,30 @@ trait IFactory<TContractState> {
         ekubo_parameters: EkuboPoolParameters,
     ) -> (u64, EkuboLP);
 
+    /// Launches the memecoin on StarkDeFi by creating a liquidity pool and adding liquidity to it.
+    ///
+    /// This function can only be called by the owner of the memecoin and only if the memecoin has not been launched yet.
+    /// The launch is set to be a volatile pool with a 1% fee.
+    /// Launching on StarkDeFi requires `quote_amount` quote tokens to be approved for transfer to the factory.
+    /// It creates a liquidity pair for the memecoin and the quote token on StarkDeFi, adds liquidity to it, and sets the memecoin as launched.
+    ///
+    /// # Arguments
+    /// same as launch_on_jediswap
+    ///
+    /// # Returns
+    /// same as launch_on_jediswap  
+    /// 
+    /// # Panics
+    ///
+    /// same as launch_on_jediswap   
+    ///
+    fn launch_on_starkdefi(
+        ref self: TContractState,
+        launch_parameters: LaunchParameters,
+        quote_amount: u256,
+        unlock_time: u64,
+    ) -> ContractAddress;
+
     /// Returns the address for a given Exchange, provided that this Exchange
     /// was registered in the factory upon initialization.
     ///

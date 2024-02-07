@@ -6,6 +6,7 @@ use unruggable::exchanges::ekubo_adapter::EkuboPoolParameters;
 #[derive(Copy, Drop, starknet::Store, Serde)]
 enum LiquidityType {
     JediERC20: ContractAddress,
+    StarkDeFiERC20: ContractAddress,
     EkuboNFT: u64
 }
 
@@ -22,9 +23,16 @@ struct JediswapLiquidityParameters {
 }
 
 #[derive(Copy, Drop, starknet::Store, Serde)]
+struct StarkDeFiLiquidityParameters {
+    quote_address: ContractAddress,
+    quote_amount: u256,
+}
+
+#[derive(Copy, Drop, starknet::Store, Serde)]
 enum LiquidityParameters {
     Ekubo: EkuboLiquidityParameters,
     Jediswap: (JediswapLiquidityParameters, ContractAddress),
+    StarkDeFi: (StarkDeFiLiquidityParameters, ContractAddress),
 }
 
 #[starknet::contract]
@@ -334,6 +342,12 @@ mod UnruggableMemecoin {
                     if (get_caller_address() != pair) {
                         // When buying from jediswap, the caller_address is the pair,
                         // so we return early if the caller is not the pair to not apply restrictions.
+                        return;
+                    }
+                },
+                LiquidityType::StarkDeFiERC20(pair) => {
+                    if (get_caller_address() != pair) {
+                        // same as above
                         return;
                     }
                 },
