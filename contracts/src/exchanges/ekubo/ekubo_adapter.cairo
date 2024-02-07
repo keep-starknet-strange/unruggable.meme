@@ -33,7 +33,7 @@ struct EkuboLaunchParameters {
     pool_params: EkuboPoolParameters
 }
 
-#[derive(Drop, Copy, Serde)]
+#[derive(Drop, Copy, starknet::Store, Serde)]
 struct EkuboPoolParameters {
     fee: u128,
     tick_spacing: u128,

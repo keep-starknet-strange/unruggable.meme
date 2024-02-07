@@ -56,65 +56,6 @@ mod test_constructor {
             memecoin.memecoin_factory_address() == MEMEFACTORY_ADDRESS(), 'wrong factory address'
         );
     }
-
-    //TODO:move to launch
-    #[test]
-    #[ignore]
-    #[should_panic(expected: ('Holders len dont match amounts',))]
-    fn test_launch_initial_holders_arrays_len_mismatch() {
-        let initial_holders: Array<ContractAddress> = array![
-            INITIAL_HOLDER_1(),
-            INITIAL_HOLDER_2(),
-            contract_address_const::<'holder 3'>(),
-            contract_address_const::<'holder 4'>()
-        ];
-        let initial_holders_amounts: Array<u256> = array![50, 40, 10];
-        let mut state = UnruggableMemecoin::contract_state_for_testing();
-        UnruggableMemecoin::constructor(
-            ref state, OWNER(), NAME(), SYMBOL(), DEFAULT_INITIAL_SUPPLY(),
-        );
-    }
-
-    //TODO: move to launch
-    #[test]
-    #[ignore]
-    #[should_panic(expected: ('Max number of holders reached',))]
-    fn test_constructor_max_holders_reached() {
-        // 11 holders > 10 holders max
-        let initial_holders = array![
-            INITIAL_HOLDER_1(),
-            INITIAL_HOLDER_2(),
-            contract_address_const::<52>(),
-            contract_address_const::<53>(),
-            contract_address_const::<54>(),
-            contract_address_const::<55>(),
-            contract_address_const::<56>(),
-            contract_address_const::<57>(),
-            contract_address_const::<58>(),
-            contract_address_const::<59>(),
-            contract_address_const::<60>(),
-        ];
-        let initial_holders_amounts: Array<u256> = array![1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
-        let mut state = UnruggableMemecoin::contract_state_for_testing();
-        UnruggableMemecoin::constructor(
-            ref state, OWNER(), NAME(), SYMBOL(), DEFAULT_INITIAL_SUPPLY(),
-        );
-    }
-
-    //TODO: move to launch
-    #[test]
-    #[ignore]
-    #[should_panic(expected: ('Max team allocation reached',))]
-    fn test_constructor_too_much_team_alloc_should_fail() {
-        let mut calldata = array![OWNER().into(), 'locker', NAME().into(), SYMBOL().into()];
-        // Allocation over 10% (over 2.1M)
-        let alloc_holder_1 = 1_050_000 * pow_256(10, 18);
-        let alloc_holder_2 = 1_050_001 * pow_256(10, 18);
-        let mut state = UnruggableMemecoin::contract_state_for_testing();
-        UnruggableMemecoin::constructor(
-            ref state, OWNER(), NAME(), SYMBOL(), DEFAULT_INITIAL_SUPPLY(),
-        );
-    }
 }
 
 mod memecoin_entrypoints {

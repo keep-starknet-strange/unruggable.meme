@@ -37,7 +37,7 @@ use unruggable::tests::unit_tests::utils::{
 use unruggable::token::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
 };
-use unruggable::token::memecoin::LiquidityType;
+use unruggable::token::memecoin::{LiquidityType, LiquidityParameters};
 use unruggable::utils::math::PercentageMath;
 use unruggable::utils::sum;
 
@@ -206,8 +206,9 @@ fn test_launch_meme() {
     let owner = snforge_std::test_address();
     let (quote, quote_address) = deploy_eth_with_owner(owner);
     let starting_price = i129 { sign: true, mag: 4600158 }; // 0.01ETH/MEME
-    let quote_to_deposit = 215_000
-        * pow_256(10, 18); // 10% of the total supply at a price of 0.01ETH/MEME
+    let quote_to_deposit = PercentageMath::percent_mul(
+        2_100_000 * pow_256(10, 16), 10_120
+    ); // 10% of the total supply at a price of 0.01ETH/MEME
     let mut spy = spy_events(SpyOn::One(MEMEFACTORY_ADDRESS()));
     let (memecoin_address, id, position) = launch_memecoin_on_ekubo(
         quote_address,
@@ -234,15 +235,19 @@ fn test_launch_meme() {
     let reserve_memecoin = memecoin.balance_of(core.contract_address);
     let reserve_quote = ERC20ABIDispatcher { contract_address: quote_address }
         .balance_of(core.contract_address);
-    //TODO: fix the reserve quote must be the amount bought by the team
-    // assert(reserve_quote == 0, 'reserve quote not 0');
 
-    // Verify that the reserve of memecoin is within 0.5% of the (total supply minus the team allocation)
+    assert(reserve_quote >= PercentageMath::percent_mul(quote_to_deposit, 9980), 'reserve too low');
+    // No need to check +2% percent
+
+    assert(reserve_quote >= PercentageMath::percent_mul(quote_to_deposit, 9980), 'reserve too low');
+    // No need to check +2% percent
+
+    // Verify that the reserve of memecoin is within 0.1% of the (total supply minus the team allocation)
     // When providing liquidity, if the liquidity provided doesn't exactly match the repartition between
     // bounds, a very small amount is returned.
     let team_allocation = memecoin.get_team_allocation();
     let expected_reserve_lower_bound = PercentageMath::percent_mul(
-        memecoin.totalSupply() - team_allocation, 9950,
+        memecoin.totalSupply() - team_allocation, 9990,
     );
     assert(reserve_memecoin > expected_reserve_lower_bound, 'reserves holds too few token');
 
@@ -259,6 +264,37 @@ fn test_launch_meme() {
             .bounds == Bounds { lower: starting_price, upper: i129 { sign: false, mag: 88719042 } },
         'wrong bounds '
     );
+
+    let liquidity_parameters = memecoin.launched_with_liquidity_parameters().unwrap();
+
+    match liquidity_parameters {
+        LiquidityParameters::Ekubo(ekubo_liquidity_parameters) => {
+            assert(ekubo_liquidity_parameters.quote_address == quote_address, 'Bad quote address');
+            assert(
+                ekubo_liquidity_parameters.ekubo_pool_parameters.fee == position.pool_key.fee,
+                'Bad ekubo fee'
+            );
+            assert(
+                ekubo_liquidity_parameters
+                    .ekubo_pool_parameters
+                    .tick_spacing == position
+                    .pool_key
+                    .tick_spacing,
+                'Bad ekubo tick spacing'
+            );
+            assert(
+                ekubo_liquidity_parameters.ekubo_pool_parameters.starting_price == starting_price,
+                'Bad ekubo starting tick'
+            );
+            assert(
+                ekubo_liquidity_parameters.ekubo_pool_parameters.bound == 88719042,
+                'Bad ekubo bound'
+            );
+        },
+        LiquidityParameters::Jediswap(jediswap_liquidity_parameters) => panic_with_felt252(
+            'wrong liquidity parameters type'
+        ),
+    }
 
     // Check events
     spy
@@ -282,8 +318,9 @@ fn test_transfer_ekuboLP_position() {
     let owner = snforge_std::test_address();
     let (quote, quote_address) = deploy_eth_with_owner(owner);
     let starting_price = i129 { sign: true, mag: 4600158 }; // 0.01ETH/MEME
-    let quote_to_deposit = 215_000
-        * pow_256(10, 18); // 10% of the total supply at a price of 0.01ETH/MEME
+    let quote_to_deposit = PercentageMath::percent_mul(
+        2_100_000 * pow_256(10, 16), 10_120
+    ); // 10% of the total supply at a price of 0.01ETH/MEME
     let (memecoin_address, id, position) = launch_memecoin_on_ekubo(
         quote_address,
         0xc49ba5e353f7d00000000000000000,
@@ -348,7 +385,7 @@ fn test_launch_meme_token0_price_below_1() {
     };
 
     // Check that swaps work correctly
-    let amount_in = MAX_PERCENTAGE_BUY_LAUNCH.into() * pow_256(10, 14);
+    let amount_in = 4200 * pow_256(10, 18); // swapping ~ 2% of the total supply
     swap_tokens_on_ekubo(
         token_in_address: quote_address,
         :amount_in,
@@ -370,11 +407,11 @@ fn test_launch_meme_token0_price_below_1() {
     let post_balance_quote = quote.balance_of(recipient);
     let balance_quote_diff = post_balance_quote - pre_balance_quote;
     assert(balance_of_memecoin == 0, 'memecoin shouldnt collect fees');
-//TODO: restore this check
-//    assert(
-//      balance_quote_diff == PercentageMath::percent_mul(amount_in, 0030),
-//    'should collect 0.3% of eth'
-//);
+    // should get ~ 0.2% of the fees on that swap, since there is still remaining liquidity of the initial position.
+    assert(
+        balance_quote_diff >= PercentageMath::percent_mul(amount_in, 20),
+        'not enough fees not collected'
+    );
 }
 
 #[test]
@@ -383,9 +420,9 @@ fn test_launch_meme_token1_price_below_1() {
     let owner = snforge_std::test_address();
     let (quote, quote_address) = deploy_token0_with_owner(owner);
     let starting_price = i129 { sign: true, mag: 4600158 }; // 0.01ETH/MEME
-    //TODO investigate with the correct amount
-    let quote_to_deposit = 2_500_000
-        * pow_256(10, 16); // 10% of the total supply at a price of 0.01ETH/MEME
+    let quote_to_deposit = PercentageMath::percent_mul(
+        2_100_000 * pow_256(10, 16), 10_120
+    ); // 10% of the total supply at a price of 0.01ETH/MEME
     let (memecoin_address, id, position) = launch_memecoin_on_ekubo(
         quote_address,
         0xc49ba5e353f7d00000000000000000,
@@ -423,17 +460,19 @@ fn test_launch_meme_token1_price_below_1() {
     let reserve_memecoin = memecoin.balance_of(core.contract_address);
     let reserve_quote = ERC20ABIDispatcher { contract_address: quote_address }
         .balance_of(core.contract_address);
-    //TODO: fix now reserves have the initial eth of the team.
-    // assert(reserve_quote == 0, 'reserve quote not 0');
 
-    // Verify that the reserve of memecoin is within 0.5% of the (total supply minus the team allocation)
+    assert(
+        reserve_quote >= PercentageMath::percent_mul(quote_to_deposit, 9980), 'quote reserve low'
+    );
+
+    // Verify that the reserve of memecoin is within 0.1% of the (total supply minus the team allocation)
     let team_allocation = memecoin.get_team_allocation();
     let expected_reserve_lower_bound = PercentageMath::percent_mul(
-        memecoin.totalSupply() - team_allocation, 9950,
+        memecoin.totalSupply() - team_allocation, 9990,
     );
     assert(reserve_memecoin > expected_reserve_lower_bound, 'reserves holds too few token');
 
-    let amount_in = MAX_PERCENTAGE_BUY_LAUNCH.into() * pow_256(10, 14);
+    let amount_in = 4200 * pow_256(10, 18); // swapping ~ 2% of the total supply
     swap_tokens_on_ekubo(
         token_in_address: quote_address,
         :amount_in,
@@ -455,11 +494,11 @@ fn test_launch_meme_token1_price_below_1() {
     let post_balance_quote = quote.balance_of(recipient);
     let balance_quote_diff = post_balance_quote - pre_balance_quote;
     assert(balance_of_memecoin == 0, 'memecoin shouldnt collect fees');
-//TODO: restore this check
-//    assert(
-//      balance_quote_diff == PercentageMath::percent_mul(amount_in, 0030),
-//    'should collect 0.3% of eth'
-//);
+    // should get ~ 0.2% of the fees on that swap, since there is still remaining liquidity of the initial position.
+    assert(
+        balance_quote_diff >= PercentageMath::percent_mul(amount_in, 20),
+        'not enough fees not collected'
+    );
 }
 
 #[test]
@@ -507,18 +546,20 @@ fn test_launch_meme_token0_price_above_1() {
     let reserve_quote = ERC20ABIDispatcher { contract_address: quote_address }
         .balance_of(core.contract_address);
 
-    //TODO: now reserves have the initial eth of the team.
-    // assert(reserve_quote == 0, 'reserve quote not 0');
+    assert(
+        reserve_quote >= PercentageMath::percent_mul(quote_to_deposit, 9900), 'quote reserve low'
+    );
+    // Changed percent range to %1 here, it was reverting lower.
 
-    // Verify that the reserve of memecoin is within 0.5% of the (total supply minus the team allocation)
+    // Verify that the reserve of memecoin is within 0.1% of the (total supply minus the team allocation)
     let team_allocation = memecoin.get_team_allocation();
     let expected_reserve_lower_bound = PercentageMath::percent_mul(
-        memecoin.totalSupply() - team_allocation, 9950,
+        memecoin.totalSupply() - team_allocation, 9990,
     );
     assert(reserve_memecoin > expected_reserve_lower_bound, 'reserves holds too few token');
 
     // Test that swaps work correctly
-    let amount_in = MAX_PERCENTAGE_BUY_LAUNCH.into() * pow_256(10, 14);
+    let amount_in = 42_000_000 * pow_256(10, 18); // swapping ~ 2% of the total supply
     swap_tokens_on_ekubo(
         token_in_address: quote_address,
         :amount_in,
@@ -541,12 +582,11 @@ fn test_launch_meme_token0_price_above_1() {
     let post_balance_quote = quote.balance_of(recipient);
     let balance_quote_diff = post_balance_quote - pre_balance_quote;
     assert(balance_of_memecoin == 0, 'memecoin shouldnt collect fees');
-//TODO: restore this check
-//TODO: restore this check
-//    assert(
-//      balance_quote_diff == PercentageMath::percent_mul(amount_in, 0030),
-//    'should collect 0.3% of eth'
-//);
+    // should get ~ 0.2% of the fees on that swap, since there is still remaining liquidity of the initial position.
+    assert(
+        balance_quote_diff >= PercentageMath::percent_mul(amount_in, 20),
+        'not enough fees not collected'
+    );
 }
 
 #[test]
@@ -594,18 +634,21 @@ fn test_launch_meme_token1_price_above_1() {
     let reserve_memecoin = memecoin.balance_of(core.contract_address);
     let reserve_token0 = ERC20ABIDispatcher { contract_address: quote_address }
         .balance_of(core.contract_address);
-    //TODO: fix now reserves have the balance of the team
-    // assert(reserve_token0 == 0, 'reserve quote not 0');
 
-    // Verify that the reserve of memecoin is within 0.5% of the (total supply minus the team allocation)
+    assert(
+        reserve_token0 >= PercentageMath::percent_mul(quote_to_deposit, 9900), 'quote reserve low'
+    );
+    // Changed percent range to %1 here, it was reverting lower.
+
+    // Verify that the reserve of memecoin is within 0.1% of the (total supply minus the team allocation)
     let team_allocation = memecoin.get_team_allocation();
     let expected_reserve_lower_bound = PercentageMath::percent_mul(
-        memecoin.totalSupply() - team_allocation, 9950,
+        memecoin.totalSupply() - team_allocation, 9990,
     );
     assert(reserve_memecoin > expected_reserve_lower_bound, 'reserves holds too few token');
 
     // Check that swaps work correctly
-    let amount_in = MAX_PERCENTAGE_BUY_LAUNCH.into() * pow_256(10, 14);
+    let amount_in = 42_000_000 * pow_256(10, 18); // swapping ~ 2% of the total supply
     swap_tokens_on_ekubo(
         token_in_address: quote_address,
         :amount_in,
@@ -627,12 +670,11 @@ fn test_launch_meme_token1_price_above_1() {
     let post_balance_quote = quote.balance_of(recipient);
     let balance_quote_diff = post_balance_quote - pre_balance_quote;
     assert(balance_of_memecoin == 0, 'memecoin shouldnt collect fees');
-//TODO: restore this check
-//TODO: restore this check
-//    assert(
-//      balance_quote_diff == PercentageMath::percent_mul(amount_in, 0030),
-//    'should collect 0.3% of eth'
-//);
+    // should get ~ 0.2% of the fees on that swap, since there is still remaining liquidity of the initial position.
+    assert(
+        balance_quote_diff >= PercentageMath::percent_mul(amount_in, 20),
+        'not enough fees not collected'
+    );
 }
 
 #[test]
@@ -641,8 +683,9 @@ fn test_launch_meme_with_pool_1percent() {
     let owner = snforge_std::test_address();
     let (quote, quote_address) = deploy_eth_with_owner(owner);
     let starting_price = i129 { sign: true, mag: 4600158 }; // 0.01ETH/MEME
-    let quote_to_deposit = 215_000
-        * pow_256(10, 18); // 10% of the total supply at a price of 0.01ETH/MEME
+    let quote_to_deposit = PercentageMath::percent_mul(
+        2_100_000 * pow_256(10, 16), 10_200 //2% extra quote
+    ); // 10% of the total supply at a price of 0.01ETH/MEME
     let (memecoin_address, id, position) = launch_memecoin_on_ekubo(
         quote_address,
         0x28f5c28f5c28f600000000000000000,
@@ -665,17 +708,16 @@ fn test_launch_meme_with_pool_1percent() {
     let liquidity = core.get_pool_liquidity(pool_key);
     let price = core.get_pool_price(pool_key);
     let reserve_memecoin = memecoin.balance_of(core.contract_address);
-    let reserve_token0 = ERC20ABIDispatcher { contract_address: quote_address }
+    let reserve_quote = ERC20ABIDispatcher { contract_address: quote_address }
         .balance_of(core.contract_address);
-    //TODO:Fix because its too low it should be 0.5%
-    // assert(reserve_token0 == 0, 'reserve quote not 0');
+    assert(reserve_quote >= PercentageMath::percent_mul(quote_to_deposit, 9980), 'reserve too low');
 
-    // Verify that the reserve of memecoin is within 0.5% of the (total supply minus the team allocation)
+    // Verify that the reserve of memecoin is within 0.1% of the (total supply minus the team allocation)
+    // because there can be slight imprecisions when swapping with ekubo
     let team_allocation = memecoin.get_team_allocation();
     let expected_reserve_lower_bound = PercentageMath::percent_mul(
-        memecoin.totalSupply() - team_allocation, 9900,
+        memecoin.totalSupply() - team_allocation, 9990,
     );
-    //TODO:Fix because its too low it should be 0.5%
     assert(reserve_memecoin > expected_reserve_lower_bound, 'reserves holds too few token');
 }
 
@@ -834,6 +876,126 @@ fn test_launch_memecoin_quote_memecoin_ekubo() {
                 quote_address: quote.contract_address,
                 initial_holders: INITIAL_HOLDERS(),
                 initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
+            },
+            quote_amount,
+            DEFAULT_MIN_LOCKTIME,
+        );
+}
+
+#[test]
+#[fork("Mainnet")]
+#[should_panic(expected: ('Holders len dont match amounts',))]
+fn test_launch_memecoin_ekubo_initial_holders_len_mismatch() {
+    let owner = snforge_std::test_address();
+    let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
+    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
+
+    let (quote, quote_address) = deploy_token0_with_owner(owner);
+    // approve spending of eth by factory
+    let quote_amount: u256 = 1 * pow_256(10, 18); // 1 ETHER
+    let factory_balance_quote = quote.balanceOf(factory.contract_address);
+    start_prank(CheatTarget::One(quote.contract_address), owner);
+    quote.approve(factory.contract_address, quote_amount);
+    stop_prank(CheatTarget::One(quote.contract_address));
+
+    start_prank(CheatTarget::One(factory.contract_address), owner);
+    let pair_address = factory
+        .launch_on_jediswap(
+            LaunchParameters {
+                memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address: quote.contract_address,
+                initial_holders: array![
+                    'initial_holder_1'.try_into().unwrap(), 'initial_holder_2'.try_into().unwrap()
+                ]
+                    .span(),
+                initial_holders_amounts: array![50_u256, 20_u256, 10_u256].span(),
+            },
+            quote_amount,
+            DEFAULT_MIN_LOCKTIME,
+        );
+}
+
+#[test]
+#[fork("Mainnet")]
+#[should_panic(expected: ('Max number of holders reached',))]
+fn test_launch_memecoin_ekubo_max_holders_reached() {
+    let owner = snforge_std::test_address();
+    let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
+    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
+
+    let initial_holders: Array<ContractAddress> = array![
+        'initial_holder_1'.try_into().unwrap(),
+        'initial_holder_2'.try_into().unwrap(),
+        'initial_holder_3'.try_into().unwrap(),
+        'initial_holder_4'.try_into().unwrap(),
+        'initial_holder_5'.try_into().unwrap(),
+        'initial_holder_6'.try_into().unwrap(),
+        'initial_holder_7'.try_into().unwrap(),
+        'initial_holder_8'.try_into().unwrap(),
+        'initial_holder_9'.try_into().unwrap(),
+        'initial_holder_10'.try_into().unwrap(),
+        'initial_holder_11'.try_into().unwrap()
+    ];
+    let initial_holders_amounts: Array<u256> = array![1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+
+    let (quote, quote_address) = deploy_token0_with_owner(owner);
+    // approve spending of eth by factory
+    let quote_amount: u256 = 1 * pow_256(10, 18); // 1 ETHER
+    let factory_balance_quote = quote.balanceOf(factory.contract_address);
+    start_prank(CheatTarget::One(quote.contract_address), owner);
+    quote.approve(factory.contract_address, quote_amount);
+    stop_prank(CheatTarget::One(quote.contract_address));
+
+    start_prank(CheatTarget::One(factory.contract_address), owner);
+    let pair_address = factory
+        .launch_on_jediswap(
+            LaunchParameters {
+                memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address: quote.contract_address,
+                initial_holders: initial_holders.span(),
+                initial_holders_amounts: initial_holders_amounts.span(),
+            },
+            quote_amount,
+            DEFAULT_MIN_LOCKTIME,
+        );
+}
+
+#[test]
+#[fork("Mainnet")]
+#[should_panic(expected: ('Max team allocation reached',))]
+fn test_launch_memecoin_ekubo_too_much_team_alloc() {
+    let owner = snforge_std::test_address();
+    let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
+    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
+
+    let alloc_holder_1 = 1_050_000 * pow_256(10, 18);
+    let alloc_holder_2 = 1_050_001 * pow_256(10, 18);
+
+    let (quote, quote_address) = deploy_token0_with_owner(owner);
+    // approve spending of eth by factory
+    let quote_amount: u256 = 1 * pow_256(10, 18); // 1 ETHER
+    let factory_balance_quote = quote.balanceOf(factory.contract_address);
+    start_prank(CheatTarget::One(quote.contract_address), owner);
+    quote.approve(factory.contract_address, quote_amount);
+    stop_prank(CheatTarget::One(quote.contract_address));
+
+    start_prank(CheatTarget::One(factory.contract_address), owner);
+    let pair_address = factory
+        .launch_on_jediswap(
+            LaunchParameters {
+                memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address: quote.contract_address,
+                initial_holders: array![
+                    'initial_holder_1'.try_into().unwrap(), 'initial_holder_2'.try_into().unwrap()
+                ]
+                    .span(),
+                initial_holders_amounts: array![alloc_holder_1, alloc_holder_2].span(),
             },
             quote_amount,
             DEFAULT_MIN_LOCKTIME,

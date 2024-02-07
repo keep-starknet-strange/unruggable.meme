@@ -1,14 +1,12 @@
 use array::ArrayTrait;
 use debug::PrintTrait;
+use integer::BoundedInt;
 use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
-use starknet::{get_block_timestamp, ContractAddress, get_contract_address, get_caller_address};
+use starknet::{get_block_timestamp, ContractAddress, contract_address_const, get_contract_address, get_caller_address};
 use unruggable::errors;
 use unruggable::locker::{ILockManagerDispatcher, ILockManagerDispatcherTrait};
 use unruggable::token::interface::{
     IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait,
-};
-use unruggable::utils::math::{
-    pow_64,
 };
 
 #[starknet::interface]
@@ -65,7 +63,7 @@ struct JediswapAdditionalParameters {
 }
 
 impl JediswapAdapterImpl of unruggable::exchanges::ExchangeAdapter<
-    JediswapAdditionalParameters, ContractAddress
+    JediswapAdditionalParameters, (ContractAddress, ContractAddress)
 > {
     fn create_and_add_liquidity(
         exchange_address: ContractAddress,
@@ -73,7 +71,7 @@ impl JediswapAdapterImpl of unruggable::exchanges::ExchangeAdapter<
         quote_address: ContractAddress,
         lp_supply: u256,
         additional_parameters: JediswapAdditionalParameters,
-    ) -> ContractAddress {
+    ) -> (ContractAddress, ContractAddress) {
         let JediswapAdditionalParameters{lock_manager_address, unlock_time, quote_amount, } =
             additional_parameters;
         let memecoin = IUnruggableMemecoinDispatcher { contract_address: token_address, };
@@ -111,22 +109,22 @@ impl JediswapAdapterImpl of unruggable::exchanges::ExchangeAdapter<
         let pair = ERC20ABIDispatcher { contract_address: pair_address, };
 
         // Burn LP if unlock_time is max u64
-        let maxValue: u64 = 1 * pow_64(2, 64);
-        if (maxValue == unlock_time) {
-            //pair.transfer(pair.contract_address.zero(), liquidity_received);
-        } else {
-            // Lock LP tokens
-            let lock_manager = ILockManagerDispatcher { contract_address: lock_manager_address };
-            pair.approve(lock_manager_address, liquidity_received);
-            let locked_address = lock_manager
-                .lock_tokens(
-                    token: pair_address,
-                    amount: liquidity_received,
-                    unlock_time: unlock_time,
-                    withdrawer: caller_address,
-                );
+        if (BoundedInt::<u64>::max() == unlock_time) {
+            pair.transfer(contract_address_const::<0xdead>::(), liquidity_received);
+            return (pair.contract_address, contract_address_const::<0xdead>::());
         }
 
-        pair.contract_address
+        // Lock LP tokens
+        let lock_manager = ILockManagerDispatcher { contract_address: lock_manager_address };
+        pair.approve(lock_manager_address, liquidity_received);
+        let lock_position = lock_manager
+            .lock_tokens(
+                token: pair_address,
+                amount: liquidity_received,
+                unlock_time: unlock_time,
+                withdrawer: caller_address,
+            );
+
+        (pair.contract_address, lock_position)
     }
 }
