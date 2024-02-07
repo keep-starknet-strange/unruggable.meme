@@ -196,6 +196,7 @@ fn test_locked_liquidity_ekubo() {
     assert(locker_address == EKUBO_LAUNCHER_ADDRESS(), 'wrong locker address');
     match locked_type {
         LiquidityType::JediERC20(_) => panic_with_felt252('wrong liquidity type'),
+        LiquidityType::StarkDeFiERC20(_) => panic_with_felt252('wrong liquidity type'),
         LiquidityType::EkuboNFT(id) => ()
     }
 }
@@ -294,6 +295,9 @@ fn test_launch_meme() {
         LiquidityParameters::Jediswap(jediswap_liquidity_parameters) => panic_with_felt252(
             'wrong liquidity parameters type'
         ),
+        LiquidityParameters::StarkDeFi(stark_defi_liquidity_parameters) => panic_with_felt252(
+            'wrong liquidity parameters type'
+        )
     }
 
     // Check events
