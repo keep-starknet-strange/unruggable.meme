@@ -31,7 +31,7 @@ mod Factory {
     };
     use unruggable::token::memecoin::{
         UnruggableMemecoin::LiquidityType, UnruggableMemecoin::LiquidityParameters,
-        JediswapLiquidityParameters, EkuboLiquidityParameters
+        JediswapLiquidityParameters, StarkDeFiLiquidityParameters, EkuboLiquidityParameters
     };
     use unruggable::utils::math::PercentageMath;
     use unruggable::utils::unique_count;
@@ -239,27 +239,31 @@ mod Factory {
 
         fn launch_on_starkdefi(
             ref self: ContractState,
-            memecoin_address: ContractAddress,
-            transfer_restriction_delay: u64,
-            max_percentage_buy_launch: u16,
-            quote_address: ContractAddress,
+            launch_parameters: LaunchParameters,
             quote_amount: u256,
             unlock_time: u64,
         ) -> ContractAddress {
-            assert(self.is_memecoin(memecoin_address), errors::NOT_UNRUGGABLE);
-            let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
-            let caller_address = get_caller_address();
+            let (team_allocation, pre_holders) = check_common_launch_parameters(
+                @self, launch_parameters
+            );
             let router_address = self.exchange_address(SupportedExchanges::Starkdefi);
-            assert(!self.is_memecoin(quote_address), errors::QUOTE_TOKEN_IS_MEMECOIN);
-            assert(!memecoin.is_launched(), errors::ALREADY_LAUNCHED);
-            assert(caller_address == memecoin.owner(), errors::CALLER_NOT_OWNER);
             assert(router_address.is_non_zero(), errors::EXCHANGE_ADDRESS_ZERO);
 
-            let mut pair_address =
+            let LaunchParameters{memecoin_address,
+            transfer_restriction_delay,
+            max_percentage_buy_launch,
+            quote_address,
+            initial_holders,
+            initial_holders_amounts } =
+                launch_parameters;
+
+            let memecoin = IUnruggableMemecoinDispatcher { contract_address: memecoin_address };
+            let (pair_address, lock_position) =
                 starkdefi_adapter::StarkDeFiAdapterImpl::create_and_add_liquidity(
                 exchange_address: router_address,
                 token_address: memecoin_address,
                 quote_address: quote_address,
+                lp_supply: memecoin.total_supply() - team_allocation,
                 additional_parameters: StarkDeFiAdditionalParameters {
                     lock_manager_address: self.lock_manager_address.read(),
                     unlock_time,
@@ -267,11 +271,21 @@ mod Factory {
                 }
             );
 
+            // Transfer the team's alloc
+            distribute_team_alloc(memecoin, initial_holders, initial_holders_amounts);
+
             memecoin
                 .set_launched(
-                    LiquidityType::ERC20(pair_address),
+                    LiquidityType::StarkDeFiERC20(pair_address),
+                    LiquidityParameters::StarkDeFi(
+                        (
+                            StarkDeFiLiquidityParameters { quote_address, quote_amount },
+                            lock_position
+                        )
+                    ),
                     :transfer_restriction_delay,
-                    :max_percentage_buy_launch
+                    :max_percentage_buy_launch,
+                    :team_allocation,
                 );
             self
                 .emit(
@@ -293,6 +307,10 @@ mod Factory {
             let locker_address = match liquidity_type {
                 LiquidityType::JediERC20(pair_address) => {
                     // ERC20 tokens are locked inside an ERC20Tokens-Locker
+                    self.lock_manager_address.read()
+                },
+                LiquidityType::StarkDeFiERC20(pair_address) => {
+                    // same as above
                     self.lock_manager_address.read()
                 },
                 LiquidityType::EkuboNFT(id) => {

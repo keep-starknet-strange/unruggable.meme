@@ -15,14 +15,15 @@ use unruggable::token::interface::{
 };
 
 impl StarkDeFiAdapterImpl of unruggable::exchanges::ExchangeAdapter<
-    StarkDeFiAdditionalParameters, ContractAddress
+    StarkDeFiAdditionalParameters, (ContractAddress, ContractAddress)
 > {
     fn create_and_add_liquidity(
         exchange_address: ContractAddress,
         token_address: ContractAddress,
         quote_address: ContractAddress,
+        lp_supply: u256,
         additional_parameters: StarkDeFiAdditionalParameters,
-    ) -> ContractAddress {
+    ) -> (ContractAddress, ContractAddress) {
         let StarkDeFiAdditionalParameters{lock_manager_address, unlock_time, quote_amount, } =
             additional_parameters;
         let memecoin = IUnruggableMemecoinDispatcher { contract_address: token_address, };
@@ -40,34 +41,32 @@ impl StarkDeFiAdapterImpl of unruggable::exchanges::ExchangeAdapter<
             contract_address: starkdefi_router.factory(),
         };
 
-        // Add liquidity 
+        // Add liquidity
         quote_token.transferFrom(caller_address, this, quote_amount,);
-        let memecoin_balance = memecoin.balanceOf(this);
-        memecoin.approve(starkdefi_router.contract_address, memecoin_balance);
+        memecoin.approve(starkdefi_router.contract_address, lp_supply);
         quote_token.approve(starkdefi_router.contract_address, quote_amount);
 
-        // As we're supplying the first liquidity for this pool,
-        // The expected minimum amounts for each tokens are the amounts we're supplying.
+        //
         let (amount_memecoin, amount_eth, liquidity_received) = starkdefi_router
             .add_liquidity(
                 memecoin_address,
                 quote_address,
                 stable,
                 fee,
-                memecoin_balance,
+                lp_supply,
                 quote_amount,
-                memecoin_balance,
+                lp_supply,
                 quote_amount,
                 this, // locked
                 deadline: get_block_timestamp()
             );
-        let pair_address = starkdefi_factory.get_pair(quote_address, memecoin_address, stable, fee);
+        let pair_address = starkdefi_factory.get_pair(memecoin_address, quote_address, stable, fee);
         let pair = ERC20ABIDispatcher { contract_address: pair_address, };
 
         // Lock LP tokens
         let lock_manager = ILockManagerDispatcher { contract_address: lock_manager_address };
         pair.approve(lock_manager_address, liquidity_received);
-        let locked_address = lock_manager
+        let lock_position = lock_manager
             .lock_tokens(
                 token: pair_address,
                 amount: liquidity_received,
@@ -75,6 +74,6 @@ impl StarkDeFiAdapterImpl of unruggable::exchanges::ExchangeAdapter<
                 withdrawer: caller_address,
             );
 
-        pair.contract_address
+        (pair.contract_address, lock_position)
     }
 }
