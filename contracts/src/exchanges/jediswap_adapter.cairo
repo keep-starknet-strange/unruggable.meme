@@ -110,8 +110,8 @@ impl JediswapAdapterImpl of unruggable::exchanges::ExchangeAdapter<
 
         // Burn LP if unlock_time is max u64
         if (BoundedInt::<u64>::max() == unlock_time) {
-            pair.transfer(contract_address_const::<0xdead>::(), liquidity_received);
-            return (pair.contract_address, contract_address_const::<0xdead>::());
+            pair.transfer(contract_address_const::<0xdead>(), liquidity_received);
+            return (pair.contract_address, contract_address_const::<0xdead>());
         }
 
         // Lock LP tokens
