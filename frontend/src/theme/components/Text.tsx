@@ -42,12 +42,40 @@ export const Small = ({ className, ...props }: TextProps) => (
   />
 )
 
+export const Subtitle = ({ className, ...props }: TextProps) => (
+  <TextWrapper
+    className={clsx(
+      className,
+      sprinkles({
+        fontWeight: 'normal',
+        color: 'text2',
+        fontSize: '16',
+      })
+    )}
+    {...props}
+  />
+)
+
 export const Body = ({ className, ...props }: TextProps) => (
   <TextWrapper
     className={clsx(
       className,
       sprinkles({
         fontWeight: 'normal',
+        color: 'text1',
+        fontSize: '16',
+      })
+    )}
+    {...props}
+  />
+)
+
+export const Medium = ({ className, ...props }: TextProps) => (
+  <TextWrapper
+    className={clsx(
+      className,
+      sprinkles({
+        fontWeight: 'medium',
         color: 'text1',
         fontSize: '16',
       })

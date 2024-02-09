@@ -9,10 +9,10 @@ interface TokenInfos {
 
 type QuoteTokens = { [chainId in constants.StarknetChainId]: Record<string, TokenInfos> }
 
-export const TOKEN_CLASS_HASH = '0x03cbe04b8aed45144483a11c3d9186fc7665bd04e87911d15c678a40c8a81ba1'
+export const TOKEN_CLASS_HASH = '0x01c33d0d4f44faf5427c9131223e39e5bdbe9dd0f4f73dc527f05c50939d67f2'
 
 export const FACTORY_ADDRESSES = {
-  [constants.StarknetChainId.SN_GOERLI]: '0x029f4dec8c99597153b323fb5dacf8286b42ba41a7b5ca6e048a826f0b7ea027',
+  [constants.StarknetChainId.SN_GOERLI]: '0x061c3711a61c540fa60a6bd11ec09d36a4fc767c19253d6203c0ab3f251ed4b3',
   [constants.StarknetChainId.SN_MAIN]: '0xdead',
 }
 

@@ -1,15 +1,15 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useAccount, useContractWrite } from '@starknet-react/core'
-import { Wallet, X } from 'lucide-react'
+import { Wallet } from 'lucide-react'
 import { useCallback } from 'react'
-import { useFieldArray, useForm } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
-import { IconButton, PrimaryButton, SecondaryButton } from 'src/components/Button'
+import { IconButton, PrimaryButton } from 'src/components/Button'
 import Input from 'src/components/Input'
 import NumericalInput from 'src/components/Input/NumericalInput'
 import Section from 'src/components/Section'
 import { FACTORY_ADDRESSES, TOKEN_CLASS_HASH } from 'src/constants/contracts'
-import { DECIMALS, MAX_HOLDERS_PER_DEPLOYMENT, Selector } from 'src/constants/misc'
+import { DECIMALS, Selector } from 'src/constants/misc'
 import useChainId from 'src/hooks/useChainId'
 import { useDeploymentStore } from 'src/hooks/useDeployment'
 import Box from 'src/theme/components/Box'
@@ -17,7 +17,7 @@ import { Column } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
 import { parseFormatedAmount } from 'src/utils/amount'
 import { decimalsScale } from 'src/utils/decimals'
-import { address, currencyInput, holder } from 'src/utils/zod'
+import { address, currencyInput } from 'src/utils/zod'
 import { CallData, hash, stark, uint256 } from 'starknet'
 import { z } from 'zod'
 
@@ -30,7 +30,6 @@ const schema = z.object({
   symbol: z.string().min(1),
   ownerAddress: address,
   initialSupply: currencyInput,
-  holders: z.array(holder),
 })
 
 /**
@@ -54,18 +53,12 @@ export default function DeployPage() {
   // const {} = useWaitForTransaction({ hash: deployedToken?.address })
 
   const {
-    control,
     register,
     handleSubmit,
     setValue,
     formState: { errors },
   } = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-  })
-
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: 'holders',
   })
 
   const deployToken = useCallback(
@@ -76,19 +69,11 @@ export default function DeployPage() {
 
       const parsedInitialSupply = parseFormatedAmount(data.initialSupply)
 
-      const totalTeamAllocation = data.holders
-        .reduce((acc, { amount }) => BigInt(parseFormatedAmount(amount)) + acc, BigInt(0))
-        .toString()
-
       const constructorCalldata = CallData.compile([
         data.ownerAddress, // owner
         data.name, // name
         data.symbol, // symbol
         uint256.bnToUint256(BigInt(parsedInitialSupply) * BigInt(decimalsScale(DECIMALS))), // initial_supply
-        data.holders.map(({ address }) => address), // initial_holders
-        data.holders.map(({ amount }) =>
-          uint256.bnToUint256(BigInt(parseFormatedAmount(amount)) * BigInt(decimalsScale(DECIMALS)))
-        ), // initial_holders_amounts
         salt, // contract salt
       ])
 
@@ -113,8 +98,7 @@ export default function DeployPage() {
           address: tokenAddress,
           name: data.name,
           symbol: data.symbol,
-          maxSupply: parsedInitialSupply,
-          teamAllocation: totalTeamAllocation,
+          totalSupply: parsedInitialSupply,
         })
 
         navigate(`/token/${tokenAddress}`)
@@ -181,41 +165,6 @@ export default function DeployPage() {
                 {errors.initialSupply?.message ? <Text.Error>{errors.initialSupply.message}</Text.Error> : null}
               </Box>
             </Column>
-
-            {fields.map((field, index) => (
-              <Column gap="8" key={field.id}>
-                <Text.Body className={styles.inputLabel}>Holder {index + 1}</Text.Body>
-
-                <Column gap="8" flexDirection="row">
-                  <Input placeholder="Holder address" {...register(`holders.${index}.address`)} />
-
-                  <NumericalInput placeholder="Tokens" {...register(`holders.${index}.amount`)} />
-
-                  <IconButton type="button" onClick={() => remove(index)}>
-                    <X />
-                  </IconButton>
-                </Column>
-
-                <Box className={styles.errorContainer}>
-                  {errors.holders?.[index]?.address?.message ? (
-                    <Text.Error>{errors.holders?.[index]?.address?.message}</Text.Error>
-                  ) : null}
-
-                  {errors.holders?.[index]?.amount?.message ? (
-                    <Text.Error>{errors.holders?.[index]?.amount?.message}</Text.Error>
-                  ) : null}
-                </Box>
-              </Column>
-            ))}
-
-            {fields.length < MAX_HOLDERS_PER_DEPLOYMENT && (
-              <SecondaryButton
-                type="button"
-                onClick={() => append({ address: '', amount: '' }, { shouldFocus: false })}
-              >
-                Add holder
-              </SecondaryButton>
-            )}
 
             <div />
 

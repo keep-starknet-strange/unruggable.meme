@@ -8,8 +8,7 @@ export interface TokenContract {
   address: string
   name: string
   symbol: string
-  maxSupply: string
-  teamAllocation: string
+  totalSupply: string
 }
 
 interface State {

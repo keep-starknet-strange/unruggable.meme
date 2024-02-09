@@ -1,10 +1,10 @@
 import { useCallback } from 'react'
 import { useBoundStore } from 'src/state'
 import { ModalType } from 'src/state/application'
-import { shallow } from 'zustand/shallow'
+import { useShallow } from 'zustand/react/shallow'
 
 export function useCloseModal(): () => void {
-  const { closeModals } = useBoundStore((state) => ({ closeModals: state.closeModals }), shallow)
+  const { closeModals } = useBoundStore(useShallow((state) => ({ closeModals: state.closeModals })))
 
   return closeModals
 }

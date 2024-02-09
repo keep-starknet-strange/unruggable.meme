@@ -1,6 +1,6 @@
 import { useContractRead, UseContractReadResult } from '@starknet-react/core'
 import { Fraction } from '@uniswap/sdk-core'
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { compiledJediswapPair, JEDISWAP_ETH_USDC } from 'src/constants/contracts'
 import { Selector } from 'src/constants/misc'
 import { decimalsScale } from 'src/utils/decimalScale'
@@ -34,4 +34,19 @@ export function useEtherPrice(blockIdentifier: BlockNumber = BlockTag.latest) {
         : ethPrice
     ).multiply(decimalsScale(12))
   }, [chainId, pairReserves.data])
+}
+
+export function useWeiAmountToParsedFiatValue(): (amount?: Fraction) => string | null {
+  const etherPrice = useEtherPrice()
+
+  return useCallback(
+    (amount?: Fraction) =>
+      etherPrice && amount
+        ? `$${(Math.round(+amount.multiply(etherPrice).toFixed(6) * 100) / 100).toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}`
+        : null,
+    [etherPrice]
+  )
 }
