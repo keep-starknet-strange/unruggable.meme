@@ -74,7 +74,7 @@ export function ImportTokenModal({ save = false }: ImportTokenModalProps) {
   }, [])
 
   // token check
-  const [{ error }, getMemecoinInfos] = useMemecoinInfos()
+  const [{ data: memecoinInfos, error }, getMemecoinInfos] = useMemecoinInfos()
 
   const importToken = useCallback(
     async (data: z.infer<typeof schema>) => {
@@ -87,22 +87,25 @@ export function ImportTokenModal({ save = false }: ImportTokenModalProps) {
         }
       }
 
-      const memecoinInfos = await getMemecoinInfos(tokenAddress)
+      getMemecoinInfos(tokenAddress)
+    },
+    [getMemecoinInfos, deployedTokenContracts, openTokenPage]
+  )
 
-      if (memecoinInfos) {
-        // save token if needed
-        if (save) {
-          pushDeployedTokenContracts(memecoinInfos)
-        }
-
-        openTokenPage(tokenAddress)
-        return
+  useEffect(() => {
+    if (memecoinInfos) {
+      // save token if needed
+      if (save) {
+        pushDeployedTokenContracts(memecoinInfos)
       }
 
-      setLoading(false)
-    },
-    [getMemecoinInfos, deployedTokenContracts, openTokenPage, pushDeployedTokenContracts, save]
-  )
+      openTokenPage(memecoinInfos.address)
+      return
+    }
+
+    setLoading(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [memecoinInfos?.address, save])
 
   // handle error
   useEffect(() => {

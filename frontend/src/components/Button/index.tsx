@@ -8,6 +8,7 @@ type ButtonProps = Omit<BoxProps, 'as'>
 interface EnlargeableButtonProps extends ButtonProps {
   large?: boolean
 }
+
 export const PrimaryButton = ({ className, children, disabled, large = false, ...props }: EnlargeableButtonProps) => (
   <Box as="button" className={clsx(className, styles.primaryButton({ large, disabled }))} {...props}>
     <Box zIndex="1" position="relative">
@@ -16,12 +17,12 @@ export const PrimaryButton = ({ className, children, disabled, large = false, ..
   </Box>
 )
 
-interface SecondaryButtonProps extends ButtonProps {
+interface SecondaryButtonProps extends EnlargeableButtonProps {
   withIcon?: boolean
 }
 
-export const SecondaryButton = ({ className, withIcon, ...props }: SecondaryButtonProps) => (
-  <Box as="button" className={clsx(className, styles.secondaryButton({ withIcon }))} {...props} />
+export const SecondaryButton = ({ className, withIcon, large = false, ...props }: SecondaryButtonProps) => (
+  <Box as="button" className={clsx(className, styles.secondaryButton({ withIcon, large }))} {...props} />
 )
 
 export const IconButton = ({ className, ...props }: ButtonProps) => (

@@ -91,6 +91,13 @@ export const secondaryButton = recipe({
   ],
 
   variants: {
+    large: {
+      true: sprinkles({
+        minHeight: '54',
+        fontSize: '18',
+        fontWeight: 'medium',
+      }),
+    },
     withIcon: {
       true: sprinkles({ paddingLeft: '8' }),
       false: sprinkles({ paddingLeft: '16' }),
@@ -99,6 +106,7 @@ export const secondaryButton = recipe({
 
   defaultVariants: {
     withIcon: false,
+    large: false,
   },
 })
 

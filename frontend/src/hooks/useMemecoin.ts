@@ -11,7 +11,7 @@ interface BaseMemecoinInfos {
   address: string
   name: string
   symbol: string
-  maxSupply: string
+  totalSupply: string
   teamAllocation: string
   isLaunched: boolean
   isOwner: boolean
@@ -35,7 +35,7 @@ interface NotLaunchedMemecoin extends BaseMemecoinInfos {
   launch: undefined
 }
 
-type MemecoinInfos = LaunchedMemecoin | NotLaunchedMemecoin
+export type MemecoinInfos = LaunchedMemecoin | NotLaunchedMemecoin
 
 interface LockPosition {
   unlockTime: number
@@ -180,15 +180,13 @@ export function useMemecoinInfos() {
           address: tokenAddress,
           name: shortString.decodeShortString(res.result[5]),
           symbol: shortString.decodeShortString(res.result[7]),
-          maxSupply: uint256.uint256ToBN({ low: res.result[11], high: res.result[12] }).toString(),
+          totalSupply: uint256.uint256ToBN({ low: res.result[11], high: res.result[12] }).toString(),
           teamAllocation: uint256.uint256ToBN({ low: res.result[14], high: res.result[15] }).toString(),
           owner: getChecksumAddress(res.result[17]),
           isLaunched,
         }
 
         setMemecoinInfos({ ...baseMemecoinInfos, launch: launchInfos })
-
-        return memecoinInfos // still return memecoin infos
       } catch (err) {
         // might just not be already indexed
         for (const deployedTokenContract of deployedTokenContracts) {
@@ -200,8 +198,6 @@ export function useMemecoinInfos() {
 
         setError('Not unruggable')
       }
-
-      return
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [chainId, provider, deployedTokenContracts.length]
@@ -221,7 +217,7 @@ export function useMemecoinInfos() {
   )
 
   return [
-    { data: memecoinInfos ? { ...memecoinInfos, isOwner } : undefined, error, indexing },
+    { data: memecoinInfos ? ({ ...memecoinInfos, isOwner } as MemecoinInfos) : undefined, error, indexing },
     getMemecoinInfos,
   ] as const
 }

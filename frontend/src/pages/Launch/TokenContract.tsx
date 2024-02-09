@@ -1,4 +1,3 @@
-import { Percent } from '@uniswap/sdk-core'
 import { useMemo } from 'react'
 import { TokenContract as TokenContractType } from 'src/state/contracts'
 import Box, { BoxProps } from 'src/theme/components/Box'
@@ -14,11 +13,6 @@ interface TokenContractProps extends BoxProps {
 }
 
 export default function TokenContract({ tokenContract, launched, ...props }: TokenContractProps) {
-  const teamAllocationPercentage = useMemo(
-    () => new Percent(tokenContract.teamAllocation, tokenContract.maxSupply).toFixed(),
-    [tokenContract.teamAllocation, tokenContract.maxSupply]
-  )
-
   const backgroundPosition = useMemo(() => {
     const seed = +encode.addHexPrefix(tokenContract.address.slice(-6))
     return `${seed % 100}% ${Math.round(seed / 100) % 70}%`
@@ -43,13 +37,6 @@ export default function TokenContract({ tokenContract, launched, ...props }: Tok
               {launched ? 'Launched' : 'Not launched'}
             </Text.Custom>
           )}
-        </Row>
-
-        <Row gap="8">
-          <Text.Body>Team allocation:</Text.Body>
-          <Text.HeadlineSmall color={+teamAllocationPercentage ? 'text1' : 'accent'}>
-            {teamAllocationPercentage}%
-          </Text.HeadlineSmall>
         </Row>
       </Column>
     </Box>
