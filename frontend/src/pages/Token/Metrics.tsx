@@ -44,11 +44,12 @@ export default function TokenMetrics({ memecoinInfos }: TokenMetricsProps) {
   // parse memecoin infos
   const parsedMemecoinInfos = useMemo(() => {
     if (!memecoinInfos) return
+    if (!memecoinInfos.isLaunched) return {}
 
     const ret: Record<string, { parsedValue: string; safety: Safety }> = {}
 
     // team allocation
-    const teamAllocation = new Percent(memecoinInfos.teamAllocation, memecoinInfos.totalSupply)
+    const teamAllocation = new Percent(memecoinInfos.launch.teamAllocation, memecoinInfos.totalSupply)
 
     ret.teamAllocation = {
       parsedValue: `${teamAllocation.toFixed()}%`,
@@ -80,11 +81,11 @@ export default function TokenMetrics({ memecoinInfos }: TokenMetricsProps) {
     }
 
     // starting mcap
-    if (memecoinInfos?.launch?.quoteAmount && ethPriceAtLaunch) {
+    if (memecoinInfos.launch.quoteAmount && ethPriceAtLaunch) {
       const startingMcap =
         ret.quoteToken.safety === Safety.SAFE
           ? new Fraction(memecoinInfos?.launch?.quoteAmount)
-              .multiply(new Fraction(memecoinInfos.teamAllocation, memecoinInfos.totalSupply).add(1))
+              .multiply(new Fraction(memecoinInfos.launch.teamAllocation, memecoinInfos.totalSupply).add(1))
               .divide(decimalsScale(18))
               .multiply(ethPriceAtLaunch)
           : undefined
@@ -109,11 +110,11 @@ export default function TokenMetrics({ memecoinInfos }: TokenMetricsProps) {
       <Box className={styles.hr} />
 
       <Row gap="16" flexWrap="wrap">
-        <Box className={styles.card}>
+        <Box className={styles.card} opacity={memecoinInfos.isLaunched ? '1' : '0.5'}>
           <Column gap="8" alignItems="flex-start">
             <Text.Small>Team allocation:</Text.Small>
             <Text.HeadlineMedium color={SAFETY_COLORS[parsedMemecoinInfos?.teamAllocation?.safety ?? Safety.UNKNOWN]}>
-              {parsedMemecoinInfos?.teamAllocation?.parsedValue ?? 'Loading...'}
+              {parsedMemecoinInfos?.teamAllocation?.parsedValue ?? 'Not launched'}
             </Text.HeadlineMedium>
           </Column>
         </Box>

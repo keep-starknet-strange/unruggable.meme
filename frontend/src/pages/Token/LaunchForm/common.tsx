@@ -12,9 +12,10 @@ interface SubmitProps {
   previous: FormPageProps['previous']
   nextText?: string
   onNext?: () => void
+  disableNext?: boolean
 }
 
-export function Submit({ previous, onNext, nextText = 'Next' }: SubmitProps) {
+export function Submit({ previous, onNext, nextText = 'Next', disableNext = false }: SubmitProps) {
   return (
     <Row gap="16">
       {!!previous && (
@@ -22,7 +23,7 @@ export function Submit({ previous, onNext, nextText = 'Next' }: SubmitProps) {
           Previous
         </SecondaryButton>
       )}
-      <PrimaryButton type={onNext ? undefined : 'submit'} onClick={onNext} flex="1">
+      <PrimaryButton type={onNext ? undefined : 'submit'} onClick={onNext} disabled={disableNext} flex="1">
         {nextText}
       </PrimaryButton>
     </Row>

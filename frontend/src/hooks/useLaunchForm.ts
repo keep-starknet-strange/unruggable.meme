@@ -17,3 +17,7 @@ export function useLiquidityForm() {
     setStartingMcap: state.setStartingMcap,
   }))
 }
+
+export function useLaunch() {
+  return useBoundStore((state) => [state.launch, state.setLaunch] as const)
+}

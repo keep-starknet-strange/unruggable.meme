@@ -88,13 +88,14 @@ export default function TokenPage() {
 
             {launchFormPageIndex === 1 && <LiquidityForm next={next} previous={previous} />}
 
-            {launchFormPageIndex === 2 && <ConfirmForm previous={previous} />}
+            {launchFormPageIndex === 2 && <ConfirmForm previous={previous} memecoinInfos={memecoinInfos} />}
           </Column>
 
           {onlyVisibleToYou}
         </Column>
       )
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [memecoinInfos?.isOwner, memecoinInfos?.isLaunched, error, launchFormPageIndex, next, previous])
 
   return (

@@ -12,7 +12,6 @@ interface BaseMemecoinInfos {
   name: string
   symbol: string
   totalSupply: string
-  teamAllocation: string
   isLaunched: boolean
   isOwner: boolean
   owner: string
@@ -27,10 +26,11 @@ interface LaunchedMemecoin extends BaseMemecoinInfos {
     liquidityLockPosition?: string
     quoteToken: string
     quoteAmount?: string
+    teamAllocation: string
   }
 }
 
-interface NotLaunchedMemecoin extends BaseMemecoinInfos {
+export interface NotLaunchedMemecoin extends BaseMemecoinInfos {
   isLaunched: false
   launch: undefined
 }
@@ -154,6 +154,7 @@ export function useMemecoinInfos() {
 
         const launchInfos = isLaunched
           ? {
+              teamAllocation: uint256.uint256ToBN({ low: res.result[14], high: res.result[15] }).toString(),
               liquidityLockManager: res.result[20] as string,
               liquidityType: Object.values(LiquidityType)[+res.result[21]] as LiquidityType,
               blockNumber: +res.result[24],
@@ -181,7 +182,6 @@ export function useMemecoinInfos() {
           name: shortString.decodeShortString(res.result[5]),
           symbol: shortString.decodeShortString(res.result[7]),
           totalSupply: uint256.uint256ToBN({ low: res.result[11], high: res.result[12] }).toString(),
-          teamAllocation: uint256.uint256ToBN({ low: res.result[14], high: res.result[15] }).toString(),
           owner: getChecksumAddress(res.result[17]),
           isLaunched,
         }
