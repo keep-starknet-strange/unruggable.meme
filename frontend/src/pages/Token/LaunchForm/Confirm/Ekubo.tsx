@@ -22,7 +22,7 @@ export default function EkuboLaunch({ memecoinInfos }: EkuboLaunchProps) {
   const weiAmountToParsedFiatValue = useWeiAmountToParsedFiatValue()
 
   // team allocation buyout
-  const teamAllocationBuyoutAmount = new Fraction(1, 15847)
+  const teamAllocationBuyoutAmount = new Fraction(0)
 
   // launch
   const launch = useCallback(() => {
@@ -44,7 +44,7 @@ export default function EkuboLaunch({ memecoinInfos }: EkuboLaunchProps) {
         </Row>
 
         <Row className={styles.amountRowContainer}>
-          <Text.Medium>Team allocation</Text.Medium>
+          <Text.Medium>Team allocation (0%)</Text.Medium>
           <Row className={styles.amountContainer}>
             <Text.Subtitle>{weiAmountToParsedFiatValue(teamAllocationBuyoutAmount)}</Text.Subtitle>
             <Text.Body>

@@ -75,9 +75,9 @@ export default function ConfirmForm({ previous, memecoinInfos }: ConfirmFormProp
       <Column gap="42">
         <Submit
           previous={previous}
-          nextText={`Launch on ${selectedAmm}`}
+          nextText={selectedAmm === AMM.EKUBO ? 'Coming soon' : `Launch on ${selectedAmm}`}
           onNext={launch ?? undefined}
-          disableNext={!launch}
+          disableNext={!launch || selectedAmm === AMM.EKUBO}
         />
       </Column>
     </Column>

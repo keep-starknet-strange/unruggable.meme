@@ -102,7 +102,7 @@ export default function JediswapLaunch({ memecoinInfos }: JediswapLaunchProps) {
         </Row>
 
         <Row className={styles.amountRowContainer}>
-          <Text.Medium>Team allocation</Text.Medium>
+          <Text.Medium>Team allocation (0%)</Text.Medium>
           <Text.Medium color="accent">Free</Text.Medium>
         </Row>
       </Column>
