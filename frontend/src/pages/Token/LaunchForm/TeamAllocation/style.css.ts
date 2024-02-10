@@ -1,10 +1,15 @@
 import { style } from '@vanilla-extract/css'
 import { recipe } from '@vanilla-extract/recipes'
-import { sprinkles } from 'src/theme/css/sprinkles.css'
+import { breakpoints, sprinkles } from 'src/theme/css/sprinkles.css'
 
 export const slotsContainer = style([
   {
-    gridTemplateColumns: 'repeat(5, 1fr)',
+    gridTemplateColumns: 'repeat(2, 1fr)',
+    '@media': {
+      [`screen and (min-width: ${breakpoints.md}px)`]: {
+        gridTemplateColumns: 'repeat(5, 1fr)',
+      },
+    },
   },
   sprinkles({
     display: 'grid',
