@@ -2,7 +2,7 @@ import { Fraction, Percent } from '@uniswap/sdk-core'
 import moment from 'moment'
 import { useMemo } from 'react'
 import { QUOTE_TOKENS } from 'src/constants/contracts'
-import { FOREVER } from 'src/constants/misc'
+import { DECIMALS, FOREVER } from 'src/constants/misc'
 import { Safety, SAFETY_COLORS } from 'src/constants/safety'
 import useChainId from 'src/hooks/useChainId'
 import { MemecoinInfos, useMemecoinliquidityLockPosition } from 'src/hooks/useMemecoin'
@@ -10,6 +10,7 @@ import { useEtherPrice } from 'src/hooks/usePrice'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
+import { formatPercentage } from 'src/utils/amount'
 import { decimalsScale } from 'src/utils/decimalScale'
 import { parseMonthsDuration } from 'src/utils/moment'
 import {
@@ -52,7 +53,7 @@ export default function TokenMetrics({ memecoinInfos }: TokenMetricsProps) {
     const teamAllocation = new Percent(memecoinInfos.launch.teamAllocation, memecoinInfos.totalSupply)
 
     ret.teamAllocation = {
-      parsedValue: `${teamAllocation.toFixed()}%`,
+      parsedValue: formatPercentage(teamAllocation),
       safety: getTeamAllocationSafety(teamAllocation),
     }
 
@@ -86,7 +87,7 @@ export default function TokenMetrics({ memecoinInfos }: TokenMetricsProps) {
         ret.quoteToken.safety === Safety.SAFE
           ? new Fraction(memecoinInfos?.launch?.quoteAmount)
               .multiply(new Fraction(memecoinInfos.launch.teamAllocation, memecoinInfos.totalSupply).add(1))
-              .divide(decimalsScale(18))
+              .divide(decimalsScale(DECIMALS))
               .multiply(ethPriceAtLaunch)
           : undefined
 

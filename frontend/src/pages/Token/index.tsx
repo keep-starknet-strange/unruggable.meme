@@ -13,6 +13,7 @@ import { getChecksumAddress } from 'starknet'
 import ConfirmForm from './LaunchForm/Confirm'
 import HodlLimitForm from './LaunchForm/HodlLimit'
 import LiquidityForm from './LaunchForm/Liqiudity'
+import TeamAllocationForm from './LaunchForm/TeamAllocation'
 import TokenMetrics from './Metrics'
 import * as styles from './style.css'
 
@@ -88,7 +89,11 @@ export default function TokenPage() {
 
             {launchFormPageIndex === 1 && <LiquidityForm next={next} previous={previous} />}
 
-            {launchFormPageIndex === 2 && <ConfirmForm previous={previous} memecoinInfos={memecoinInfos} />}
+            {launchFormPageIndex === 2 && (
+              <TeamAllocationForm next={next} previous={previous} memecoinInfos={memecoinInfos} />
+            )}
+
+            {launchFormPageIndex === 3 && <ConfirmForm previous={previous} memecoinInfos={memecoinInfos} />}
           </Column>
 
           {onlyVisibleToYou}
