@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
 import { AMM } from 'src/constants/misc'
-import { useLaunch } from 'src/hooks/useLaunchForm'
+import { useLaunch, useTeamAllocationTotalPercentage } from 'src/hooks/useLaunchForm'
 import { NotLaunchedMemecoin } from 'src/hooks/useMemecoin'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
@@ -52,6 +52,9 @@ export default function ConfirmForm({ previous, memecoinInfos }: ConfirmFormProp
     [selectedAmm]
   )
 
+  // team allocation
+  const teamAllocationTotalPercentage = useTeamAllocationTotalPercentage(memecoinInfos.totalSupply)
+
   return (
     <Column gap="42">
       <Text.Custom color="text2" fontWeight="normal" fontSize="24">
@@ -64,7 +67,10 @@ export default function ConfirmForm({ previous, memecoinInfos }: ConfirmFormProp
         </Column>
 
         <Box flex="1">
-          <LaunchComponent memecoinInfos={memecoinInfos} />
+          <LaunchComponent
+            memecoinInfos={memecoinInfos}
+            teamAllocationTotalPercentage={teamAllocationTotalPercentage}
+          />
         </Box>
 
         <Column className={styles.ammNavigatior} onClick={nextAmm}>

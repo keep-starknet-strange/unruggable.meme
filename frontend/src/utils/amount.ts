@@ -1,4 +1,4 @@
-import { Fraction } from '@uniswap/sdk-core'
+import { Fraction, Percent } from '@uniswap/sdk-core'
 
 export const parseFormatedAmount = (amount: string) => amount.replace(/,/g, '')
 
@@ -7,5 +7,12 @@ interface ParseCurrencyAmountOptions {
   significant?: number
 }
 
-export const parseCurrencyAmount = (amount: Fraction, { fixed, significant = 1 }: ParseCurrencyAmountOptions) =>
+export const formatCurrenyAmount = (amount: Fraction, { fixed, significant = 1 }: ParseCurrencyAmountOptions) =>
   Math.max(+amount.toFixed(fixed), +amount.toSignificant(significant))
+
+export const formatPercentage = (percentage: Percent) => {
+  const formatedPercentage = +percentage.toFixed(2)
+  const exact = percentage.equalTo(new Percent(Math.round(formatedPercentage * 100), 10000))
+
+  return `${exact ? '' : '~'}${formatedPercentage}%`
+}

@@ -16,8 +16,3 @@ export const percentInput = z
   .refine((input) => +input <= 100 && +input >= 0.01 && /\d+(\.\d{0,2})?/.test(input), {
     message: 'Invalid percentage',
   })
-
-export const holder = z.object({
-  address,
-  amount: currencyInput,
-})
