@@ -134,6 +134,7 @@ export const vars = createGlobalTheme(':root', {
     appGradient: `radial-gradient(50% 50% at 50% 30%, ${transparentize(0.9, '#6E44FF')}, transparent)`,
     accentGradient: 'linear-gradient(215deg, #cc0033, #6E44FF)',
 
+    accentAlpha20: transparentize(0.8, '#6E44FF'),
     accent: '#6E44FF',
 
     error: '#ff003e',

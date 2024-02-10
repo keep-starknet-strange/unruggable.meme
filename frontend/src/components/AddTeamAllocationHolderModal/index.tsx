@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useAccount } from '@starknet-react/core'
-import { Fraction } from '@uniswap/sdk-core'
+import { Fraction, Percent } from '@uniswap/sdk-core'
 import { Wallet } from 'lucide-react'
 import { useCallback, useEffect, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
@@ -8,9 +8,9 @@ import { DECIMALS, MAX_TEAM_ALLOCATION_TOTAL_SUPPLY_PERCENTAGE } from 'src/const
 import { useTeamAllocation } from 'src/hooks/useLaunchForm'
 import { useAddTeamAllocationHolderModal, useCloseModal } from 'src/hooks/useModal'
 import Box from 'src/theme/components/Box'
-import { Column } from 'src/theme/components/Flex'
+import { Column, Row } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
-import { parseFormatedAmount } from 'src/utils/amount'
+import { formatPercentage, parseFormatedAmount } from 'src/utils/amount'
 import { decimalsScale } from 'src/utils/decimalScale'
 import { address, currencyInput } from 'src/utils/zod'
 import { getChecksumAddress } from 'starknet'
@@ -35,7 +35,13 @@ interface AddTeamAllocationHolderModalProps {
   totalSupply: string
 }
 
-// eslint-disable-next-line import/no-unused-modules
+const PERCENTAGE_SUGGESTIONS = [
+  new Percent(5, 1000), // 0.5%
+  new Percent(1, 100), // 1%
+  new Percent(2, 100), // 2%
+  new Percent(5, 100), // 5%
+]
+
 export function AddTeamAllocationHolderModal({ index, totalSupply }: AddTeamAllocationHolderModalProps) {
   // state
   const { teamAllocation, setTeamAllocationHolder, removeTeamAllocationHolder } = useTeamAllocation()
@@ -132,6 +138,14 @@ export function AddTeamAllocationHolderModal({ index, totalSupply }: AddTeamAllo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [index, isOpen, setValue, reset, teamAllocation[index]?.address, teamAllocation[index]?.amount])
 
+  // set percentage suggestion
+  const setPercentageSuggestion = useCallback(
+    (percentage: Percent) => {
+      setValue('amount', new Fraction(totalSupply, decimalsScale(DECIMALS)).multiply(percentage).quotient.toString())
+    },
+    [setValue, totalSupply]
+  )
+
   if (!isOpen) return null
 
   return (
@@ -148,7 +162,7 @@ export function AddTeamAllocationHolderModal({ index, totalSupply }: AddTeamAllo
                   <IconButton
                     type="button"
                     disabled={!address}
-                    onClick={() => (address ? setValue('holderAddress', address, { shouldValidate: true }) : null)}
+                    onClick={() => (address ? setValue('holderAddress', address) : null)}
                   >
                     <Wallet />
                   </IconButton>
@@ -165,6 +179,18 @@ export function AddTeamAllocationHolderModal({ index, totalSupply }: AddTeamAllo
               <Text.Body className={styles.inputLabel}>Amount</Text.Body>
 
               <NumericalInput placeholder="21,000,000" {...register('amount')} />
+
+              <Row gap="8">
+                {PERCENTAGE_SUGGESTIONS.map((percentage, index) => (
+                  <Box
+                    key={`percentage-suggestion-${index}`}
+                    className={styles.percentageSelection}
+                    onClick={() => setPercentageSuggestion(percentage)}
+                  >
+                    <Text.Body color="accent">{formatPercentage(percentage)}</Text.Body>
+                  </Box>
+                ))}
+              </Row>
 
               <Box className={styles.errorContainer}>
                 {errors.amount?.message ? <Text.Error>{errors.amount.message}</Text.Error> : null}

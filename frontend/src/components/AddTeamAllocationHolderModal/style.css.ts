@@ -30,3 +30,24 @@ export const loader = style([
     color: 'text1',
   }),
 ])
+
+export const percentageSelection = style([
+  {
+    borderRadius: '4px',
+  },
+  sprinkles({
+    transition: '125',
+    cursor: 'pointer',
+    background: 'accentAlpha20',
+    borderColor: {
+      default: 'accentAlpha20',
+      hover: 'accent',
+    },
+    borderWidth: '1px',
+    borderStyle: 'solid',
+    paddingY: '4',
+    paddingX: '8',
+    flex: '1',
+    textAlign: 'center',
+  }),
+])
