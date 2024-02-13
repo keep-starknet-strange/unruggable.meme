@@ -17,13 +17,15 @@ interface BaseMemecoinInfos {
   owner: string
 }
 
-interface LaunchedMemecoin extends BaseMemecoinInfos {
+export interface LaunchedMemecoin extends BaseMemecoinInfos {
   isLaunched: true
+  isOwner: false
   launch: {
     blockNumber: number
     liquidityType: LiquidityType
     liquidityLockManager: string
     liquidityLockPosition?: string
+    liquidityEkuboId?: string
     quoteToken: string
     quoteAmount?: string
     teamAllocation: string
@@ -36,10 +38,6 @@ export interface NotLaunchedMemecoin extends BaseMemecoinInfos {
 }
 
 export type MemecoinInfos = LaunchedMemecoin | NotLaunchedMemecoin
-
-interface LockPosition {
-  unlockTime: number
-}
 
 export function useMemecoinInfos() {
   const [memecoinInfos, setMemecoinInfos] = useState<Omit<MemecoinInfos, 'isOwner'> | undefined>()
@@ -170,6 +168,7 @@ export function useMemecoinInfos() {
 
                   case AMM.EKUBO:
                     return {
+                      liquidityEkuboId: res.result[22],
                       quoteToken: '0xdead',
                     }
                 }
@@ -222,14 +221,30 @@ export function useMemecoinInfos() {
   ] as const
 }
 
+//
+// LIQUIDITY
+//
+
+export interface LockPosition {
+  unlockTime: number
+  owner: string
+  isOwner: boolean
+}
+
+interface LockParameters {
+  lockPosition?: string
+  ekuboId?: string
+}
+
 export function useMemecoinliquidityLockPosition(
   liquidityType?: LiquidityType,
   lockManager?: string,
-  lockPosition?: string
-) {
-  const [liquidity, setLiquidity] = useState<LockPosition | undefined>()
+  parameters?: LockParameters
+): LockPosition | undefined {
+  const [liquidity, setLiquidity] = useState<Omit<LockPosition, 'isOwner'> | undefined>()
 
   // starknet
+  const { address } = useAccount()
   const { provider } = useProvider()
   const chainId = useChainId()
 
@@ -241,7 +256,7 @@ export function useMemecoinliquidityLockPosition(
 
     switch (liquidityType) {
       case LiquidityType.ERC20: {
-        if (!lockPosition) {
+        if (!parameters?.lockPosition) {
           setLiquidity(undefined)
           return
         }
@@ -250,11 +265,12 @@ export function useMemecoinliquidityLockPosition(
           ?.callContract({
             contractAddress: lockManager,
             entrypoint: Selector.GET_LOCK_DETAILS,
-            calldata: [lockPosition],
+            calldata: [parameters.lockPosition],
           })
           .then((res) => {
             setLiquidity({
-              unlockTime: +res?.result[4],
+              unlockTime: +res.result[4],
+              owner: res.result[3],
             })
           })
 
@@ -262,12 +278,26 @@ export function useMemecoinliquidityLockPosition(
       }
 
       case LiquidityType.NFT: {
-        setLiquidity({
-          unlockTime: LIQUIDITY_LOCK_FOREVER_TIMESTAMP,
-        })
+        if (!parameters?.ekuboId) {
+          setLiquidity(undefined)
+          return
+        }
+
+        provider
+          ?.callContract({
+            contractAddress: lockManager,
+            entrypoint: Selector.LIQUIDITY_POSITION_DETAILS,
+            calldata: [parameters.ekuboId],
+          })
+          .then((res) => {
+            setLiquidity({
+              unlockTime: LIQUIDITY_LOCK_FOREVER_TIMESTAMP,
+              owner: res.result[1],
+            })
+          })
       }
     }
-  }, [lockManager, lockPosition, liquidityType, chainId, provider])
+  }, [lockManager, liquidityType, chainId, provider, parameters?.lockPosition, parameters?.ekuboId])
 
-  return liquidity
+  return liquidity ? { ...liquidity, isOwner: liquidity?.owner === address } : undefined
 }

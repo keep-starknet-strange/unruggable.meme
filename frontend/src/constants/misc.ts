@@ -22,6 +22,8 @@ export enum Selector {
   GET_LOCK_DETAILS = 'get_lock_details',
   LAUNCHED_AT_BLOCK_NUMBER = 'launched_at_block_number',
   GET_RESERVES = 'get_reserves',
+  LIQUIDITY_POSITION_DETAILS = 'liquidity_position_details',
+  WITHDRAW_FEES = 'withdraw_fees',
 }
 
 export enum AMM {

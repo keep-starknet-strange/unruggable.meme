@@ -81,8 +81,6 @@ export default function JediswapLaunch({ memecoinInfos, teamAllocationTotalPerce
         : moment().add(moment.duration(liquidityLockPeriod, 'months')).unix(),
     ])
 
-    console.log(launchCalldata)
-
     writeAsync({
       calls: [
         {

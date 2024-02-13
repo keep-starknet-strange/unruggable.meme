@@ -5,7 +5,7 @@ import { QUOTE_TOKENS } from 'src/constants/contracts'
 import { DECIMALS, FOREVER } from 'src/constants/misc'
 import { Safety, SAFETY_COLORS } from 'src/constants/safety'
 import useChainId from 'src/hooks/useChainId'
-import { MemecoinInfos, useMemecoinliquidityLockPosition } from 'src/hooks/useMemecoin'
+import { LockPosition, MemecoinInfos } from 'src/hooks/useMemecoin'
 import { useEtherPrice } from 'src/hooks/usePrice'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
@@ -24,16 +24,10 @@ import * as styles from './style.css'
 
 interface TokenMetricsProps {
   memecoinInfos: MemecoinInfos
+  liquidityLockPosition?: LockPosition
 }
 
-export default function TokenMetrics({ memecoinInfos }: TokenMetricsProps) {
-  // get memecoin launch status
-  const liquidityLockPosition = useMemecoinliquidityLockPosition(
-    memecoinInfos?.launch?.liquidityType,
-    memecoinInfos?.launch?.liquidityLockManager,
-    memecoinInfos?.launch?.liquidityLockPosition
-  )
-
+export default function TokenMetrics({ memecoinInfos, liquidityLockPosition }: TokenMetricsProps) {
   // eth price
   const ethPriceAtLaunch = useEtherPrice(
     memecoinInfos?.launch?.blockNumber ? memecoinInfos?.launch?.blockNumber - 1 : undefined

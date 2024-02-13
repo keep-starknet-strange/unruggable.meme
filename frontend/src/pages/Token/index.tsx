@@ -3,13 +3,15 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useMatch } from 'react-router-dom'
 import { PrimaryButton } from 'src/components/Button'
 import Section from 'src/components/Section'
-import { useMemecoinInfos } from 'src/hooks/useMemecoin'
+import { LiquidityType } from 'src/constants/misc'
+import { LaunchedMemecoin, useMemecoinInfos, useMemecoinliquidityLockPosition } from 'src/hooks/useMemecoin'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
 import { vars } from 'src/theme/css/sprinkles.css'
 import { getChecksumAddress } from 'starknet'
 
+import CollectFees from './CollectFees'
 import ConfirmForm from './LaunchForm/Confirm'
 import HodlLimitForm from './LaunchForm/HodlLimit'
 import LiquidityForm from './LaunchForm/Liqiudity'
@@ -43,6 +45,16 @@ export default function TokenPage() {
     }
   }, [getMemecoinInfos, memecoinAddress])
 
+  // get memecoin launch status
+  const liquidityLockPosition = useMemecoinliquidityLockPosition(
+    memecoinInfos?.launch?.liquidityType,
+    memecoinInfos?.launch?.liquidityLockManager,
+    {
+      lockPosition: memecoinInfos?.launch?.liquidityLockPosition,
+      ekuboId: memecoinInfos?.launch?.liquidityEkuboId,
+    }
+  )
+
   // page content
   const mainContent = useMemo(() => {
     if (indexing) {
@@ -55,13 +67,13 @@ export default function TokenPage() {
 
     if (!memecoinInfos) return
 
-    return <TokenMetrics memecoinInfos={memecoinInfos} />
-  }, [indexing, error, memecoinInfos])
+    return <TokenMetrics memecoinInfos={memecoinInfos} liquidityLockPosition={liquidityLockPosition} />
+  }, [indexing, error, memecoinInfos, liquidityLockPosition])
 
   // Owner content
 
   const ownerContent = useMemo(() => {
-    if (!memecoinInfos?.isOwner || error) return
+    if (!memecoinInfos || error) return
 
     const onlyVisibleToYou = (
       <Row gap="2">
@@ -70,44 +82,63 @@ export default function TokenPage() {
       </Row>
     )
 
-    if (memecoinInfos.isLaunched) {
+    if (liquidityLockPosition?.isOwner) {
       return (
-        <Column gap="32">
-          <PrimaryButton>Collect fees</PrimaryButton>
-          {onlyVisibleToYou}
-        </Column>
+        <>
+          {memecoinInfos.launch?.liquidityType === LiquidityType.NFT && (
+            <Box className={styles.container}>
+              <Column gap="32">
+                <CollectFees
+                  memecoinInfos={memecoinInfos as LaunchedMemecoin}
+                  liquidityLockPosition={liquidityLockPosition}
+                />
+                {onlyVisibleToYou}
+              </Column>
+            </Box>
+          )}
+
+          <Box className={styles.container}>
+            <Column gap="32">
+              <PrimaryButton>Increase liquidity lock</PrimaryButton>
+              {onlyVisibleToYou}
+            </Column>
+          </Box>
+        </>
       )
-    } else {
+    } else if (memecoinInfos.isOwner) {
       return (
-        <Column gap="32">
-          <Column>
-            <Row gap="12" justifyContent="space-between">
-              <Text.HeadlineLarge>Launch token</Text.HeadlineLarge>
-            </Row>
+        <Box className={styles.container}>
+          <Column gap="32">
+            <Column>
+              <Row gap="12" justifyContent="space-between">
+                <Text.HeadlineLarge>Launch token</Text.HeadlineLarge>
+              </Row>
 
-            {launchFormPageIndex === 0 && <HodlLimitForm next={next} />}
+              {launchFormPageIndex === 0 && <HodlLimitForm next={next} />}
 
-            {launchFormPageIndex === 1 && <LiquidityForm next={next} previous={previous} />}
+              {launchFormPageIndex === 1 && <LiquidityForm next={next} previous={previous} />}
 
-            {launchFormPageIndex === 2 && (
-              <TeamAllocationForm next={next} previous={previous} memecoinInfos={memecoinInfos} />
-            )}
+              {launchFormPageIndex === 2 && (
+                <TeamAllocationForm next={next} previous={previous} memecoinInfos={memecoinInfos} />
+              )}
 
-            {launchFormPageIndex === 3 && <ConfirmForm previous={previous} memecoinInfos={memecoinInfos} />}
+              {launchFormPageIndex === 3 && <ConfirmForm previous={previous} memecoinInfos={memecoinInfos} />}
+            </Column>
+
+            {onlyVisibleToYou}
           </Column>
-
-          {onlyVisibleToYou}
-        </Column>
+        </Box>
       )
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [memecoinInfos?.isOwner, memecoinInfos?.isLaunched, error, launchFormPageIndex, next, previous])
+
+    return
+  }, [memecoinInfos, error, liquidityLockPosition, launchFormPageIndex, next, previous])
 
   return (
     <Section>
       <Column gap="32" alignItems="center" width="full">
         <Box className={styles.container}>{mainContent}</Box>
-        {!!ownerContent && <Box className={styles.container}>{ownerContent}</Box>}
+        {!!ownerContent && <>{ownerContent}</>}
       </Column>
     </Section>
   )
