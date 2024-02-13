@@ -1,17 +1,20 @@
 import { Eye } from 'lucide-react'
+import moment from 'moment'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useMatch } from 'react-router-dom'
-import { PrimaryButton } from 'src/components/Button'
 import Section from 'src/components/Section'
 import { LiquidityType } from 'src/constants/misc'
+import { Safety } from 'src/constants/safety'
 import { LaunchedMemecoin, useMemecoinInfos, useMemecoinliquidityLockPosition } from 'src/hooks/useMemecoin'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
 import { vars } from 'src/theme/css/sprinkles.css'
+import { getLiquidityLockSafety } from 'src/utils/safety'
 import { getChecksumAddress } from 'starknet'
 
 import CollectFees from './CollectFees'
+import IncreaseLiquidityLock from './IncreaseLiquidityLock'
 import ConfirmForm from './LaunchForm/Confirm'
 import HodlLimitForm from './LaunchForm/HodlLimit'
 import LiquidityForm from './LaunchForm/Liqiudity'
@@ -83,26 +86,33 @@ export default function TokenPage() {
     )
 
     if (liquidityLockPosition?.isOwner) {
+      const liquidityLock = moment.duration(
+        moment(moment.unix(liquidityLockPosition.unlockTime)).diff(moment.now()),
+        'milliseconds'
+      )
+      const liquidityLockSafety = getLiquidityLockSafety(liquidityLock)
+
       return (
         <>
           {memecoinInfos.launch?.liquidityType === LiquidityType.NFT && (
-            <Box className={styles.container}>
-              <Column gap="32">
-                <CollectFees
-                  memecoinInfos={memecoinInfos as LaunchedMemecoin}
-                  liquidityLockPosition={liquidityLockPosition}
-                />
-                {onlyVisibleToYou}
-              </Column>
-            </Box>
-          )}
-
-          <Box className={styles.container}>
-            <Column gap="32">
-              <PrimaryButton>Increase liquidity lock</PrimaryButton>
+            <Column className={styles.container}>
+              <CollectFees
+                memecoinInfos={memecoinInfos as LaunchedMemecoin}
+                liquidityLockPosition={liquidityLockPosition}
+              />
               {onlyVisibleToYou}
             </Column>
-          </Box>
+          )}
+
+          {liquidityLockSafety !== Safety.SAFE && (
+            <Column className={styles.container}>
+              <IncreaseLiquidityLock
+                memecoinInfos={memecoinInfos as LaunchedMemecoin}
+                liquidityLockPosition={liquidityLockPosition}
+              />
+              {onlyVisibleToYou}
+            </Column>
+          )}
         </>
       )
     } else if (memecoinInfos.isOwner) {

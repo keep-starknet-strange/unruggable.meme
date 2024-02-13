@@ -24,6 +24,7 @@ export enum Selector {
   GET_RESERVES = 'get_reserves',
   LIQUIDITY_POSITION_DETAILS = 'liquidity_position_details',
   WITHDRAW_FEES = 'withdraw_fees',
+  EXTEND_LOCK = 'extend_lock',
 }
 
 export enum AMM {
@@ -46,6 +47,10 @@ export const MAX_TRANSFER_RESTRICTION_DELAY = 1440 // 24h
 export const LIQUIDITY_LOCK_PERIOD_STEP = 1 // 1 month
 export const MIN_LIQUIDITY_LOCK_PERIOD = 6 // 6 months
 export const MAX_LIQUIDITY_LOCK_PERIOD = 25 // 2 years and 1 month
+
+export const LIQUIDITY_LOCK_INCREASE_STEP = 1 // 1 month
+export const MIN_LIQUIDITY_LOCK_INCREASE = 1 // 1 months
+export const MAX_LIQUIDITY_LOCK_INCREASE = 25 // 2 years and 1 month
 
 export const LIQUIDITY_LOCK_FOREVER_TIMESTAMP = 9999999999 // 20/11/2286
 export const FOREVER = 'Forever'
