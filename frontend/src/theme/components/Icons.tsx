@@ -30,3 +30,16 @@ export const CarretRight = (props: SVGProps) => (
     />
   </svg>
 )
+
+export const Checkmark = (props: SVGProps) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" {...props}>
+    <polyline
+      fill="none"
+      stroke="currentColor"
+      points="12.9,5.7 6.4,12.3 3.1,9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+    />
+  </svg>
+)

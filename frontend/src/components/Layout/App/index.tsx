@@ -1,6 +1,7 @@
 import { useAccount, useNetwork } from '@starknet-react/core'
 import NavBar from 'src/components/NavBar'
 import NavBarMobile from 'src/components/NavBar/Mobile'
+import { TransactionModal } from 'src/components/TransactionModal'
 import Box from 'src/theme/components/Box'
 
 import * as styles from './style.css'
@@ -23,7 +24,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
       <NavBar />
       <NavBarMobile />
       <Box as="span" className={styles.radial} />
+
       {children}
+
+      <TransactionModal />
     </>
   )
 }

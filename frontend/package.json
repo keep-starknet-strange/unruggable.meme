@@ -12,7 +12,7 @@
   "dependencies": {
     "@hookform/resolvers": "^3.3.2",
     "@starknet-react/chains": "^0.1.0",
-    "@starknet-react/core": "^2.0.0",
+    "@starknet-react/core": "^2.2.4",
     "@types/react-dom": "^18.2.1",
     "@uniswap/sdk-core": "^4.0.9",
     "@vanilla-extract/css": "^1.11.0",

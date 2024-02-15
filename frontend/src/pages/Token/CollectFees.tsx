@@ -1,8 +1,8 @@
-import { useContractWrite } from '@starknet-react/core'
 import { useCallback } from 'react'
 import { PrimaryButton } from 'src/components/Button'
 import { Selector } from 'src/constants/misc'
 import { LaunchedMemecoin, LockPosition } from 'src/hooks/useMemecoin'
+import { useExecuteTransaction } from 'src/hooks/useTransactions'
 import { CallData } from 'starknet'
 
 interface CollectFeesProps {
@@ -12,7 +12,7 @@ interface CollectFeesProps {
 
 export default function CollectFees({ memecoinInfos, liquidityLockPosition }: CollectFeesProps) {
   // starknet
-  const { writeAsync } = useContractWrite({})
+  const executeTransaction = useExecuteTransaction()
 
   const collectFees = useCallback(() => {
     const collectFeesCalldata = CallData.compile([
@@ -20,7 +20,7 @@ export default function CollectFees({ memecoinInfos, liquidityLockPosition }: Co
       liquidityLockPosition.owner,
     ])
 
-    writeAsync({
+    executeTransaction({
       calls: [
         {
           contractAddress: memecoinInfos.launch.liquidityLockManager,
@@ -28,8 +28,14 @@ export default function CollectFees({ memecoinInfos, liquidityLockPosition }: Co
           calldata: collectFeesCalldata,
         },
       ],
+      action: 'Collect fees',
     })
-  }, [liquidityLockPosition.owner, memecoinInfos.address, memecoinInfos.launch.liquidityLockManager, writeAsync])
+  }, [
+    liquidityLockPosition.owner,
+    memecoinInfos.address,
+    memecoinInfos.launch.liquidityLockManager,
+    executeTransaction,
+  ])
 
   return <PrimaryButton onClick={collectFees}>Collect fees</PrimaryButton>
 }

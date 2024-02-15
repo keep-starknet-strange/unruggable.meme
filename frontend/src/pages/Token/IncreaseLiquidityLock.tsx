@@ -1,4 +1,3 @@
-import { useContractWrite } from '@starknet-react/core'
 import moment from 'moment'
 import { useCallback, useMemo, useState } from 'react'
 import { PrimaryButton } from 'src/components/Button'
@@ -13,6 +12,7 @@ import {
   Selector,
 } from 'src/constants/misc'
 import { LaunchedMemecoin, LockPosition } from 'src/hooks/useMemecoin'
+import { useExecuteTransaction } from 'src/hooks/useTransactions'
 import { Column } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
 import { parseMonthsDuration } from 'src/utils/moment'
@@ -35,8 +35,8 @@ export default function IncreaseLiquidityLock({ memecoinInfos, liquidityLockPosi
     [liquidityLockIncrease]
   )
 
-  // starknet
-  const { writeAsync } = useContractWrite({})
+  // transaction
+  const executeTransaction = useExecuteTransaction()
 
   // increase tx
   const increaseLiquidityLock = useCallback(() => {
@@ -53,7 +53,7 @@ export default function IncreaseLiquidityLock({ memecoinInfos, liquidityLockPosi
     ])
 
     // send tx
-    writeAsync({
+    executeTransaction({
       calls: [
         {
           contractAddress: memecoinInfos.launch.liquidityLockManager,
@@ -61,13 +61,14 @@ export default function IncreaseLiquidityLock({ memecoinInfos, liquidityLockPosi
           calldata: launchCalldata,
         },
       ],
+      action: 'Increase liquidity lock',
     })
   }, [
+    executeTransaction,
     liquidityLockIncrease,
     liquidityLockPosition.unlockTime,
     memecoinInfos.launch.liquidityLockManager,
     memecoinInfos.launch.liquidityLockPosition,
-    writeAsync,
   ])
 
   return (

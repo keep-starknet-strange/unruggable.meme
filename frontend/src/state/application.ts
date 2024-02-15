@@ -7,6 +7,7 @@ export enum ModalType {
   L2_WALLET_OVERVIEW,
   IMPORT_TOKEN,
   ADD_TEAM_ALLOCATION_HOLDER,
+  TRANSACTION,
 }
 
 export type ApplicationSlice = State & Actions

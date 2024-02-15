@@ -1,4 +1,3 @@
-import { useContractWrite } from '@starknet-react/core'
 import { Fraction, Percent } from '@uniswap/sdk-core'
 import moment from 'moment'
 import { useCallback, useEffect, useMemo } from 'react'
@@ -8,6 +7,7 @@ import useChainId from 'src/hooks/useChainId'
 import { useHodlLimitForm, useLaunch, useLiquidityForm, useTeamAllocation } from 'src/hooks/useLaunchForm'
 import { NotLaunchedMemecoin } from 'src/hooks/useMemecoin'
 import { useEtherPrice, useWeiAmountToParsedFiatValue } from 'src/hooks/usePrice'
+import { useExecuteTransaction } from 'src/hooks/useTransactions'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
@@ -44,7 +44,9 @@ export default function JediswapLaunch({ memecoinInfos, teamAllocationTotalPerce
 
   // starknet
   const chainId = useChainId()
-  const { writeAsync } = useContractWrite({})
+
+  // transaction
+  const executeTransaction = useExecuteTransaction()
 
   // launch
   const launch = useCallback(() => {
@@ -81,7 +83,7 @@ export default function JediswapLaunch({ memecoinInfos, teamAllocationTotalPerce
         : moment().add(moment.duration(liquidityLockPeriod, 'months')).unix(),
     ])
 
-    writeAsync({
+    executeTransaction({
       calls: [
         {
           contractAddress: ETH_ADDRESS,
@@ -94,16 +96,17 @@ export default function JediswapLaunch({ memecoinInfos, teamAllocationTotalPerce
           calldata: launchCalldata,
         },
       ],
+      action: 'Launch on JediSwap',
     })
   }, [
     quoteAmount,
     chainId,
+    hodlLimit,
+    teamAllocation,
     memecoinInfos.address,
     antiBotPeriod,
-    hodlLimit,
     liquidityLockPeriod,
-    writeAsync,
-    teamAllocation,
+    executeTransaction,
   ])
 
   // set launch
