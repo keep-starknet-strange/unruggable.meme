@@ -24,7 +24,11 @@ export function useLiquidityForm() {
 }
 
 export function useLaunch() {
-  return useBoundStore((state) => [state.launch, state.setLaunch] as const)
+  return useBoundStore((state) => ({
+    launch: state.launch,
+    setLaunch: state.setLaunch,
+    resetLaunchForm: state.resetLaunchForm,
+  }))
 }
 
 export function useTeamAllocation() {

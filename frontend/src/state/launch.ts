@@ -29,15 +29,20 @@ interface Actions {
   setLaunch: (launch: () => void) => void
   setTeamAllocationHolder: (holder: Holder, index: number) => void
   removeTeamAllocationHolder: (index: number) => void
+  resetLaunchForm: () => void
 }
 
-export const createLaunchSlice: StateCreator<StoreState, [['zustand/immer', never]], [], LaunchSlice> = (set) => ({
+const initialState = {
   hodlLimit: null,
   antiBotPeriod: MAX_TRANSFER_RESTRICTION_DELAY,
   liquidityLockPeriod: MAX_LIQUIDITY_LOCK_PERIOD,
   startingMcap: null,
   launch: null,
   teamAllocation: {},
+}
+
+export const createLaunchSlice: StateCreator<StoreState, [['zustand/immer', never]], [], LaunchSlice> = (set) => ({
+  ...initialState,
 
   setHodlLimit: (hodlLimit) => set({ hodlLimit }),
   setAntiBotPeriod: (antiBotPeriod) => set({ antiBotPeriod }),
@@ -53,4 +58,5 @@ export const createLaunchSlice: StateCreator<StoreState, [['zustand/immer', neve
       delete state.teamAllocation[index]
       return state
     }),
+  resetLaunchForm: () => set({ ...initialState }),
 })
