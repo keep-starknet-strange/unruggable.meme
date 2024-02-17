@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { useBoundStore } from 'src/state'
-import { InvokeTransactionDetails } from 'src/state/transactions'
+import { InvokeTransactionDetails } from 'src/state/transaction'
 
 import { useTransactionModal } from './useModal'
 

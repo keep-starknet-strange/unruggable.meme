@@ -2,10 +2,10 @@ import { Fraction, Percent } from '@uniswap/sdk-core'
 import moment from 'moment'
 import { useMemo } from 'react'
 import { QUOTE_TOKENS } from 'src/constants/contracts'
-import { DECIMALS, FOREVER } from 'src/constants/misc'
+import { DECIMALS, FOREVER, LiquidityType } from 'src/constants/misc'
 import { Safety, SAFETY_COLORS } from 'src/constants/safety'
 import useChainId from 'src/hooks/useChainId'
-import { LockPosition, MemecoinInfos } from 'src/hooks/useMemecoin'
+import useMemecoin from 'src/hooks/useMemecoin'
 import { useEtherPrice } from 'src/hooks/usePrice'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
@@ -22,29 +22,25 @@ import {
 
 import * as styles from './style.css'
 
-interface TokenMetricsProps {
-  memecoinInfos: MemecoinInfos
-  liquidityLockPosition?: LockPosition
-}
+export default function TokenMetrics() {
+  // memecoin
+  const { data: memecoin } = useMemecoin()
 
-export default function TokenMetrics({ memecoinInfos, liquidityLockPosition }: TokenMetricsProps) {
   // eth price
-  const ethPriceAtLaunch = useEtherPrice(
-    memecoinInfos?.launch?.blockNumber ? memecoinInfos?.launch?.blockNumber - 1 : undefined
-  )
+  const ethPriceAtLaunch = useEtherPrice(memecoin?.isLaunched ? memecoin.launch.blockNumber - 1 : undefined)
 
   // starknet
   const chainId = useChainId()
 
   // parse memecoin infos
   const parsedMemecoinInfos = useMemo(() => {
-    if (!memecoinInfos) return
-    if (!memecoinInfos.isLaunched) return {}
+    if (!memecoin) return
+    if (!memecoin.isLaunched) return {}
 
     const ret: Record<string, { parsedValue: string; safety: Safety }> = {}
 
     // team allocation
-    const teamAllocation = new Percent(memecoinInfos.launch.teamAllocation, memecoinInfos.totalSupply)
+    const teamAllocation = new Percent(memecoin.launch.teamAllocation, memecoin.totalSupply)
 
     ret.teamAllocation = {
       parsedValue: formatPercentage(teamAllocation),
@@ -52,9 +48,9 @@ export default function TokenMetrics({ memecoinInfos, liquidityLockPosition }: T
     }
 
     // liquidity lock
-    if (liquidityLockPosition?.unlockTime) {
+    if (memecoin.liquidity.unlockTime) {
       const liquidityLock = moment.duration(
-        moment(moment.unix(liquidityLockPosition.unlockTime)).diff(moment.now()),
+        moment(moment.unix(memecoin.liquidity.unlockTime)).diff(moment.now()),
         'milliseconds'
       )
       const safety = getLiquidityLockSafety(liquidityLock)
@@ -66,8 +62,8 @@ export default function TokenMetrics({ memecoinInfos, liquidityLockPosition }: T
     }
 
     // quote token
-    if (chainId && memecoinInfos?.launch) {
-      const quoteTokenInfos = QUOTE_TOKENS[chainId][memecoinInfos.launch.quoteToken]
+    if (chainId) {
+      const quoteTokenInfos = QUOTE_TOKENS[chainId][memecoin.liquidity.quoteToken]
 
       ret.quoteToken = {
         parsedValue: quoteTokenInfos?.symbol ?? 'UNKOWN',
@@ -76,11 +72,11 @@ export default function TokenMetrics({ memecoinInfos, liquidityLockPosition }: T
     }
 
     // starting mcap
-    if (memecoinInfos.launch.quoteAmount && ethPriceAtLaunch) {
+    if (ethPriceAtLaunch && memecoin.liquidity.type === LiquidityType.ERC20) {
       const startingMcap =
         ret.quoteToken.safety === Safety.SAFE
-          ? new Fraction(memecoinInfos?.launch?.quoteAmount)
-              .multiply(new Fraction(memecoinInfos.launch.teamAllocation, memecoinInfos.totalSupply).add(1))
+          ? new Fraction(memecoin.liquidity.quoteAmount)
+              .multiply(new Fraction(memecoin.launch.teamAllocation, memecoin.totalSupply).add(1))
               .divide(decimalsScale(DECIMALS))
               .multiply(ethPriceAtLaunch)
           : undefined
@@ -92,20 +88,22 @@ export default function TokenMetrics({ memecoinInfos, liquidityLockPosition }: T
     }
 
     return ret
-  }, [liquidityLockPosition?.unlockTime, memecoinInfos, chainId, ethPriceAtLaunch])
+  }, [memecoin, chainId, ethPriceAtLaunch])
+
+  if (!memecoin) return null
 
   // page content
   return (
     <Column gap="16">
       <Row gap="12" alignItems="baseline">
-        <Text.HeadlineLarge>{memecoinInfos.name}</Text.HeadlineLarge>
-        <Text.HeadlineSmall color="text2">${memecoinInfos.symbol}</Text.HeadlineSmall>
+        <Text.HeadlineLarge>{memecoin.name}</Text.HeadlineLarge>
+        <Text.HeadlineSmall color="text2">${memecoin.symbol}</Text.HeadlineSmall>
       </Row>
 
       <Box className={styles.hr} />
 
       <Row gap="16" flexWrap="wrap">
-        <Box className={styles.card} opacity={memecoinInfos.isLaunched ? '1' : '0.5'}>
+        <Box className={styles.card} opacity={memecoin.isLaunched ? '1' : '0.5'}>
           <Column gap="8" alignItems="flex-start">
             <Text.Small>Team allocation:</Text.Small>
             <Text.HeadlineMedium color={SAFETY_COLORS[parsedMemecoinInfos?.teamAllocation?.safety ?? Safety.UNKNOWN]}>
@@ -114,7 +112,7 @@ export default function TokenMetrics({ memecoinInfos, liquidityLockPosition }: T
           </Column>
         </Box>
 
-        <Box className={styles.card} opacity={memecoinInfos.isLaunched ? '1' : '0.5'}>
+        <Box className={styles.card} opacity={memecoin.isLaunched ? '1' : '0.5'}>
           <Column gap="8" alignItems="flex-start">
             <Text.Small>Liquidity lock:</Text.Small>
             <Text.HeadlineMedium
@@ -126,7 +124,7 @@ export default function TokenMetrics({ memecoinInfos, liquidityLockPosition }: T
           </Column>
         </Box>
 
-        <Box className={styles.card} opacity={memecoinInfos.isLaunched ? '1' : '0.5'}>
+        <Box className={styles.card} opacity={memecoin.isLaunched ? '1' : '0.5'}>
           <Column gap="8" alignItems="flex-start">
             <Text.Small>Quote token:</Text.Small>
             <Text.HeadlineMedium
@@ -138,7 +136,7 @@ export default function TokenMetrics({ memecoinInfos, liquidityLockPosition }: T
           </Column>
         </Box>
 
-        <Box className={styles.card} opacity={memecoinInfos.isLaunched ? '1' : '0.5'}>
+        <Box className={styles.card} opacity={memecoin.isLaunched ? '1' : '0.5'}>
           <Column gap="8" alignItems="flex-start">
             <Text.Small>Starting market cap:</Text.Small>
             <Text.HeadlineMedium

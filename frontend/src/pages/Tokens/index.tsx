@@ -21,7 +21,7 @@ export default function TokensPage() {
   const [, toggleImportTokenModel] = useImportTokenModal()
 
   // deployed tokens
-  const { deployedTokenContracts } = useDeploymentStore()
+  const [deployedTokenContracts] = useDeploymentStore()
 
   const launchedStatusCallArgs = useMemo(
     () => [

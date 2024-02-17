@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { AMM } from 'src/constants/misc'
 import { useLaunch, useTeamAllocationTotalPercentage } from 'src/hooks/useLaunchForm'
-import { NotLaunchedMemecoin } from 'src/hooks/useMemecoin'
+import useMemecoin from 'src/hooks/useMemecoin'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
 import * as Icons from 'src/theme/components/Icons'
@@ -12,13 +12,12 @@ import EkuboLaunch from './Ekubo'
 import JediswapLaunch from './Jediswap'
 import * as styles from './style.css'
 
-interface ConfirmFormProps extends LastFormPageProps {
-  memecoinInfos: NotLaunchedMemecoin
-}
-
-export default function ConfirmForm({ previous, memecoinInfos }: ConfirmFormProps) {
+export default function ConfirmForm({ previous }: LastFormPageProps) {
   const [selectedAmm, setSelectedAmm] = useState(AMM.EKUBO)
   const [launch] = useLaunch()
+
+  // memecoin
+  const { data: memecoin } = useMemecoin()
 
   // AMM selection
   const nextAmm = useCallback(
@@ -53,7 +52,9 @@ export default function ConfirmForm({ previous, memecoinInfos }: ConfirmFormProp
   )
 
   // team allocation
-  const teamAllocationTotalPercentage = useTeamAllocationTotalPercentage(memecoinInfos.totalSupply)
+  const teamAllocationTotalPercentage = useTeamAllocationTotalPercentage(memecoin?.totalSupply)
+
+  if (!teamAllocationTotalPercentage || !memecoin) return null
 
   return (
     <Column gap="42">
@@ -67,10 +68,7 @@ export default function ConfirmForm({ previous, memecoinInfos }: ConfirmFormProp
         </Column>
 
         <Box flex="1">
-          <LaunchComponent
-            memecoinInfos={memecoinInfos}
-            teamAllocationTotalPercentage={teamAllocationTotalPercentage}
-          />
+          <LaunchComponent teamAllocationTotalPercentage={teamAllocationTotalPercentage} />
         </Box>
 
         <Column className={styles.ammNavigatior} onClick={nextAmm}>

@@ -5,7 +5,6 @@ import { StoreState } from './index'
 
 export type LaunchSlice = State & Actions
 
-// eslint-disable-next-line import/no-unused-modules
 export interface Holder {
   address: string
   amount: string

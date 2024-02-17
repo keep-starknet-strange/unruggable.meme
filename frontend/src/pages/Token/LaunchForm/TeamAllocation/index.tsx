@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react'
 import { AddTeamAllocationHolderModal } from 'src/components/AddTeamAllocationHolderModal'
 import { MAX_TEAM_ALLOCATION_HOLDERS_COUNT } from 'src/constants/misc'
 import { useTeamAllocation, useTeamAllocationTotalPercentage } from 'src/hooks/useLaunchForm'
-import { NotLaunchedMemecoin } from 'src/hooks/useMemecoin'
+import useMemecoin from 'src/hooks/useMemecoin'
 import { useAddTeamAllocationHolderModal } from 'src/hooks/useModal'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
@@ -15,12 +15,11 @@ import * as styles from './style.css'
 
 const slots = Array(MAX_TEAM_ALLOCATION_HOLDERS_COUNT).fill(0)
 
-interface TeamAllocationFormProps extends FormPageProps {
-  memecoinInfos: NotLaunchedMemecoin
-}
-
-export default function TeamAllocationForm({ previous, next, memecoinInfos }: TeamAllocationFormProps) {
+export default function TeamAllocationForm({ previous, next }: FormPageProps) {
   const [selectedHolderIndex, setSelectedHolderIndex] = useState(0)
+
+  // memecoin
+  const { data: memecoin } = useMemecoin()
 
   // team allocation state
   const { teamAllocation } = useTeamAllocation()
@@ -38,7 +37,9 @@ export default function TeamAllocationForm({ previous, next, memecoinInfos }: Te
   )
 
   // total team allocation
-  const teamAllocationTotalPercentage = useTeamAllocationTotalPercentage(memecoinInfos.totalSupply)
+  const teamAllocationTotalPercentage = useTeamAllocationTotalPercentage(memecoin?.totalSupply)
+
+  if (!teamAllocationTotalPercentage || !memecoin) return null
 
   return (
     <>
@@ -54,7 +55,7 @@ export default function TeamAllocationForm({ previous, next, memecoinInfos }: Te
                 key={index}
                 open={() => openSlot(index)}
                 holder={teamAllocation[index]}
-                totalSupply={memecoinInfos.totalSupply}
+                totalSupply={memecoin.totalSupply}
               />
             ))}
           </Box>
@@ -74,7 +75,7 @@ export default function TeamAllocationForm({ previous, next, memecoinInfos }: Te
         </Column>
       </Column>
 
-      <AddTeamAllocationHolderModal index={selectedHolderIndex} totalSupply={memecoinInfos.totalSupply} />
+      <AddTeamAllocationHolderModal index={selectedHolderIndex} totalSupply={memecoin.totalSupply} />
     </>
   )
 }

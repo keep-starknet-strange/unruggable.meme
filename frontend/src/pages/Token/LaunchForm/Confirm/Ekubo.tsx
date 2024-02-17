@@ -1,7 +1,6 @@
 import { Fraction, Percent } from '@uniswap/sdk-core'
 import { useCallback, useEffect } from 'react'
 import { useHodlLimitForm, useLaunch, useLiquidityForm } from 'src/hooks/useLaunchForm'
-import { NotLaunchedMemecoin } from 'src/hooks/useMemecoin'
 import { useWeiAmountToParsedFiatValue } from 'src/hooks/usePrice'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
@@ -11,11 +10,10 @@ import { formatCurrenyAmount, formatPercentage } from 'src/utils/amount'
 import * as styles from './style.css'
 
 interface EkuboLaunchProps {
-  memecoinInfos: NotLaunchedMemecoin
   teamAllocationTotalPercentage: Percent
 }
 
-export default function EkuboLaunch({ memecoinInfos, teamAllocationTotalPercentage }: EkuboLaunchProps) {
+export default function EkuboLaunch({ teamAllocationTotalPercentage }: EkuboLaunchProps) {
   const { hodlLimit, antiBotPeriod } = useHodlLimitForm()
   const { liquidityLockPeriod, startingMcap } = useLiquidityForm()
 

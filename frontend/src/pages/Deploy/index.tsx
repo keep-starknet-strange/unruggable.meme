@@ -38,7 +38,7 @@ const schema = z.object({
  */
 
 export default function DeployPage() {
-  const { pushDeployedTokenContracts } = useDeploymentStore()
+  const [, pushDeployedTokenContracts] = useDeploymentStore()
 
   // navigation
   const navigate = useNavigate()
@@ -98,6 +98,7 @@ export default function DeployPage() {
         calls: [createMemecoin],
         action: 'Deploy memecoin',
         onSuccess: () => {
+          console.log('hey')
           pushDeployedTokenContracts({
             address: tokenAddress,
             name: data.name,

@@ -1,41 +1,36 @@
 import { useCallback } from 'react'
 import { PrimaryButton } from 'src/components/Button'
-import { Selector } from 'src/constants/misc'
-import { LaunchedMemecoin, LockPosition } from 'src/hooks/useMemecoin'
+import { LiquidityType, Selector } from 'src/constants/misc'
+import useMemecoin from 'src/hooks/useMemecoin'
 import { useExecuteTransaction } from 'src/hooks/useTransactions'
 import { CallData } from 'starknet'
 
-interface CollectFeesProps {
-  memecoinInfos: LaunchedMemecoin
-  liquidityLockPosition: LockPosition
-}
-
-export default function CollectFees({ memecoinInfos, liquidityLockPosition }: CollectFeesProps) {
+export default function CollectFees() {
   // starknet
   const executeTransaction = useExecuteTransaction()
 
+  // memecoin
+  const { data: memecoin } = useMemecoin()
+
   const collectFees = useCallback(() => {
+    if (!memecoin?.isLaunched || memecoin.liquidity.type !== LiquidityType.NFT) return
+
     const collectFeesCalldata = CallData.compile([
-      memecoinInfos.address, // memecoin address
-      liquidityLockPosition.owner,
+      memecoin.address, // memecoin address
+      memecoin.liquidity.owner,
     ])
 
     executeTransaction({
       calls: [
         {
-          contractAddress: memecoinInfos.launch.liquidityLockManager,
+          contractAddress: memecoin.liquidity.lockManager,
           entrypoint: Selector.WITHDRAW_FEES,
           calldata: collectFeesCalldata,
         },
       ],
       action: 'Collect fees',
     })
-  }, [
-    liquidityLockPosition.owner,
-    memecoinInfos.address,
-    memecoinInfos.launch.liquidityLockManager,
-    executeTransaction,
-  ])
+  }, [memecoin, executeTransaction])
 
   return <PrimaryButton onClick={collectFees}>Collect fees</PrimaryButton>
 }

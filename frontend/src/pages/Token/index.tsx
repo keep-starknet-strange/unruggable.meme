@@ -1,11 +1,11 @@
 import { Eye } from 'lucide-react'
 import moment from 'moment'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { useMatch } from 'react-router-dom'
 import Section from 'src/components/Section'
 import { LiquidityType } from 'src/constants/misc'
 import { Safety } from 'src/constants/safety'
-import { LaunchedMemecoin, useMemecoinInfos, useMemecoinliquidityLockPosition } from 'src/hooks/useMemecoin'
+import useMemecoin from 'src/hooks/useMemecoin'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
@@ -27,7 +27,7 @@ export default function TokenPage() {
 
   // URL
   const match = useMatch('/token/:address')
-  const memecoinAddress = useMemo(() => {
+  const tokenAddress = useMemo(() => {
     if (match?.params.address) {
       return getChecksumAddress(match?.params.address)
     } else {
@@ -39,44 +39,24 @@ export default function TokenPage() {
   const next = useCallback(() => setLaunchFormPageIndex((page) => page + 1), [])
   const previous = useCallback(() => setLaunchFormPageIndex((page) => page - 1), [])
 
-  // get memecoin infos
-  const [{ data: memecoinInfos, error, indexing }, getMemecoinInfos] = useMemecoinInfos()
-
-  useEffect(() => {
-    if (memecoinAddress) {
-      getMemecoinInfos(memecoinAddress)
-    }
-  }, [getMemecoinInfos, memecoinAddress])
-
-  // get memecoin launch status
-  const liquidityLockPosition = useMemecoinliquidityLockPosition(
-    memecoinInfos?.launch?.liquidityType,
-    memecoinInfos?.launch?.liquidityLockManager,
-    {
-      lockPosition: memecoinInfos?.launch?.liquidityLockPosition,
-      ekuboId: memecoinInfos?.launch?.liquidityEkuboId,
-    }
-  )
+  // memecoin
+  const { data: memecoin, ruggable } = useMemecoin(tokenAddress ?? undefined)
 
   // page content
   const mainContent = useMemo(() => {
-    if (indexing) {
-      return <Text.Body textAlign="center">Indexing...</Text.Body>
-    }
-
-    if (error) {
+    if (ruggable) {
       return <Text.Body textAlign="center">This token is not unruggable</Text.Body>
     }
 
-    if (!memecoinInfos) return
+    if (!memecoin) return
 
-    return <TokenMetrics memecoinInfos={memecoinInfos} liquidityLockPosition={liquidityLockPosition} />
-  }, [indexing, error, memecoinInfos, liquidityLockPosition])
+    return <TokenMetrics />
+  }, [ruggable, memecoin])
 
   // Owner content
 
   const ownerContent = useMemo(() => {
-    if (!memecoinInfos || error) return
+    if (!memecoin) return
 
     const onlyVisibleToYou = (
       <Row gap="2">
@@ -85,37 +65,31 @@ export default function TokenPage() {
       </Row>
     )
 
-    if (liquidityLockPosition?.isOwner) {
+    if (memecoin.isLaunched && memecoin.isOwner) {
       const liquidityLock = moment.duration(
-        moment(moment.unix(liquidityLockPosition.unlockTime)).diff(moment.now()),
+        moment(moment.unix(memecoin.liquidity.unlockTime)).diff(moment.now()),
         'milliseconds'
       )
       const liquidityLockSafety = getLiquidityLockSafety(liquidityLock)
 
       return (
         <>
-          {memecoinInfos.launch?.liquidityType === LiquidityType.NFT && (
+          {memecoin.liquidity.type === LiquidityType.NFT && (
             <Column className={styles.container}>
-              <CollectFees
-                memecoinInfos={memecoinInfos as LaunchedMemecoin}
-                liquidityLockPosition={liquidityLockPosition}
-              />
+              <CollectFees />
               {onlyVisibleToYou}
             </Column>
           )}
 
           {liquidityLockSafety !== Safety.SAFE && (
             <Column className={styles.container}>
-              <IncreaseLiquidityLock
-                memecoinInfos={memecoinInfos as LaunchedMemecoin}
-                liquidityLockPosition={liquidityLockPosition}
-              />
+              <IncreaseLiquidityLock />
               {onlyVisibleToYou}
             </Column>
           )}
         </>
       )
-    } else if (memecoinInfos.isOwner) {
+    } else if (memecoin.isOwner) {
       return (
         <Box className={styles.container}>
           <Column gap="32">
@@ -128,11 +102,9 @@ export default function TokenPage() {
 
               {launchFormPageIndex === 1 && <LiquidityForm next={next} previous={previous} />}
 
-              {launchFormPageIndex === 2 && (
-                <TeamAllocationForm next={next} previous={previous} memecoinInfos={memecoinInfos} />
-              )}
+              {launchFormPageIndex === 2 && <TeamAllocationForm next={next} previous={previous} />}
 
-              {launchFormPageIndex === 3 && <ConfirmForm previous={previous} memecoinInfos={memecoinInfos} />}
+              {launchFormPageIndex === 3 && <ConfirmForm previous={previous} />}
             </Column>
 
             {onlyVisibleToYou}
@@ -142,7 +114,7 @@ export default function TokenPage() {
     }
 
     return
-  }, [memecoinInfos, error, liquidityLockPosition, launchFormPageIndex, next, previous])
+  }, [memecoin, launchFormPageIndex, next, previous])
 
   return (
     <Section>

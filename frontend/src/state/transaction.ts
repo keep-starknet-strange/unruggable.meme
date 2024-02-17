@@ -3,7 +3,7 @@ import { StateCreator } from 'zustand'
 
 import { StoreState } from './index'
 
-export type TransactionsSlice = State & Actions
+export type TransactionSlice = State & Actions
 
 export interface InvokeTransactionDetails {
   calls: Call[]
@@ -20,7 +20,7 @@ interface Actions {
   resetTransaction: () => void
 }
 
-export const createTransactionsSlice: StateCreator<StoreState, [['zustand/immer', never]], [], TransactionsSlice> = (
+export const createTransactionSlice: StateCreator<StoreState, [['zustand/immer', never]], [], TransactionSlice> = (
   set
 ) => ({
   invokeTransactionDetails: null,

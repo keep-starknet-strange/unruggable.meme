@@ -5,9 +5,10 @@ import { immer } from 'zustand/middleware/immer'
 import { ApplicationSlice, createApplicationSlice } from './application'
 import { ContractsSlice, createContractsSlice } from './contracts'
 import { createLaunchSlice, LaunchSlice } from './launch'
-import { createTransactionsSlice, TransactionsSlice } from './transactions'
+import { createMemecoinSlice, MemecoinSlice } from './memecoin'
+import { createTransactionSlice, TransactionSlice } from './transaction'
 
-export type StoreState = ApplicationSlice & ContractsSlice & LaunchSlice & TransactionsSlice
+export type StoreState = ApplicationSlice & ContractsSlice & LaunchSlice & TransactionSlice & MemecoinSlice
 
 const PERSISTING_KEYS: (keyof StoreState)[] = ['deployedTokenContracts']
 
@@ -17,7 +18,8 @@ export const useBoundStore = create<StoreState>()(
       ...createApplicationSlice(...a),
       ...createContractsSlice(...a),
       ...createLaunchSlice(...a),
-      ...createTransactionsSlice(...a),
+      ...createTransactionSlice(...a),
+      ...createMemecoinSlice(...a),
     })),
     {
       name: 'unruggable-state-storage-v0.1.3', // bump version after breaking changes

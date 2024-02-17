@@ -35,10 +35,12 @@ export function useTeamAllocation() {
   }))
 }
 
-export function useTeamAllocationTotalPercentage(totalSupply: string) {
+export function useTeamAllocationTotalPercentage(totalSupply?: string) {
   const { teamAllocation } = useTeamAllocation()
 
   return useMemo(() => {
+    if (!totalSupply) return
+
     const totalTeamAllocation = Object.values(teamAllocation).reduce(
       (acc, holder) => acc.add(parseFormatedAmount(holder?.amount ?? 0)),
       new Fraction(0)
