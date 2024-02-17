@@ -6,8 +6,12 @@ import Input from 'src/components/Input'
 import PercentInput from 'src/components/Input/PercentInput'
 import Slider from 'src/components/Slider'
 import {
+  MAX_HODL_LIMIT,
   MAX_TRANSFER_RESTRICTION_DELAY,
+  MIN_HODL_LIMIT,
   MIN_TRANSFER_RESTRICTION_DELAY,
+  PERCENTAGE_INPUT_PRECISION,
+  RECOMMENDED_HODL_LIMIT,
   TRANSFER_RESTRICTION_DELAY_STEP,
 } from 'src/constants/misc'
 import { useHodlLimitForm } from 'src/hooks/useLaunchForm'
@@ -24,7 +28,15 @@ import * as styles from './style.css'
 // zod schemes
 
 const schema = z.object({
-  hodlLimit: percentInput,
+  hodlLimit: percentInput
+    .refine(
+      (input) => +input <= +MAX_HODL_LIMIT.toFixed(PERCENTAGE_INPUT_PRECISION),
+      `Hodl limit cannot exceed ${+MAX_HODL_LIMIT.toFixed(PERCENTAGE_INPUT_PRECISION)}%`
+    )
+    .refine(
+      (input) => +input >= +MIN_HODL_LIMIT.toFixed(PERCENTAGE_INPUT_PRECISION),
+      `Hodl limit cannot fall behind ${+MIN_HODL_LIMIT.toFixed(PERCENTAGE_INPUT_PRECISION)}%`
+    ),
 })
 
 export default function HodlLimitForm({ next, previous }: FormPageProps) {
@@ -66,7 +78,7 @@ export default function HodlLimitForm({ next, previous }: FormPageProps) {
           <Text.HeadlineSmall>Hold limit</Text.HeadlineSmall>
           <PercentInput
             addon={<Text.HeadlineSmall>%</Text.HeadlineSmall>}
-            placeholder="1.00"
+            placeholder={`${RECOMMENDED_HODL_LIMIT.toFixed(2)} (recommended)`}
             {...register('hodlLimit')}
           />
 

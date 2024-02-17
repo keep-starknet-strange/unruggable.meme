@@ -32,8 +32,14 @@ export enum LiquidityType {
   NFT = 'EkuboNFT',
 }
 
+export const PERCENTAGE_INPUT_PRECISION = 2
+
 export const MIN_STARTING_MCAP = 5_000 // $5k
 export const RECOMMENDED_STARTING_MCAP = 10_000 // $12k
+
+export const MIN_HODL_LIMIT = new Percent(1, 200) // 0.5%
+export const MAX_HODL_LIMIT = new Percent(1, 1) // 100%
+export const RECOMMENDED_HODL_LIMIT = new Percent(1, 100) // 1%
 
 export const TRANSFER_RESTRICTION_DELAY_STEP = 15 // 15m
 export const MIN_TRANSFER_RESTRICTION_DELAY = 30 // 30m
@@ -49,5 +55,3 @@ export const MAX_LIQUIDITY_LOCK_INCREASE = 25 // 2 years and 1 month
 
 export const LIQUIDITY_LOCK_FOREVER_TIMESTAMP = 9999999999 // 20/11/2286
 export const FOREVER = 'Forever'
-
-// export const MIN_HODL_LIMIT = new Percent(1, 200) // 0.5%
