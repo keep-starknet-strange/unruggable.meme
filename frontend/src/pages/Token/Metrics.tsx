@@ -102,52 +102,56 @@ export default function TokenMetrics() {
 
       <Box className={styles.hr} />
 
-      <Row gap="16" flexWrap="wrap">
-        <Box className={styles.card} opacity={memecoin.isLaunched ? '1' : '0.5'}>
-          <Column gap="8" alignItems="flex-start">
-            <Text.Small>Team allocation:</Text.Small>
-            <Text.HeadlineMedium color={SAFETY_COLORS[parsedMemecoinInfos?.teamAllocation?.safety ?? Safety.UNKNOWN]}>
-              {parsedMemecoinInfos?.teamAllocation?.parsedValue ?? 'Not launched'}
-            </Text.HeadlineMedium>
-          </Column>
-        </Box>
+      {memecoin.isLaunched ? (
+        <Row gap="16" flexWrap="wrap">
+          <Box className={styles.card}>
+            <Column gap="8" alignItems="flex-start">
+              <Text.Small>Team allocation:</Text.Small>
+              <Text.HeadlineMedium color={SAFETY_COLORS[parsedMemecoinInfos?.teamAllocation?.safety ?? Safety.UNKNOWN]}>
+                {parsedMemecoinInfos?.teamAllocation?.parsedValue ?? 'Not launched'}
+              </Text.HeadlineMedium>
+            </Column>
+          </Box>
 
-        <Box className={styles.card} opacity={memecoin.isLaunched ? '1' : '0.5'}>
-          <Column gap="8" alignItems="flex-start">
-            <Text.Small>Liquidity lock:</Text.Small>
-            <Text.HeadlineMedium
-              color={SAFETY_COLORS[parsedMemecoinInfos?.liquidityLock?.safety ?? Safety.UNKNOWN]}
-              whiteSpace="nowrap"
-            >
-              {parsedMemecoinInfos?.liquidityLock?.parsedValue ?? 'Not launched'}
-            </Text.HeadlineMedium>
-          </Column>
-        </Box>
+          <Box className={styles.card}>
+            <Column gap="8" alignItems="flex-start">
+              <Text.Small>Liquidity lock:</Text.Small>
+              <Text.HeadlineMedium
+                color={SAFETY_COLORS[parsedMemecoinInfos?.liquidityLock?.safety ?? Safety.UNKNOWN]}
+                whiteSpace="nowrap"
+              >
+                {parsedMemecoinInfos?.liquidityLock?.parsedValue ?? 'Not launched'}
+              </Text.HeadlineMedium>
+            </Column>
+          </Box>
 
-        <Box className={styles.card} opacity={memecoin.isLaunched ? '1' : '0.5'}>
-          <Column gap="8" alignItems="flex-start">
-            <Text.Small>Quote token:</Text.Small>
-            <Text.HeadlineMedium
-              color={SAFETY_COLORS[parsedMemecoinInfos?.quoteToken?.safety ?? Safety.UNKNOWN]}
-              whiteSpace="nowrap"
-            >
-              {parsedMemecoinInfos?.quoteToken?.parsedValue ?? 'Not launched'}
-            </Text.HeadlineMedium>
-          </Column>
-        </Box>
+          <Box className={styles.card}>
+            <Column gap="8" alignItems="flex-start">
+              <Text.Small>Quote token:</Text.Small>
+              <Text.HeadlineMedium
+                color={SAFETY_COLORS[parsedMemecoinInfos?.quoteToken?.safety ?? Safety.UNKNOWN]}
+                whiteSpace="nowrap"
+              >
+                {parsedMemecoinInfos?.quoteToken?.parsedValue ?? 'Not launched'}
+              </Text.HeadlineMedium>
+            </Column>
+          </Box>
 
-        <Box className={styles.card} opacity={memecoin.isLaunched ? '1' : '0.5'}>
-          <Column gap="8" alignItems="flex-start">
-            <Text.Small>Starting market cap:</Text.Small>
-            <Text.HeadlineMedium
-              color={SAFETY_COLORS[parsedMemecoinInfos?.startingMcap?.safety ?? Safety.UNKNOWN]}
-              whiteSpace="nowrap"
-            >
-              {parsedMemecoinInfos?.startingMcap?.parsedValue ?? 'Not launched'}
-            </Text.HeadlineMedium>
-          </Column>
-        </Box>
-      </Row>
+          <Box className={styles.card}>
+            <Column gap="8" alignItems="flex-start">
+              <Text.Small>Starting market cap:</Text.Small>
+              <Text.HeadlineMedium
+                color={SAFETY_COLORS[parsedMemecoinInfos?.startingMcap?.safety ?? Safety.UNKNOWN]}
+                whiteSpace="nowrap"
+              >
+                {parsedMemecoinInfos?.startingMcap?.parsedValue ?? 'Not launched'}
+              </Text.HeadlineMedium>
+            </Column>
+          </Box>
+        </Row>
+      ) : (
+        <Text.HeadlineMedium color={SAFETY_COLORS[Safety.UNKNOWN]}>Not launched</Text.HeadlineMedium>
+      )}
     </Column>
   )
 }

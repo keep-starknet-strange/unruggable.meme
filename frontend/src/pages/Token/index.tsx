@@ -122,7 +122,7 @@ export default function TokenPage() {
   return (
     <Section>
       <Column gap="32" alignItems="center" width="full">
-        <Box className={styles.container}>{mainContent}</Box>
+        {mainContent && <Box className={styles.container}>{mainContent}</Box>}
         {!!ownerContent && <>{ownerContent}</>}
       </Column>
     </Section>
