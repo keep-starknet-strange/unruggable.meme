@@ -16,19 +16,24 @@ export function useHodlLimitForm() {
 
 export function useLiquidityForm() {
   return useBoundStore((state) => ({
-    liquidityLockPeriod: state.liquidityLockPeriod,
     startingMcap: state.startingMcap,
-    setLiquidityLockPeriod: state.setLiquidityLockPeriod,
     setStartingMcap: state.setStartingMcap,
   }))
 }
 
-export function useLaunch() {
+export function useJediswapLiquidityForm() {
   return useBoundStore((state) => ({
-    launch: state.launch,
-    setLaunch: state.setLaunch,
-    resetLaunchForm: state.resetLaunchForm,
+    liquidityLockPeriod: state.liquidityLockPeriod,
+    setLiquidityLockPeriod: state.setLiquidityLockPeriod,
   }))
+}
+
+export function useAmm() {
+  return useBoundStore((state) => [state.amm, state.setAMM] as const)
+}
+
+export function useResetLaunchForm() {
+  return useBoundStore((state) => state.resetLaunchForm)
 }
 
 export function useTeamAllocation() {

@@ -63,18 +63,6 @@ export default function HodlLimitForm({ next, previous }: FormPageProps) {
 
       <Column gap="16">
         <Column gap="8">
-          <Text.HeadlineSmall>Disable anti bot after</Text.HeadlineSmall>
-          <Slider
-            value={antiBotPeriod}
-            min={MIN_TRANSFER_RESTRICTION_DELAY}
-            step={TRANSFER_RESTRICTION_DELAY_STEP}
-            max={MAX_TRANSFER_RESTRICTION_DELAY}
-            onSlidingChange={setAntiBotPeriod}
-            addon={<Input value={parsedAntiBotPeriod} />}
-          />
-        </Column>
-
-        <Column gap="8">
           <Text.HeadlineSmall>Hold limit</Text.HeadlineSmall>
           <PercentInput
             addon={<Text.HeadlineSmall>%</Text.HeadlineSmall>}
@@ -85,6 +73,18 @@ export default function HodlLimitForm({ next, previous }: FormPageProps) {
           <Box className={styles.errorContainer}>
             {errors.hodlLimit?.message ? <Text.Error>{errors.hodlLimit.message}</Text.Error> : null}
           </Box>
+        </Column>
+
+        <Column gap="8">
+          <Text.HeadlineSmall>Disable anti bot after</Text.HeadlineSmall>
+          <Slider
+            value={antiBotPeriod}
+            min={MIN_TRANSFER_RESTRICTION_DELAY}
+            step={TRANSFER_RESTRICTION_DELAY_STEP}
+            max={MAX_TRANSFER_RESTRICTION_DELAY}
+            onSlidingChange={setAntiBotPeriod}
+            addon={<Input value={parsedAntiBotPeriod} />}
+          />
         </Column>
       </Column>
 

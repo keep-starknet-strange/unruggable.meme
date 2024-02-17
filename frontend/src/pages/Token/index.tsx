@@ -15,9 +15,10 @@ import { getChecksumAddress } from 'starknet'
 
 import CollectFees from './CollectFees'
 import IncreaseLiquidityLock from './IncreaseLiquidityLock'
+import AMMForm from './LaunchForm/AMM'
 import ConfirmForm from './LaunchForm/Confirm'
 import HodlLimitForm from './LaunchForm/HodlLimit'
-import LiquidityForm from './LaunchForm/Liqiudity'
+import LiquidityForm from './LaunchForm/Liquidity'
 import TeamAllocationForm from './LaunchForm/TeamAllocation'
 import TokenMetrics from './Metrics'
 import * as styles from './style.css'
@@ -98,13 +99,15 @@ export default function TokenPage() {
                 <Text.HeadlineLarge>Launch token</Text.HeadlineLarge>
               </Row>
 
-              {launchFormPageIndex === 0 && <HodlLimitForm next={next} />}
+              {launchFormPageIndex === 0 && <AMMForm next={next} />}
 
               {launchFormPageIndex === 1 && <LiquidityForm next={next} previous={previous} />}
 
-              {launchFormPageIndex === 2 && <TeamAllocationForm next={next} previous={previous} />}
+              {launchFormPageIndex === 2 && <HodlLimitForm next={next} previous={previous} />}
 
-              {launchFormPageIndex === 3 && <ConfirmForm previous={previous} />}
+              {launchFormPageIndex === 3 && <TeamAllocationForm next={next} previous={previous} />}
+
+              {launchFormPageIndex === 4 && <ConfirmForm previous={previous} />}
             </Column>
 
             {onlyVisibleToYou}

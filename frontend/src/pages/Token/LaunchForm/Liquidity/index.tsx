@@ -1,28 +1,18 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import moment from 'moment'
 import { useCallback, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
-import Input from 'src/components/Input'
 import NumericalInput from 'src/components/Input/NumericalInput'
-import Slider from 'src/components/Slider'
-import {
-  FOREVER,
-  LIQUIDITY_LOCK_PERIOD_STEP,
-  MAX_LIQUIDITY_LOCK_PERIOD,
-  MIN_LIQUIDITY_LOCK_PERIOD,
-  MIN_STARTING_MCAP,
-  RECOMMENDED_STARTING_MCAP,
-} from 'src/constants/misc'
-import { useLiquidityForm } from 'src/hooks/useLaunchForm'
+import { AMM, MIN_STARTING_MCAP, RECOMMENDED_STARTING_MCAP } from 'src/constants/misc'
+import { useAmm, useLiquidityForm } from 'src/hooks/useLaunchForm'
 import Box from 'src/theme/components/Box'
 import { Column } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
 import { parseFormatedAmount } from 'src/utils/amount'
-import { parseMonthsDuration } from 'src/utils/moment'
 import { currencyInput } from 'src/utils/zod'
 import { z } from 'zod'
 
-import { FormPageProps, Submit } from './common'
+import { FormPageProps, Submit } from '../common'
+import JediswapLiquidityForm from './Jediswap'
 import * as styles from './style.css'
 
 // zod schemes
@@ -33,8 +23,10 @@ const schema = z.object({
   }),
 })
 
-export default function LiquidityForm({ next, previous }: FormPageProps) {
-  const { liquidityLockPeriod, startingMcap, setLiquidityLockPeriod, setStartingMcap } = useLiquidityForm()
+// eslint-disable-next-line import/no-unused-modules
+export default function PriceForm({ next, previous }: FormPageProps) {
+  const { startingMcap, setStartingMcap } = useLiquidityForm()
+  const [amm] = useAmm()
 
   // form
   const {
@@ -48,14 +40,6 @@ export default function LiquidityForm({ next, previous }: FormPageProps) {
     },
   })
 
-  const parsedLiquidityLockPeriod = useMemo(
-    () =>
-      liquidityLockPeriod === MAX_LIQUIDITY_LOCK_PERIOD
-        ? FOREVER
-        : parseMonthsDuration(moment.duration(liquidityLockPeriod, 'months')),
-    [liquidityLockPeriod]
-  )
-
   const submit = useCallback(
     (data: z.infer<typeof schema>) => {
       setStartingMcap(data.startingMcap)
@@ -63,6 +47,16 @@ export default function LiquidityForm({ next, previous }: FormPageProps) {
     },
     [next, setStartingMcap]
   )
+
+  const ammSpecificComponent = useMemo(() => {
+    switch (amm) {
+      case AMM.EKUBO:
+        return null
+
+      case AMM.JEDISWAP:
+        return <JediswapLiquidityForm />
+    }
+  }, [amm])
 
   return (
     <Column gap="42">
@@ -72,18 +66,6 @@ export default function LiquidityForm({ next, previous }: FormPageProps) {
 
       <Column as="form" onSubmit={handleSubmit(submit)} gap="42">
         <Column gap="16">
-          <Column gap="8">
-            <Text.HeadlineSmall>Lock liquidity for</Text.HeadlineSmall>
-            <Slider
-              value={liquidityLockPeriod}
-              min={MIN_LIQUIDITY_LOCK_PERIOD}
-              step={LIQUIDITY_LOCK_PERIOD_STEP}
-              max={MAX_LIQUIDITY_LOCK_PERIOD}
-              onSlidingChange={setLiquidityLockPeriod}
-              addon={<Input value={parsedLiquidityLockPeriod} />}
-            />
-          </Column>
-
           <Column gap="8">
             <Text.HeadlineSmall>Starting market cap</Text.HeadlineSmall>
 
@@ -97,6 +79,8 @@ export default function LiquidityForm({ next, previous }: FormPageProps) {
               {errors.startingMcap?.message ? <Text.Error>{errors.startingMcap.message}</Text.Error> : null}
             </Box>
           </Column>
+
+          {ammSpecificComponent}
         </Column>
 
         <Submit previous={previous} />

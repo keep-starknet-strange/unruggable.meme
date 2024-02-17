@@ -1,13 +1,14 @@
 import { Fraction } from '@uniswap/sdk-core'
 import moment from 'moment'
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { ETH_ADDRESS, FACTORY_ADDRESSES } from 'src/constants/contracts'
 import { DECIMALS, LIQUIDITY_LOCK_FOREVER_TIMESTAMP, MAX_LIQUIDITY_LOCK_PERIOD, Selector } from 'src/constants/misc'
 import useChainId from 'src/hooks/useChainId'
 import {
   useHodlLimitForm,
-  useLaunch,
+  useJediswapLiquidityForm,
   useLiquidityForm,
+  useResetLaunchForm,
   useTeamAllocation,
   useTeamAllocationTotalPercentage,
 } from 'src/hooks/useLaunchForm'
@@ -18,14 +19,16 @@ import { parseFormatedAmount } from 'src/utils/amount'
 import { decimalsScale } from 'src/utils/decimalScale'
 import { CallData, uint256 } from 'starknet'
 
+import { LastFormPageProps } from '../common'
 import LaunchTemplate from './template'
 
-export default function JediswapLaunch() {
+export default function JediswapLaunch({ previous }: LastFormPageProps) {
   // form data
   const { hodlLimit, antiBotPeriod } = useHodlLimitForm()
-  const { liquidityLockPeriod, startingMcap } = useLiquidityForm()
+  const { startingMcap } = useLiquidityForm()
+  const { liquidityLockPeriod } = useJediswapLiquidityForm()
   const { teamAllocation } = useTeamAllocation()
-  const { setLaunch, resetLaunchForm } = useLaunch()
+  const resetLaunchForm = useResetLaunchForm()
 
   // memecoin
   const { data: memecoin, refresh: refreshMemecoin } = useMemecoin()
@@ -119,10 +122,5 @@ export default function JediswapLaunch() {
     resetLaunchForm,
   ])
 
-  // set launch
-  useEffect(() => {
-    setLaunch(launch)
-  }, [launch, setLaunch])
-
-  return <LaunchTemplate liquidityPrice={quoteAmount} />
+  return <LaunchTemplate liquidityPrice={quoteAmount} previous={previous} next={launch} />
 }

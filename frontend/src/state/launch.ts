@@ -1,4 +1,4 @@
-import { MAX_LIQUIDITY_LOCK_PERIOD, MAX_TRANSFER_RESTRICTION_DELAY } from 'src/constants/misc'
+import { AMM, MAX_LIQUIDITY_LOCK_PERIOD, MAX_TRANSFER_RESTRICTION_DELAY } from 'src/constants/misc'
 import { StateCreator } from 'zustand'
 
 import { StoreState } from './index'
@@ -17,8 +17,8 @@ interface State {
   antiBotPeriod: number
   liquidityLockPeriod: number
   startingMcap: string | null
-  launch: (() => void) | null
   teamAllocation: TeamAllocation
+  amm: AMM
 }
 
 interface Actions {
@@ -26,7 +26,7 @@ interface Actions {
   setAntiBotPeriod: (antiBotPeriod: number) => void
   setLiquidityLockPeriod: (liquidityLockPeriod: number) => void
   setStartingMcap: (startingMcap: string | null) => void
-  setLaunch: (launch: () => void) => void
+  setAMM: (amm: AMM) => void
   setTeamAllocationHolder: (holder: Holder, index: number) => void
   removeTeamAllocationHolder: (index: number) => void
   resetLaunchForm: () => void
@@ -37,8 +37,8 @@ const initialState = {
   antiBotPeriod: MAX_TRANSFER_RESTRICTION_DELAY,
   liquidityLockPeriod: MAX_LIQUIDITY_LOCK_PERIOD,
   startingMcap: null,
-  launch: null,
   teamAllocation: {},
+  amm: AMM.EKUBO, // we don't really care about this value
 }
 
 export const createLaunchSlice: StateCreator<StoreState, [['zustand/immer', never]], [], LaunchSlice> = (set) => ({
@@ -48,7 +48,8 @@ export const createLaunchSlice: StateCreator<StoreState, [['zustand/immer', neve
   setAntiBotPeriod: (antiBotPeriod) => set({ antiBotPeriod }),
   setLiquidityLockPeriod: (liquidityLockPeriod) => set({ liquidityLockPeriod }),
   setStartingMcap: (startingMcap) => set({ startingMcap }),
-  setLaunch: (launch: () => void) => set({ launch }),
+  setAMM: (amm) => set({ amm }),
+
   setTeamAllocationHolder: (holder: Holder, index: number) =>
     set((state) => {
       state.teamAllocation[index] = holder
