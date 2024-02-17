@@ -101,11 +101,11 @@ export default function TokenPage() {
 
               {launchFormPageIndex === 0 && <AMMForm next={next} />}
 
-              {launchFormPageIndex === 1 && <LiquidityForm next={next} previous={previous} />}
+              {launchFormPageIndex === 1 && <TeamAllocationForm next={next} previous={previous} />}
 
               {launchFormPageIndex === 2 && <HodlLimitForm next={next} previous={previous} />}
 
-              {launchFormPageIndex === 3 && <TeamAllocationForm next={next} previous={previous} />}
+              {launchFormPageIndex === 3 && <LiquidityForm next={next} previous={previous} />}
 
               {launchFormPageIndex === 4 && <ConfirmForm previous={previous} />}
             </Column>

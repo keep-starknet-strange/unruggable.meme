@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
-import { PrimaryButton } from 'src/components/Button'
-import { AMM } from 'src/constants/misc'
+import { CardButton } from 'src/components/Button'
+import { AMM } from 'src/constants/AMMs'
+import { AmmInfos } from 'src/constants/AMMs'
 import { useAmm } from 'src/hooks/useLaunchForm'
 import { Column } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
@@ -22,15 +23,19 @@ export default function AMMForm({ next }: FormPageProps) {
   return (
     <Column gap="42">
       <Text.Custom color="text2" fontWeight="normal" fontSize="24">
-        Liquidity
+        Choose an AMM
       </Text.Custom>
 
       <Column gap="32">
         <Column gap="16">
           {Object.values(AMM).map((amm) => (
-            <PrimaryButton key={amm} onClick={() => selectAmm(amm)}>
-              {amm}
-            </PrimaryButton>
+            <CardButton
+              key={amm}
+              onClick={() => selectAmm(amm)}
+              title={amm}
+              subtitle={AmmInfos[amm].description}
+              icon={() => AmmInfos[amm].icon}
+            />
           ))}
         </Column>
       </Column>

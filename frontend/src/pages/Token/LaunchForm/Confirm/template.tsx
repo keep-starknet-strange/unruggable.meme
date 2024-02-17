@@ -1,6 +1,6 @@
 import { Fraction } from '@uniswap/sdk-core'
 import { useMemo } from 'react'
-import { AMM } from 'src/constants/misc'
+import { AMM } from 'src/constants/AMMs'
 import { useAmm, useTeamAllocationTotalPercentage } from 'src/hooks/useLaunchForm'
 import useMemecoin from 'src/hooks/useMemecoin'
 import { useWeiAmountToParsedFiatValue } from 'src/hooks/usePrice'

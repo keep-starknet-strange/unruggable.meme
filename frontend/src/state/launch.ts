@@ -1,4 +1,5 @@
-import { AMM, MAX_LIQUIDITY_LOCK_PERIOD, MAX_TRANSFER_RESTRICTION_DELAY } from 'src/constants/misc'
+import { AMM } from 'src/constants/AMMs'
+import { MAX_LIQUIDITY_LOCK_PERIOD, MAX_TRANSFER_RESTRICTION_DELAY } from 'src/constants/misc'
 import { StateCreator } from 'zustand'
 
 import { StoreState } from './index'

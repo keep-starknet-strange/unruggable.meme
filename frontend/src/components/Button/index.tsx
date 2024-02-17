@@ -1,5 +1,7 @@
 import clsx from 'clsx'
 import Box, { BoxProps } from 'src/theme/components/Box'
+import { Column, Row } from 'src/theme/components/Flex'
+import * as Text from 'src/theme/components/Text'
 
 import * as styles from './style.css'
 
@@ -28,3 +30,29 @@ export const SecondaryButton = ({ className, withIcon, large = false, ...props }
 export const IconButton = ({ className, ...props }: ButtonProps) => (
   <Box as="button" className={clsx(className, styles.iconButton)} {...props} />
 )
+
+// Card button
+
+interface CardButtonProps extends BoxProps {
+  title: string
+  subtitle: string
+  icon: () => JSX.Element
+}
+
+export const CardButton = ({ className, title, subtitle, icon, ...props }: CardButtonProps) => {
+  return (
+    <Box as="button" className={clsx(className, styles.cardButton)} {...props}>
+      <Row gap="12" alignItems="flex-start">
+        <Box className={styles.cardButtonIconContainer}>{icon()}</Box>
+
+        <Column gap="4">
+          <Text.Body>{title}</Text.Body>
+
+          <Text.Custom fontWeight="normal" fontSize="14" color="text2">
+            {subtitle}
+          </Text.Custom>
+        </Column>
+      </Row>
+    </Box>
+  )
+}

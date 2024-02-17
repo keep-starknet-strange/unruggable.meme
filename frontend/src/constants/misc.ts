@@ -27,11 +27,6 @@ export enum Selector {
   EXTEND_LOCK = 'extend_lock',
 }
 
-export enum AMM {
-  EKUBO = 'Ekubo',
-  JEDISWAP = 'Jediswap',
-}
-
 export enum LiquidityType {
   ERC20 = 'JediERC20',
   NFT = 'EkuboNFT',
