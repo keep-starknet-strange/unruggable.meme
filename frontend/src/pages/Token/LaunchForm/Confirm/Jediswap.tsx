@@ -1,7 +1,7 @@
 import { Fraction } from '@uniswap/sdk-core'
 import moment from 'moment'
 import { useCallback, useMemo } from 'react'
-import { ETH_ADDRESS, FACTORY_ADDRESSES } from 'src/constants/contracts'
+import { FACTORY_ADDRESSES } from 'src/constants/contracts'
 import { DECIMALS, LIQUIDITY_LOCK_FOREVER_TIMESTAMP, MAX_LIQUIDITY_LOCK_PERIOD, Selector } from 'src/constants/misc'
 import useChainId from 'src/hooks/useChainId'
 import {
@@ -25,7 +25,7 @@ import LaunchTemplate from './template'
 export default function JediswapLaunch({ previous }: LastFormPageProps) {
   // form data
   const { hodlLimit, antiBotPeriod } = useHodlLimitForm()
-  const { startingMcap } = useLiquidityForm()
+  const { startingMcap, quoteTokenAddress } = useLiquidityForm()
   const { liquidityLockPeriod } = useJediswapLiquidityForm()
   const { teamAllocation } = useTeamAllocation()
   const resetLaunchForm = useResetLaunchForm()
@@ -81,7 +81,7 @@ export default function JediswapLaunch({ previous }: LastFormPageProps) {
       memecoin.address, // memecoin address
       antiBotPeriod * 60, // anti bot period in seconds
       +hodlLimit * 100, // hodl limit
-      ETH_ADDRESS, // quote token
+      quoteTokenAddress, // quote token
       initalHolders, // initial holders
       initalHoldersAmounts, // intial holders amounts
       uin256QuoteAmount, // quote amount
@@ -93,7 +93,7 @@ export default function JediswapLaunch({ previous }: LastFormPageProps) {
     executeTransaction({
       calls: [
         {
-          contractAddress: ETH_ADDRESS,
+          contractAddress: quoteTokenAddress,
           entrypoint: Selector.APPROVE,
           calldata: approveCalldata,
         },
@@ -120,6 +120,7 @@ export default function JediswapLaunch({ previous }: LastFormPageProps) {
     executeTransaction,
     refreshMemecoin,
     resetLaunchForm,
+    quoteTokenAddress,
   ])
 
   return <LaunchTemplate liquidityPrice={quoteAmount} previous={previous} next={launch} />

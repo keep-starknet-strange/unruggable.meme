@@ -25,6 +25,8 @@ export enum Selector {
   LIQUIDITY_POSITION_DETAILS = 'liquidity_position_details',
   WITHDRAW_FEES = 'withdraw_fees',
   EXTEND_LOCK = 'extend_lock',
+  BALANCE_OF_CAMEL = 'balanceOf',
+  BALANCE_OF = 'balance_of',
 }
 
 export enum LiquidityType {

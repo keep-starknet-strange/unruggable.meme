@@ -1,13 +1,6 @@
 import JediswapPair from 'src/abis/JediswapPair.json'
 import Multicall from 'src/abis/Multicall.json'
-import { constants, getChecksumAddress, json } from 'starknet'
-
-interface TokenInfos {
-  name: string
-  symbol: string
-}
-
-type QuoteTokens = { [chainId in constants.StarknetChainId]: Record<string, TokenInfos> }
+import { constants, json } from 'starknet'
 
 export const TOKEN_CLASS_HASH = '0x01c33d0d4f44faf5427c9131223e39e5bdbe9dd0f4f73dc527f05c50939d67f2'
 
@@ -23,20 +16,6 @@ export const MULTICALL_ADDRESS = '0x01a33330996310a1e3fa1df5b16c1e07f0491fdd20c4
 export const JEDISWAP_ETH_USDC = {
   [constants.StarknetChainId.SN_GOERLI]: '0x05a2b2b37f66157f767ea711cb4e034c40d41f2f5acf9ff4a19049fa11c1a884',
   [constants.StarknetChainId.SN_MAIN]: '0x04d0390b777b424e43839cd1e744799f3de6c176c7e32c1812a41dbd9c19db6a',
-}
-
-const ETH_INFOS: TokenInfos = {
-  name: 'Ether',
-  symbol: 'ETH',
-}
-
-export const QUOTE_TOKENS: QuoteTokens = {
-  [constants.StarknetChainId.SN_GOERLI]: {
-    [getChecksumAddress(ETH_ADDRESS)]: ETH_INFOS,
-  },
-  [constants.StarknetChainId.SN_MAIN]: {
-    [getChecksumAddress(ETH_ADDRESS)]: ETH_INFOS,
-  },
 }
 
 export const compiledMulticall = json.parse(JSON.stringify(Multicall))
