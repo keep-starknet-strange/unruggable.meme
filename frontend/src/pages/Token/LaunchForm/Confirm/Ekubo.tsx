@@ -1,6 +1,6 @@
 import { Fraction } from '@uniswap/sdk-core'
 import { useCallback } from 'react'
-import { useHodlLimitForm, useLiquidityForm } from 'src/hooks/useLaunchForm'
+import { useEkuboLiquidityForm, useHodlLimitForm, useLiquidityForm } from 'src/hooks/useLaunchForm'
 
 import { LastFormPageProps } from '../common'
 import LaunchTemplate from './template'
@@ -8,6 +8,9 @@ import LaunchTemplate from './template'
 export default function EkuboLaunch({ previous }: LastFormPageProps) {
   const { hodlLimit, antiBotPeriod } = useHodlLimitForm()
   const { startingMcap } = useLiquidityForm()
+  const { ekuboFees } = useEkuboLiquidityForm()
+
+  console.log(ekuboFees)
 
   // team allocation buyout
   const teamAllocationBuyoutAmount = new Fraction(0)

@@ -57,3 +57,7 @@ export const MAX_LIQUIDITY_LOCK_INCREASE = 25 // 2 years and 1 month
 
 export const LIQUIDITY_LOCK_FOREVER_TIMESTAMP = 9999999999 // 20/11/2286
 export const FOREVER = 'Forever'
+
+export const MIN_EKUBO_FEES = new Percent(0, 1) // 0%
+export const MAX_EKUBO_FEES = new Percent(1, 100) // 1%
+export const RECOMMENDED_EKUBO_FEES = new Percent(3, 1000) // 0.3%

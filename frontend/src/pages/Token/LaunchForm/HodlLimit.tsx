@@ -78,7 +78,7 @@ export default function HodlLimitForm({ next, previous }: FormPageProps) {
           <Text.HeadlineSmall>Hold limit</Text.HeadlineSmall>
           <PercentInput
             addon={<Text.HeadlineSmall>%</Text.HeadlineSmall>}
-            placeholder={`${RECOMMENDED_HODL_LIMIT.toFixed(2)} (recommended)`}
+            placeholder={`${RECOMMENDED_HODL_LIMIT.toFixed(PERCENTAGE_INPUT_PRECISION)} (recommended)`}
             {...register('hodlLimit')}
           />
 

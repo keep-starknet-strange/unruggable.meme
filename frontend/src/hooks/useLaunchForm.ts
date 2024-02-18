@@ -29,6 +29,13 @@ export function useJediswapLiquidityForm() {
   }))
 }
 
+export function useEkuboLiquidityForm() {
+  return useBoundStore((state) => ({
+    ekuboFees: state.ekuboFees,
+    setEkuboFees: state.setEkuboFees,
+  }))
+}
+
 export function useAmm() {
   return useBoundStore((state) => [state.amm, state.setAMM] as const)
 }

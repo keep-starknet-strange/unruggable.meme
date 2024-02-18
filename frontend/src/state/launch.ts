@@ -23,6 +23,7 @@ interface State {
   teamAllocation: TeamAllocation
   amm: AMM
   quoteTokenAddress: string
+  ekuboFees: string | null
 }
 
 interface Actions {
@@ -34,6 +35,7 @@ interface Actions {
   setTeamAllocationHolder: (holder: Holder, index: number) => void
   removeTeamAllocationHolder: (index: number) => void
   resetLaunchForm: () => void
+  setEkuboFees: (ekuboFees: string) => void
 }
 
 const initialState = {
@@ -44,6 +46,7 @@ const initialState = {
   teamAllocation: {},
   amm: AMM.EKUBO, // we don't really care about this value
   quoteTokenAddress: getChecksumAddress(DEFAULT_QUOTE_TOKEN_ADDRESS),
+  ekuboFees: null,
 }
 
 export const createLaunchSlice: StateCreator<StoreState, [['zustand/immer', never]], [], LaunchSlice> = (set) => ({
@@ -54,6 +57,7 @@ export const createLaunchSlice: StateCreator<StoreState, [['zustand/immer', neve
   setLiquidityLockPeriod: (liquidityLockPeriod) => set({ liquidityLockPeriod }),
   setStartingMcap: (startingMcap) => set({ startingMcap }),
   setAMM: (amm) => set({ amm }),
+  setEkuboFees: (ekuboFees) => set({ ekuboFees }),
 
   setTeamAllocationHolder: (holder: Holder, index: number) =>
     set((state) => {
