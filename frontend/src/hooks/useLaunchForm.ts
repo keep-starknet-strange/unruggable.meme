@@ -66,3 +66,24 @@ export function useTeamAllocationTotalPercentage(totalSupply?: string) {
     return new Percent(totalTeamAllocation.quotient, new Fraction(totalSupply, decimalsScale(DECIMALS)).quotient)
   }, [totalSupply, teamAllocation])
 }
+
+export function useTeamAllocation() {
+  return useBoundStore((state) => ({
+    teamAllocation: state.teamAllocation,
+    setTeamAllocationHolder: state.setTeamAllocationHolder,
+    removeTeamAllocationHolder: state.removeTeamAllocationHolder,
+  }))
+}
+
+export function useTeamAllocationTotalPercentage(totalSupply: string) {
+  const { teamAllocation } = useTeamAllocation()
+
+  return useMemo(() => {
+    const totalTeamAllocation = Object.values(teamAllocation).reduce(
+      (acc, holder) => acc.add(parseFormatedAmount(holder?.amount ?? 0)),
+      new Fraction(0)
+    )
+
+    return new Percent(totalTeamAllocation.quotient, new Fraction(totalSupply, decimalsScale(DECIMALS)).quotient)
+  }, [totalSupply, teamAllocation])
+}

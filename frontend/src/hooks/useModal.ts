@@ -30,3 +30,4 @@ export const useImportTokenModal = () => useModal(ModalType.IMPORT_TOKEN)
 export const useAddTeamAllocationHolderModal = () => useModal(ModalType.ADD_TEAM_ALLOCATION_HOLDER)
 
 export const useTransactionModal = () => useModal(ModalType.TRANSACTION)
+

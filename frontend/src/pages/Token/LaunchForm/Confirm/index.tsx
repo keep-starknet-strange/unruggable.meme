@@ -21,6 +21,9 @@ export default function ConfirmForm({ previous }: LastFormPageProps) {
     }
   }, [amm, previous])
 
+  // team allocation
+  const teamAllocationTotalPercentage = useTeamAllocationTotalPercentage(memecoinInfos.totalSupply)
+
   return (
     <Column gap="42">
       <Text.Custom color="text2" fontWeight="normal" fontSize="24">
