@@ -1,6 +1,5 @@
 import { Fraction } from '@uniswap/sdk-core'
 import { useMemo } from 'react'
-import { AMM } from 'src/constants/AMMs'
 import { QUOTE_TOKENS } from 'src/constants/tokens'
 import { useBalance } from 'src/hooks/useBalances'
 import useChainId from 'src/hooks/useChainId'
@@ -116,14 +115,12 @@ export default function LaunchTemplate({ liquidityPrice, teamAllocationPrice, pr
         nextText={
           loading
             ? 'Loading...'
-            : amm === AMM.EKUBO
-            ? 'Coming soon'
             : hasEnoughQuoteTokenBalance
             ? `Launch on ${amm}`
             : `Insufficent ${quoteToken.symbol} balance`
         }
         onNext={next}
-        disableNext={loading || amm === AMM.EKUBO || !hasEnoughQuoteTokenBalance}
+        disableNext={loading || !hasEnoughQuoteTokenBalance}
       />
     </Column>
   )

@@ -1,6 +1,10 @@
 import { Fraction, Percent } from '@uniswap/sdk-core'
+import { PERCENTAGE_INPUT_PRECISION } from 'src/constants/misc'
 
 export const parseFormatedAmount = (amount: string) => amount.replace(/,/g, '')
+
+export const parseFormatedPercentage = (percent: string) =>
+  new Percent(+percent * 10 ** PERCENTAGE_INPUT_PRECISION, 100 * 10 ** PERCENTAGE_INPUT_PRECISION)
 
 interface ParseCurrencyAmountOptions {
   fixed: number

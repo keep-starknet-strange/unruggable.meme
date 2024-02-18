@@ -16,6 +16,7 @@ export enum Selector {
   OWNER = 'owner',
   LOCKED_LIQUIDITY = 'locked_liquidity',
   LAUNCH_ON_JEDISWAP = 'launch_on_jediswap',
+  LAUNCH_ON_EKUBO = 'launch_on_ekubo',
   APPROVE = 'approve',
   GET_REMAINING_TIME = 'get_remaining_time',
   LAUNCHED_WITH_LIQUIDITY_PARAMETERS = 'launched_with_liquidity_parameters',
@@ -59,5 +60,10 @@ export const LIQUIDITY_LOCK_FOREVER_TIMESTAMP = 9999999999 // 20/11/2286
 export const FOREVER = 'Forever'
 
 export const MIN_EKUBO_FEES = new Percent(0, 1) // 0%
-export const MAX_EKUBO_FEES = new Percent(1, 100) // 1%
+export const MAX_EKUBO_FEES = new Percent(2, 100) // 2%
 export const RECOMMENDED_EKUBO_FEES = new Percent(3, 1000) // 0.3%
+
+export const EKUBO_TICK_SPACING = 5982
+export const EKUBO_LOG = Math.log(1.000001)
+export const EKUBO_FEES_MULTIPLICATOR = '0x100000000000000000000000000000000' // 2 ** 128
+export const EKUBO_BOUND = 88_719_042
