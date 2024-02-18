@@ -1,4 +1,5 @@
 import { Percent } from '@uniswap/sdk-core'
+import { getStartingTick } from 'src/utils/ekubo'
 
 export const MAX_TEAM_ALLOCATION_HOLDERS_COUNT = 10
 export const MAX_TEAM_ALLOCATION_TOTAL_SUPPLY_PERCENTAGE = new Percent(10, 100) // 10%
@@ -63,7 +64,12 @@ export const MIN_EKUBO_FEES = new Percent(0, 1) // 0%
 export const MAX_EKUBO_FEES = new Percent(2, 100) // 2%
 export const RECOMMENDED_EKUBO_FEES = new Percent(3, 1000) // 0.3%
 
-export const EKUBO_TICK_SPACING = 5982
-export const EKUBO_LOG = Math.log(1.000001)
-export const EKUBO_FEES_MULTIPLICATOR = '0x100000000000000000000000000000000' // 2 ** 128
-export const EKUBO_BOUND = 88_719_042
+// Ekubo
+
+export const EKUBO_TICK_SIZE = 1.000001
+const EKUBO_MAX_PRICE = '0x100000000000000000000000000000000' // 2 ** 128
+
+export const EKUBO_TICK_SPACING = 5982 // log(1 + 0.6%) / log(1.000001) => 0.6% is the tick spacing percentage
+export const EKUBO_TICK_SIZE_LOG = Math.log(EKUBO_TICK_SIZE)
+export const EKUBO_FEES_MULTIPLICATOR = EKUBO_MAX_PRICE
+export const EKUBO_BOUND = getStartingTick(+EKUBO_MAX_PRICE)

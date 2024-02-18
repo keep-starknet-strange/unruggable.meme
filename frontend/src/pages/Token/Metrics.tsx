@@ -12,6 +12,7 @@ import { Column, Row } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
 import { formatPercentage } from 'src/utils/amount'
 import { decimalsScale } from 'src/utils/decimalScale'
+import { getInitialPrice } from 'src/utils/ekubo'
 import { parseMonthsDuration } from 'src/utils/moment'
 import {
   getLiquidityLockSafety,
@@ -72,14 +73,32 @@ export default function TokenMetrics() {
     }
 
     // starting mcap
-    if (ethPriceAtLaunch && memecoin.liquidity.type === LiquidityType.ERC20) {
-      const startingMcap =
-        ret.quoteToken.safety === Safety.SAFE
-          ? new Fraction(memecoin.liquidity.quoteAmount)
-              .multiply(new Fraction(memecoin.launch.teamAllocation, memecoin.totalSupply).add(1))
-              .divide(decimalsScale(DECIMALS))
-              .multiply(ethPriceAtLaunch)
-          : undefined
+    if (ethPriceAtLaunch) {
+      let startingMcap: Fraction | undefined
+      switch (memecoin.liquidity.type) {
+        case LiquidityType.ERC20: {
+          startingMcap =
+            ret.quoteToken.safety === Safety.SAFE
+              ? new Fraction(memecoin.liquidity.quoteAmount)
+                  .multiply(new Fraction(memecoin.launch.teamAllocation, memecoin.totalSupply).add(1))
+                  .divide(decimalsScale(DECIMALS))
+                  .multiply(ethPriceAtLaunch)
+              : undefined
+
+          break
+        }
+
+        case LiquidityType.NFT: {
+          const initialPrice = getInitialPrice(memecoin.liquidity.startingTick)
+          startingMcap =
+            ret.quoteToken.safety === Safety.SAFE
+              ? new Fraction(Math.round(initialPrice * +decimalsScale(DECIMALS)), decimalsScale(DECIMALS))
+                  .multiply(ethPriceAtLaunch)
+                  .multiply(memecoin.totalSupply)
+                  .divide(decimalsScale(DECIMALS))
+              : undefined
+        }
+      }
 
       ret.startingMcap = {
         parsedValue: startingMcap ? `$${startingMcap.toFixed(0, { groupSeparator: ',' })}` : 'UNKNOWN',

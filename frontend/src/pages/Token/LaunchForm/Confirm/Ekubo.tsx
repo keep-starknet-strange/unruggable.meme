@@ -1,14 +1,7 @@
 import { Fraction } from '@uniswap/sdk-core'
 import { useCallback, useMemo } from 'react'
 import { FACTORY_ADDRESSES } from 'src/constants/contracts'
-import {
-  DECIMALS,
-  EKUBO_BOUND,
-  EKUBO_FEES_MULTIPLICATOR,
-  EKUBO_LOG,
-  EKUBO_TICK_SPACING,
-  Selector,
-} from 'src/constants/misc'
+import { DECIMALS, EKUBO_BOUND, EKUBO_FEES_MULTIPLICATOR, EKUBO_TICK_SPACING, Selector } from 'src/constants/misc'
 import useChainId from 'src/hooks/useChainId'
 import {
   useEkuboLiquidityForm,
@@ -22,6 +15,7 @@ import { useEtherPrice } from 'src/hooks/usePrice'
 import { useExecuteTransaction } from 'src/hooks/useTransactions'
 import { parseFormatedAmount, parseFormatedPercentage } from 'src/utils/amount'
 import { decimalsScale } from 'src/utils/decimals'
+import { getStartingTick } from 'src/utils/ekubo'
 import { CallData, uint256 } from 'starknet'
 
 import { LastFormPageProps } from '../common'
@@ -54,11 +48,7 @@ export default function EkuboLaunch({ previous }: LastFormPageProps) {
       .divide(new Fraction(memecoin.totalSupply))
       .toFixed(DECIMALS)
 
-    // exact tick = log(initial price) / log(1.000001)
-    const exactTick = Math.log(initalPrice) / EKUBO_LOG
-
-    // starting tick = floor(Extact tick / tick spacing) * tick spacing
-    const startingTickMag = Math.floor(exactTick / EKUBO_TICK_SPACING) * EKUBO_TICK_SPACING
+    const startingTickMag = getStartingTick(initalPrice)
 
     return {
       mag: Math.abs(startingTickMag),

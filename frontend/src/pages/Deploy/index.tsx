@@ -98,7 +98,6 @@ export default function DeployPage() {
         calls: [createMemecoin],
         action: 'Deploy memecoin',
         onSuccess: () => {
-          console.log('hey')
           pushDeployedTokenContracts({
             address: tokenAddress,
             name: data.name,

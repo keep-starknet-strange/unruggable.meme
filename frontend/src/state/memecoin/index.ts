@@ -41,6 +41,7 @@ interface EkuboMemecoin extends BaseLaunchedMemecoin {
     type: LiquidityType.NFT
     lockManager: string
     ekuboId: string
+    startingTick: number
     unlockTime: number
     owner: string
     quoteToken: string

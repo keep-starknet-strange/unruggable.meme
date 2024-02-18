@@ -167,7 +167,8 @@ export default function MemecoinUpdater(): null {
               type: LiquidityType.NFT,
               lockManager,
               ekuboId: res.result[22],
-              quoteToken: getChecksumAddress(res.result[28]),
+              quoteToken: getChecksumAddress(res.result[33]),
+              startingTick: +res.result[30] * (+res.result[31] ? -1 : 1), // mag * sign
             } as const
 
             setMemecoin({
