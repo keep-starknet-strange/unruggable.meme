@@ -1,12 +1,13 @@
 import { useContractWrite, useWaitForTransaction } from '@starknet-react/core'
 import { useEffect, useMemo, useState } from 'react'
+import { STARKNET_POLLING } from 'src/constants/misc'
 import { useCloseModal, useTransactionModal } from 'src/hooks/useModal'
 import { useTransaction } from 'src/hooks/useTransactions'
 import { InvokeTransactionDetails } from 'src/state/transaction'
 import { Column, Row } from 'src/theme/components/Flex'
 import * as Icons from 'src/theme/components/Icons'
 import * as Text from 'src/theme/components/Text'
-import { TransactionStatus } from 'starknet'
+import { encode, TransactionStatus } from 'starknet'
 
 import Portal from '../common/Portal'
 import Content from '../Modal/Content'
@@ -36,8 +37,11 @@ export function TransactionModal() {
   const [invokeTransactionDetails, resetTransaction] = useTransaction()
 
   // transaction status
-  const { data } = useWaitForTransaction({
-    hash: transactionHash ?? undefined,
+  const { data, refetch } = useWaitForTransaction({
+    retry: true,
+    retryDelay: STARKNET_POLLING,
+    refetchInterval: STARKNET_POLLING,
+    hash: isOpen ? transactionHash ?? undefined : undefined,
   }) as UseWaitForTransactionResponse
 
   const statusComponent = useMemo(() => {
@@ -66,6 +70,23 @@ export function TransactionModal() {
 
     return
   }, [data?.finality_status])
+
+  // refetch
+  useEffect(() => {
+    if (!isOpen || (data?.finality_status && data.finality_status !== TransactionStatus.RECEIVED)) return
+
+    const intervalId = setInterval(() => {
+      setTransactionHash((state) => {
+        if (state) {
+          return `0x0${encode.removeHexPrefix(state)}`
+        }
+
+        return state
+      })
+    }, STARKNET_POLLING)
+
+    return () => clearInterval(intervalId)
+  }, [data?.finality_status, isOpen, refetch])
 
   // onSuccess callback
   useEffect(() => {

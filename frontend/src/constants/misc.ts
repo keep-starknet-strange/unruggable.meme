@@ -37,6 +37,8 @@ export enum LiquidityType {
   NFT = 'EkuboNFT',
 }
 
+export const STARKNET_POLLING = 3000 // 3s
+
 export const PERCENTAGE_INPUT_PRECISION = 2
 
 export const MIN_STARTING_MCAP = 5_000 // $5k
