@@ -34,7 +34,7 @@ export default function LaunchTemplate({ liquidityPrice, teamAllocationPrice, pr
   )
 
   // quote token balance
-  const { data: quoteTokenBalance } = useBalance(quoteToken ?? undefined)
+  const { data: quoteTokenBalance, loading } = useBalance(quoteToken ?? undefined)
 
   // eth price
   const weiAmountToParsedFiatValue = useWeiAmountToParsedFiatValue()
@@ -61,7 +61,7 @@ export default function LaunchTemplate({ liquidityPrice, teamAllocationPrice, pr
     [quoteTokenBalance, totalPrice]
   )
 
-  if (!teamAllocationTotalPercentage || !quoteToken || !quoteTokenBalance) return null
+  if (!teamAllocationTotalPercentage || !quoteToken) return null
 
   return (
     <Column gap="42">
@@ -114,14 +114,16 @@ export default function LaunchTemplate({ liquidityPrice, teamAllocationPrice, pr
       <Submit
         previous={previous}
         nextText={
-          amm === AMM.EKUBO
+          loading
+            ? 'Loading...'
+            : amm === AMM.EKUBO
             ? 'Coming soon'
             : hasEnoughQuoteTokenBalance
             ? `Launch on ${amm}`
             : `Insufficent ${quoteToken.symbol} balance`
         }
         onNext={next}
-        disableNext={amm === AMM.EKUBO || !hasEnoughQuoteTokenBalance}
+        disableNext={loading || amm === AMM.EKUBO || !hasEnoughQuoteTokenBalance}
       />
     </Column>
   )

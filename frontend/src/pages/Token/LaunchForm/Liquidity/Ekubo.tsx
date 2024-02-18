@@ -57,32 +57,26 @@ export default function EkuboLiquidityForm({ previous, next }: FormPageProps) {
   )
 
   return (
-    <Column gap="42">
-      <Text.Custom color="text2" fontWeight="normal" fontSize="24">
-        Liquidity
-      </Text.Custom>
+    <Column as="form" onSubmit={handleSubmit(submit)} gap="42">
+      <Column gap="16">
+        <LiquidityTemplate register={register} errors={errors} />
 
-      <Column as="form" onSubmit={handleSubmit(submit)} gap="42">
-        <Column gap="16">
-          <LiquidityTemplate register={register} errors={errors} />
+        <Column gap="8">
+          <Text.HeadlineSmall>Ekubo fees</Text.HeadlineSmall>
 
-          <Column gap="8">
-            <Text.HeadlineSmall>Ekubo fees</Text.HeadlineSmall>
+          <PercentInput
+            addon={<Text.HeadlineSmall>%</Text.HeadlineSmall>}
+            placeholder={`${RECOMMENDED_EKUBO_FEES.toFixed(PERCENTAGE_INPUT_PRECISION)} (recommended)`}
+            {...register('ekuboFees')}
+          />
 
-            <PercentInput
-              addon={<Text.HeadlineSmall>%</Text.HeadlineSmall>}
-              placeholder={`${RECOMMENDED_EKUBO_FEES.toFixed(PERCENTAGE_INPUT_PRECISION)} (recommended)`}
-              {...register('ekuboFees')}
-            />
-
-            <Box className={styles.errorContainer}>
-              {errors.ekuboFees?.message ? <Text.Error>{errors.ekuboFees.message}</Text.Error> : null}
-            </Box>
-          </Column>
+          <Box className={styles.errorContainer}>
+            {errors.ekuboFees?.message ? <Text.Error>{errors.ekuboFees.message}</Text.Error> : null}
+          </Box>
         </Column>
-
-        <Submit previous={previous} />
       </Column>
+
+      <Submit previous={previous} />
     </Column>
   )
 }

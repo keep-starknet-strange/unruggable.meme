@@ -52,30 +52,24 @@ export default function JediswapLiquidityForm({ next, previous }: FormPageProps)
   )
 
   return (
-    <Column gap="42">
-      <Text.Custom color="text2" fontWeight="normal" fontSize="24">
-        Liquidity
-      </Text.Custom>
+    <Column as="form" onSubmit={handleSubmit(submit)} gap="42">
+      <Column gap="16">
+        <LiquidityTemplate register={register} errors={errors} />
 
-      <Column as="form" onSubmit={handleSubmit(submit)} gap="42">
-        <Column gap="16">
-          <LiquidityTemplate register={register} errors={errors} />
-
-          <Column gap="8">
-            <Text.HeadlineSmall>Lock liquidity for</Text.HeadlineSmall>
-            <Slider
-              value={liquidityLockPeriod}
-              min={MIN_LIQUIDITY_LOCK_PERIOD}
-              step={LIQUIDITY_LOCK_PERIOD_STEP}
-              max={MAX_LIQUIDITY_LOCK_PERIOD}
-              onSlidingChange={setLiquidityLockPeriod}
-              addon={<Input value={parsedLiquidityLockPeriod} />}
-            />
-          </Column>
+        <Column gap="8">
+          <Text.HeadlineSmall>Lock liquidity for</Text.HeadlineSmall>
+          <Slider
+            value={liquidityLockPeriod}
+            min={MIN_LIQUIDITY_LOCK_PERIOD}
+            step={LIQUIDITY_LOCK_PERIOD_STEP}
+            max={MAX_LIQUIDITY_LOCK_PERIOD}
+            onSlidingChange={setLiquidityLockPeriod}
+            addon={<Input value={parsedLiquidityLockPeriod} />}
+          />
         </Column>
-
-        <Submit previous={previous} />
       </Column>
+
+      <Submit previous={previous} />
     </Column>
   )
 }
