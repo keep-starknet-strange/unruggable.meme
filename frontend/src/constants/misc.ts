@@ -30,6 +30,7 @@ export enum Selector {
   BALANCE_OF_CAMEL = 'balanceOf',
   BALANCE_OF = 'balance_of',
   TRANSFER = 'transfer',
+  GET_TOKEN_INFOS = 'get_token_info',
 }
 
 export enum LiquidityType {

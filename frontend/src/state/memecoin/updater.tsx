@@ -3,11 +3,10 @@ import { useCallback, useEffect } from 'react'
 import { FACTORY_ADDRESSES, MULTICALL_ADDRESS } from 'src/constants/contracts'
 import { LIQUIDITY_LOCK_FOREVER_TIMESTAMP, LiquidityType, Selector } from 'src/constants/misc'
 import useChainId from 'src/hooks/useChainId'
-import { OmitUnion } from 'src/utils/types'
 import { CallData, getChecksumAddress, hash, shortString, uint256 } from 'starknet'
 
 import { useBoundStore } from '..'
-import { LaunchedMemecoin } from '.'
+import { EkuboMemecoin, JediswapMemecoin } from '.'
 
 // eslint-disable-next-line import/no-unused-modules
 export default function MemecoinUpdater(): null {
@@ -25,7 +24,8 @@ export default function MemecoinUpdater(): null {
   const chainId = useChainId()
 
   // liquidity lock position
-  const getMemecoinLiquidityLockPosition = useGetMemecoinLiquidityLockPosition()
+  const { getMemecoinEkuboLiquidityLockPosition, getMemecoinJediswapLiquidityLockPosition } =
+    useGetMemecoinLiquidityLockPosition()
 
   // fetch callback
   const fetchMemecoin = useCallback(async () => {
@@ -156,7 +156,7 @@ export default function MemecoinUpdater(): null {
               launch,
               liquidity: {
                 ...liquidity,
-                ...(await getMemecoinLiquidityLockPosition(liquidity)),
+                ...(await getMemecoinJediswapLiquidityLockPosition(liquidity)),
               },
             })
             break
@@ -177,7 +177,7 @@ export default function MemecoinUpdater(): null {
               launch,
               liquidity: {
                 ...liquidity,
-                ...(await getMemecoinLiquidityLockPosition(liquidity)),
+                ...(await getMemecoinEkuboLiquidityLockPosition(liquidity)),
               },
             })
           }
@@ -188,7 +188,15 @@ export default function MemecoinUpdater(): null {
     } catch {
       setRuggable()
     }
-  }, [chainId, getMemecoinLiquidityLockPosition, provider, setMemecoin, setRuggable, tokenAddress])
+  }, [
+    chainId,
+    getMemecoinEkuboLiquidityLockPosition,
+    getMemecoinJediswapLiquidityLockPosition,
+    provider,
+    setMemecoin,
+    setRuggable,
+    tokenAddress,
+  ])
 
   // refresher
   useEffect(() => {
@@ -209,38 +217,59 @@ function useGetMemecoinLiquidityLockPosition() {
   // starknet
   const { provider } = useProvider()
 
-  return useCallback(
-    async (liquidity: OmitUnion<LaunchedMemecoin['liquidity'], 'unlockTime' | 'owner'>) => {
-      switch (liquidity.type) {
-        case LiquidityType.ERC20:
-          return provider
-            ?.callContract({
-              contractAddress: liquidity.lockManager,
-              entrypoint: Selector.GET_LOCK_DETAILS,
-              calldata: [liquidity.lockPosition],
-            })
-            .then((res) => {
-              return {
-                unlockTime: +res.result[4],
-                owner: res.result[3],
-              }
-            })
-
-        case LiquidityType.NFT:
-          return provider
-            ?.callContract({
-              contractAddress: liquidity.lockManager,
-              entrypoint: Selector.LIQUIDITY_POSITION_DETAILS,
-              calldata: [liquidity.ekuboId],
-            })
-            .then((res) => {
-              return {
-                unlockTime: LIQUIDITY_LOCK_FOREVER_TIMESTAMP,
-                owner: res.result[1],
-              }
-            })
-      }
+  const getMemecoinJediswapLiquidityLockPosition = useCallback(
+    async (liquidity: Pick<JediswapMemecoin['liquidity'], 'lockPosition' | 'lockManager'>) => {
+      return provider
+        ?.callContract({
+          contractAddress: liquidity.lockManager,
+          entrypoint: Selector.GET_LOCK_DETAILS,
+          calldata: [liquidity.lockPosition],
+        })
+        .then((res) => {
+          return {
+            unlockTime: +res.result[4],
+            owner: res.result[3],
+          }
+        })
     },
     [provider]
   )
+
+  const getMemecoinEkuboLiquidityLockPosition = useCallback(
+    async (liquidity: Pick<EkuboMemecoin['liquidity'], 'ekuboId' | 'lockManager'>) => {
+      return provider
+        ?.callContract({
+          contractAddress: liquidity.lockManager,
+          entrypoint: Selector.LIQUIDITY_POSITION_DETAILS,
+          calldata: [liquidity.ekuboId],
+        })
+        .then((res) => {
+          return {
+            unlockTime: LIQUIDITY_LOCK_FOREVER_TIMESTAMP,
+            owner: res.result[0],
+            // pool key
+            poolKey: {
+              token0: res.result[2],
+              token1: res.result[3],
+              fee: res.result[4],
+              tickSpacing: res.result[5],
+              extension: res.result[6],
+            },
+            bounds: {
+              lower: {
+                mag: res.result[7],
+                sign: res.result[8],
+              },
+              upper: {
+                mag: res.result[9],
+                sign: res.result[10],
+              },
+            },
+          }
+        })
+    },
+    [provider]
+  )
+
+  return { getMemecoinJediswapLiquidityLockPosition, getMemecoinEkuboLiquidityLockPosition }
 }

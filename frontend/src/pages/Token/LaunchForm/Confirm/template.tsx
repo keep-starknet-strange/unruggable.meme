@@ -1,11 +1,10 @@
 import { Fraction } from '@uniswap/sdk-core'
 import { useMemo } from 'react'
-import { QUOTE_TOKENS } from 'src/constants/tokens'
 import { useBalance } from 'src/hooks/useBalances'
-import useChainId from 'src/hooks/useChainId'
 import { useAmm, useLiquidityForm, useTeamAllocationTotalPercentage } from 'src/hooks/useLaunchForm'
 import useMemecoin from 'src/hooks/useMemecoin'
 import { useWeiAmountToParsedFiatValue } from 'src/hooks/usePrice'
+import useQuoteToken from 'src/hooks/useQuote'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
@@ -23,14 +22,8 @@ export default function LaunchTemplate({ liquidityPrice, teamAllocationPrice, pr
   const [amm] = useAmm()
   const { quoteTokenAddress } = useLiquidityForm()
 
-  // starknet
-  const chainId = useChainId()
-
   // quote token
-  const quoteToken = useMemo(
-    () => (chainId ? QUOTE_TOKENS[chainId][quoteTokenAddress] : null),
-    [chainId, quoteTokenAddress]
-  )
+  const quoteToken = useQuoteToken(quoteTokenAddress)
 
   // quote token balance
   const { data: quoteTokenBalance, loading } = useBalance(quoteToken ?? undefined)

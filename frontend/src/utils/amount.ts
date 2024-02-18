@@ -11,8 +11,13 @@ interface ParseCurrencyAmountOptions {
   significant?: number
 }
 
-export const formatCurrenyAmount = (amount: Fraction, { fixed, significant = 1 }: ParseCurrencyAmountOptions) =>
-  Math.max(+amount.toFixed(fixed), +amount.toSignificant(significant))
+export const formatCurrenyAmount = (amount: Fraction, { fixed, significant = 1 }: ParseCurrencyAmountOptions) => {
+  const fixedAmount = amount.toFixed(fixed)
+  const significantAmount = amount.toSignificant(significant)
+
+  if (+significantAmount > +fixedAmount) return significantAmount
+  else return +fixedAmount.toString()
+}
 
 export const formatPercentage = (percentage: Percent) => {
   const formatedPercentage = +percentage.toFixed(2)

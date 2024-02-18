@@ -1,4 +1,5 @@
 import { LiquidityType } from 'src/constants/misc'
+import i129 from 'src/utils/i129'
 import { StateCreator } from 'zustand'
 
 import { StoreState } from '../index'
@@ -6,6 +7,19 @@ import { StoreState } from '../index'
 export type MemecoinSlice = State & Actions
 
 // Memecoin
+
+interface EkuboPoolKey {
+  token0: string
+  token1: string
+  fee: string
+  tickSpacing: string
+  extension: string
+}
+
+interface EkuboBounds {
+  lower: i129
+  upper: i129
+}
 
 interface BaseMemecoin {
   address: string
@@ -24,31 +38,33 @@ interface BaseLaunchedMemecoin extends BaseMemecoin {
   }
 }
 
-interface JediswapMemecoin extends BaseLaunchedMemecoin {
+interface BaseLiquidity {
+  type: LiquidityType
+  lockManager: string
+  unlockTime: number
+  owner: string
+  quoteToken: string
+}
+
+export interface JediswapMemecoin extends BaseLaunchedMemecoin {
   liquidity: {
     type: LiquidityType.ERC20
-    lockManager: string
     lockPosition: string
-    unlockTime: number
-    owner: string
-    quoteToken: string
     quoteAmount: string
-  }
+  } & Omit<BaseLiquidity, 'type'>
 }
 
-interface EkuboMemecoin extends BaseLaunchedMemecoin {
+export interface EkuboMemecoin extends BaseLaunchedMemecoin {
   liquidity: {
     type: LiquidityType.NFT
-    lockManager: string
     ekuboId: string
     startingTick: number
-    unlockTime: number
-    owner: string
-    quoteToken: string
-  }
+    poolKey: EkuboPoolKey
+    bounds: EkuboBounds
+  } & Omit<BaseLiquidity, 'type'>
 }
 
-export type LaunchedMemecoin = JediswapMemecoin | EkuboMemecoin
+type LaunchedMemecoin = JediswapMemecoin | EkuboMemecoin
 
 interface NotLaunchedMemecoin extends BaseMemecoin {
   isLaunched: false
