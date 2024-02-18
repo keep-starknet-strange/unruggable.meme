@@ -9,6 +9,7 @@ import {
   useLiquidityForm,
   useResetLaunchForm,
   useTeamAllocation,
+  useTeamAllocationTotalPercentage,
 } from 'src/hooks/useLaunchForm'
 import useMemecoin from 'src/hooks/useMemecoin'
 import { useEtherPrice } from 'src/hooks/usePrice'
@@ -31,11 +32,21 @@ export default function EkuboLaunch({ previous }: LastFormPageProps) {
   // memecoin
   const { data: memecoin, refresh: refreshMemecoin } = useMemecoin()
 
-  // team allocation buyout
-  const teamAllocationBuyoutAmount = new Fraction(0)
-
   // eth price
   const ethPrice = useEtherPrice()
+
+  // team allocation
+  const teamAllocationTotalPercentage = useTeamAllocationTotalPercentage(memecoin?.totalSupply)
+
+  // team allocation quote amount
+  const teamAllocationQuoteAmount = useMemo(() => {
+    if (!ethPrice || !startingMcap || !teamAllocationTotalPercentage || !ekuboFees) return
+
+    // mcap / eth_price * (team_allocation / total_supply + ekuboFees)
+    return new Fraction(parseFormatedAmount(startingMcap))
+      .divide(ethPrice)
+      .multiply(teamAllocationTotalPercentage.add(parseFormatedPercentage(ekuboFees)))
+  }, [ethPrice, startingMcap, teamAllocationTotalPercentage, ekuboFees])
 
   // starting tick
   const i129StartingTick = useMemo(() => {
@@ -71,12 +82,15 @@ export default function EkuboLaunch({ previous }: LastFormPageProps) {
 
   // launch
   const launch = useCallback(() => {
-    if (!i129StartingTick || !fees || !chainId || !hodlLimit || !memecoin?.address) return
+    if (!i129StartingTick || !fees || !chainId || !hodlLimit || !memecoin?.address || !teamAllocationQuoteAmount) return
 
-    const approveCalldata = CallData.compile([
-      FACTORY_ADDRESSES[chainId], // spender
-      '0', // TODO
-      '0',
+    const uin256TeamAllocationQuoteAmount = uint256.bnToUint256(
+      BigInt(teamAllocationQuoteAmount.multiply(decimalsScale(DECIMALS)).quotient.toString())
+    )
+
+    const transferCalldata = CallData.compile([
+      FACTORY_ADDRESSES[chainId], // recipient
+      uin256TeamAllocationQuoteAmount, // amount
     ])
 
     // team allocation
@@ -106,8 +120,8 @@ export default function EkuboLaunch({ previous }: LastFormPageProps) {
       calls: [
         {
           contractAddress: quoteTokenAddress,
-          entrypoint: Selector.APPROVE,
-          calldata: approveCalldata,
+          entrypoint: Selector.TRANSFER,
+          calldata: transferCalldata,
         },
         {
           contractAddress: FACTORY_ADDRESSES[chainId],
@@ -133,7 +147,8 @@ export default function EkuboLaunch({ previous }: LastFormPageProps) {
     refreshMemecoin,
     resetLaunchForm,
     teamAllocation,
+    teamAllocationQuoteAmount,
   ])
 
-  return <LaunchTemplate teamAllocationPrice={teamAllocationBuyoutAmount} previous={previous} next={launch} />
+  return <LaunchTemplate teamAllocationPrice={teamAllocationQuoteAmount} previous={previous} next={launch} />
 }

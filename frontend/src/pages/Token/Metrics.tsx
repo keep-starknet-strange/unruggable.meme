@@ -127,7 +127,7 @@ export default function TokenMetrics() {
             <Column gap="8" alignItems="flex-start">
               <Text.Small>Team allocation:</Text.Small>
               <Text.HeadlineMedium color={SAFETY_COLORS[parsedMemecoinInfos?.teamAllocation?.safety ?? Safety.UNKNOWN]}>
-                {parsedMemecoinInfos?.teamAllocation?.parsedValue ?? 'Not launched'}
+                {parsedMemecoinInfos?.teamAllocation?.parsedValue ?? 'Loading'}
               </Text.HeadlineMedium>
             </Column>
           </Box>
@@ -139,7 +139,7 @@ export default function TokenMetrics() {
                 color={SAFETY_COLORS[parsedMemecoinInfos?.liquidityLock?.safety ?? Safety.UNKNOWN]}
                 whiteSpace="nowrap"
               >
-                {parsedMemecoinInfos?.liquidityLock?.parsedValue ?? 'Not launched'}
+                {parsedMemecoinInfos?.liquidityLock?.parsedValue ?? 'Loading'}
               </Text.HeadlineMedium>
             </Column>
           </Box>
@@ -151,7 +151,7 @@ export default function TokenMetrics() {
                 color={SAFETY_COLORS[parsedMemecoinInfos?.quoteToken?.safety ?? Safety.UNKNOWN]}
                 whiteSpace="nowrap"
               >
-                {parsedMemecoinInfos?.quoteToken?.parsedValue ?? 'Not launched'}
+                {parsedMemecoinInfos?.quoteToken?.parsedValue ?? 'Loading'}
               </Text.HeadlineMedium>
             </Column>
           </Box>
@@ -163,7 +163,7 @@ export default function TokenMetrics() {
                 color={SAFETY_COLORS[parsedMemecoinInfos?.startingMcap?.safety ?? Safety.UNKNOWN]}
                 whiteSpace="nowrap"
               >
-                {parsedMemecoinInfos?.startingMcap?.parsedValue ?? 'Not launched'}
+                {parsedMemecoinInfos?.startingMcap?.parsedValue ?? 'Loading'}
               </Text.HeadlineMedium>
             </Column>
           </Box>

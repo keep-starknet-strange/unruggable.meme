@@ -29,6 +29,7 @@ export enum Selector {
   EXTEND_LOCK = 'extend_lock',
   BALANCE_OF_CAMEL = 'balanceOf',
   BALANCE_OF = 'balance_of',
+  TRANSFER = 'transfer',
 }
 
 export enum LiquidityType {
