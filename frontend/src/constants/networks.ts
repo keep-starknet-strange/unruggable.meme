@@ -2,23 +2,33 @@ import { Chain, goerli, mainnet } from '@starknet-react/chains'
 import { ChainProviderFactory } from '@starknet-react/core'
 import { RpcProvider } from 'starknet'
 
-const NETHERMIND_KEY = process.env.REACT_APP_NETHERMIND_KEY
+export const SUPPORTED_STARKNET_NETWORKS = [mainnet, goerli]
 
-export const nethermindRpcProviders: ChainProviderFactory | null = NETHERMIND_KEY
-  ? (chain: Chain) => {
-      switch (chain.id) {
-        case goerli.id:
-          return new RpcProvider({
-            nodeUrl: `https://rpc.nethermind.io/goerli-juno/?apikey=${NETHERMIND_KEY}`,
-          })
+const NETHERMIND_KEY = process.env.REACT_APP_NETHERMIND_KEY as string
+if (typeof NETHERMIND_KEY === 'undefined') {
+  throw new Error(`REACT_APP_NETHERMIND_KEY must be a defined environment variable`)
+}
 
-        case mainnet.id:
-          return new RpcProvider({
-            nodeUrl: `https://rpc.nethermind.io/mainnet-juno/?apikey=${NETHERMIND_KEY}`,
-          })
+const DEFAULT_NETWORK_NAME = process.env.REACT_APP_DEFAULT_NETWORK_NAME as string
+if (typeof DEFAULT_NETWORK_NAME === 'undefined') {
+  throw new Error(`REACT_APP_DEFAULT_NETWORK_NAME must be a defined environment variable`)
+} else if (SUPPORTED_STARKNET_NETWORKS.reduce((_, { network }) => network === DEFAULT_NETWORK_NAME, false)) {
+  throw new Error(`REACT_APP_DEFAULT_NETWORK_NAME is invalid`)
+}
 
-        default:
-          return null
-      }
-    }
-  : null
+export const nethermindRpcProviders: ChainProviderFactory = (chain: Chain) => {
+  switch (chain.id) {
+    case goerli.id:
+      return new RpcProvider({
+        nodeUrl: `https://rpc.nethermind.io/goerli-juno/?apikey=${NETHERMIND_KEY}`,
+      })
+
+    case mainnet.id:
+      return new RpcProvider({
+        nodeUrl: `https://rpc.nethermind.io/mainnet-juno/?apikey=${NETHERMIND_KEY}`,
+      })
+
+    default:
+      return null
+  }
+}

@@ -39,6 +39,7 @@ export enum LiquidityType {
 }
 
 export const STARKNET_POLLING = 3000 // 3s
+export const STARKNET_MAX_BLOCK_TIME = 3600 * 2 // 2h
 
 export const PERCENTAGE_INPUT_PRECISION = 2
 

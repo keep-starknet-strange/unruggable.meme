@@ -7,7 +7,7 @@ export const TOKEN_CLASS_HASH = '0x01c33d0d4f44faf5427c9131223e39e5bdbe9dd0f4f73
 
 export const FACTORY_ADDRESSES = {
   [constants.StarknetChainId.SN_GOERLI]: '0x061c3711a61c540fa60a6bd11ec09d36a4fc767c19253d6203c0ab3f251ed4b3',
-  [constants.StarknetChainId.SN_MAIN]: '0xdead',
+  [constants.StarknetChainId.SN_MAIN]: '0x0615120dde9172441acac3f87d241859c0782f152b9f3f64a311d61f2469c5dd',
 }
 
 export const EKUBO_POSITIONS_ADDRESSES = {
