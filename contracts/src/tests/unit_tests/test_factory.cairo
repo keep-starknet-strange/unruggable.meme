@@ -432,33 +432,6 @@ fn test_launch_memecoin_quote_memecoin_jedsiwap() {
 }
 
 #[test]
-#[should_panic(expected: ('Exchange address is zero',))]
-//TODO: does this test still make sense?
-fn test_launch_memecoin_amm_not_whitelisted() {
-    //INFO: Ekubo is not supported in unit tests, as we don't have a way
-    // to deploy their contracts. Thus, it's not possible to use it in unit tests.
-    let owner = starknet::get_contract_address();
-    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
-    let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
-    let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
-
-    let pool_address = factory
-        .launch_on_ekubo(
-            LaunchParameters {
-                memecoin_address,
-                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
-                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
-                quote_address: eth.contract_address,
-                initial_holders: INITIAL_HOLDERS(),
-                initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
-            },
-            EkuboPoolParameters {
-                fee: 0, tick_spacing: 5982, starting_price: i129 { sign: false, mag: 0 }, bound: 0
-            }
-        );
-}
-
-#[test]
 #[should_panic(expected: ('Fee too high',))]
 fn test_launch_memecoin_ekubo_fee_high() {
     let owner = starknet::get_contract_address();

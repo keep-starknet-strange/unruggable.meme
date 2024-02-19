@@ -15,3 +15,4 @@ const QUOTE_TOKEN_IS_MEMECOIN: felt252 = 'Quote token is memecoin';
 const TICK_SPACING_TOO_LOW: felt252 = 'Tick spacing low';
 const TICK_SPACING_TOO_HIGH: felt252 = 'Tick spacing high';
 const FEE_TOO_HIGH: felt252 = 'Fee too high';
+const BOUND_TOO_LOW: felt252 = 'Upper bound too low';
