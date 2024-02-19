@@ -18,6 +18,7 @@ export enum Selector {
   LOCKED_LIQUIDITY = 'locked_liquidity',
   LAUNCH_ON_JEDISWAP = 'launch_on_jediswap',
   LAUNCH_ON_EKUBO = 'launch_on_ekubo',
+  LAUNCH_ON_STARKDEFI = 'launch_on_starkdefi',
   APPROVE = 'approve',
   GET_REMAINING_TIME = 'get_remaining_time',
   LAUNCHED_WITH_LIQUIDITY_PARAMETERS = 'launched_with_liquidity_parameters',
