@@ -193,6 +193,7 @@ mod Factory {
             assert(ekubo_parameters.fee <= 0x51eb851eb851ec00000000000000000, errors::FEE_TOO_HIGH);
             assert(ekubo_parameters.tick_spacing >= 5982, errors::TICK_SPACING_TOO_LOW);
             assert(ekubo_parameters.tick_spacing <= 19802, errors::TICK_SPACING_TOO_HIGH);
+            assert(ekubo_parameters.bound >= 88712960, errors::BOUND_TOO_LOW);
 
             let LaunchParameters{memecoin_address,
             transfer_restriction_delay,
