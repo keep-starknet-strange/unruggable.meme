@@ -1,6 +1,7 @@
 import { Fraction } from '@uniswap/sdk-core'
 import moment from 'moment'
 import { useCallback, useMemo } from 'react'
+import { AMM } from 'src/constants/AMMs'
 import { FACTORY_ADDRESSES } from 'src/constants/contracts'
 import {
   DECIMALS,
@@ -12,9 +13,9 @@ import {
 import useChainId from 'src/hooks/useChainId'
 import {
   useHodlLimitForm,
-  useJediswapLiquidityForm,
   useLiquidityForm,
   useResetLaunchForm,
+  useStandardAmmLiquidityForm,
   useTeamAllocation,
   useTeamAllocationTotalPercentage,
 } from 'src/hooks/useLaunchForm'
@@ -28,11 +29,11 @@ import { CallData, uint256 } from 'starknet'
 import { LastFormPageProps } from '../common'
 import LaunchTemplate from './template'
 
-export default function JediswapLaunch({ previous }: LastFormPageProps) {
+export default function StarndardAmmLaunch({ previous, amm }: Readonly<LastFormPageProps & { amm: AMM }>) {
   // form data
   const { hodlLimit, antiBotPeriod } = useHodlLimitForm()
   const { startingMcap, quoteTokenAddress } = useLiquidityForm()
-  const { liquidityLockPeriod } = useJediswapLiquidityForm()
+  const { liquidityLockPeriod } = useStandardAmmLiquidityForm()
   const { teamAllocation } = useTeamAllocation()
   const resetLaunchForm = useResetLaunchForm()
 
@@ -82,6 +83,25 @@ export default function JediswapLaunch({ previous }: LastFormPageProps) {
       .filter(Boolean)
       .map((holder) => uint256.bnToUint256(BigInt(parseFormatedAmount(holder.amount)) * BigInt(decimalsScale(18))))
 
+    const ammOptions: {
+      entrypoint: Selector
+      action: string
+    } = {
+      entrypoint: Selector.LAUNCH_ON_JEDISWAP,
+      action: 'Launch on JediSwap',
+    }
+
+    switch (amm) {
+      case AMM.JEDISWAP:
+        ammOptions.entrypoint = Selector.LAUNCH_ON_JEDISWAP
+        ammOptions.action = 'Launch on JediSwap'
+        break
+      case AMM.STARKDEFI:
+        ammOptions.entrypoint = Selector.LAUNCH_ON_STARKDEFI
+        ammOptions.action = 'Launch on StarkDeFi'
+        break
+    }
+
     // prepare calldata
     const launchCalldata = CallData.compile([
       memecoin.address, // memecoin address
@@ -105,17 +125,18 @@ export default function JediswapLaunch({ previous }: LastFormPageProps) {
         },
         {
           contractAddress: FACTORY_ADDRESSES[chainId],
-          entrypoint: Selector.LAUNCH_ON_JEDISWAP,
+          entrypoint: ammOptions.entrypoint,
           calldata: launchCalldata,
         },
       ],
-      action: 'Launch on JediSwap',
+      action: ammOptions.action,
       onSuccess: () => {
         resetLaunchForm()
         refreshMemecoin()
       },
     })
   }, [
+    amm,
     quoteAmount,
     chainId,
     hodlLimit,
