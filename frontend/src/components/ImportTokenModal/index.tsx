@@ -5,14 +5,13 @@ import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import useDebounce from 'src/hooks/useDebounce'
 import { useDeploymentStore } from 'src/hooks/useDeployment'
-import { useMemecoinInfos } from 'src/hooks/useMemecoin'
+import useMemecoin from 'src/hooks/useMemecoin'
 import { useCloseModal, useImportTokenModal } from 'src/hooks/useModal'
 import Box from 'src/theme/components/Box'
 import { Column } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
 import { isValidL2Address } from 'src/utils/address'
 import { address } from 'src/utils/zod'
-import { getChecksumAddress } from 'starknet'
 import { z } from 'zod'
 
 import Portal from '../common/Portal'
@@ -34,7 +33,7 @@ interface ImportTokenModalProps {
 export function ImportTokenModal({ save = false }: ImportTokenModalProps) {
   const [loading, setLoading] = useState(false)
 
-  const { deployedTokenContracts, pushDeployedTokenContracts } = useDeploymentStore()
+  const [, pushDeployedTokenContracts] = useDeploymentStore()
 
   // modal
   const [isOpen] = useImportTokenModal()
@@ -54,8 +53,6 @@ export function ImportTokenModal({ save = false }: ImportTokenModalProps) {
   const {
     register,
     formState: { errors },
-    handleSubmit,
-    formState,
     watch,
     setError,
   } = useForm<z.infer<typeof schema>>({
@@ -74,51 +71,30 @@ export function ImportTokenModal({ save = false }: ImportTokenModalProps) {
   }, [])
 
   // token check
-  const [{ data: memecoinInfos, error }, getMemecoinInfos] = useMemecoinInfos()
-
-  const importToken = useCallback(
-    async (data: z.infer<typeof schema>) => {
-      const { tokenAddress } = data
-
-      for (const deployedTokenContract of deployedTokenContracts) {
-        if (getChecksumAddress(deployedTokenContract.address) === getChecksumAddress(tokenAddress)) {
-          openTokenPage(tokenAddress)
-          return
-        }
-      }
-
-      getMemecoinInfos(tokenAddress)
-    },
-    [getMemecoinInfos, deployedTokenContracts, openTokenPage]
-  )
+  const { data: memecoin, ruggable } = useMemecoin(debouncedTokenAddress)
 
   useEffect(() => {
-    if (memecoinInfos) {
+    if (memecoin && isOpen) {
       // save token if needed
       if (save) {
-        pushDeployedTokenContracts(memecoinInfos)
+        pushDeployedTokenContracts(memecoin)
       }
 
-      openTokenPage(memecoinInfos.address)
+      openTokenPage(memecoin.address)
       return
     }
 
     setLoading(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [memecoinInfos?.address, save])
+  }, [memecoin?.address, save, isOpen])
 
   // handle error
   useEffect(() => {
-    setError('tokenAddress', { message: error })
-  }, [error, setError])
-
-  // handle submit
-  useEffect(() => {
-    if (formState.isValid) {
-      handleSubmit(importToken)()
+    if (ruggable) {
+      setError('tokenAddress', { message: 'This token is not unruggable' })
+      setLoading(false)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedTokenAddress])
+  }, [setError, ruggable])
 
   if (!isOpen) return null
 

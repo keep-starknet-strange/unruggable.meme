@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useAccount, useContractWrite } from '@starknet-react/core'
+import { useAccount } from '@starknet-react/core'
 import { Wallet } from 'lucide-react'
 import { useCallback } from 'react'
 import { useForm } from 'react-hook-form'
@@ -12,6 +12,7 @@ import { FACTORY_ADDRESSES, TOKEN_CLASS_HASH } from 'src/constants/contracts'
 import { DECIMALS, Selector } from 'src/constants/misc'
 import useChainId from 'src/hooks/useChainId'
 import { useDeploymentStore } from 'src/hooks/useDeployment'
+import { useExecuteTransaction } from 'src/hooks/useTransactions'
 import Box from 'src/theme/components/Box'
 import { Column } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
@@ -37,15 +38,17 @@ const schema = z.object({
  */
 
 export default function DeployPage() {
-  const { pushDeployedTokenContracts } = useDeploymentStore()
+  const [, pushDeployedTokenContracts] = useDeploymentStore()
 
   // navigation
   const navigate = useNavigate()
 
+  // starknet
   const { account, address } = useAccount()
-  const { writeAsync, isPending } = useContractWrite({})
-
   const chainId = useChainId()
+
+  // transaction
+  const executeTransaction = useExecuteTransaction()
 
   // If you need the transaction status, you can use this hook.
   // Notice that RPC providers will take some time to receive the transaction,
@@ -91,22 +94,22 @@ export default function DeployPage() {
         FACTORY_ADDRESSES[chainId]
       )
 
-      try {
-        await writeAsync({ calls: [createMemecoin] })
+      executeTransaction({
+        calls: [createMemecoin],
+        action: 'Deploy memecoin',
+        onSuccess: () => {
+          pushDeployedTokenContracts({
+            address: tokenAddress,
+            name: data.name,
+            symbol: data.symbol,
+            totalSupply: parsedInitialSupply,
+          })
 
-        pushDeployedTokenContracts({
-          address: tokenAddress,
-          name: data.name,
-          symbol: data.symbol,
-          totalSupply: parsedInitialSupply,
-        })
-
-        navigate(`/token/${tokenAddress}`)
-      } catch (err) {
-        console.error(err)
-      }
+          navigate(`/token/${tokenAddress}`)
+        },
+      })
     },
-    [account, writeAsync, pushDeployedTokenContracts, chainId, navigate]
+    [account?.address, chainId, executeTransaction, navigate, pushDeployedTokenContracts]
   )
 
   return (
@@ -168,8 +171,8 @@ export default function DeployPage() {
 
             <div />
 
-            <PrimaryButton type="submit" disabled={!account || isPending} large>
-              {account ? (isPending ? 'Waiting for signature' : 'Deploy') : 'Connect wallet'}
+            <PrimaryButton type="submit" disabled={!account} large>
+              {account ? 'Deploy' : 'Connect wallet'}
             </PrimaryButton>
           </Column>
         </Box>

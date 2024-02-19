@@ -12,6 +12,7 @@ export const container = style([
     background: 'bg1',
     borderRadius: '10',
     border: 'light',
+    gap: '32',
   }),
 ])
 

@@ -16,12 +16,12 @@ import { CallStruct, hash } from 'starknet'
 import * as styles from './style.css'
 import TokenContract from './TokenContract'
 
-export default function LaunchPage() {
+export default function TokensPage() {
   // modal
   const [, toggleImportTokenModel] = useImportTokenModal()
 
   // deployed tokens
-  const { deployedTokenContracts } = useDeploymentStore()
+  const [deployedTokenContracts] = useDeploymentStore()
 
   const launchedStatusCallArgs = useMemo(
     () => [

@@ -14,8 +14,8 @@ export const links = [
     path: '/deploy',
   },
   {
-    name: 'Launch',
-    path: '/launch',
+    name: 'My tokens',
+    path: '/tokens',
   },
 ]
 

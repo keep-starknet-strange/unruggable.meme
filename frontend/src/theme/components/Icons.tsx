@@ -30,3 +30,34 @@ export const CarretRight = (props: SVGProps) => (
     />
   </svg>
 )
+
+export const Checkmark = (props: SVGProps) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" {...props}>
+    <polyline
+      fill="none"
+      stroke="currentColor"
+      points="12.9,5.7 6.4,12.3 3.1,9"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="2"
+    />
+  </svg>
+)
+
+export const Jediswap = (props: SVGProps) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 360" fill="currentColor" {...props}>
+    <polygon points="297 252 282 278 27 278 0 328 360 328 297 252" />
+    <polygon points="63 108 78 82 333 82 360 32 0 32 63 108" />
+    <polygon points="225.5 205 105.5 205 134.5 155 254.5 155 225.5 205" />
+  </svg>
+)
+
+export const Ekubo = (props: SVGProps) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" fill="currentColor" {...props}>
+    <path
+      d="M30.6,6.4H5.4c-3,0-5.4,2.4-5.4,5.4v12.5c0,3,2.4,5.4,5.4,5.4h25.2c3,0,5.4-2.4,5.4-5.4V11.7C36,8.8,33.6,6.4,30.6,6.4z
+	 M25.2,25.2c-4,0-7.2-3.2-7.2-7.2c0,4-3.2,7.2-7.2,7.2c-4,0-7.2-3.2-7.2-7.2s3.2-7.2,7.2-7.2c4,0,7.2,3.2,7.2,7.2
+	c0-4,3.2-7.2,7.2-7.2c4,0,7.2,3.2,7.2,7.2S29.2,25.2,25.2,25.2z"
+    />
+  </svg>
+)

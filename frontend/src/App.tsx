@@ -4,8 +4,8 @@ import AppLayout from './components/Layout/App'
 import HomeLayout from './components/Layout/Home'
 import DeployPage from './pages/Deploy'
 import HomePage from './pages/Home'
-import LaunchPage from './pages/Launch'
 import TokenPage from './pages/Token'
+import TokensPage from './pages/Tokens'
 
 const router = createBrowserRouter([
   {
@@ -25,10 +25,10 @@ const router = createBrowserRouter([
     ),
   },
   {
-    path: '/launch',
+    path: '/tokens',
     element: (
       <AppLayout>
-        <LaunchPage />
+        <TokensPage />
       </AppLayout>
     ),
   },

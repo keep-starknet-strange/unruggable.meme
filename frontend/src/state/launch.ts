@@ -1,11 +1,13 @@
+import { AMM } from 'src/constants/AMMs'
 import { MAX_LIQUIDITY_LOCK_PERIOD, MAX_TRANSFER_RESTRICTION_DELAY } from 'src/constants/misc'
+import { DEFAULT_QUOTE_TOKEN_ADDRESS } from 'src/constants/tokens'
+import { getChecksumAddress } from 'starknet'
 import { StateCreator } from 'zustand'
 
 import { StoreState } from './index'
 
 export type LaunchSlice = State & Actions
 
-// eslint-disable-next-line import/no-unused-modules
 export interface Holder {
   address: string
   amount: string
@@ -18,8 +20,10 @@ interface State {
   antiBotPeriod: number
   liquidityLockPeriod: number
   startingMcap: string | null
-  launch: (() => void) | null
   teamAllocation: TeamAllocation
+  amm: AMM
+  quoteTokenAddress: string
+  ekuboFees: string | null
 }
 
 interface Actions {
@@ -27,24 +31,34 @@ interface Actions {
   setAntiBotPeriod: (antiBotPeriod: number) => void
   setLiquidityLockPeriod: (liquidityLockPeriod: number) => void
   setStartingMcap: (startingMcap: string | null) => void
-  setLaunch: (launch: () => void) => void
+  setAMM: (amm: AMM) => void
   setTeamAllocationHolder: (holder: Holder, index: number) => void
   removeTeamAllocationHolder: (index: number) => void
+  resetLaunchForm: () => void
+  setEkuboFees: (ekuboFees: string) => void
 }
 
-export const createLaunchSlice: StateCreator<StoreState, [['zustand/immer', never]], [], LaunchSlice> = (set) => ({
+const initialState = {
   hodlLimit: null,
   antiBotPeriod: MAX_TRANSFER_RESTRICTION_DELAY,
   liquidityLockPeriod: MAX_LIQUIDITY_LOCK_PERIOD,
   startingMcap: null,
-  launch: null,
   teamAllocation: {},
+  amm: AMM.EKUBO, // we don't really care about this value
+  quoteTokenAddress: getChecksumAddress(DEFAULT_QUOTE_TOKEN_ADDRESS),
+  ekuboFees: null,
+}
+
+export const createLaunchSlice: StateCreator<StoreState, [['zustand/immer', never]], [], LaunchSlice> = (set) => ({
+  ...initialState,
 
   setHodlLimit: (hodlLimit) => set({ hodlLimit }),
   setAntiBotPeriod: (antiBotPeriod) => set({ antiBotPeriod }),
   setLiquidityLockPeriod: (liquidityLockPeriod) => set({ liquidityLockPeriod }),
   setStartingMcap: (startingMcap) => set({ startingMcap }),
-  setLaunch: (launch: () => void) => set({ launch }),
+  setAMM: (amm) => set({ amm }),
+  setEkuboFees: (ekuboFees) => set({ ekuboFees }),
+
   setTeamAllocationHolder: (holder: Holder, index: number) =>
     set((state) => {
       state.teamAllocation[index] = holder
@@ -54,4 +68,5 @@ export const createLaunchSlice: StateCreator<StoreState, [['zustand/immer', neve
       delete state.teamAllocation[index]
       return state
     }),
+  resetLaunchForm: () => set({ ...initialState }),
 })

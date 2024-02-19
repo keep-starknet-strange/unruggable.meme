@@ -1,3 +1,4 @@
+import { PERCENTAGE_INPUT_PRECISION } from 'src/constants/misc'
 import { z } from 'zod'
 
 import { isValidL2Address } from './address'
@@ -13,6 +14,11 @@ export const currencyInput = z
 
 export const percentInput = z
   .string()
-  .refine((input) => +input <= 100 && +input >= 0.01 && /\d+(\.\d{0,2})?/.test(input), {
-    message: 'Invalid percentage',
-  })
+  .refine(
+    (input) =>
+      +input >= 10 ** -PERCENTAGE_INPUT_PRECISION &&
+      new RegExp(`\\d+(\\.\\d{0,${PERCENTAGE_INPUT_PRECISION}})?`).test(input),
+    {
+      message: 'Invalid percentage',
+    }
+  )

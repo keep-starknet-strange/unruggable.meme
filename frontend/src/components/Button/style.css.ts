@@ -130,3 +130,29 @@ export const iconButton = style([
     border: 'none',
   }),
 ])
+
+export const cardButton = style([
+  Base,
+  {
+    textAlign: 'left',
+  },
+  sprinkles({
+    transition: '125',
+    paddingY: '16',
+    paddingX: '16',
+    gap: '8',
+    borderRadius: '10',
+    background: {
+      default: 'bg2',
+      hover: 'border2',
+    },
+    outline: 'none',
+    border: 'none',
+  }),
+])
+
+export const cardButtonIconContainer = sprinkles({
+  width: '42',
+  height: '42',
+  color: 'text1',
+})

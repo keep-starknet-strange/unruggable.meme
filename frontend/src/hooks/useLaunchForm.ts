@@ -16,15 +16,32 @@ export function useHodlLimitForm() {
 
 export function useLiquidityForm() {
   return useBoundStore((state) => ({
-    liquidityLockPeriod: state.liquidityLockPeriod,
     startingMcap: state.startingMcap,
-    setLiquidityLockPeriod: state.setLiquidityLockPeriod,
     setStartingMcap: state.setStartingMcap,
+    quoteTokenAddress: state.quoteTokenAddress,
   }))
 }
 
-export function useLaunch() {
-  return useBoundStore((state) => [state.launch, state.setLaunch] as const)
+export function useJediswapLiquidityForm() {
+  return useBoundStore((state) => ({
+    liquidityLockPeriod: state.liquidityLockPeriod,
+    setLiquidityLockPeriod: state.setLiquidityLockPeriod,
+  }))
+}
+
+export function useEkuboLiquidityForm() {
+  return useBoundStore((state) => ({
+    ekuboFees: state.ekuboFees,
+    setEkuboFees: state.setEkuboFees,
+  }))
+}
+
+export function useAmm() {
+  return useBoundStore((state) => [state.amm, state.setAMM] as const)
+}
+
+export function useResetLaunchForm() {
+  return useBoundStore((state) => state.resetLaunchForm)
 }
 
 export function useTeamAllocation() {
@@ -35,10 +52,12 @@ export function useTeamAllocation() {
   }))
 }
 
-export function useTeamAllocationTotalPercentage(totalSupply: string) {
+export function useTeamAllocationTotalPercentage(totalSupply?: string) {
   const { teamAllocation } = useTeamAllocation()
 
   return useMemo(() => {
+    if (!totalSupply) return
+
     const totalTeamAllocation = Object.values(teamAllocation).reduce(
       (acc, holder) => acc.add(parseFormatedAmount(holder?.amount ?? 0)),
       new Fraction(0)

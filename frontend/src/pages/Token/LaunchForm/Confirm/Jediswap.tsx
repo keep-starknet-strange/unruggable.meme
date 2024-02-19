@@ -1,40 +1,47 @@
-import { useContractWrite } from '@starknet-react/core'
-import { Fraction, Percent } from '@uniswap/sdk-core'
+import { Fraction } from '@uniswap/sdk-core'
 import moment from 'moment'
-import { useCallback, useEffect, useMemo } from 'react'
-import { ETH_ADDRESS, FACTORY_ADDRESSES } from 'src/constants/contracts'
+import { useCallback, useMemo } from 'react'
+import { FACTORY_ADDRESSES } from 'src/constants/contracts'
 import { DECIMALS, LIQUIDITY_LOCK_FOREVER_TIMESTAMP, MAX_LIQUIDITY_LOCK_PERIOD, Selector } from 'src/constants/misc'
 import useChainId from 'src/hooks/useChainId'
-import { useHodlLimitForm, useLaunch, useLiquidityForm, useTeamAllocation } from 'src/hooks/useLaunchForm'
-import { NotLaunchedMemecoin } from 'src/hooks/useMemecoin'
-import { useEtherPrice, useWeiAmountToParsedFiatValue } from 'src/hooks/usePrice'
-import Box from 'src/theme/components/Box'
-import { Column, Row } from 'src/theme/components/Flex'
-import * as Text from 'src/theme/components/Text'
-import { formatCurrenyAmount, formatPercentage, parseFormatedAmount } from 'src/utils/amount'
+import {
+  useHodlLimitForm,
+  useJediswapLiquidityForm,
+  useLiquidityForm,
+  useResetLaunchForm,
+  useTeamAllocation,
+  useTeamAllocationTotalPercentage,
+} from 'src/hooks/useLaunchForm'
+import useMemecoin from 'src/hooks/useMemecoin'
+import { useEtherPrice } from 'src/hooks/usePrice'
+import { useExecuteTransaction } from 'src/hooks/useTransactions'
+import { parseFormatedAmount } from 'src/utils/amount'
 import { decimalsScale } from 'src/utils/decimalScale'
 import { CallData, uint256 } from 'starknet'
 
-import * as styles from './style.css'
+import { LastFormPageProps } from '../common'
+import LaunchTemplate from './template'
 
-interface JediswapLaunchProps {
-  memecoinInfos: NotLaunchedMemecoin
-  teamAllocationTotalPercentage: Percent
-}
-
-export default function JediswapLaunch({ memecoinInfos, teamAllocationTotalPercentage }: JediswapLaunchProps) {
+export default function JediswapLaunch({ previous }: LastFormPageProps) {
   // form data
   const { hodlLimit, antiBotPeriod } = useHodlLimitForm()
-  const { liquidityLockPeriod, startingMcap } = useLiquidityForm()
+  const { startingMcap, quoteTokenAddress } = useLiquidityForm()
+  const { liquidityLockPeriod } = useJediswapLiquidityForm()
   const { teamAllocation } = useTeamAllocation()
+  const resetLaunchForm = useResetLaunchForm()
+
+  // memecoin
+  const { data: memecoin, refresh: refreshMemecoin } = useMemecoin()
 
   // eth price
   const ethPrice = useEtherPrice()
-  const weiAmountToParsedFiatValue = useWeiAmountToParsedFiatValue()
+
+  // team allocation
+  const teamAllocationTotalPercentage = useTeamAllocationTotalPercentage(memecoin?.totalSupply)
 
   // quote amount
   const quoteAmount = useMemo(() => {
-    if (!ethPrice || !startingMcap) return
+    if (!ethPrice || !startingMcap || !teamAllocationTotalPercentage) return
 
     // mcap / eth_price * (1 - team_allocation / total_supply)
     return new Fraction(parseFormatedAmount(startingMcap))
@@ -44,11 +51,13 @@ export default function JediswapLaunch({ memecoinInfos, teamAllocationTotalPerce
 
   // starknet
   const chainId = useChainId()
-  const { writeAsync } = useContractWrite({})
+
+  // transaction
+  const executeTransaction = useExecuteTransaction()
 
   // launch
   const launch = useCallback(() => {
-    if (!quoteAmount || !chainId || !hodlLimit) return
+    if (!quoteAmount || !chainId || !hodlLimit || !memecoin?.address) return
 
     const uin256QuoteAmount = uint256.bnToUint256(
       BigInt(quoteAmount.multiply(decimalsScale(DECIMALS)).quotient.toString())
@@ -69,10 +78,10 @@ export default function JediswapLaunch({ memecoinInfos, teamAllocationTotalPerce
 
     // prepare calldata
     const launchCalldata = CallData.compile([
-      memecoinInfos.address, // memecoin address
+      memecoin.address, // memecoin address
       antiBotPeriod * 60, // anti bot period in seconds
       +hodlLimit * 100, // hodl limit
-      ETH_ADDRESS, // quote token
+      quoteTokenAddress, // quote token
       initalHolders, // initial holders
       initalHoldersAmounts, // intial holders amounts
       uin256QuoteAmount, // quote amount
@@ -81,12 +90,10 @@ export default function JediswapLaunch({ memecoinInfos, teamAllocationTotalPerce
         : moment().add(moment.duration(liquidityLockPeriod, 'months')).unix(),
     ])
 
-    console.log(launchCalldata)
-
-    writeAsync({
+    executeTransaction({
       calls: [
         {
-          contractAddress: ETH_ADDRESS,
+          contractAddress: quoteTokenAddress,
           entrypoint: Selector.APPROVE,
           calldata: approveCalldata,
         },
@@ -96,50 +103,25 @@ export default function JediswapLaunch({ memecoinInfos, teamAllocationTotalPerce
           calldata: launchCalldata,
         },
       ],
+      action: 'Launch on JediSwap',
+      onSuccess: () => {
+        resetLaunchForm()
+        refreshMemecoin()
+      },
     })
   }, [
     quoteAmount,
     chainId,
-    memecoinInfos.address,
-    antiBotPeriod,
     hodlLimit,
-    liquidityLockPeriod,
-    writeAsync,
+    memecoin?.address,
     teamAllocation,
+    antiBotPeriod,
+    liquidityLockPeriod,
+    executeTransaction,
+    refreshMemecoin,
+    resetLaunchForm,
+    quoteTokenAddress,
   ])
 
-  // set launch
-  const [, setLaunch] = useLaunch()
-  useEffect(() => {
-    setLaunch(launch)
-  }, [launch, setLaunch])
-
-  return (
-    <Column gap="24">
-      <Column gap="8">
-        <Row className={styles.amountRowContainer}>
-          <Text.Medium>Liquidity</Text.Medium>
-          <Row className={styles.amountContainer}>
-            <Text.Subtitle>{weiAmountToParsedFiatValue(quoteAmount)}</Text.Subtitle>
-            <Text.Body>{quoteAmount ? `${formatCurrenyAmount(quoteAmount, { fixed: 4 })} ETH` : '-'}</Text.Body>
-          </Row>
-        </Row>
-
-        <Row className={styles.amountRowContainer}>
-          <Text.Medium>Team allocation ({formatPercentage(teamAllocationTotalPercentage)})</Text.Medium>
-          <Text.Medium color="accent">Free</Text.Medium>
-        </Row>
-      </Column>
-
-      <Box className={styles.separator} />
-
-      <Row className={styles.amountRowContainer}>
-        <Text.Medium>Total</Text.Medium>
-        <Row className={styles.amountContainer}>
-          <Text.Subtitle>{weiAmountToParsedFiatValue(quoteAmount)}</Text.Subtitle>
-          <Text.Body>{quoteAmount ? `${formatCurrenyAmount(quoteAmount, { fixed: 4 })} ETH` : '-'}</Text.Body>
-        </Row>
-      </Row>
-    </Column>
-  )
+  return <LaunchTemplate liquidityPrice={quoteAmount} previous={previous} next={launch} />
 }

@@ -1,73 +1,154 @@
-import { Fraction, Percent } from '@uniswap/sdk-core'
-import { useCallback, useEffect } from 'react'
-import { useHodlLimitForm, useLaunch, useLiquidityForm } from 'src/hooks/useLaunchForm'
-import { NotLaunchedMemecoin } from 'src/hooks/useMemecoin'
-import { useWeiAmountToParsedFiatValue } from 'src/hooks/usePrice'
-import Box from 'src/theme/components/Box'
-import { Column, Row } from 'src/theme/components/Flex'
-import * as Text from 'src/theme/components/Text'
-import { formatCurrenyAmount, formatPercentage } from 'src/utils/amount'
+import { Fraction } from '@uniswap/sdk-core'
+import { useCallback, useMemo } from 'react'
+import { FACTORY_ADDRESSES } from 'src/constants/contracts'
+import { DECIMALS, EKUBO_BOUND, EKUBO_FEES_MULTIPLICATOR, EKUBO_TICK_SPACING, Selector } from 'src/constants/misc'
+import useChainId from 'src/hooks/useChainId'
+import {
+  useEkuboLiquidityForm,
+  useHodlLimitForm,
+  useLiquidityForm,
+  useResetLaunchForm,
+  useTeamAllocation,
+  useTeamAllocationTotalPercentage,
+} from 'src/hooks/useLaunchForm'
+import useMemecoin from 'src/hooks/useMemecoin'
+import { useEtherPrice } from 'src/hooks/usePrice'
+import { useExecuteTransaction } from 'src/hooks/useTransactions'
+import { parseFormatedAmount, parseFormatedPercentage } from 'src/utils/amount'
+import { decimalsScale } from 'src/utils/decimals'
+import { getStartingTick } from 'src/utils/ekubo'
+import { CallData, uint256 } from 'starknet'
 
-import * as styles from './style.css'
+import { LastFormPageProps } from '../common'
+import LaunchTemplate from './template'
 
-interface EkuboLaunchProps {
-  memecoinInfos: NotLaunchedMemecoin
-  teamAllocationTotalPercentage: Percent
-}
-
-export default function EkuboLaunch({ memecoinInfos, teamAllocationTotalPercentage }: EkuboLaunchProps) {
+export default function EkuboLaunch({ previous }: LastFormPageProps) {
   const { hodlLimit, antiBotPeriod } = useHodlLimitForm()
-  const { liquidityLockPeriod, startingMcap } = useLiquidityForm()
+  const { startingMcap, quoteTokenAddress } = useLiquidityForm()
+  const { ekuboFees } = useEkuboLiquidityForm()
+  const { teamAllocation } = useTeamAllocation()
+  const resetLaunchForm = useResetLaunchForm()
+
+  // memecoin
+  const { data: memecoin, refresh: refreshMemecoin } = useMemecoin()
 
   // eth price
-  const weiAmountToParsedFiatValue = useWeiAmountToParsedFiatValue()
+  const ethPrice = useEtherPrice()
 
-  // team allocation buyout
-  const teamAllocationBuyoutAmount = new Fraction(0)
+  // team allocation
+  const teamAllocationTotalPercentage = useTeamAllocationTotalPercentage(memecoin?.totalSupply)
+
+  // team allocation quote amount
+  const teamAllocationQuoteAmount = useMemo(() => {
+    if (!ethPrice || !startingMcap || !teamAllocationTotalPercentage || !ekuboFees) return
+
+    // mcap / eth_price * (team_allocation / total_supply + ekuboFees)
+    return new Fraction(parseFormatedAmount(startingMcap))
+      .divide(ethPrice)
+      .multiply(teamAllocationTotalPercentage.add(parseFormatedPercentage(ekuboFees)))
+  }, [ethPrice, startingMcap, teamAllocationTotalPercentage, ekuboFees])
+
+  // starting tick
+  const i129StartingTick = useMemo(() => {
+    if (!ethPrice || !startingMcap || !memecoin) return
+
+    // initial price in quote/MEME = mcap / eth price / total supply
+    const initalPrice = +new Fraction(parseFormatedAmount(startingMcap))
+      .divide(ethPrice)
+      .multiply(decimalsScale(DECIMALS))
+      .divide(new Fraction(memecoin.totalSupply))
+      .toFixed(DECIMALS)
+
+    const startingTickMag = getStartingTick(initalPrice)
+
+    return {
+      mag: Math.abs(startingTickMag),
+      sign: startingTickMag < 0,
+    }
+  }, [ethPrice, startingMcap, memecoin])
+
+  // fees
+  const fees = useMemo(() => {
+    if (!ekuboFees) return
+
+    return parseFormatedPercentage(ekuboFees).multiply(EKUBO_FEES_MULTIPLICATOR).quotient.toString()
+  }, [ekuboFees])
+
+  // starknet
+  const chainId = useChainId()
+
+  // transaction
+  const executeTransaction = useExecuteTransaction()
 
   // launch
   const launch = useCallback(() => {
-    console.log('ekubo')
-  }, [])
+    if (!i129StartingTick || !fees || !chainId || !hodlLimit || !memecoin?.address || !teamAllocationQuoteAmount) return
 
-  // set launch
-  const [, setLaunch] = useLaunch()
-  useEffect(() => {
-    setLaunch(launch)
-  }, [launch, setLaunch])
+    const uin256TeamAllocationQuoteAmount = uint256.bnToUint256(
+      BigInt(teamAllocationQuoteAmount.multiply(decimalsScale(DECIMALS)).quotient.toString())
+    )
 
-  return (
-    <Column gap="24">
-      <Column gap="8">
-        <Row className={styles.amountRowContainer}>
-          <Text.Medium>Liquidity</Text.Medium>
-          <Text.Medium color="accent">Free</Text.Medium>
-        </Row>
+    const transferCalldata = CallData.compile([
+      FACTORY_ADDRESSES[chainId], // recipient
+      uin256TeamAllocationQuoteAmount, // amount
+    ])
 
-        <Row className={styles.amountRowContainer}>
-          <Text.Medium>Team allocation ({formatPercentage(teamAllocationTotalPercentage)})</Text.Medium>
-          <Row className={styles.amountContainer}>
-            <Text.Subtitle>{weiAmountToParsedFiatValue(teamAllocationBuyoutAmount)}</Text.Subtitle>
-            <Text.Body>
-              {teamAllocationBuyoutAmount
-                ? `${formatCurrenyAmount(teamAllocationBuyoutAmount, { fixed: 4 })} ETH`
-                : '-'}
-            </Text.Body>
-          </Row>
-        </Row>
-      </Column>
+    // team allocation
+    const initalHolders = Object.values(teamAllocation)
+      .filter(Boolean)
+      .map((holder) => holder.address)
+    const initalHoldersAmounts = Object.values(teamAllocation)
+      .filter(Boolean)
+      .map((holder) => uint256.bnToUint256(BigInt(parseFormatedAmount(holder.amount)) * BigInt(decimalsScale(18))))
 
-      <Box className={styles.separator} />
+    // prepare calldata
+    const launchCalldata = CallData.compile([
+      memecoin.address, // memecoin address
+      antiBotPeriod * 60, // anti bot period in seconds
+      +hodlLimit * 100, // hodl limit
+      quoteTokenAddress, // quote token
+      initalHolders, // initial holders
+      initalHoldersAmounts, // intial holders amounts
 
-      <Row className={styles.amountRowContainer}>
-        <Text.Medium>Total</Text.Medium>
-        <Row className={styles.amountContainer}>
-          <Text.Subtitle>{weiAmountToParsedFiatValue(teamAllocationBuyoutAmount)}</Text.Subtitle>
-          <Text.Body>
-            {teamAllocationBuyoutAmount ? `${formatCurrenyAmount(teamAllocationBuyoutAmount, { fixed: 4 })} ETH` : '-'}
-          </Text.Body>
-        </Row>
-      </Row>
-    </Column>
-  )
+      fees, // ekubo fees
+      EKUBO_TICK_SPACING, // tick spacing
+      i129StartingTick, // starting tick
+      EKUBO_BOUND, // bound,
+    ])
+
+    executeTransaction({
+      calls: [
+        {
+          contractAddress: quoteTokenAddress,
+          entrypoint: Selector.TRANSFER,
+          calldata: transferCalldata,
+        },
+        {
+          contractAddress: FACTORY_ADDRESSES[chainId],
+          entrypoint: Selector.LAUNCH_ON_EKUBO,
+          calldata: launchCalldata,
+        },
+      ],
+      action: 'Launch on JediSwap',
+      onSuccess: () => {
+        resetLaunchForm()
+        refreshMemecoin()
+      },
+    })
+  }, [
+    antiBotPeriod,
+    chainId,
+    executeTransaction,
+    fees,
+    hodlLimit,
+    i129StartingTick,
+    memecoin?.address,
+    quoteTokenAddress,
+    refreshMemecoin,
+    resetLaunchForm,
+    teamAllocation,
+    teamAllocationQuoteAmount,
+  ])
+
+  return <LaunchTemplate teamAllocationPrice={teamAllocationQuoteAmount} previous={previous} next={launch} />
 }

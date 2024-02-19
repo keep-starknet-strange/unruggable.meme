@@ -1,18 +1,24 @@
 import { Eye } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import moment from 'moment'
+import { useCallback, useMemo, useState } from 'react'
 import { useMatch } from 'react-router-dom'
-import { PrimaryButton } from 'src/components/Button'
 import Section from 'src/components/Section'
-import { useMemecoinInfos } from 'src/hooks/useMemecoin'
+import { LiquidityType } from 'src/constants/misc'
+import { Safety } from 'src/constants/safety'
+import useMemecoin from 'src/hooks/useMemecoin'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
 import { vars } from 'src/theme/css/sprinkles.css'
+import { getLiquidityLockSafety } from 'src/utils/safety'
 import { getChecksumAddress } from 'starknet'
 
+import CollectFees from './CollectFees'
+import IncreaseLiquidityLock from './IncreaseLiquidityLock'
+import AMMForm from './LaunchForm/AMM'
 import ConfirmForm from './LaunchForm/Confirm'
 import HodlLimitForm from './LaunchForm/HodlLimit'
-import LiquidityForm from './LaunchForm/Liqiudity'
+import LiquidityForm from './LaunchForm/Liquidity'
 import TeamAllocationForm from './LaunchForm/TeamAllocation'
 import TokenMetrics from './Metrics'
 import * as styles from './style.css'
@@ -22,7 +28,7 @@ export default function TokenPage() {
 
   // URL
   const match = useMatch('/token/:address')
-  const memecoinAddress = useMemo(() => {
+  const tokenAddress = useMemo(() => {
     if (match?.params.address) {
       return getChecksumAddress(match?.params.address)
     } else {
@@ -34,34 +40,24 @@ export default function TokenPage() {
   const next = useCallback(() => setLaunchFormPageIndex((page) => page + 1), [])
   const previous = useCallback(() => setLaunchFormPageIndex((page) => page - 1), [])
 
-  // get memecoin infos
-  const [{ data: memecoinInfos, error, indexing }, getMemecoinInfos] = useMemecoinInfos()
-
-  useEffect(() => {
-    if (memecoinAddress) {
-      getMemecoinInfos(memecoinAddress)
-    }
-  }, [getMemecoinInfos, memecoinAddress])
+  // memecoin
+  const { data: memecoin, ruggable } = useMemecoin(tokenAddress ?? undefined)
 
   // page content
   const mainContent = useMemo(() => {
-    if (indexing) {
-      return <Text.Body textAlign="center">Indexing...</Text.Body>
-    }
-
-    if (error) {
+    if (ruggable) {
       return <Text.Body textAlign="center">This token is not unruggable</Text.Body>
     }
 
-    if (!memecoinInfos) return
+    if (!memecoin) return
 
-    return <TokenMetrics memecoinInfos={memecoinInfos} />
-  }, [indexing, error, memecoinInfos])
+    return <TokenMetrics />
+  }, [ruggable, memecoin])
 
   // Owner content
 
   const ownerContent = useMemo(() => {
-    if (!memecoinInfos?.isOwner || error) return
+    if (!memecoin) return
 
     const onlyVisibleToYou = (
       <Row gap="2">
@@ -70,44 +66,64 @@ export default function TokenPage() {
       </Row>
     )
 
-    if (memecoinInfos.isLaunched) {
-      return (
-        <Column gap="32">
-          <PrimaryButton>Collect fees</PrimaryButton>
-          {onlyVisibleToYou}
-        </Column>
+    if (memecoin.isLaunched && memecoin.isOwner) {
+      const liquidityLock = moment.duration(
+        moment(moment.unix(memecoin.liquidity.unlockTime)).diff(moment.now()),
+        'milliseconds'
       )
-    } else {
+      const liquidityLockSafety = getLiquidityLockSafety(liquidityLock)
+
       return (
-        <Column gap="32">
-          <Column>
-            <Row gap="12" justifyContent="space-between">
-              <Text.HeadlineLarge>Launch token</Text.HeadlineLarge>
-            </Row>
+        <>
+          {memecoin.liquidity.type === LiquidityType.NFT && (
+            <Column className={styles.container}>
+              <CollectFees />
+              {onlyVisibleToYou}
+            </Column>
+          )}
 
-            {launchFormPageIndex === 0 && <HodlLimitForm next={next} />}
+          {liquidityLockSafety !== Safety.SAFE && (
+            <Column className={styles.container}>
+              <IncreaseLiquidityLock />
+              {onlyVisibleToYou}
+            </Column>
+          )}
+        </>
+      )
+    } else if (memecoin.isOwner) {
+      return (
+        <Box className={styles.container}>
+          <Column gap="32">
+            <Column>
+              <Row gap="12" justifyContent="space-between">
+                <Text.HeadlineLarge>Launch token</Text.HeadlineLarge>
+              </Row>
 
-            {launchFormPageIndex === 1 && <LiquidityForm next={next} previous={previous} />}
+              {launchFormPageIndex === 0 && <AMMForm next={next} />}
 
-            {launchFormPageIndex === 2 && (
-              <TeamAllocationForm next={next} previous={previous} memecoinInfos={memecoinInfos} />
-            )}
+              {launchFormPageIndex === 1 && <TeamAllocationForm next={next} previous={previous} />}
 
-            {launchFormPageIndex === 3 && <ConfirmForm previous={previous} memecoinInfos={memecoinInfos} />}
+              {launchFormPageIndex === 2 && <HodlLimitForm next={next} previous={previous} />}
+
+              {launchFormPageIndex === 3 && <LiquidityForm next={next} previous={previous} />}
+
+              {launchFormPageIndex === 4 && <ConfirmForm previous={previous} />}
+            </Column>
+
+            {onlyVisibleToYou}
           </Column>
-
-          {onlyVisibleToYou}
-        </Column>
+        </Box>
       )
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [memecoinInfos?.isOwner, memecoinInfos?.isLaunched, error, launchFormPageIndex, next, previous])
+
+    return
+  }, [memecoin, launchFormPageIndex, next, previous])
 
   return (
     <Section>
       <Column gap="32" alignItems="center" width="full">
-        <Box className={styles.container}>{mainContent}</Box>
-        {!!ownerContent && <Box className={styles.container}>{ownerContent}</Box>}
+        {mainContent && <Box className={styles.container}>{mainContent}</Box>}
+        {!!ownerContent && <>{ownerContent}</>}
       </Column>
     </Section>
   )
