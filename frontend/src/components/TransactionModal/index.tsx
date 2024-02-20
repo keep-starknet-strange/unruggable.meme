@@ -1,13 +1,13 @@
-import { useContractWrite, useWaitForTransaction } from '@starknet-react/core'
+import { useAccount, useContractWrite, useWaitForTransaction } from '@starknet-react/core'
 import { useEffect, useMemo, useState } from 'react'
-import { STARKNET_POLLING } from 'src/constants/misc'
+import { STARKNET_POLLING, WHITELISTED_ADDRESSES } from 'src/constants/misc'
 import { useCloseModal, useTransactionModal } from 'src/hooks/useModal'
 import { useTransaction } from 'src/hooks/useTransactions'
 import { InvokeTransactionDetails } from 'src/state/transaction'
 import { Column, Row } from 'src/theme/components/Flex'
 import * as Icons from 'src/theme/components/Icons'
 import * as Text from 'src/theme/components/Text'
-import { encode, TransactionStatus } from 'starknet'
+import { encode, getChecksumAddress, TransactionStatus } from 'starknet'
 
 import Portal from '../common/Portal'
 import Content from '../Modal/Content'
@@ -32,6 +32,7 @@ export function TransactionModal() {
 
   // starknet
   const { writeAsync } = useContractWrite({})
+  const { address } = useAccount()
 
   // calls
   const [invokeTransactionDetails, resetTransaction] = useTransaction()
@@ -102,6 +103,26 @@ export function TransactionModal() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accepted, data?.finality_status, currentInvokeTransactionDetails?.onSuccess])
 
+  // whitelist
+  const isWhiteListed = useMemo(() => {
+    if (!address) return false
+
+    for (const whitelistedAddress of WHITELISTED_ADDRESSES) {
+      if (getChecksumAddress(whitelistedAddress) === getChecksumAddress(address)) {
+        return true
+      }
+    }
+
+    return false
+  }, [address])
+
+  // whitelist error
+  useEffect(() => {
+    if (!isWhiteListed) {
+      setError("Sorry, you're not allowed to perform this action yet. Wait for the official unruggable launch")
+    }
+  }, [isWhiteListed, isOpen])
+
   // error component
   const errorComponent = useMemo(() => {
     if (error) {
@@ -111,7 +132,7 @@ export function TransactionModal() {
             <Icons.Close width="64" height="64" />
           </Row>
           <Text.HeadlineLarge>Transaction rejected</Text.HeadlineLarge>
-          <Text.Error>{error}</Text.Error>
+          <Text.Error textAlign="center">{error}</Text.Error>
         </>
       )
     }
@@ -121,7 +142,7 @@ export function TransactionModal() {
 
   // execute transaction
   useEffect(() => {
-    if (!currentInvokeTransactionDetails) return
+    if (!currentInvokeTransactionDetails || !isWhiteListed) return
 
     writeAsync({ calls: currentInvokeTransactionDetails.calls })
       .then((res) => {
@@ -134,7 +155,7 @@ export function TransactionModal() {
       })
 
     resetTransaction()
-  }, [resetTransaction, currentInvokeTransactionDetails, writeAsync])
+  }, [resetTransaction, currentInvokeTransactionDetails, writeAsync, isWhiteListed])
 
   // updating current invoke transaction details
   useEffect(() => {
