@@ -3,6 +3,7 @@ import { Loader2Icon } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
+import useChainId from 'src/hooks/useChainId'
 import useDebounce from 'src/hooks/useDebounce'
 import { useDeploymentStore } from 'src/hooks/useDeployment'
 import useMemecoin from 'src/hooks/useMemecoin'
@@ -49,6 +50,9 @@ export function ImportTokenModal({ save = false }: ImportTokenModalProps) {
     [navigate, close]
   )
 
+  // starknet
+  const chainId = useChainId()
+
   // form
   const {
     register,
@@ -74,7 +78,7 @@ export function ImportTokenModal({ save = false }: ImportTokenModalProps) {
   const { data: memecoin, ruggable } = useMemecoin(debouncedTokenAddress)
 
   useEffect(() => {
-    if (memecoin && isOpen) {
+    if (memecoin && isOpen && chainId) {
       // save token if needed
       if (save) {
         pushDeployedTokenContracts(memecoin)
@@ -86,7 +90,7 @@ export function ImportTokenModal({ save = false }: ImportTokenModalProps) {
 
     setLoading(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [memecoin?.address, save, isOpen])
+  }, [memecoin?.address, save, isOpen, chainId])
 
   // handle error
   useEffect(() => {

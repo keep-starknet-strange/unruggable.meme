@@ -1,3 +1,4 @@
+import { constants } from 'starknet'
 import { StateCreator } from 'zustand'
 
 import { StoreState } from './index'
@@ -12,15 +13,15 @@ export interface TokenContract {
 }
 
 interface State {
-  deployedTokenContracts: TokenContract[]
+  deployedTokenContracts: { [chainId in constants.StarknetChainId]?: TokenContract[] }
 }
 
 interface Actions {
-  pushDeployedTokenContracts: (...contracts: TokenContract[]) => void
+  pushDeployedTokenContract: (contract: TokenContract, chainId: constants.StarknetChainId) => void
 }
 
 const initialState: State = {
-  deployedTokenContracts: [],
+  deployedTokenContracts: {},
 }
 
 // Create a deployment slice with Zustand and persist middleware
@@ -29,8 +30,9 @@ export const createContractsSlice: StateCreator<StoreState, [['zustand/immer', n
 ) => ({
   ...initialState,
 
-  pushDeployedTokenContracts: (...contracts: TokenContract[]) =>
+  pushDeployedTokenContract: (contract: TokenContract, chainId: constants.StarknetChainId) =>
     set((state) => {
-      state.deployedTokenContracts.push(...(contracts as any[]))
+      state.deployedTokenContracts[chainId] ??= []
+      state.deployedTokenContracts[chainId]?.push(contract)
     }),
 })

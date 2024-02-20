@@ -35,6 +35,7 @@ export enum Selector {
 
 export enum LiquidityType {
   ERC20 = 'JediERC20',
+  StarkDefiERC20 = 'StarkDefiERC20',
   NFT = 'EkuboNFT',
 }
 

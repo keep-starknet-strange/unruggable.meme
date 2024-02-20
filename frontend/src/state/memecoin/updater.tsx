@@ -143,6 +143,8 @@ export default function MemecoinUpdater(): null {
 
         const lockManager = res.result[20] as string
 
+        console.log(res.result[21])
+
         switch (liquidityType) {
           case LiquidityType.ERC20: {
             const liquidity = {
