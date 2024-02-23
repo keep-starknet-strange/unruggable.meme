@@ -1,10 +1,7 @@
-import { goerli, mainnet } from '@starknet-react/chains'
-import { argent, braavos, publicProvider, StarknetConfig, starkscan, useInjectedConnectors } from '@starknet-react/core'
-import { nethermindRpcProviders } from 'src/constants/networks'
+import { argent, braavos, StarknetConfig, starkscan, useInjectedConnectors } from '@starknet-react/core'
+import { nethermindRpcProviders, SUPPORTED_STARKNET_NETWORKS } from 'src/constants/networks'
 import { ArgentMobileConnector } from 'starknetkit/argentMobile'
 import { WebWalletConnector } from 'starknetkit/webwallet'
-
-const network = process.env.REACT_APP_NETWORK ?? 'goerli'
 
 // STARKNET
 
@@ -27,8 +24,8 @@ export function StarknetProvider({ children }: StarknetProviderProps) {
   return (
     <StarknetConfig
       connectors={connectors}
-      chains={[network === 'mainnet' ? mainnet : goerli]}
-      provider={nethermindRpcProviders ?? publicProvider()}
+      chains={SUPPORTED_STARKNET_NETWORKS}
+      provider={nethermindRpcProviders}
       explorer={starkscan}
       autoConnect
     >

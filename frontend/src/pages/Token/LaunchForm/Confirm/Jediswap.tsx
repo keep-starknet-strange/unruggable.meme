@@ -2,7 +2,13 @@ import { Fraction } from '@uniswap/sdk-core'
 import moment from 'moment'
 import { useCallback, useMemo } from 'react'
 import { FACTORY_ADDRESSES } from 'src/constants/contracts'
-import { DECIMALS, LIQUIDITY_LOCK_FOREVER_TIMESTAMP, MAX_LIQUIDITY_LOCK_PERIOD, Selector } from 'src/constants/misc'
+import {
+  DECIMALS,
+  LIQUIDITY_LOCK_FOREVER_TIMESTAMP,
+  MAX_LIQUIDITY_LOCK_PERIOD,
+  Selector,
+  STARKNET_MAX_BLOCK_TIME,
+} from 'src/constants/misc'
 import useChainId from 'src/hooks/useChainId'
 import {
   useHodlLimitForm,
@@ -87,7 +93,7 @@ export default function JediswapLaunch({ previous }: LastFormPageProps) {
       uin256QuoteAmount, // quote amount
       liquidityLockPeriod === MAX_LIQUIDITY_LOCK_PERIOD // liquidity lock until
         ? LIQUIDITY_LOCK_FOREVER_TIMESTAMP
-        : moment().add(moment.duration(liquidityLockPeriod, 'months')).unix(),
+        : moment().add(moment.duration(liquidityLockPeriod, 'months')).unix() + STARKNET_MAX_BLOCK_TIME,
     ])
 
     executeTransaction({

@@ -11,13 +11,16 @@ import { EkuboMemecoin, JediswapMemecoin } from '.'
 // eslint-disable-next-line import/no-unused-modules
 export default function MemecoinUpdater(): null {
   // store
-  const { needsMemecoinRefresh, tokenAddress, setRuggable, setMemecoin, startRefresh } = useBoundStore((state) => ({
-    needsMemecoinRefresh: state.needsMemecoinRefresh,
-    tokenAddress: state.tokenAddress,
-    setRuggable: state.setRuggable,
-    setMemecoin: state.setMemecoin,
-    startRefresh: state.startRefresh,
-  }))
+  const { needsMemecoinRefresh, tokenAddress, setRuggable, setMemecoin, startRefresh, refreshMemecoin } = useBoundStore(
+    (state) => ({
+      needsMemecoinRefresh: state.needsMemecoinRefresh,
+      tokenAddress: state.tokenAddress,
+      setRuggable: state.setRuggable,
+      setMemecoin: state.setMemecoin,
+      startRefresh: state.startRefresh,
+      refreshMemecoin: state.refreshMemecoin,
+    })
+  )
 
   // starknet
   const { provider } = useProvider()
@@ -140,6 +143,7 @@ export default function MemecoinUpdater(): null {
 
         const lockManager = res.result[20] as string
 
+
         switch (liquidityType) {
           case LiquidityType.ERC20: {
             const liquidity = {
@@ -205,6 +209,13 @@ export default function MemecoinUpdater(): null {
       fetchMemecoin()
     }
   }, [fetchMemecoin, needsMemecoinRefresh, startRefresh])
+
+  // refresh on chainId update
+  useEffect(() => {
+    if (chainId) {
+      refreshMemecoin()
+    }
+  }, [chainId, refreshMemecoin])
 
   return null
 }

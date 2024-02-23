@@ -38,7 +38,7 @@ const schema = z.object({
  */
 
 export default function DeployPage() {
-  const [, pushDeployedTokenContracts] = useDeploymentStore()
+  const [, pushDeployedTokenContract] = useDeploymentStore()
 
   // navigation
   const navigate = useNavigate()
@@ -89,7 +89,7 @@ export default function DeployPage() {
 
       const tokenAddress = hash.calculateContractAddressFromHash(
         salt,
-        TOKEN_CLASS_HASH,
+        TOKEN_CLASS_HASH[chainId],
         constructorCalldata.slice(0, -1),
         FACTORY_ADDRESSES[chainId]
       )
@@ -98,7 +98,7 @@ export default function DeployPage() {
         calls: [createMemecoin],
         action: 'Deploy memecoin',
         onSuccess: () => {
-          pushDeployedTokenContracts({
+          pushDeployedTokenContract({
             address: tokenAddress,
             name: data.name,
             symbol: data.symbol,
@@ -109,7 +109,7 @@ export default function DeployPage() {
         },
       })
     },
-    [account?.address, chainId, executeTransaction, navigate, pushDeployedTokenContracts]
+    [account?.address, chainId, executeTransaction, navigate, pushDeployedTokenContract]
   )
 
   return (

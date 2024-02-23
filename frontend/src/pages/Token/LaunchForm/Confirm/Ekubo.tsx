@@ -42,10 +42,10 @@ export default function EkuboLaunch({ previous }: LastFormPageProps) {
   const teamAllocationQuoteAmount = useMemo(() => {
     if (!ethPrice || !startingMcap || !teamAllocationTotalPercentage || !ekuboFees) return
 
-    // mcap / eth_price * (team_allocation / total_supply + ekuboFees)
+    // mcap / eth_price * (team_allocation / total_supply * (1 + ekuboFees))
     return new Fraction(parseFormatedAmount(startingMcap))
       .divide(ethPrice)
-      .multiply(teamAllocationTotalPercentage.add(parseFormatedPercentage(ekuboFees)))
+      .multiply(teamAllocationTotalPercentage.multiply(parseFormatedPercentage(ekuboFees).add(1)))
   }, [ethPrice, startingMcap, teamAllocationTotalPercentage, ekuboFees])
 
   // starting tick
@@ -129,7 +129,7 @@ export default function EkuboLaunch({ previous }: LastFormPageProps) {
           calldata: launchCalldata,
         },
       ],
-      action: 'Launch on JediSwap',
+      action: 'Launch on Ekubo',
       onSuccess: () => {
         resetLaunchForm()
         refreshMemecoin()
