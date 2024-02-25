@@ -13,6 +13,13 @@ fn JEDI_FACTORY_ADDRESS() -> ContractAddress {
     0x00dad44c139a476c7a17fc8141e6db680e9abc9f56fe249a105094c44382c2fd.try_into().unwrap()
 }
 
+fn STARKDEFI_ROUTER_ADDRESS() -> ContractAddress {
+    0x07eee624919fae668387d0d34d86d67795e5c919bc994841581144977ef21c32.try_into().unwrap()
+}
+
+fn STARKDEFI_FACTORY_ADDRESS() -> ContractAddress {
+    0x02721f5ab785ae5e13b276ca9d41e859b7b150440a288a7826ba5e27dd05e08e.try_into().unwrap()
+}
 // NOT THE ACTUAL ETH ADDRESS
 // It's set to a the maximum possible value for a contract address
 // This ensures that in Jediswap pairs, the ETH side is always token1
