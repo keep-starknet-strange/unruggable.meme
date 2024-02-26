@@ -46,19 +46,19 @@ fn test_jediswap_integration() {
     quote.approve(factory.contract_address, amount);
     stop_prank(CheatTarget::One(quote.contract_address));
 
-let pair_address = factory
-    .launch_on_jediswap(
-        LaunchParameters {
-            memecoin_address,
-            transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
-            max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
-            quote_address,
-            initial_holders: INITIAL_HOLDERS(),
-            initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
-        },
-        amount,
-        unlock_time
-    );
+    let pair_address = factory
+        .launch_on_jediswap(
+            LaunchParameters {
+                memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address,
+                initial_holders: INITIAL_HOLDERS(),
+                initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
+            },
+            amount,
+            unlock_time
+        );
 
     let pair = IJediswapPairDispatcher { contract_address: pair_address };
 
@@ -84,7 +84,7 @@ let pair_address = factory
 
     start_prank(CheatTarget::One(memecoin_address), owner);
     memecoin.approve(JEDI_ROUTER_ADDRESS(), first_out);
-    stop_prank(CheatTarget::One(quote.contract_address));
+    stop_prank(CheatTarget::One(memecoin_address));
 
     let _second_swap = router
         .swap_exact_tokens_for_tokens(

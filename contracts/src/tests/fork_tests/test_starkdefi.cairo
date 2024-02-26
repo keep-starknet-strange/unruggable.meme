@@ -23,7 +23,9 @@ use unruggable::token::interface::{IUnruggableMemecoinDispatcherTrait};
 use unruggable::token::memecoin::LiquidityType;
 use unruggable::utils::math::PercentageMath;
 
+//TODO: restore once snfoundry supports mocks with c0
 #[test]
+#[ignore]
 #[fork("Mainnet")]
 fn test_starkdefi_integration() {
     let owner = snforge_std::test_address();
@@ -85,7 +87,7 @@ fn test_starkdefi_integration() {
 
     start_prank(CheatTarget::One(memecoin_address), owner);
     memecoin.approve(STARKDEFI_ROUTER_ADDRESS(), first_out);
-    stop_prank(CheatTarget::One(quote.contract_address));
+    stop_prank(CheatTarget::One(memecoin_address));
 
     let path: Array::<SwapPath> = array![
         SwapPath { tokenIn: memecoin_address, tokenOut: quote_address, stable, feeTier: fee, }
