@@ -155,6 +155,7 @@ trait IEkuboLauncher<T> {
 #[starknet::contract]
 mod EkuboLauncher {
     use alexandria_storage::list::{List, ListTrait};
+    use core::traits::Destruct;
     use debug::PrintTrait;
     use ekubo::components::clear::{IClearDispatcher, IClearDispatcherTrait};
     use ekubo::components::shared_locker::{call_core_with_callback, consume_callback_data};
@@ -165,7 +166,10 @@ mod EkuboLauncher {
     use ekubo::interfaces::router::{IRouterDispatcher, IRouterDispatcherTrait};
     use ekubo::types::bounds::{Bounds};
     use ekubo::types::{i129::i129};
-    use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
+    use openzeppelin::token::erc20::interface::{
+        IERC20Dispatcher as OZIERC20Dispatcher, IERC20DispatcherTrait as OZIERC20DispatcherTrait,
+        ERC20ABIDispatcher, ERC20ABIDispatcherTrait
+    };
     use starknet::SyscallResultTrait;
     use starknet::{ContractAddress, ClassHash, get_contract_address, get_caller_address, Store};
     use super::{IEkuboLauncher, EkuboLaunchParameters};
@@ -176,7 +180,8 @@ mod EkuboLauncher {
         get_next_tick_bounds, get_initial_tick_from_starting_price
     };
     use unruggable::exchanges::ekubo::interfaces::{
-        ITokenRegistryDispatcher, IOwnedNFTDispatcher, IOwnedNFTDispatcherTrait,
+        ITokenRegistryDispatcher, ITokenRegistryDispatcherTrait, IOwnedNFTDispatcher,
+        IOwnedNFTDispatcherTrait,
     };
     use unruggable::token::interface::{
         IUnruggableMemecoinDispatcher, IUnruggableMemecoinDispatcherTrait
@@ -245,6 +250,13 @@ mod EkuboLauncher {
     #[external(v0)]
     impl EkuboLauncherImpl of IEkuboLauncher<ContractState> {
         fn launch_token(ref self: ContractState, params: EkuboLaunchParameters) -> (u64, EkuboLP) {
+            // Register the token in Ekubo Registry
+            let registry = self.registry.read();
+            let base_token = IERC20Dispatcher { contract_address: params.token_address };
+            // All unrug tokens are ERC20 with 18 decimals, thus the amount is 1 token.
+            base_token.transfer(registry.contract_address, 1000000000000000000);
+            registry.register_token(OZIERC20Dispatcher { contract_address: params.token_address });
+
             // Call the core with a callback to deposit and mint the LP tokens.
             let (id, position) = call_core_with_callback::<
                 CallbackData, (u64, EkuboLP)
