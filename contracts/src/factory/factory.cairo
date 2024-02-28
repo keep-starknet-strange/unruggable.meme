@@ -82,7 +82,8 @@ mod Factory {
         ref self: ContractState,
         memecoin_class_hash: ClassHash,
         lock_manager_address: ContractAddress,
-        mut exchanges: Span<(SupportedExchanges, ContractAddress)>
+        mut exchanges: Span<(SupportedExchanges, ContractAddress)>,
+        mut migrated_tokens: Span<ContractAddress>,
     ) {
         self.memecoin_class_hash.write(memecoin_class_hash);
         self.lock_manager_address.write(lock_manager_address);
@@ -93,6 +94,14 @@ mod Factory {
                 Option::Some((exchange, address)) => self
                     .exchange_configs
                     .write(*exchange, *address),
+                Option::None => { break; }
+            }
+        };
+
+        // Migrate old tokens, mark them as deployed
+        loop {
+            match migrated_tokens.pop_front() {
+                Option::Some(address) => self.deployed_memecoins.write(*address, true),
                 Option::None => { break; }
             }
         };

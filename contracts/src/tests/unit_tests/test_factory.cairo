@@ -1,9 +1,10 @@
 use core::option::OptionTrait;
+use core::traits::TryInto;
 use ekubo::types::i129::i129;
 use openzeppelin::token::erc20::interface::{ERC20ABIDispatcher, ERC20ABIDispatcherTrait};
 use snforge_std::{
     declare, ContractClassTrait, start_prank, stop_prank, CheatTarget, start_warp, stop_warp,
-    start_roll, stop_roll
+    start_roll, stop_roll, get_class_hash, ContractClass
 };
 use starknet::{ContractAddress, contract_address_const};
 use unruggable::exchanges::ekubo_adapter::EkuboPoolParameters;
@@ -111,6 +112,57 @@ fn test_create_memecoin() {
     assert(memecoin.name() == NAME(), 'wrong memecoin name');
     assert(memecoin.symbol() == SYMBOL(), 'wrong memecoin symbol');
     assert_eq!(memecoin.balanceOf(memecoin_factory_address), DEFAULT_INITIAL_SUPPLY(),);
+}
+
+#[test]
+fn test_migrate_memecoin_from_old_factory() {
+    // Launch
+    let owner = snforge_std::test_address();
+    let (memecoin, memecoin_address) = deploy_memecoin_through_factory_with_owner(owner);
+    let factory = IFactoryDispatcher { contract_address: MEMEFACTORY_ADDRESS() };
+    let eth = ERC20ABIDispatcher { contract_address: ETH_ADDRESS() };
+    let block_number = 42;
+
+    // approve spending of eth by factory
+    let eth_amount: u256 = 1 * pow_256(10, 18); // 1 ETHER
+    let factory_balance_meme = memecoin.balanceOf(factory.contract_address);
+    start_prank(CheatTarget::One(eth.contract_address), owner);
+    eth.approve(factory.contract_address, eth_amount);
+    stop_prank(CheatTarget::One(eth.contract_address));
+
+    start_prank(CheatTarget::One(factory.contract_address), owner);
+    start_warp(CheatTarget::One(memecoin_address), 1);
+    start_roll(CheatTarget::One(memecoin_address), block_number);
+    let pair_address = factory
+        .launch_on_jediswap(
+            LaunchParameters {
+                memecoin_address,
+                transfer_restriction_delay: TRANSFER_RESTRICTION_DELAY,
+                max_percentage_buy_launch: MAX_PERCENTAGE_BUY_LAUNCH,
+                quote_address: eth.contract_address,
+                initial_holders: INITIAL_HOLDERS(),
+                initial_holders_amounts: INITIAL_HOLDERS_AMOUNTS(),
+            },
+            eth_amount,
+            DEFAULT_MIN_LOCKTIME,
+        );
+    stop_prank(CheatTarget::One(factory.contract_address));
+
+    // New factory
+    let factory_hash = ContractClass { class_hash: get_class_hash(factory.contract_address) };
+    let memecoin_hash = get_class_hash(memecoin_address);
+    let mut calldata = array![];
+    let migrated_tokens: Span<ContractAddress> = array![memecoin_address].span();
+    let mut amms: Array<(SupportedExchanges, ContractAddress)> = array![];
+    Serde::serialize(@memecoin_hash, ref calldata);
+    Serde::serialize(@0, ref calldata);
+    Serde::serialize(@amms.into(), ref calldata);
+    Serde::serialize(@migrated_tokens, ref calldata);
+    let new_factory = factory_hash
+        .deploy_at(@calldata, 'new_factory'.try_into().unwrap())
+        .expect('UnrugFactory deployment failed');
+    let new_factory_dispatcher = IFactoryDispatcher { contract_address: new_factory };
+    assert!(new_factory_dispatcher.is_memecoin(memecoin_address), "should be migrated");
 }
 
 #[test]
