@@ -177,9 +177,11 @@ fn deploy_meme_factory(router_address: ContractAddress) -> ContractAddress {
 
     let contract = declare('Factory');
     let mut calldata = array![];
+    let migrated_tokens: Span<ContractAddress> = array![].span();
     Serde::serialize(@memecoin_class_hash, ref calldata);
     Serde::serialize(@locker_address, ref calldata);
     Serde::serialize(@amms.into(), ref calldata);
+    Serde::serialize(@migrated_tokens, ref calldata);
     contract.deploy_at(@calldata, MEMEFACTORY_ADDRESS()).expect('UnrugFactory deployment failed')
 }
 
