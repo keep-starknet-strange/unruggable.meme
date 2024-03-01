@@ -10,7 +10,7 @@ use unruggable::exchanges::SupportedExchanges;
 use unruggable::factory::interface::{IFactoryDispatcher, IFactoryDispatcherTrait};
 use unruggable::tests::addresses::{
     JEDI_FACTORY_ADDRESS, JEDI_ROUTER_ADDRESS, EKUBO_CORE, EKUBO_POSITIONS, EKUBO_REGISTRY,
-    EKUBO_NFT_CLASS_HASH, ETH_ADDRESS, EKUBO_ROUTER, STARKDEFI_ROUTER_ADDRESS
+    ETH_ADDRESS, EKUBO_ROUTER, STARKDEFI_ROUTER_ADDRESS
 };
 use unruggable::tests::unit_tests::utils::{
     deploy_locker, deploy_eth_with_owner, NAME, SYMBOL, DEFAULT_INITIAL_SUPPLY, INITIAL_HOLDERS,
