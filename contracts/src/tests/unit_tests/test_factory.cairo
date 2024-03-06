@@ -146,13 +146,17 @@ fn test_migrate_memecoin_from_old_factory() {
             eth_amount,
             DEFAULT_MIN_LOCKTIME,
         );
+    let (memecoin_lock_manager, _) = factory.locked_liquidity(memecoin_address).unwrap();
     stop_prank(CheatTarget::One(factory.contract_address));
 
     // New factory
     let factory_hash = ContractClass { class_hash: get_class_hash(factory.contract_address) };
     let memecoin_hash = get_class_hash(memecoin_address);
     let mut calldata = array![];
-    let migrated_tokens: Span<ContractAddress> = array![memecoin_address].span();
+    let migrated_tokens: Span<(ContractAddress, ContractAddress)> = array![
+        (memecoin_address, memecoin_lock_manager)
+    ]
+        .span();
     let mut amms: Array<(SupportedExchanges, ContractAddress)> = array![];
     Serde::serialize(@memecoin_hash, ref calldata);
     Serde::serialize(@0, ref calldata);
