@@ -348,6 +348,10 @@ mod Factory {
             self.exchange_configs.read(exchange)
         }
 
+        fn lock_manager_address(self: @ContractState) -> ContractAddress {
+            self.lock_manager_address.read()
+        }
+
         fn is_memecoin(self: @ContractState, address: ContractAddress) -> bool {
             self.deployed_memecoins.read(address)
         }

@@ -115,11 +115,11 @@ trait IFactory<TContractState> {
     /// same as launch_on_jediswap
     ///
     /// # Returns
-    /// same as launch_on_jediswap  
-    /// 
+    /// same as launch_on_jediswap
+    ///
     /// # Panics
     ///
-    /// same as launch_on_jediswap   
+    /// same as launch_on_jediswap
     ///
     fn launch_on_starkdefi(
         ref self: TContractState,
@@ -139,6 +139,9 @@ trait IFactory<TContractState> {
     ///
     /// * `ContractAddress` - The contract address associated with the given Exchange name.
     fn exchange_address(self: @TContractState, exchange: SupportedExchanges) -> ContractAddress;
+
+    /// Returns the address of the Lock manager, provided at factory deployment.
+    fn lock_manager_address(self: @TContractState) -> ContractAddress;
 
     /// Returns information about the locked liquidity of a token launched with unruggable.
     ///

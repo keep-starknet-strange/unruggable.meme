@@ -166,7 +166,16 @@ fn test_migrate_memecoin_from_old_factory() {
         .deploy_at(@calldata, 'new_factory'.try_into().unwrap())
         .expect('UnrugFactory deployment failed');
     let new_factory_dispatcher = IFactoryDispatcher { contract_address: new_factory };
+
+    let new_locker_manager = new_factory_dispatcher.lock_manager_address();
+
+    let old_memecoin_lock_manager = memecoin_lock_manager;
+    let (new_memecoin_lock_manager, _) = factory.locked_liquidity(memecoin_address).unwrap();
+
     assert!(new_factory_dispatcher.is_memecoin(memecoin_address), "should be migrated");
+
+    assert!(new_locker_manager != old_memecoin_lock_manager, "lockers should be different");
+    assert!(new_memecoin_lock_manager == old_memecoin_lock_manager, "locker should be migrated");
 }
 
 #[test]
