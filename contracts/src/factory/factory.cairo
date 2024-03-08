@@ -75,6 +75,7 @@ mod Factory {
         exchange_configs: LegacyMap<SupportedExchanges, ContractAddress>,
         deployed_memecoins: LegacyMap<ContractAddress, bool>,
         lock_manager_address: ContractAddress,
+        migrated_lock_managers: LegacyMap<ContractAddress, ContractAddress>,
     }
 
     #[constructor]
@@ -83,7 +84,7 @@ mod Factory {
         memecoin_class_hash: ClassHash,
         lock_manager_address: ContractAddress,
         mut exchanges: Span<(SupportedExchanges, ContractAddress)>,
-        mut migrated_tokens: Span<ContractAddress>,
+        mut migrated_tokens: Span<(ContractAddress, ContractAddress)>,
     ) {
         self.memecoin_class_hash.write(memecoin_class_hash);
         self.lock_manager_address.write(lock_manager_address);
@@ -101,7 +102,12 @@ mod Factory {
         // Migrate old tokens, mark them as deployed
         loop {
             match migrated_tokens.pop_front() {
-                Option::Some(address) => self.deployed_memecoins.write(*address, true),
+                Option::Some((
+                    address, lock_manager
+                )) => {
+                    self.deployed_memecoins.write(*address, true);
+                    self.migrated_lock_managers.write(*address, *lock_manager);
+                },
                 Option::None => { break; }
             }
         };
@@ -314,18 +320,24 @@ mod Factory {
                 Option::Some(liquidity_type) => liquidity_type,
                 Option::None => { return Option::None; },
             };
-            let locker_address = match liquidity_type {
-                LiquidityType::JediERC20(pair_address) => {
-                    // ERC20 tokens are locked inside an ERC20Tokens-Locker
-                    self.lock_manager_address.read()
-                },
-                LiquidityType::StarkDeFiERC20(pair_address) => {
-                    // same as above
-                    self.lock_manager_address.read()
-                },
-                LiquidityType::EkuboNFT(id) => {
-                    // Ekubo NFTs are locked inside the EkuboLauncher contract
-                    self.exchange_address(SupportedExchanges::Ekubo)
+
+            let migrated_locker_address = self.migrated_lock_managers.read(token);
+            let locker_address = if (migrated_locker_address.is_non_zero()) {
+                migrated_locker_address
+            } else {
+                match liquidity_type {
+                    LiquidityType::JediERC20(pair_address) => {
+                        // ERC20 tokens are locked inside an ERC20Tokens-Locker
+                        self.lock_manager_address.read()
+                    },
+                    LiquidityType::StarkDeFiERC20(pair_address) => {
+                        // same as above
+                        self.lock_manager_address.read()
+                    },
+                    LiquidityType::EkuboNFT(id) => {
+                        // Ekubo NFTs are locked inside the EkuboLauncher contract
+                        self.exchange_address(SupportedExchanges::Ekubo)
+                    }
                 }
             };
 
@@ -334,6 +346,10 @@ mod Factory {
 
         fn exchange_address(self: @ContractState, exchange: SupportedExchanges) -> ContractAddress {
             self.exchange_configs.read(exchange)
+        }
+
+        fn lock_manager_address(self: @ContractState) -> ContractAddress {
+            self.lock_manager_address.read()
         }
 
         fn is_memecoin(self: @ContractState, address: ContractAddress) -> bool {
