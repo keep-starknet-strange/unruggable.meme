@@ -18,8 +18,7 @@ export const AmmInfos = {
     icon: <Icons.Jediswap />,
   },
   [AMM.STARKDEFI]: {
-    description:
-      "Most convenient AMM, team allocation will be free but you have to provide liquidity and can't collect fees.",
+    description: "Team allocation will be free but you have to provide liquidity and can't collect fees.",
     icon: <Icons.StarkDeFi />,
   },
 }
