@@ -75,7 +75,7 @@ export default function TokenPage() {
 
       return (
         <>
-          {memecoin.liquidity.type === LiquidityType.NFT && (
+          {memecoin.liquidity.type === LiquidityType.EKUBO_NFT && (
             <Column className={styles.container}>
               <CollectFees />
               {onlyVisibleToYou}

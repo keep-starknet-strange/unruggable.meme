@@ -41,7 +41,7 @@ export default function IncreaseLiquidityLock() {
   const increaseLiquidityLock = useCallback(() => {
     // the only supported AMM with supported liquidity lock increase is Jediswap.
     // No need for a better way to handle that atm.
-    if (!memecoin?.isLaunched || memecoin.liquidity.type !== LiquidityType.ERC20) return
+    if (!memecoin?.isLaunched || memecoin.liquidity.type === LiquidityType.EKUBO_NFT) return
 
     // prepare calldata
     const launchCalldata = CallData.compile([

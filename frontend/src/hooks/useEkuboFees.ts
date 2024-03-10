@@ -19,7 +19,7 @@ export default function useEkuboFees() {
 
   // can collect
   const calldata = useMemo(() => {
-    if (!memecoin?.isLaunched || memecoin.liquidity.type !== LiquidityType.NFT) return
+    if (!memecoin?.isLaunched || memecoin.liquidity.type !== LiquidityType.EKUBO_NFT) return
 
     return CallData.compile([memecoin.liquidity.ekuboId, memecoin.liquidity.poolKey, memecoin.liquidity.bounds])
   }, [memecoin])

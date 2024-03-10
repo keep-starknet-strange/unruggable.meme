@@ -76,7 +76,8 @@ export default function TokenMetrics() {
     if (ethPriceAtLaunch) {
       let startingMcap: Fraction | undefined
       switch (memecoin.liquidity.type) {
-        case LiquidityType.ERC20: {
+        case LiquidityType.STARKDEFI_ERC20:
+        case LiquidityType.JEDISWAP_ERC20: {
           startingMcap =
             ret.quoteToken.safety === Safety.SAFE
               ? new Fraction(memecoin.liquidity.quoteAmount)
@@ -88,7 +89,7 @@ export default function TokenMetrics() {
           break
         }
 
-        case LiquidityType.NFT: {
+        case LiquidityType.EKUBO_NFT: {
           const initialPrice = getInitialPrice(memecoin.liquidity.startingTick)
           startingMcap =
             ret.quoteToken.safety === Safety.SAFE

@@ -35,9 +35,9 @@ export enum Selector {
 }
 
 export enum LiquidityType {
-  ERC20 = 'JediERC20',
-  StarkDefiERC20 = 'StarkDefiERC20',
-  NFT = 'EkuboNFT',
+  JEDISWAP_ERC20 = 'JEDISWAP_ERC20',
+  STARKDEFI_ERC20 = 'STARKDEFI_ERC20',
+  EKUBO_NFT = 'EKUBO_NFT',
 }
 
 export const STARKNET_POLLING = 3000 // 3s

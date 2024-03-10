@@ -48,7 +48,7 @@ interface BaseLiquidity {
 
 export interface JediswapMemecoin extends BaseLaunchedMemecoin {
   liquidity: {
-    type: LiquidityType.ERC20
+    type: LiquidityType.JEDISWAP_ERC20 | LiquidityType.STARKDEFI_ERC20
     lockPosition: string
     quoteAmount: string
   } & Omit<BaseLiquidity, 'type'>
@@ -56,7 +56,7 @@ export interface JediswapMemecoin extends BaseLaunchedMemecoin {
 
 export interface EkuboMemecoin extends BaseLaunchedMemecoin {
   liquidity: {
-    type: LiquidityType.NFT
+    type: LiquidityType.EKUBO_NFT
     ekuboId: string
     startingTick: number
     poolKey: EkuboPoolKey

@@ -144,9 +144,11 @@ export default function MemecoinUpdater(): null {
         const lockManager = res.result[20] as string
 
         switch (liquidityType) {
-          case LiquidityType.ERC20: {
+          case LiquidityType.STARKDEFI_ERC20:
+          case LiquidityType.JEDISWAP_ERC20: {
+            console.log('hey')
             const liquidity = {
-              type: LiquidityType.ERC20,
+              type: liquidityType,
               lockManager,
               lockPosition: res.result[31],
               quoteToken: getChecksumAddress(res.result[28]),
@@ -165,9 +167,9 @@ export default function MemecoinUpdater(): null {
             break
           }
 
-          case LiquidityType.NFT: {
+          case LiquidityType.EKUBO_NFT: {
             const liquidity = {
-              type: LiquidityType.NFT,
+              type: LiquidityType.EKUBO_NFT,
               lockManager,
               ekuboId: res.result[22],
               quoteToken: getChecksumAddress(res.result[33]),
@@ -183,6 +185,7 @@ export default function MemecoinUpdater(): null {
                 ...(await getMemecoinEkuboLiquidityLockPosition(liquidity)),
               },
             })
+            break
           }
         }
       } else {
