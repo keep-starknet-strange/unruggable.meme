@@ -1,7 +1,7 @@
 import { Fraction } from '@uniswap/sdk-core'
 import moment from 'moment'
 import { useCallback, useMemo } from 'react'
-import { AMM } from 'src/constants/AMMs'
+import { AMM, AmmInfos } from 'src/constants/AMMs'
 import { FACTORY_ADDRESSES } from 'src/constants/contracts'
 import {
   DECIMALS,
@@ -29,7 +29,11 @@ import { CallData, uint256 } from 'starknet'
 import { LastFormPageProps } from '../common'
 import LaunchTemplate from './template'
 
-export default function StarndardAmmLaunch({ previous, amm }: Readonly<LastFormPageProps & { amm: AMM }>) {
+interface StarndardAmmLaunchProps extends LastFormPageProps {
+  amm: AMM.JEDISWAP | AMM.STARKDEFI
+}
+
+export default function StarndardAmmLaunch({ previous, amm }: StarndardAmmLaunchProps) {
   // form data
   const { hodlLimit, antiBotPeriod } = useHodlLimitForm()
   const { startingMcap, quoteTokenAddress } = useLiquidityForm()
@@ -83,25 +87,6 @@ export default function StarndardAmmLaunch({ previous, amm }: Readonly<LastFormP
       .filter(Boolean)
       .map((holder) => uint256.bnToUint256(BigInt(parseFormatedAmount(holder.amount)) * BigInt(decimalsScale(18))))
 
-    const ammOptions: {
-      entrypoint: Selector
-      action: string
-    } = {
-      entrypoint: Selector.LAUNCH_ON_JEDISWAP,
-      action: 'Launch on JediSwap',
-    }
-
-    switch (amm) {
-      case AMM.JEDISWAP:
-        ammOptions.entrypoint = Selector.LAUNCH_ON_JEDISWAP
-        ammOptions.action = 'Launch on JediSwap'
-        break
-      case AMM.STARKDEFI:
-        ammOptions.entrypoint = Selector.LAUNCH_ON_STARKDEFI
-        ammOptions.action = 'Launch on StarkDeFi'
-        break
-    }
-
     // prepare calldata
     const launchCalldata = CallData.compile([
       memecoin.address, // memecoin address
@@ -125,11 +110,11 @@ export default function StarndardAmmLaunch({ previous, amm }: Readonly<LastFormP
         },
         {
           contractAddress: FACTORY_ADDRESSES[chainId],
-          entrypoint: ammOptions.entrypoint,
+          entrypoint: AmmInfos[amm].launchEntrypoint,
           calldata: launchCalldata,
         },
       ],
-      action: ammOptions.action,
+      action: `Launch on ${amm}`,
       onSuccess: () => {
         resetLaunchForm()
         refreshMemecoin()
