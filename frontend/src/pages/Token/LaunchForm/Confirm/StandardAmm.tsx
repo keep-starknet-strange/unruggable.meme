@@ -1,6 +1,7 @@
 import { Fraction } from '@uniswap/sdk-core'
 import moment from 'moment'
 import { useCallback, useMemo } from 'react'
+import { AMM, AmmInfos } from 'src/constants/AMMs'
 import { FACTORY_ADDRESSES } from 'src/constants/contracts'
 import {
   DECIMALS,
@@ -12,9 +13,9 @@ import {
 import useChainId from 'src/hooks/useChainId'
 import {
   useHodlLimitForm,
-  useJediswapLiquidityForm,
   useLiquidityForm,
   useResetLaunchForm,
+  useStandardAmmLiquidityForm,
   useTeamAllocation,
   useTeamAllocationTotalPercentage,
 } from 'src/hooks/useLaunchForm'
@@ -28,11 +29,15 @@ import { CallData, uint256 } from 'starknet'
 import { LastFormPageProps } from '../common'
 import LaunchTemplate from './template'
 
-export default function JediswapLaunch({ previous }: LastFormPageProps) {
+interface StarndardAmmLaunchProps extends LastFormPageProps {
+  amm: AMM.JEDISWAP | AMM.STARKDEFI
+}
+
+export default function StarndardAmmLaunch({ previous, amm }: StarndardAmmLaunchProps) {
   // form data
   const { hodlLimit, antiBotPeriod } = useHodlLimitForm()
   const { startingMcap, quoteTokenAddress } = useLiquidityForm()
-  const { liquidityLockPeriod } = useJediswapLiquidityForm()
+  const { liquidityLockPeriod } = useStandardAmmLiquidityForm()
   const { teamAllocation } = useTeamAllocation()
   const resetLaunchForm = useResetLaunchForm()
 
@@ -105,17 +110,18 @@ export default function JediswapLaunch({ previous }: LastFormPageProps) {
         },
         {
           contractAddress: FACTORY_ADDRESSES[chainId],
-          entrypoint: Selector.LAUNCH_ON_JEDISWAP,
+          entrypoint: AmmInfos[amm].launchEntrypoint,
           calldata: launchCalldata,
         },
       ],
-      action: 'Launch on JediSwap',
+      action: `Launch on ${amm}`,
       onSuccess: () => {
         resetLaunchForm()
         refreshMemecoin()
       },
     })
   }, [
+    amm,
     quoteAmount,
     chainId,
     hodlLimit,

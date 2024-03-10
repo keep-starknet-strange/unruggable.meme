@@ -10,7 +10,7 @@ import {
   MAX_LIQUIDITY_LOCK_PERIOD,
   MIN_LIQUIDITY_LOCK_PERIOD,
 } from 'src/constants/misc'
-import { useJediswapLiquidityForm } from 'src/hooks/useLaunchForm'
+import { useStandardAmmLiquidityForm } from 'src/hooks/useLaunchForm'
 import { Column } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
 import { parseMonthsDuration } from 'src/utils/moment'
@@ -19,8 +19,8 @@ import { z } from 'zod'
 import { FormPageProps, Submit } from '../common'
 import LiquidityTemplate, { liquiditySchema, useLiquidityTemplateForm } from './template'
 
-export default function JediswapLiquidityForm({ next, previous }: FormPageProps) {
-  const { liquidityLockPeriod, setLiquidityLockPeriod } = useJediswapLiquidityForm()
+export default function StandardAmmLiquidityForm({ next, previous }: FormPageProps) {
+  const { liquidityLockPeriod, setLiquidityLockPeriod } = useStandardAmmLiquidityForm()
 
   // form
   const liquidityTemplateForm = useLiquidityTemplateForm<z.infer<typeof liquiditySchema>>()

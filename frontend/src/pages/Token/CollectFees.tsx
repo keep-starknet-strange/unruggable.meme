@@ -29,7 +29,7 @@ export default function CollectFees() {
 
   // collect fees
   const collectFees = useCallback(() => {
-    if (!memecoin?.isLaunched || memecoin.liquidity.type !== LiquidityType.NFT) return
+    if (!memecoin?.isLaunched || memecoin.liquidity.type !== LiquidityType.EKUBO_NFT) return
 
     const collectFeesCalldata = CallData.compile([
       memecoin.liquidity.ekuboId, // ekubo pool id

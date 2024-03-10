@@ -6,7 +6,7 @@ import * as Text from 'src/theme/components/Text'
 
 import { FormPageProps } from '../common'
 import EkuboLiquidityForm from './Ekubo'
-import JediswapLiquidityForm from './Jediswap'
+import StandardAmmLiquidityForm from './StandardAmm'
 
 export default function LiquidityForm({ next, previous }: FormPageProps) {
   const [amm] = useAmm()
@@ -18,7 +18,10 @@ export default function LiquidityForm({ next, previous }: FormPageProps) {
         return <EkuboLiquidityForm previous={previous} next={next} />
 
       case AMM.JEDISWAP:
-        return <JediswapLiquidityForm previous={previous} next={next} />
+        return <StandardAmmLiquidityForm previous={previous} next={next} />
+
+      case AMM.STARKDEFI:
+        return <StandardAmmLiquidityForm previous={previous} next={next} />
     }
   }, [amm, next, previous])
 

@@ -22,7 +22,7 @@ export function useLiquidityForm() {
   }))
 }
 
-export function useJediswapLiquidityForm() {
+export function useStandardAmmLiquidityForm() {
   return useBoundStore((state) => ({
     liquidityLockPeriod: state.liquidityLockPeriod,
     setLiquidityLockPeriod: state.setLiquidityLockPeriod,

@@ -4,12 +4,12 @@ import Multicall from 'src/abis/Multicall.json'
 import { constants, json } from 'starknet'
 
 export const TOKEN_CLASS_HASH = {
-  [constants.StarknetChainId.SN_GOERLI]: '0x01c33d0d4f44faf5427c9131223e39e5bdbe9dd0f4f73dc527f05c50939d67f2',
+  [constants.StarknetChainId.SN_GOERLI]: '0x05ba9aea47a8dd7073ab82b9e91721bdb3a2c1b259cffd68669da1454faa80ac',
   [constants.StarknetChainId.SN_MAIN]: '0x05ba9aea47a8dd7073ab82b9e91721bdb3a2c1b259cffd68669da1454faa80ac',
 }
 
 export const FACTORY_ADDRESSES = {
-  [constants.StarknetChainId.SN_GOERLI]: '0x061c3711a61c540fa60a6bd11ec09d36a4fc767c19253d6203c0ab3f251ed4b3',
+  [constants.StarknetChainId.SN_GOERLI]: '0x076c3112e95994507c44c72b8dfb7f8d568a370d2f7c2d918ed9f55327671385',
   [constants.StarknetChainId.SN_MAIN]: '0x06468f3cc11291b601e13f863c482850bbefa7eee20c6682573cff0be9de4152',
 }
 

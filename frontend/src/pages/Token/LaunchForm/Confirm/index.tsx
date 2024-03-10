@@ -6,9 +6,9 @@ import * as Text from 'src/theme/components/Text'
 
 import { LastFormPageProps } from '../common'
 import EkuboLaunch from './Ekubo'
-import JediswapLaunch from './Jediswap'
+import StarndardAmmLaunch from './StandardAmm'
 
-export default function ConfirmForm({ previous }: LastFormPageProps) {
+export default function ConfirmForm({ previous }: Readonly<LastFormPageProps>) {
   const [amm] = useAmm()
 
   const launchComponent = useMemo(() => {
@@ -17,7 +17,10 @@ export default function ConfirmForm({ previous }: LastFormPageProps) {
         return <EkuboLaunch previous={previous} />
 
       case AMM.JEDISWAP:
-        return <JediswapLaunch previous={previous} />
+        return <StarndardAmmLaunch previous={previous} amm={AMM.JEDISWAP} />
+
+      case AMM.STARKDEFI:
+        return <StarndardAmmLaunch previous={previous} amm={AMM.STARKDEFI} />
     }
   }, [amm, previous])
 
