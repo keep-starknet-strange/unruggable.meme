@@ -370,8 +370,6 @@ mod UnruggableMemecoin {
                     .percent_mul(self.max_percentage_buy_launch.read().into()),
                 'Max buy cap reached'
             );
-
-            self.ensure_not_multicall();
         }
 
         /// Checks if the current time is after the launch period.
@@ -385,23 +383,6 @@ mod UnruggableMemecoin {
             self.is_launched()
                 && current_time >= (self.launch_time.read()
                     + self.transfer_restriction_delay.read())
-        }
-
-        /// Ensures that the current call is not a part of a multicall.
-        ///
-        /// By keeping track of the transaction origin contract address,
-        /// we can ensure that the current call is not part of a transaction already performed.
-        ///
-        /// # Arguments
-        //TODO(audit): Verify whether this can cause a problem for trading through aggregators, that can
-        // do multiple transfers when using complex routes.
-        #[inline(always)]
-        fn ensure_not_multicall(ref self: ContractState) {
-            let tx_info = get_tx_info().unbox();
-            let tx_hash = tx_info.transaction_hash;
-            let tx_origin = tx_info.account_contract_address;
-            assert(self.tx_hash_tracker.read(tx_origin) != tx_hash, 'Multi calls not allowed');
-            self.tx_hash_tracker.write(tx_origin, tx_hash);
         }
     }
 }
