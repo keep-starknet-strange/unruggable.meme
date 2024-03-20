@@ -29,6 +29,12 @@ export const JEDISWAP_ETH_USDC = {
   [constants.StarknetChainId.SN_MAIN]: '0x04d0390b777b424e43839cd1e744799f3de6c176c7e32c1812a41dbd9c19db6a',
 }
 
+export const JEDISWAP_STRK_USDC = {
+  // TODO: find the correct goerli address
+  [constants.StarknetChainId.SN_GOERLI]: '0x5726725e9507c3586cc0516449e2c74d9b201ab2747752bb0251aaa263c9a26',
+  [constants.StarknetChainId.SN_MAIN]: '0x5726725e9507c3586cc0516449e2c74d9b201ab2747752bb0251aaa263c9a26',
+}
+
 export const compiledMulticall = json.parse(JSON.stringify(Multicall))
 export const compiledJediswapPair = json.parse(JSON.stringify(JediswapPair))
 export const compiledEkuboPositions = json.parse(JSON.stringify(EkuboPositions))

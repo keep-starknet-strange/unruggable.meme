@@ -4,7 +4,6 @@ import { useCallback, useMemo } from 'react'
 import { AMM, AmmInfos } from 'src/constants/AMMs'
 import { FACTORY_ADDRESSES } from 'src/constants/contracts'
 import {
-  DECIMALS,
   LIQUIDITY_LOCK_FOREVER_TIMESTAMP,
   MAX_LIQUIDITY_LOCK_PERIOD,
   Selector,
@@ -20,7 +19,8 @@ import {
   useTeamAllocationTotalPercentage,
 } from 'src/hooks/useLaunchForm'
 import useMemecoin from 'src/hooks/useMemecoin'
-import { useEtherPrice } from 'src/hooks/usePrice'
+import { useQuoteTokenPrice } from 'src/hooks/usePrice'
+import useQuoteToken from 'src/hooks/useQuote'
 import { useExecuteTransaction } from 'src/hooks/useTransactions'
 import { parseFormatedAmount } from 'src/utils/amount'
 import { decimalsScale } from 'src/utils/decimalScale'
@@ -44,21 +44,22 @@ export default function StarndardAmmLaunch({ previous, amm }: StarndardAmmLaunch
   // memecoin
   const { data: memecoin, refresh: refreshMemecoin } = useMemecoin()
 
-  // eth price
-  const ethPrice = useEtherPrice()
+  // quote token price
+  const quoteToken = useQuoteToken()
+  const quoteTokenPrice = useQuoteTokenPrice(quoteTokenAddress)
 
   // team allocation
   const teamAllocationTotalPercentage = useTeamAllocationTotalPercentage(memecoin?.totalSupply)
 
   // quote amount
   const quoteAmount = useMemo(() => {
-    if (!ethPrice || !startingMcap || !teamAllocationTotalPercentage) return
+    if (!quoteTokenPrice || !startingMcap || !teamAllocationTotalPercentage) return
 
-    // mcap / eth_price * (1 - team_allocation / total_supply)
+    // mcap / quote_token_price * (1 - team_allocation / total_supply)
     return new Fraction(parseFormatedAmount(startingMcap))
-      .divide(ethPrice)
+      .divide(quoteTokenPrice)
       .multiply(new Fraction(1).subtract(teamAllocationTotalPercentage))
-  }, [teamAllocationTotalPercentage, startingMcap, ethPrice])
+  }, [teamAllocationTotalPercentage, startingMcap, quoteTokenPrice])
 
   // starknet
   const chainId = useChainId()
@@ -68,10 +69,10 @@ export default function StarndardAmmLaunch({ previous, amm }: StarndardAmmLaunch
 
   // launch
   const launch = useCallback(() => {
-    if (!quoteAmount || !chainId || !hodlLimit || !memecoin?.address) return
+    if (!quoteToken || !quoteAmount || !chainId || !hodlLimit || !memecoin?.address) return
 
     const uin256QuoteAmount = uint256.bnToUint256(
-      BigInt(quoteAmount.multiply(decimalsScale(DECIMALS)).quotient.toString())
+      BigInt(quoteAmount.multiply(decimalsScale(quoteToken.decimals)).quotient.toString())
     )
 
     const approveCalldata = CallData.compile([
@@ -121,6 +122,7 @@ export default function StarndardAmmLaunch({ previous, amm }: StarndardAmmLaunch
       },
     })
   }, [
+    quoteToken,
     amm,
     quoteAmount,
     chainId,

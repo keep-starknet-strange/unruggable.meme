@@ -1,19 +1,20 @@
 import { useContractRead, UseContractReadResult } from '@starknet-react/core'
 import { Fraction } from '@uniswap/sdk-core'
 import { useCallback, useMemo } from 'react'
-import { compiledJediswapPair, JEDISWAP_ETH_USDC } from 'src/constants/contracts'
+import { compiledJediswapPair, JEDISWAP_ETH_USDC, JEDISWAP_STRK_USDC } from 'src/constants/contracts'
 import { Selector } from 'src/constants/misc'
 import { decimalsScale } from 'src/utils/decimalScale'
 import { BlockNumber, BlockTag, constants, Uint256, uint256 } from 'starknet'
 
 import useChainId from './useChainId'
+import useQuoteToken from './useQuote'
 
-export function useEtherPrice(blockIdentifier: BlockNumber = BlockTag.latest) {
+function usePairPrice(pairAddress?: string, blockIdentifier: BlockNumber = BlockTag.latest) {
   const chainId = useChainId()
 
   const pairReserves = useContractRead({
     abi: compiledJediswapPair, // call is not send if abi is undefined
-    address: chainId ? JEDISWAP_ETH_USDC[chainId] : undefined,
+    address: pairAddress,
     functionName: Selector.GET_RESERVES,
     watch: true,
     blockIdentifier,
@@ -22,7 +23,7 @@ export function useEtherPrice(blockIdentifier: BlockNumber = BlockTag.latest) {
   return useMemo(() => {
     if (!pairReserves.data) return
 
-    const ethPrice = new Fraction(
+    const pairPrice = new Fraction(
       uint256.uint256ToBN(pairReserves.data.reserve1).toString(),
       uint256.uint256ToBN(pairReserves.data.reserve0).toString()
     )
@@ -30,23 +31,50 @@ export function useEtherPrice(blockIdentifier: BlockNumber = BlockTag.latest) {
     // token0 and token1 are switched on goerli and mainnet ...
     return (
       chainId === constants.StarknetChainId.SN_GOERLI
-        ? new Fraction(ethPrice.denominator, ethPrice.numerator)
-        : ethPrice
+        ? new Fraction(pairPrice.denominator, pairPrice.numerator)
+        : pairPrice
     ).multiply(decimalsScale(12))
   }, [chainId, pairReserves.data])
 }
 
-export function useWeiAmountToParsedFiatValue(): (amount?: Fraction) => string | null {
-  const etherPrice = useEtherPrice()
+// TODO: remove this
+// eslint-disable-next-line import/no-unused-modules
+export function useEtherPrice(blockIdentifier: BlockNumber = BlockTag.latest) {
+  const chainId = useChainId()
 
+  return usePairPrice(chainId ? JEDISWAP_ETH_USDC[chainId] : undefined, blockIdentifier)
+}
+
+function useStarkPrice(blockIdentifier: BlockNumber = BlockTag.latest) {
+  const chainId = useChainId()
+
+  return usePairPrice(chainId ? JEDISWAP_STRK_USDC[chainId] : undefined, blockIdentifier)
+}
+
+// TODO: Refactor this
+export function useQuoteTokenPrice(quoteTokenAddress: string, blockIdentifier: BlockNumber = BlockTag.latest) {
+  const etherPrice = useEtherPrice(blockIdentifier)
+  const starkPrice = useStarkPrice(blockIdentifier)
+
+  const quoteToken = useQuoteToken(quoteTokenAddress)
+  if (!quoteToken) return
+
+  if (quoteToken.symbol === 'ETH') return etherPrice
+  if (quoteToken.symbol === 'STRK') return starkPrice
+  if (quoteToken.symbol === 'USDC') return new Fraction(1)
+
+  return
+}
+
+export function useWeiAmountToParsedFiatValue(price?: Fraction): (amount?: Fraction) => string | null {
   return useCallback(
     (amount?: Fraction) =>
-      etherPrice && amount
-        ? `$${(Math.round(+amount.multiply(etherPrice).toFixed(6) * 100) / 100).toLocaleString(undefined, {
+      price && amount
+        ? `$${(Math.round(+amount.multiply(price).toFixed(6) * 100) / 100).toLocaleString(undefined, {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
           })}`
         : null,
-    [etherPrice]
+    [price]
   )
 }

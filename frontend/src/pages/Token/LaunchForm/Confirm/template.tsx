@@ -3,7 +3,7 @@ import { useMemo } from 'react'
 import { useBalance } from 'src/hooks/useBalances'
 import { useAmm, useLiquidityForm, useTeamAllocationTotalPercentage } from 'src/hooks/useLaunchForm'
 import useMemecoin from 'src/hooks/useMemecoin'
-import { useWeiAmountToParsedFiatValue } from 'src/hooks/usePrice'
+import { useQuoteTokenPrice, useWeiAmountToParsedFiatValue } from 'src/hooks/usePrice'
 import useQuoteToken from 'src/hooks/useQuote'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
@@ -28,8 +28,9 @@ export default function LaunchTemplate({ liquidityPrice, teamAllocationPrice, pr
   // quote token balance
   const { data: quoteTokenBalance, loading } = useBalance(quoteToken ?? undefined)
 
-  // eth price
-  const weiAmountToParsedFiatValue = useWeiAmountToParsedFiatValue()
+  // quote token price
+  const quoteTokenPrice = useQuoteTokenPrice(quoteTokenAddress)
+  const weiAmountToParsedFiatValue = useWeiAmountToParsedFiatValue(quoteTokenPrice)
 
   // memecoin
   const { data: memecoin } = useMemecoin()

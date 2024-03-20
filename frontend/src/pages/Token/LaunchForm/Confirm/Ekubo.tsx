@@ -1,7 +1,7 @@
 import { Fraction } from '@uniswap/sdk-core'
 import { useCallback, useMemo } from 'react'
 import { FACTORY_ADDRESSES } from 'src/constants/contracts'
-import { DECIMALS, EKUBO_BOUND, EKUBO_FEES_MULTIPLICATOR, EKUBO_TICK_SPACING, Selector } from 'src/constants/misc'
+import { EKUBO_BOUND, EKUBO_FEES_MULTIPLICATOR, EKUBO_TICK_SPACING, Selector } from 'src/constants/misc'
 import useChainId from 'src/hooks/useChainId'
 import {
   useEkuboLiquidityForm,
@@ -12,7 +12,8 @@ import {
   useTeamAllocationTotalPercentage,
 } from 'src/hooks/useLaunchForm'
 import useMemecoin from 'src/hooks/useMemecoin'
-import { useEtherPrice } from 'src/hooks/usePrice'
+import { useQuoteTokenPrice } from 'src/hooks/usePrice'
+import useQuoteToken from 'src/hooks/useQuote'
 import { useExecuteTransaction } from 'src/hooks/useTransactions'
 import { parseFormatedAmount, parseFormatedPercentage } from 'src/utils/amount'
 import { decimalsScale } from 'src/utils/decimals'
@@ -32,32 +33,33 @@ export default function EkuboLaunch({ previous }: LastFormPageProps) {
   // memecoin
   const { data: memecoin, refresh: refreshMemecoin } = useMemecoin()
 
-  // eth price
-  const ethPrice = useEtherPrice()
+  // quote token price
+  const quoteToken = useQuoteToken(quoteTokenAddress)
+  const quoteTokenPrice = useQuoteTokenPrice(quoteTokenAddress)
 
   // team allocation
   const teamAllocationTotalPercentage = useTeamAllocationTotalPercentage(memecoin?.totalSupply)
 
   // team allocation quote amount
   const teamAllocationQuoteAmount = useMemo(() => {
-    if (!ethPrice || !startingMcap || !teamAllocationTotalPercentage || !ekuboFees) return
+    if (!quoteTokenPrice || !startingMcap || !teamAllocationTotalPercentage || !ekuboFees) return
 
-    // mcap / eth_price * (team_allocation / total_supply * (1 + ekuboFees))
+    // mcap / quote_token_price * (team_allocation / total_supply * (1 + ekuboFees))
     return new Fraction(parseFormatedAmount(startingMcap))
-      .divide(ethPrice)
+      .divide(quoteTokenPrice)
       .multiply(teamAllocationTotalPercentage.multiply(parseFormatedPercentage(ekuboFees).add(1)))
-  }, [ethPrice, startingMcap, teamAllocationTotalPercentage, ekuboFees])
+  }, [quoteTokenPrice, startingMcap, teamAllocationTotalPercentage, ekuboFees])
 
   // starting tick
   const i129StartingTick = useMemo(() => {
-    if (!ethPrice || !startingMcap || !memecoin) return
+    if (!quoteToken || !quoteTokenPrice || !startingMcap || !memecoin) return
 
-    // initial price in quote/MEME = mcap / eth price / total supply
+    // initial price in quote/MEME = mcap / quote token price / total supply
     const initalPrice = +new Fraction(parseFormatedAmount(startingMcap))
-      .divide(ethPrice)
-      .multiply(decimalsScale(DECIMALS))
+      .divide(quoteTokenPrice)
+      .multiply(decimalsScale(quoteToken.decimals))
       .divide(new Fraction(memecoin.totalSupply))
-      .toFixed(DECIMALS)
+      .toFixed(quoteToken.decimals)
 
     const startingTickMag = getStartingTick(initalPrice)
 
@@ -65,7 +67,7 @@ export default function EkuboLaunch({ previous }: LastFormPageProps) {
       mag: Math.abs(startingTickMag),
       sign: startingTickMag < 0,
     }
-  }, [ethPrice, startingMcap, memecoin])
+  }, [quoteToken, quoteTokenPrice, startingMcap, memecoin])
 
   // fees
   const fees = useMemo(() => {
@@ -82,10 +84,19 @@ export default function EkuboLaunch({ previous }: LastFormPageProps) {
 
   // launch
   const launch = useCallback(() => {
-    if (!i129StartingTick || !fees || !chainId || !hodlLimit || !memecoin?.address || !teamAllocationQuoteAmount) return
+    if (
+      !quoteToken ||
+      !i129StartingTick ||
+      !fees ||
+      !chainId ||
+      !hodlLimit ||
+      !memecoin?.address ||
+      !teamAllocationQuoteAmount
+    )
+      return
 
     const uin256TeamAllocationQuoteAmount = uint256.bnToUint256(
-      BigInt(teamAllocationQuoteAmount.multiply(decimalsScale(DECIMALS)).quotient.toString())
+      BigInt(teamAllocationQuoteAmount.multiply(decimalsScale(quoteToken.decimals)).quotient.toString())
     )
 
     const transferCalldata = CallData.compile([
@@ -136,6 +147,7 @@ export default function EkuboLaunch({ previous }: LastFormPageProps) {
       },
     })
   }, [
+    quoteToken,
     antiBotPeriod,
     chainId,
     executeTransaction,
