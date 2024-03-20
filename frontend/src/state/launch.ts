@@ -36,6 +36,7 @@ interface Actions {
   removeTeamAllocationHolder: (index: number) => void
   resetLaunchForm: () => void
   setEkuboFees: (ekuboFees: string) => void
+  setQuoteTokenAddress: (quoteTokenAddress: string) => void
 }
 
 const initialState = {
@@ -58,6 +59,7 @@ export const createLaunchSlice: StateCreator<StoreState, [['zustand/immer', neve
   setStartingMcap: (startingMcap) => set({ startingMcap }),
   setAMM: (amm) => set({ amm }),
   setEkuboFees: (ekuboFees) => set({ ekuboFees }),
+  setQuoteTokenAddress: (quoteTokenAddress) => set({ quoteTokenAddress }),
 
   setTeamAllocationHolder: (holder: Holder, index: number) =>
     set((state) => {
