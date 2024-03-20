@@ -52,7 +52,7 @@ function useStarkPrice(blockIdentifier: BlockNumber = BlockTag.latest) {
 export function useQuoteTokenPrice(quoteTokenAddress?: string, blockIdentifier: BlockNumber = BlockTag.latest) {
   const etherPrice = useEtherPrice(blockIdentifier)
   const starkPrice = useStarkPrice(blockIdentifier)
-  const usdcPrice = new Fraction(1)
+  const usdcPrice = new Fraction(1, 1)
 
   const quoteToken = useQuoteToken(quoteTokenAddress ? getChecksumAddress(quoteTokenAddress) : undefined)
   if (!quoteToken) return

@@ -107,7 +107,7 @@ export default function TokenMetrics() {
                 )
                   .multiply(quoteTokenPriceAtLaunch)
                   .multiply(memecoin.totalSupply)
-                  .divide(decimalsScale(quoteToken.decimals))
+                  .divide(decimalsScale(18))
               : undefined
         }
       }

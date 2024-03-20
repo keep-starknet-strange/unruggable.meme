@@ -57,7 +57,7 @@ export default function EkuboLaunch({ previous }: LastFormPageProps) {
     // initial price in quote/MEME = mcap / quote token price / total supply
     const initalPrice = +new Fraction(parseFormatedAmount(startingMcap))
       .divide(quoteTokenPrice)
-      .multiply(decimalsScale(quoteToken.decimals))
+      .multiply(decimalsScale(18))
       .divide(new Fraction(memecoin.totalSupply))
       .toFixed(quoteToken.decimals)
 
