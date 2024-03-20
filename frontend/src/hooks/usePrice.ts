@@ -4,7 +4,7 @@ import { useCallback, useMemo } from 'react'
 import { compiledJediswapPair, JEDISWAP_ETH_USDC, JEDISWAP_STRK_USDC } from 'src/constants/contracts'
 import { Selector } from 'src/constants/misc'
 import { decimalsScale } from 'src/utils/decimalScale'
-import { BlockNumber, BlockTag, constants, Uint256, uint256 } from 'starknet'
+import { BlockNumber, BlockTag, constants, getChecksumAddress, Uint256, uint256 } from 'starknet'
 
 import useChainId from './useChainId'
 import useQuoteToken from './useQuote'
@@ -37,9 +37,7 @@ function usePairPrice(pairAddress?: string, blockIdentifier: BlockNumber = Block
   }, [chainId, pairReserves.data])
 }
 
-// TODO: remove this
-// eslint-disable-next-line import/no-unused-modules
-export function useEtherPrice(blockIdentifier: BlockNumber = BlockTag.latest) {
+function useEtherPrice(blockIdentifier: BlockNumber = BlockTag.latest) {
   const chainId = useChainId()
 
   return usePairPrice(chainId ? JEDISWAP_ETH_USDC[chainId] : undefined, blockIdentifier)
@@ -51,17 +49,19 @@ function useStarkPrice(blockIdentifier: BlockNumber = BlockTag.latest) {
   return usePairPrice(chainId ? JEDISWAP_STRK_USDC[chainId] : undefined, blockIdentifier)
 }
 
-// TODO: Refactor this
-export function useQuoteTokenPrice(quoteTokenAddress: string, blockIdentifier: BlockNumber = BlockTag.latest) {
+export function useQuoteTokenPrice(quoteTokenAddress?: string, blockIdentifier: BlockNumber = BlockTag.latest) {
   const etherPrice = useEtherPrice(blockIdentifier)
   const starkPrice = useStarkPrice(blockIdentifier)
+  const usdcPrice = new Fraction(1)
 
-  const quoteToken = useQuoteToken(quoteTokenAddress)
+  const quoteToken = useQuoteToken(quoteTokenAddress ? getChecksumAddress(quoteTokenAddress) : undefined)
   if (!quoteToken) return
 
-  if (quoteToken.symbol === 'ETH') return etherPrice
-  if (quoteToken.symbol === 'STRK') return starkPrice
-  if (quoteToken.symbol === 'USDC') return new Fraction(1)
+  return {
+    ETH: etherPrice,
+    STRK: starkPrice,
+    USDC: usdcPrice,
+  }[quoteToken.symbol]
 
   return
 }
