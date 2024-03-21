@@ -68,7 +68,7 @@ export default function LiquidityTemplate({ register, errors }: LiquidityTemplat
       <Column gap="8">
         <Text.HeadlineSmall>Quote Token</Text.HeadlineSmall>
 
-        <Row gap="16">
+        <Row gap="16" flexWrap="wrap">
           {chainId &&
             Object.values(QUOTE_TOKENS[chainId]).map((token) => (
               <CardButton

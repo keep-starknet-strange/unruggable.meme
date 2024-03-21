@@ -10,6 +10,7 @@ export const errorContainer = sprinkles({
 export const quoteTokenCard = recipe({
   base: {
     flex: '1',
+    minWidth: '150px',
   },
   variants: {
     selected: {
