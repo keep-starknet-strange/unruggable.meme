@@ -17,6 +17,10 @@ export const links = [
     name: 'My tokens',
     path: '/tokens',
   },
+  {
+    name: 'About',
+    path: '/about',
+  },
 ]
 
 export default function NavBar() {
