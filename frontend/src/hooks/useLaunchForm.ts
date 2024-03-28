@@ -17,8 +17,9 @@ export function useHodlLimitForm() {
 export function useLiquidityForm() {
   return useBoundStore((state) => ({
     startingMcap: state.startingMcap,
-    setStartingMcap: state.setStartingMcap,
     quoteTokenAddress: state.quoteTokenAddress,
+    setStartingMcap: state.setStartingMcap,
+    setQuoteTokenAddress: state.setQuoteTokenAddress,
   }))
 }
 

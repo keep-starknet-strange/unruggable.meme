@@ -6,7 +6,8 @@ import { Safety, SAFETY_COLORS } from 'src/constants/safety'
 import { QUOTE_TOKENS } from 'src/constants/tokens'
 import useChainId from 'src/hooks/useChainId'
 import useMemecoin from 'src/hooks/useMemecoin'
-import { useEtherPrice } from 'src/hooks/usePrice'
+import { useQuoteTokenPrice } from 'src/hooks/usePrice'
+import useQuoteToken from 'src/hooks/useQuote'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
@@ -27,15 +28,21 @@ export default function TokenMetrics() {
   // memecoin
   const { data: memecoin } = useMemecoin()
 
-  // eth price
-  const ethPriceAtLaunch = useEtherPrice(memecoin?.isLaunched ? memecoin.launch.blockNumber - 1 : undefined)
+  // quote token
+  const quoteToken = useQuoteToken(memecoin?.isLaunched ? memecoin?.liquidity?.quoteToken : undefined)
+
+  // quote token price
+  const quoteTokenPriceAtLaunch = useQuoteTokenPrice(
+    quoteToken?.address,
+    memecoin?.isLaunched ? memecoin.launch.blockNumber - 1 : undefined
+  )
 
   // starknet
   const chainId = useChainId()
 
   // parse memecoin infos
   const parsedMemecoinInfos = useMemo(() => {
-    if (!memecoin) return
+    if (!quoteToken?.decimals || !memecoin) return
     if (!memecoin.isLaunched) return {}
 
     const ret: Record<string, { parsedValue: string; safety: Safety }> = {}
@@ -73,7 +80,7 @@ export default function TokenMetrics() {
     }
 
     // starting mcap
-    if (ethPriceAtLaunch) {
+    if (quoteTokenPriceAtLaunch) {
       let startingMcap: Fraction | undefined
       switch (memecoin.liquidity.type) {
         case LiquidityType.STARKDEFI_ERC20:
@@ -82,8 +89,8 @@ export default function TokenMetrics() {
             ret.quoteToken.safety === Safety.SAFE
               ? new Fraction(memecoin.liquidity.quoteAmount)
                   .multiply(new Fraction(memecoin.launch.teamAllocation, memecoin.totalSupply).add(1))
-                  .divide(decimalsScale(DECIMALS))
-                  .multiply(ethPriceAtLaunch)
+                  .divide(decimalsScale(quoteToken.decimals))
+                  .multiply(quoteTokenPriceAtLaunch)
               : undefined
 
           break
@@ -93,8 +100,11 @@ export default function TokenMetrics() {
           const initialPrice = getInitialPrice(memecoin.liquidity.startingTick)
           startingMcap =
             ret.quoteToken.safety === Safety.SAFE
-              ? new Fraction(Math.round(initialPrice * +decimalsScale(DECIMALS)), decimalsScale(DECIMALS))
-                  .multiply(ethPriceAtLaunch)
+              ? new Fraction(
+                  initialPrice.toFixed(DECIMALS).replace(/\./, '').replace(/^0+/, ''), // from 0.000[...]0001 to "1"
+                  decimalsScale(DECIMALS)
+                )
+                  .multiply(quoteTokenPriceAtLaunch)
                   .multiply(memecoin.totalSupply)
                   .divide(decimalsScale(DECIMALS))
               : undefined
@@ -108,7 +118,7 @@ export default function TokenMetrics() {
     }
 
     return ret
-  }, [memecoin, chainId, ethPriceAtLaunch])
+  }, [quoteToken?.decimals, memecoin, chainId, quoteTokenPriceAtLaunch])
 
   if (!memecoin) return null
 
