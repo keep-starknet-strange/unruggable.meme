@@ -26,7 +26,7 @@ export const Ether: MultichainToken = {
   [constants.StarknetChainId.SN_GOERLI]: {
     address: ETH_ADDRESS,
     symbol: 'ETH',
-    name: 'Ethereum',
+    name: 'Ether',
     decimals: 18,
     camelCased: true,
     icon: <Icons.ETH />,
@@ -38,7 +38,7 @@ export const Ether: MultichainToken = {
   [constants.StarknetChainId.SN_MAIN]: {
     address: ETH_ADDRESS,
     symbol: 'ETH',
-    name: 'Ethereum',
+    name: 'Ether',
     decimals: 18,
     camelCased: true,
     icon: <Icons.ETH />,

@@ -84,6 +84,8 @@ export default function LiquidityTemplate({ register, errors }: LiquidityTemplat
               />
             ))}
         </Row>
+
+        <Box />
       </Column>
     </>
   )
