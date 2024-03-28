@@ -3,7 +3,7 @@ import { constants, getChecksumAddress } from 'starknet'
 
 import { ETH_ADDRESS, JEDISWAP_ETH_USDC, JEDISWAP_STRK_USDC, STRK_ADDRESS, USDC_ADDRESSES } from './contracts'
 
-interface USDCPair {
+export interface USDCPair {
   address: string
   reversed: boolean
 }
@@ -22,7 +22,7 @@ type MultichainToken = { [chainId in constants.StarknetChainId]: Token }
 
 // ETH
 
-const Ether: MultichainToken = {
+export const Ether: MultichainToken = {
   [constants.StarknetChainId.SN_GOERLI]: {
     address: ETH_ADDRESS,
     symbol: 'ETH',
@@ -51,7 +51,7 @@ const Ether: MultichainToken = {
 
 // STRK
 
-const Stark: MultichainToken = {
+export const Stark: MultichainToken = {
   [constants.StarknetChainId.SN_GOERLI]: {
     address: STRK_ADDRESS,
     symbol: 'STRK',

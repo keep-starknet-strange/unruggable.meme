@@ -1,7 +1,7 @@
 import { Fraction, Percent } from '@uniswap/sdk-core'
 import moment from 'moment'
 import { useMemo } from 'react'
-import { FOREVER, LiquidityType } from 'src/constants/misc'
+import { DECIMALS, FOREVER, LiquidityType } from 'src/constants/misc'
 import { Safety, SAFETY_COLORS } from 'src/constants/safety'
 import { QUOTE_TOKENS } from 'src/constants/tokens'
 import useChainId from 'src/hooks/useChainId'
@@ -42,8 +42,7 @@ export default function TokenMetrics() {
 
   // parse memecoin infos
   const parsedMemecoinInfos = useMemo(() => {
-    if (!quoteToken) return
-    if (!memecoin) return
+    if (!quoteToken?.decimals || !memecoin) return
     if (!memecoin.isLaunched) return {}
 
     const ret: Record<string, { parsedValue: string; safety: Safety }> = {}
@@ -102,12 +101,12 @@ export default function TokenMetrics() {
           startingMcap =
             ret.quoteToken.safety === Safety.SAFE
               ? new Fraction(
-                  Math.round(initialPrice * +decimalsScale(quoteToken.decimals)),
-                  decimalsScale(quoteToken.decimals)
+                  initialPrice.toFixed(DECIMALS).replace(/\./, '').replace(/^0+/, ''), // from 0.000[...]0001 to "1"
+                  decimalsScale(DECIMALS)
                 )
                   .multiply(quoteTokenPriceAtLaunch)
                   .multiply(memecoin.totalSupply)
-                  .divide(decimalsScale(18))
+                  .divide(decimalsScale(DECIMALS))
               : undefined
         }
       }
@@ -119,7 +118,7 @@ export default function TokenMetrics() {
     }
 
     return ret
-  }, [quoteToken, memecoin, chainId, quoteTokenPriceAtLaunch])
+  }, [quoteToken?.decimals, memecoin, chainId, quoteTokenPriceAtLaunch])
 
   if (!memecoin) return null
 

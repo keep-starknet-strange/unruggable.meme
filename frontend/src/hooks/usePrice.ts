@@ -1,20 +1,19 @@
 import { useContractRead, UseContractReadResult } from '@starknet-react/core'
 import { Fraction } from '@uniswap/sdk-core'
 import { useCallback, useMemo } from 'react'
-import { compiledJediswapPair, JEDISWAP_ETH_USDC, JEDISWAP_STRK_USDC } from 'src/constants/contracts'
+import { compiledJediswapPair } from 'src/constants/contracts'
 import { Selector } from 'src/constants/misc'
+import { Ether, Stark, USDCPair } from 'src/constants/tokens'
 import { decimalsScale } from 'src/utils/decimalScale'
-import { BlockNumber, BlockTag, constants, getChecksumAddress, Uint256, uint256 } from 'starknet'
+import { BlockNumber, BlockTag, getChecksumAddress, Uint256, uint256 } from 'starknet'
 
 import useChainId from './useChainId'
 import useQuoteToken from './useQuote'
 
-function usePairPrice(pairAddress?: string, blockIdentifier: BlockNumber = BlockTag.latest) {
-  const chainId = useChainId()
-
+function usePairPrice(usdcPair?: USDCPair, blockIdentifier: BlockNumber = BlockTag.latest) {
   const pairReserves = useContractRead({
     abi: compiledJediswapPair, // call is not send if abi is undefined
-    address: pairAddress,
+    address: usdcPair?.address,
     functionName: Selector.GET_RESERVES,
     watch: true,
     blockIdentifier,
@@ -28,25 +27,23 @@ function usePairPrice(pairAddress?: string, blockIdentifier: BlockNumber = Block
       uint256.uint256ToBN(pairReserves.data.reserve0).toString()
     )
 
-    // token0 and token1 are switched on goerli and mainnet ...
-    return (
-      chainId === constants.StarknetChainId.SN_GOERLI
-        ? new Fraction(pairPrice.denominator, pairPrice.numerator)
-        : pairPrice
-    ).multiply(decimalsScale(12))
-  }, [chainId, pairReserves.data])
+    // token0 and token1 are switched on some pairs
+    return (usdcPair?.reversed ? new Fraction(pairPrice.denominator, pairPrice.numerator) : pairPrice).multiply(
+      decimalsScale(12)
+    )
+  }, [pairReserves.data, usdcPair?.reversed])
 }
 
 function useEtherPrice(blockIdentifier: BlockNumber = BlockTag.latest) {
   const chainId = useChainId()
 
-  return usePairPrice(chainId ? JEDISWAP_ETH_USDC[chainId] : undefined, blockIdentifier)
+  return usePairPrice(chainId ? Ether[chainId].usdcPair : undefined, blockIdentifier)
 }
 
 function useStarkPrice(blockIdentifier: BlockNumber = BlockTag.latest) {
   const chainId = useChainId()
 
-  return usePairPrice(chainId ? JEDISWAP_STRK_USDC[chainId] : undefined, blockIdentifier)
+  return usePairPrice(chainId ? Stark[chainId].usdcPair : undefined, blockIdentifier)
 }
 
 export function useQuoteTokenPrice(quoteTokenAddress?: string, blockIdentifier: BlockNumber = BlockTag.latest) {

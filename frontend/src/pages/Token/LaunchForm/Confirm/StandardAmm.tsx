@@ -69,7 +69,7 @@ export default function StarndardAmmLaunch({ previous, amm }: StarndardAmmLaunch
 
   // launch
   const launch = useCallback(() => {
-    if (!quoteToken || !quoteAmount || !chainId || !hodlLimit || !memecoin?.address) return
+    if (!quoteToken?.decimals || !quoteAmount || !chainId || !hodlLimit || !memecoin?.address) return
 
     const uin256QuoteAmount = uint256.bnToUint256(
       BigInt(quoteAmount.multiply(decimalsScale(quoteToken.decimals)).quotient.toString())
@@ -122,7 +122,7 @@ export default function StarndardAmmLaunch({ previous, amm }: StarndardAmmLaunch
       },
     })
   }, [
-    quoteToken,
+    quoteToken?.decimals,
     amm,
     quoteAmount,
     chainId,

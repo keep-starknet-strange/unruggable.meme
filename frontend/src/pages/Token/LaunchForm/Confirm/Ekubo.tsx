@@ -1,7 +1,7 @@
 import { Fraction } from '@uniswap/sdk-core'
 import { useCallback, useMemo } from 'react'
 import { FACTORY_ADDRESSES } from 'src/constants/contracts'
-import { EKUBO_BOUND, EKUBO_FEES_MULTIPLICATOR, EKUBO_TICK_SPACING, Selector } from 'src/constants/misc'
+import { DECIMALS, EKUBO_BOUND, EKUBO_FEES_MULTIPLICATOR, EKUBO_TICK_SPACING, Selector } from 'src/constants/misc'
 import useChainId from 'src/hooks/useChainId'
 import {
   useEkuboLiquidityForm,
@@ -13,7 +13,6 @@ import {
 } from 'src/hooks/useLaunchForm'
 import useMemecoin from 'src/hooks/useMemecoin'
 import { useQuoteTokenPrice } from 'src/hooks/usePrice'
-import useQuoteToken from 'src/hooks/useQuote'
 import { useExecuteTransaction } from 'src/hooks/useTransactions'
 import { parseFormatedAmount, parseFormatedPercentage } from 'src/utils/amount'
 import { decimalsScale } from 'src/utils/decimals'
@@ -34,7 +33,6 @@ export default function EkuboLaunch({ previous }: LastFormPageProps) {
   const { data: memecoin, refresh: refreshMemecoin } = useMemecoin()
 
   // quote token price
-  const quoteToken = useQuoteToken(quoteTokenAddress)
   const quoteTokenPrice = useQuoteTokenPrice(quoteTokenAddress)
 
   // team allocation
@@ -52,14 +50,14 @@ export default function EkuboLaunch({ previous }: LastFormPageProps) {
 
   // starting tick
   const i129StartingTick = useMemo(() => {
-    if (!quoteToken || !quoteTokenPrice || !startingMcap || !memecoin) return
+    if (!quoteTokenPrice || !startingMcap || !memecoin) return
 
     // initial price in quote/MEME = mcap / quote token price / total supply
     const initalPrice = +new Fraction(parseFormatedAmount(startingMcap))
       .divide(quoteTokenPrice)
-      .multiply(decimalsScale(18))
+      .multiply(decimalsScale(DECIMALS))
       .divide(new Fraction(memecoin.totalSupply))
-      .toFixed(quoteToken.decimals)
+      .toFixed(DECIMALS)
 
     const startingTickMag = getStartingTick(initalPrice)
 
@@ -67,7 +65,7 @@ export default function EkuboLaunch({ previous }: LastFormPageProps) {
       mag: Math.abs(startingTickMag),
       sign: startingTickMag < 0,
     }
-  }, [quoteToken, quoteTokenPrice, startingMcap, memecoin])
+  }, [quoteTokenPrice, startingMcap, memecoin])
 
   // fees
   const fees = useMemo(() => {
@@ -84,19 +82,10 @@ export default function EkuboLaunch({ previous }: LastFormPageProps) {
 
   // launch
   const launch = useCallback(() => {
-    if (
-      !quoteToken ||
-      !i129StartingTick ||
-      !fees ||
-      !chainId ||
-      !hodlLimit ||
-      !memecoin?.address ||
-      !teamAllocationQuoteAmount
-    )
-      return
+    if (!i129StartingTick || !fees || !chainId || !hodlLimit || !memecoin?.address || !teamAllocationQuoteAmount) return
 
     const uin256TeamAllocationQuoteAmount = uint256.bnToUint256(
-      BigInt(teamAllocationQuoteAmount.multiply(decimalsScale(quoteToken.decimals)).quotient.toString())
+      BigInt(teamAllocationQuoteAmount.multiply(decimalsScale(DECIMALS)).quotient.toString())
     )
 
     const transferCalldata = CallData.compile([
@@ -147,7 +136,6 @@ export default function EkuboLaunch({ previous }: LastFormPageProps) {
       },
     })
   }, [
-    quoteToken,
     antiBotPeriod,
     chainId,
     executeTransaction,
