@@ -107,6 +107,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://nodeguardians.io/character/98995858fd55"><img src="https://avatars.githubusercontent.com/u/122918260?v=4?s=100" width="100px;" alt="Tristan"/><br /><sub><b>Tristan</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=TAdev0" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://ugureren.net/"><img src="https://avatars.githubusercontent.com/u/86152092?v=4?s=100" width="100px;" alt="Uğur Eren"/><br /><sub><b>Uğur Eren</b></sub></a><br /><a href="https://github.com/keep-starknet-strange/unruggable-memecoin/commits?author=ugur-eren" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
