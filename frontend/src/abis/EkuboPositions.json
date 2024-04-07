@@ -178,32 +178,6 @@
     ]
   },
   {
-    "name": "ekubo::types::call_points::CallPoints",
-    "type": "struct",
-    "members": [
-      {
-        "name": "after_initialize_pool",
-        "type": "core::bool"
-      },
-      {
-        "name": "before_swap",
-        "type": "core::bool"
-      },
-      {
-        "name": "after_swap",
-        "type": "core::bool"
-      },
-      {
-        "name": "before_update_position",
-        "type": "core::bool"
-      },
-      {
-        "name": "after_update_position",
-        "type": "core::bool"
-      }
-    ]
-  },
-  {
     "name": "ekubo::types::pool_price::PoolPrice",
     "type": "struct",
     "members": [
@@ -214,10 +188,6 @@
       {
         "name": "tick",
         "type": "ekubo::types::i129::i129"
-      },
-      {
-        "name": "call_points",
-        "type": "ekubo::types::call_points::CallPoints"
       }
     ]
   },
@@ -262,6 +232,70 @@
     ]
   },
   {
+    "name": "ekubo::extensions::interfaces::twamm::OrderKey",
+    "type": "struct",
+    "members": [
+      {
+        "name": "sell_token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "buy_token",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "fee",
+        "type": "core::integer::u128"
+      },
+      {
+        "name": "start_time",
+        "type": "core::integer::u64"
+      },
+      {
+        "name": "end_time",
+        "type": "core::integer::u64"
+      }
+    ]
+  },
+  {
+    "name": "core::array::Span::<(core::integer::u64, ekubo::extensions::interfaces::twamm::OrderKey)>",
+    "type": "struct",
+    "members": [
+      {
+        "name": "snapshot",
+        "type": "@core::array::Array::<(core::integer::u64, ekubo::extensions::interfaces::twamm::OrderKey)>"
+      }
+    ]
+  },
+  {
+    "name": "ekubo::extensions::interfaces::twamm::OrderInfo",
+    "type": "struct",
+    "members": [
+      {
+        "name": "sale_rate",
+        "type": "core::integer::u128"
+      },
+      {
+        "name": "remaining_sell_amount",
+        "type": "core::integer::u128"
+      },
+      {
+        "name": "purchased_amount",
+        "type": "core::integer::u128"
+      }
+    ]
+  },
+  {
+    "name": "core::array::Span::<ekubo::extensions::interfaces::twamm::OrderInfo>",
+    "type": "struct",
+    "members": [
+      {
+        "name": "snapshot",
+        "type": "@core::array::Array::<ekubo::extensions::interfaces::twamm::OrderInfo>"
+      }
+    ]
+  },
+  {
     "name": "ekubo::interfaces::positions::IPositions",
     "type": "interface",
     "items": [
@@ -287,6 +321,29 @@
         ],
         "outputs": [],
         "state_mutability": "external"
+      },
+      {
+        "name": "set_twamm",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "twamm_address",
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "get_twamm_address",
+        "type": "function",
+        "inputs": [],
+        "outputs": [
+          {
+            "type": "core::starknet::contract_address::ContractAddress"
+          }
+        ],
+        "state_mutability": "view"
       },
       {
         "name": "get_tokens_info",
@@ -324,6 +381,42 @@
         "outputs": [
           {
             "type": "ekubo::interfaces::positions::GetTokenInfoResult"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "get_orders_info",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "params",
+            "type": "core::array::Span::<(core::integer::u64, ekubo::extensions::interfaces::twamm::OrderKey)>"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::array::Span::<ekubo::extensions::interfaces::twamm::OrderInfo>"
+          }
+        ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "get_order_info",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "id",
+            "type": "core::integer::u64"
+          },
+          {
+            "name": "order_key",
+            "type": "ekubo::extensions::interfaces::twamm::OrderKey"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "ekubo::extensions::interfaces::twamm::OrderInfo"
           }
         ],
         "state_mutability": "view"
@@ -389,6 +482,26 @@
         "state_mutability": "external"
       },
       {
+        "name": "check_liquidity_is_zero",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "id",
+            "type": "core::integer::u64"
+          },
+          {
+            "name": "pool_key",
+            "type": "ekubo::types::keys::PoolKey"
+          },
+          {
+            "name": "bounds",
+            "type": "ekubo::types::bounds::Bounds"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "view"
+      },
+      {
         "name": "unsafe_burn",
         "type": "function",
         "inputs": [
@@ -425,6 +538,38 @@
         "state_mutability": "external"
       },
       {
+        "name": "deposit_amounts_last",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "pool_key",
+            "type": "ekubo::types::keys::PoolKey"
+          },
+          {
+            "name": "bounds",
+            "type": "ekubo::types::bounds::Bounds"
+          },
+          {
+            "name": "amount0",
+            "type": "core::integer::u128"
+          },
+          {
+            "name": "amount1",
+            "type": "core::integer::u128"
+          },
+          {
+            "name": "min_liquidity",
+            "type": "core::integer::u128"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::integer::u128"
+          }
+        ],
+        "state_mutability": "external"
+      },
+      {
         "name": "deposit",
         "type": "function",
         "inputs": [
@@ -439,6 +584,42 @@
           {
             "name": "bounds",
             "type": "ekubo::types::bounds::Bounds"
+          },
+          {
+            "name": "min_liquidity",
+            "type": "core::integer::u128"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::integer::u128"
+          }
+        ],
+        "state_mutability": "external"
+      },
+      {
+        "name": "deposit_amounts",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "id",
+            "type": "core::integer::u64"
+          },
+          {
+            "name": "pool_key",
+            "type": "ekubo::types::keys::PoolKey"
+          },
+          {
+            "name": "bounds",
+            "type": "ekubo::types::bounds::Bounds"
+          },
+          {
+            "name": "amount0",
+            "type": "core::integer::u128"
+          },
+          {
+            "name": "amount1",
+            "type": "core::integer::u128"
           },
           {
             "name": "min_liquidity",
@@ -642,6 +823,106 @@
             "type": "ekubo::types::pool_price::PoolPrice"
           }
         ],
+        "state_mutability": "view"
+      },
+      {
+        "name": "mint_and_increase_sell_amount",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "order_key",
+            "type": "ekubo::extensions::interfaces::twamm::OrderKey"
+          },
+          {
+            "name": "amount",
+            "type": "core::integer::u128"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "(core::integer::u64, core::integer::u128)"
+          }
+        ],
+        "state_mutability": "external"
+      },
+      {
+        "name": "increase_sell_amount_last",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "order_key",
+            "type": "ekubo::extensions::interfaces::twamm::OrderKey"
+          },
+          {
+            "name": "amount",
+            "type": "core::integer::u128"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::integer::u128"
+          }
+        ],
+        "state_mutability": "external"
+      },
+      {
+        "name": "increase_sell_amount",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "id",
+            "type": "core::integer::u64"
+          },
+          {
+            "name": "order_key",
+            "type": "ekubo::extensions::interfaces::twamm::OrderKey"
+          },
+          {
+            "name": "amount",
+            "type": "core::integer::u128"
+          }
+        ],
+        "outputs": [
+          {
+            "type": "core::integer::u128"
+          }
+        ],
+        "state_mutability": "external"
+      },
+      {
+        "name": "decrease_sale_rate",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "id",
+            "type": "core::integer::u64"
+          },
+          {
+            "name": "order_key",
+            "type": "ekubo::extensions::interfaces::twamm::OrderKey"
+          },
+          {
+            "name": "sale_rate_delta",
+            "type": "core::integer::u128"
+          }
+        ],
+        "outputs": [],
+        "state_mutability": "external"
+      },
+      {
+        "name": "withdraw_proceeds_from_sale",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "id",
+            "type": "core::integer::u64"
+          },
+          {
+            "name": "order_key",
+            "type": "ekubo::extensions::interfaces::twamm::OrderKey"
+          }
+        ],
+        "outputs": [],
         "state_mutability": "external"
       }
     ]
@@ -780,6 +1061,29 @@
             "type": "core::integer::u256"
           }
         ],
+        "state_mutability": "view"
+      }
+    ]
+  },
+  {
+    "name": "Expires",
+    "type": "impl",
+    "interface_name": "ekubo::components::expires::IExpires"
+  },
+  {
+    "name": "ekubo::components::expires::IExpires",
+    "type": "interface",
+    "items": [
+      {
+        "name": "expires",
+        "type": "function",
+        "inputs": [
+          {
+            "name": "at",
+            "type": "core::integer::u64"
+          }
+        ],
+        "outputs": [],
         "state_mutability": "view"
       }
     ]
