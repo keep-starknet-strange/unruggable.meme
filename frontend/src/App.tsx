@@ -6,6 +6,7 @@ import DeployPage from './pages/Deploy'
 import HomePage from './pages/Home'
 import TokenPage from './pages/Token'
 import TokensPage from './pages/Tokens'
+import WalletRedirect from './pages/WalletRedirect'
 
 const router = createBrowserRouter([
   {
@@ -39,6 +40,10 @@ const router = createBrowserRouter([
         <TokenPage />
       </AppLayout>
     ),
+  },
+  {
+    path: '/wallet-redirect/:redirectUrl',
+    element: <WalletRedirect />,
   },
 ])
 
