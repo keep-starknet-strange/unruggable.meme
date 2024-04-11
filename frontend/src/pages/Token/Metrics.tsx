@@ -24,6 +24,14 @@ import {
 
 import * as styles from './style.css'
 
+const getStarkscanUrl = (address: string) => {
+  return `https://starkscan.co/token/${address}`
+}
+
+const getDexscreenerUrl = (address: string) => {
+  return `https://dexscreener.com/starknet/${address}`
+}
+
 export default function TokenMetrics() {
   // memecoin
   const { data: memecoin } = useMemecoin()
@@ -132,54 +140,95 @@ export default function TokenMetrics() {
 
       <Box className={styles.hr} />
 
-      {memecoin.isLaunched ? (
-        <Row gap="16" flexWrap="wrap">
-          <Box className={styles.card}>
-            <Column gap="8" alignItems="flex-start">
-              <Text.Small>Team allocation:</Text.Small>
-              <Text.HeadlineMedium color={SAFETY_COLORS[parsedMemecoinInfos?.teamAllocation?.safety ?? Safety.UNKNOWN]}>
-                {parsedMemecoinInfos?.teamAllocation?.parsedValue ?? 'Loading'}
-              </Text.HeadlineMedium>
-            </Column>
-          </Box>
+      {!!memecoin.isLaunched && (
+        <>
+          <Row gap="16" flexWrap="wrap">
+            <Box className={styles.card}>
+              <Column gap="8" alignItems="flex-start">
+                <Text.Small>Team allocation:</Text.Small>
+                <Text.HeadlineMedium
+                  color={SAFETY_COLORS[parsedMemecoinInfos?.teamAllocation?.safety ?? Safety.UNKNOWN]}
+                >
+                  {parsedMemecoinInfos?.teamAllocation?.parsedValue ?? 'Loading'}
+                </Text.HeadlineMedium>
+              </Column>
+            </Box>
 
-          <Box className={styles.card}>
-            <Column gap="8" alignItems="flex-start">
-              <Text.Small>Liquidity lock:</Text.Small>
-              <Text.HeadlineMedium
-                color={SAFETY_COLORS[parsedMemecoinInfos?.liquidityLock?.safety ?? Safety.UNKNOWN]}
-                whiteSpace="nowrap"
-              >
-                {parsedMemecoinInfos?.liquidityLock?.parsedValue ?? 'Loading'}
-              </Text.HeadlineMedium>
-            </Column>
-          </Box>
+            <Box className={styles.card}>
+              <Column gap="8" alignItems="flex-start">
+                <Text.Small>Liquidity lock:</Text.Small>
+                <Text.HeadlineMedium
+                  color={SAFETY_COLORS[parsedMemecoinInfos?.liquidityLock?.safety ?? Safety.UNKNOWN]}
+                  whiteSpace="nowrap"
+                >
+                  {parsedMemecoinInfos?.liquidityLock?.parsedValue ?? 'Loading'}
+                </Text.HeadlineMedium>
+              </Column>
+            </Box>
 
-          <Box className={styles.card}>
-            <Column gap="8" alignItems="flex-start">
-              <Text.Small>Quote token:</Text.Small>
-              <Text.HeadlineMedium
-                color={SAFETY_COLORS[parsedMemecoinInfos?.quoteToken?.safety ?? Safety.UNKNOWN]}
-                whiteSpace="nowrap"
-              >
-                {parsedMemecoinInfos?.quoteToken?.parsedValue ?? 'Loading'}
-              </Text.HeadlineMedium>
-            </Column>
-          </Box>
+            <Box className={styles.card}>
+              <Column gap="8" alignItems="flex-start">
+                <Text.Small>Quote token:</Text.Small>
+                <Text.HeadlineMedium
+                  color={SAFETY_COLORS[parsedMemecoinInfos?.quoteToken?.safety ?? Safety.UNKNOWN]}
+                  whiteSpace="nowrap"
+                >
+                  {parsedMemecoinInfos?.quoteToken?.parsedValue ?? 'Loading'}
+                </Text.HeadlineMedium>
+              </Column>
+            </Box>
 
-          <Box className={styles.card}>
-            <Column gap="8" alignItems="flex-start">
-              <Text.Small>Starting market cap:</Text.Small>
-              <Text.HeadlineMedium
-                color={SAFETY_COLORS[parsedMemecoinInfos?.startingMcap?.safety ?? Safety.UNKNOWN]}
-                whiteSpace="nowrap"
-              >
-                {parsedMemecoinInfos?.startingMcap?.parsedValue ?? 'Loading'}
-              </Text.HeadlineMedium>
-            </Column>
-          </Box>
-        </Row>
-      ) : (
+            <Box className={styles.card}>
+              <Column gap="8" alignItems="flex-start">
+                <Text.Small>Starting market cap:</Text.Small>
+                <Text.HeadlineMedium
+                  color={SAFETY_COLORS[parsedMemecoinInfos?.startingMcap?.safety ?? Safety.UNKNOWN]}
+                  whiteSpace="nowrap"
+                >
+                  {parsedMemecoinInfos?.startingMcap?.parsedValue ?? 'Loading'}
+                </Text.HeadlineMedium>
+              </Column>
+            </Box>
+          </Row>
+          (
+          <Row gap="16" flexWrap="wrap">
+            <Box className={styles.card}>
+              <Column gap="8" alignItems="flex-start">
+                <Text.Small>Dexscreener chart:</Text.Small>
+                <Text.Link
+                  width="full"
+                  textOverflow="ellipsis"
+                  overflowX="hidden"
+                  color={SAFETY_COLORS[Safety.SAFE]}
+                  whiteSpace="nowrap"
+                  onClick={() => window.open(getDexscreenerUrl(memecoin.address))}
+                >
+                  {getDexscreenerUrl(memecoin.address)}
+                </Text.Link>
+              </Column>
+            </Box>
+          </Row>
+          )
+        </>
+      )}
+      <Row gap="16" flexWrap="wrap">
+        <Box className={styles.card}>
+          <Column gap="8" alignItems="flex-start">
+            <Text.Small>Starkscan explorer:</Text.Small>
+            <Text.Link
+              width="full"
+              textOverflow="ellipsis"
+              overflowX="hidden"
+              color={SAFETY_COLORS[Safety.SAFE]}
+              whiteSpace="nowrap"
+              onClick={() => window.open(getStarkscanUrl(memecoin.address))}
+            >
+              {getStarkscanUrl(memecoin.address)}
+            </Text.Link>
+          </Column>
+        </Box>
+      </Row>
+      {!memecoin.isLaunched && (
         <Text.HeadlineMedium color={SAFETY_COLORS[Safety.UNKNOWN]}>Not launched</Text.HeadlineMedium>
       )}
     </Column>
