@@ -110,26 +110,46 @@ export const secondaryButton = recipe({
   },
 })
 
-export const iconButton = style([
-  sprinkles({
-    paddingX: '2',
-    paddingY: '2',
-    fontSize: '14',
-    borderRadius: '10',
-    fontWeight: 'medium',
-    cursor: 'pointer',
-    pointerEvents: {
-      default: 'all',
-      disabled: 'none',
+export const iconButton = recipe({
+  base: [
+    sprinkles({
+      cursor: 'pointer',
+      pointerEvents: {
+        default: 'all',
+        disabled: 'none',
+      },
+      border: 'none',
+    }),
+  ],
+
+  variants: {
+    large: {
+      true: sprinkles({
+        padding: '10',
+        borderRadius: '10',
+        background: {
+          default: 'bg2',
+          hover: 'border2',
+        },
+        color: 'text1',
+      }),
+      false: sprinkles({
+        background: 'transparent',
+        padding: '2',
+        fontSize: '14',
+        fontWeight: 'medium',
+        color: {
+          default: 'text2',
+          hover: 'text1',
+        },
+      }),
     },
-    color: {
-      default: 'text2',
-      hover: 'text1',
-    },
-    background: 'transparent',
-    border: 'none',
-  }),
-])
+  },
+
+  defaultVariants: {
+    large: false,
+  },
+})
 
 export const cardButton = style([
   Base,

@@ -27,8 +27,8 @@ export const SecondaryButton = ({ className, withIcon, large = false, ...props }
   <Box as="button" className={clsx(className, styles.secondaryButton({ withIcon, large }))} {...props} />
 )
 
-export const IconButton = ({ className, ...props }: ButtonProps) => (
-  <Box as="button" className={clsx(className, styles.iconButton)} {...props} />
+export const IconButton = ({ className, large = false, ...props }: EnlargeableButtonProps) => (
+  <Box as="button" className={clsx(className, styles.iconButton({ large }))} {...props} />
 )
 
 // Card button

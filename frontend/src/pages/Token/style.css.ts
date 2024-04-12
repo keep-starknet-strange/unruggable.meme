@@ -1,4 +1,5 @@
 import { style } from '@vanilla-extract/css'
+import { recipe } from '@vanilla-extract/recipes'
 import { sprinkles, vars } from 'src/theme/css/sprinkles.css'
 
 export const container = style([
@@ -47,3 +48,43 @@ export const errorContainer = sprinkles({
   paddingTop: '4',
   color: 'error',
 })
+
+export const dropdown = recipe({
+  base: [
+    {
+      boxShadow: `0 0 8px ${vars.color.bg1}`,
+    },
+    sprinkles({
+      position: 'absolute',
+      background: 'bg2',
+      right: '0',
+      marginTop: '8',
+      borderRadius: '10',
+      overflow: 'hidden',
+      minWidth: '180',
+    }),
+  ],
+
+  variants: {
+    opened: {
+      false: {
+        display: 'none',
+      },
+    },
+  },
+
+  defaultVariants: {
+    opened: false,
+  },
+})
+
+export const dropdownRow = style([
+  sprinkles({
+    paddingX: '16',
+    paddingY: '12',
+    background: {
+      default: 'transparent',
+      hover: 'border2',
+    },
+  }),
+])
