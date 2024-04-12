@@ -1,15 +1,19 @@
 import { Fraction, Percent } from '@uniswap/sdk-core'
 import moment from 'moment'
-import { useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { IconButton } from 'src/components/Button'
 import { DECIMALS, FOREVER, LiquidityType } from 'src/constants/misc'
 import { Safety, SAFETY_COLORS } from 'src/constants/safety'
 import { QUOTE_TOKENS } from 'src/constants/tokens'
 import useChainId from 'src/hooks/useChainId'
+import useLinks from 'src/hooks/useLinks'
 import useMemecoin from 'src/hooks/useMemecoin'
 import { useQuoteTokenPrice } from 'src/hooks/usePrice'
 import useQuoteToken from 'src/hooks/useQuote'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
+import * as Icons from 'src/theme/components/Icons'
 import * as Text from 'src/theme/components/Text'
 import { formatPercentage } from 'src/utils/amount'
 import { decimalsScale } from 'src/utils/decimalScale'
@@ -24,17 +28,18 @@ import {
 
 import * as styles from './style.css'
 
-const getStarkscanUrl = (address: string) => {
-  return `https://starkscan.co/token/${address}`
-}
-
-const getDexscreenerUrl = (address: string) => {
-  return `https://dexscreener.com/starknet/${address}`
-}
-
 export default function TokenMetrics() {
+  // TODO: create a dropdown component
+  const [dropdownOpened, setDropdownOpened] = useState(false)
+
   // memecoin
   const { data: memecoin } = useMemecoin()
+
+  // dropdown
+  const toggleDropdown = useCallback(() => setDropdownOpened((state) => !state), [])
+
+  // dropdown links
+  const links = useLinks(memecoin?.address)
 
   // quote token
   const quoteToken = useQuoteToken(memecoin?.isLaunched ? memecoin?.liquidity?.quoteToken : undefined)
@@ -133,102 +138,87 @@ export default function TokenMetrics() {
   // page content
   return (
     <Column gap="16">
-      <Row gap="12" alignItems="baseline">
-        <Text.HeadlineLarge>{memecoin.name}</Text.HeadlineLarge>
-        <Text.HeadlineSmall color="text2">${memecoin.symbol}</Text.HeadlineSmall>
+      <Row gap="16" justifyContent="space-between">
+        <Row gap="12" alignItems="baseline">
+          <Text.HeadlineLarge>{memecoin.name}</Text.HeadlineLarge>
+          <Text.HeadlineSmall color="text2">${memecoin.symbol}</Text.HeadlineSmall>
+        </Row>
+
+        <Box position="relative">
+          <IconButton onClick={toggleDropdown} large>
+            <Icons.ThreeDots display="block" width="16" />
+          </IconButton>
+
+          <Column className={styles.dropdown({ opened: dropdownOpened })}>
+            {(Object.keys(links) as Array<keyof typeof links>).map((name) => {
+              const link = links[name]
+
+              if (link) {
+                return (
+                  <Link target="_blank" to={link} key={name}>
+                    <Box className={styles.dropdownRow}>
+                      <Text.Body style={{ textTransform: 'capitalize' }}>{name}</Text.Body>
+                    </Box>
+                  </Link>
+                )
+              }
+
+              return <></>
+            })}
+          </Column>
+        </Box>
       </Row>
 
       <Box className={styles.hr} />
 
-      {!!memecoin.isLaunched && (
-        <>
-          <Row gap="16" flexWrap="wrap">
-            <Box className={styles.card}>
-              <Column gap="8" alignItems="flex-start">
-                <Text.Small>Team allocation:</Text.Small>
-                <Text.HeadlineMedium
-                  color={SAFETY_COLORS[parsedMemecoinInfos?.teamAllocation?.safety ?? Safety.UNKNOWN]}
-                >
-                  {parsedMemecoinInfos?.teamAllocation?.parsedValue ?? 'Loading'}
-                </Text.HeadlineMedium>
-              </Column>
-            </Box>
+      {memecoin.isLaunched ? (
+        <Row gap="16" flexWrap="wrap">
+          <Box className={styles.card}>
+            <Column gap="8" alignItems="flex-start">
+              <Text.Small>Team allocation:</Text.Small>
+              <Text.HeadlineMedium color={SAFETY_COLORS[parsedMemecoinInfos?.teamAllocation?.safety ?? Safety.UNKNOWN]}>
+                {parsedMemecoinInfos?.teamAllocation?.parsedValue ?? 'Loading'}
+              </Text.HeadlineMedium>
+            </Column>
+          </Box>
 
-            <Box className={styles.card}>
-              <Column gap="8" alignItems="flex-start">
-                <Text.Small>Liquidity lock:</Text.Small>
-                <Text.HeadlineMedium
-                  color={SAFETY_COLORS[parsedMemecoinInfos?.liquidityLock?.safety ?? Safety.UNKNOWN]}
-                  whiteSpace="nowrap"
-                >
-                  {parsedMemecoinInfos?.liquidityLock?.parsedValue ?? 'Loading'}
-                </Text.HeadlineMedium>
-              </Column>
-            </Box>
+          <Box className={styles.card}>
+            <Column gap="8" alignItems="flex-start">
+              <Text.Small>Liquidity lock:</Text.Small>
+              <Text.HeadlineMedium
+                color={SAFETY_COLORS[parsedMemecoinInfos?.liquidityLock?.safety ?? Safety.UNKNOWN]}
+                whiteSpace="nowrap"
+              >
+                {parsedMemecoinInfos?.liquidityLock?.parsedValue ?? 'Loading'}
+              </Text.HeadlineMedium>
+            </Column>
+          </Box>
 
-            <Box className={styles.card}>
-              <Column gap="8" alignItems="flex-start">
-                <Text.Small>Quote token:</Text.Small>
-                <Text.HeadlineMedium
-                  color={SAFETY_COLORS[parsedMemecoinInfos?.quoteToken?.safety ?? Safety.UNKNOWN]}
-                  whiteSpace="nowrap"
-                >
-                  {parsedMemecoinInfos?.quoteToken?.parsedValue ?? 'Loading'}
-                </Text.HeadlineMedium>
-              </Column>
-            </Box>
+          <Box className={styles.card}>
+            <Column gap="8" alignItems="flex-start">
+              <Text.Small>Quote token:</Text.Small>
+              <Text.HeadlineMedium
+                color={SAFETY_COLORS[parsedMemecoinInfos?.quoteToken?.safety ?? Safety.UNKNOWN]}
+                whiteSpace="nowrap"
+              >
+                {parsedMemecoinInfos?.quoteToken?.parsedValue ?? 'Loading'}
+              </Text.HeadlineMedium>
+            </Column>
+          </Box>
 
-            <Box className={styles.card}>
-              <Column gap="8" alignItems="flex-start">
-                <Text.Small>Starting market cap:</Text.Small>
-                <Text.HeadlineMedium
-                  color={SAFETY_COLORS[parsedMemecoinInfos?.startingMcap?.safety ?? Safety.UNKNOWN]}
-                  whiteSpace="nowrap"
-                >
-                  {parsedMemecoinInfos?.startingMcap?.parsedValue ?? 'Loading'}
-                </Text.HeadlineMedium>
-              </Column>
-            </Box>
-          </Row>
-          (
-          <Row gap="16" flexWrap="wrap">
-            <Box className={styles.card}>
-              <Column gap="8" alignItems="flex-start">
-                <Text.Small>Dexscreener chart:</Text.Small>
-                <Text.Link
-                  width="full"
-                  textOverflow="ellipsis"
-                  overflowX="hidden"
-                  color={SAFETY_COLORS[Safety.SAFE]}
-                  whiteSpace="nowrap"
-                  onClick={() => window.open(getDexscreenerUrl(memecoin.address))}
-                >
-                  {getDexscreenerUrl(memecoin.address)}
-                </Text.Link>
-              </Column>
-            </Box>
-          </Row>
-          )
-        </>
-      )}
-      <Row gap="16" flexWrap="wrap">
-        <Box className={styles.card}>
-          <Column gap="8" alignItems="flex-start">
-            <Text.Small>Starkscan explorer:</Text.Small>
-            <Text.Link
-              width="full"
-              textOverflow="ellipsis"
-              overflowX="hidden"
-              color={SAFETY_COLORS[Safety.SAFE]}
-              whiteSpace="nowrap"
-              onClick={() => window.open(getStarkscanUrl(memecoin.address))}
-            >
-              {getStarkscanUrl(memecoin.address)}
-            </Text.Link>
-          </Column>
-        </Box>
-      </Row>
-      {!memecoin.isLaunched && (
+          <Box className={styles.card}>
+            <Column gap="8" alignItems="flex-start">
+              <Text.Small>Starting market cap:</Text.Small>
+              <Text.HeadlineMedium
+                color={SAFETY_COLORS[parsedMemecoinInfos?.startingMcap?.safety ?? Safety.UNKNOWN]}
+                whiteSpace="nowrap"
+              >
+                {parsedMemecoinInfos?.startingMcap?.parsedValue ?? 'Loading'}
+              </Text.HeadlineMedium>
+            </Column>
+          </Box>
+        </Row>
+      ) : (
         <Text.HeadlineMedium color={SAFETY_COLORS[Safety.UNKNOWN]}>Not launched</Text.HeadlineMedium>
       )}
     </Column>
