@@ -4,6 +4,7 @@ import AppLayout from './components/Layout/App'
 import HomeLayout from './components/Layout/Home'
 import DeployPage from './pages/Deploy'
 import HomePage from './pages/Home'
+import SignTransaction from './pages/SignTransaction/SignTransaction'
 import TokenPage from './pages/Token'
 import TokensPage from './pages/Tokens'
 import WalletRedirect from './pages/WalletRedirect'
@@ -44,6 +45,14 @@ const router = createBrowserRouter([
   {
     path: '/wallet-redirect/:redirectUrl',
     element: <WalletRedirect />,
+  },
+  {
+    path: '/sign-transaction/:calls',
+    element: (
+      <AppLayout>
+        <SignTransaction />
+      </AppLayout>
+    ),
   },
 ])
 
