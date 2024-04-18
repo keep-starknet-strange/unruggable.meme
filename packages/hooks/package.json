@@ -1,0 +1,25 @@
+{
+  "name": "hooks",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "format:check": "prettier -c \"src/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "lint": "eslint \"src/**/*.ts\"",
+    "lint:fix": "yarn lint --fix",
+    "ts:check": "tsc --noEmit",
+    "check": "yarn format && yarn lint:check && yarn ts:check"
+  },
+  "devDependencies": {
+    "@uniswap/eslint-config": "^1.2.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.1.0",
+    "typescript": "~5.4.0"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0"
+  },
+  "dependencies": {
+    "@uniswap/sdk-core": "^4.2.0"
+  }
+}

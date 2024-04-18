@@ -1,0 +1,26 @@
+{
+  "name": "core",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "format:check": "prettier -c \"src/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "lint": "eslint \"src/**/*.ts\"",
+    "lint:fix": "yarn lint --fix",
+    "ts:check": "tsc --noEmit",
+    "check": "yarn format && yarn lint:check && yarn ts:check"
+  },
+  "devDependencies": {
+    "@uniswap/eslint-config": "^1.2.0",
+    "eslint": "^8.57.0",
+    "prettier": "^3.1.0",
+    "starknet": "5.24.3",
+    "typescript": "~5.4.0"
+  },
+  "peerDependencies": {
+    "starknet": ">=5.0.0"
+  },
+  "dependencies": {
+    "@uniswap/sdk-core": "^4.2.0"
+  }
+}
