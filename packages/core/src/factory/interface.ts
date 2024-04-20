@@ -1,2 +1,1 @@
-export abstract class FactoryInterface {
-}
+export abstract class FactoryInterface {}

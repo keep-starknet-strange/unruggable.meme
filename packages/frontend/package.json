@@ -1,13 +1,12 @@
 {
-  "name": "unruggable-interface",
+  "name": "interface",
   "version": "0.1.0",
-  "repository": "git@github.com:0xchqrles/unruggable-interface.git",
-  "author": "chqrles",
   "license": "MIT",
   "scripts": {
     "start": "craco start",
     "build": "craco build",
-    "lint": "eslint ."
+    "lint": "eslint . --max-warnings=0 --ignore-path ../../.eslintignore",
+    "lint:fix": "eslint src --fix"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.2",
@@ -19,6 +18,7 @@
     "@vanilla-extract/recipes": "^0.4.0",
     "@vanilla-extract/sprinkles": "^1.6.0",
     "clsx": "^2.0.0",
+    "eslint": "^8.0.0",
     "lucide-react": "^0.294.0",
     "moment": "^2.30.1",
     "ms.macro": "^2.0.0",
@@ -35,18 +35,15 @@
     "zustand": "^4.3.8"
   },
   "devDependencies": {
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
     "@craco/craco": "^7.1.0",
     "@types/ms.macro": "^2.0.0",
     "@types/qrcode": "^1.5.5",
     "@types/react": "^18.2.0",
     "@types/ua-parser-js": "^0.7.36",
-    "@typescript-eslint/eslint-plugin": "^5.61.0",
-    "@typescript-eslint/parser": "^5.61.0",
     "@uniswap/eslint-config": "^1.2.0",
     "@vanilla-extract/webpack-plugin": "^2.2.0",
     "css-loader": "^6.7.3",
-    "eslint": "^8.55.0",
-    "eslint-webpack-plugin": "^4.0.1",
     "get-graphql-schema": "^2.1.2",
     "mini-css-extract-plugin": "^2.7.5",
     "node-polyfill-webpack-plugin": "^2.0.1",

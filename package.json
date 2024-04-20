@@ -1,0 +1,29 @@
+{
+  "name": "unruggable",
+  "private": true,
+  "version": "0.0.0",
+  "license": "MIT",
+  "scripts": {
+    "g:build": "turbo run build --concurrency=100%",
+    "g:check:circular": "turbo run check:circular",
+    "g:lint": "turbo run lint",
+    "g:lint:fix": "turbo run lint:fix",
+    "g:prepare": "turbo run prepare",
+    "g:rm:local-packages": "rm -rf ./node_modules/core ./node_modules/hooks",
+    "g:rm:nodemodules": "rm -rf node_modules"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "dependencies": {
+    "@commitlint/cli": "^19.2.2",
+    "@commitlint/config-conventional": "^19.2.2",
+    "turbo": "^1.13.2"
+  },
+  "engines": {
+    "node": "=18.12.1",
+    "yarn": ">=3.2.3",
+    "npm": "please-use-yarn"
+  },
+  "packageManager": "yarn@3.2.3"
+}

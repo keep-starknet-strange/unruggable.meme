@@ -138,3 +138,9 @@ contracts/.snfoundry_cache/
 # Starkli
 *account.json
 *keystore.json
+
+# Turbo
+.turbo
+
+# Build
+build
