@@ -21,6 +21,7 @@
     "starknet": ">=5.0.0"
   },
   "dependencies": {
-    "@uniswap/sdk-core": "^4.2.0"
+    "@uniswap/sdk-core": "^4.2.0",
+    "moment": "^2.30.1"
   }
 }

@@ -5,6 +5,7 @@ import { LIQUIDITY_LOCK_FOREVER_TIMESTAMP, LiquidityType, Selector } from '../co
 import { EkuboLiquidity, JediswapLiquidity, LaunchedLiquidity, MemecoinLaunchData } from '../types/memecoin'
 import { multiCallContract } from '../utils/contract'
 import { FactoryConfig } from './interface'
+import { Safety } from './safety'
 
 type MemecoinData = {
   address: string
@@ -17,6 +18,7 @@ type MemecoinData = {
 // eslint-disable-next-line import/no-unused-modules
 export class Memecoin {
   public config: FactoryConfig
+  public safety: Safety
 
   public address: string
   public name: string
@@ -26,6 +28,7 @@ export class Memecoin {
 
   constructor(config: FactoryConfig, data: MemecoinData) {
     this.config = config
+    this.safety = new Safety(this)
 
     this.address = data.address
     this.name = data.name
