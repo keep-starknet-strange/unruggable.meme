@@ -1,4 +1,5 @@
 import { LiquidityType } from '../constants/misc'
+import { QuoteToken } from '../factory/quoteToken'
 
 interface i129 {
   mag: string
@@ -48,6 +49,7 @@ export type MemecoinLaunchData =
     }
   | {
       isLaunched: true
+      quoteToken: QuoteToken
       teamAllocation: bigint
       blockNumber: number
       liquidity: LaunchedLiquidity

@@ -18,20 +18,30 @@ export class Safety {
   }
 
   public async isSafe() {
+    const safety = await this.getSafety()
+    return safety.safety === SafetyEnum.SAFE
+  }
+
+  public async getSafety() {
     const totalSupply = await this.memecoin.getTotalSupply()
     const launch = await this.memecoin.getLaunch()
 
-    if (!launch.isLaunched) return SafetyEnum.UNKNOWN
+    if (!launch.isLaunched) {
+      return {
+        safety: SafetyEnum.UNKNOWN,
+      }
+    }
 
     const teamAllocationPercentage = new Percent(launch.teamAllocation.toString(), totalSupply.toString())
     const quoteToken = QUOTE_TOKENS[this.memecoin.config.chainId][launch.liquidity.quoteToken]
     const liquidityLock = moment.duration(moment.unix(launch.liquidity.unlockTime).diff(moment.now()), 'milliseconds')
+    const startingMcap = await this.memecoin.getStartingMarketCap()
 
     const safeties = {
       teamAllocation: Safety.getTeamAllocationSafety(teamAllocationPercentage),
       liquidityLock: Safety.getLiquidityLockSafety(liquidityLock),
       quoteToken: Safety.getQuoteTokenSafety(!quoteToken),
-      // TODO: startingMcap
+      startingMarketCap: Safety.getStartingMarketCapSafety(teamAllocationPercentage, startingMcap),
     }
 
     const lowestSafety = Object.values(safeties).reduce((acc, safety) => {
@@ -45,14 +55,9 @@ export class Safety {
     }
   }
 
-  public static getTeamAllocationSafety(teamAllocationPercentage: Percent): SafetyEnum {
-    if (teamAllocationPercentage.greaterThan(TEAM_ALLOCATION_SAFETY_BOUNDS[SafetyEnum.CORRECT])) {
-      return SafetyEnum.DANGEROUS
-    }
-
-    if (teamAllocationPercentage.greaterThan(TEAM_ALLOCATION_SAFETY_BOUNDS[SafetyEnum.SAFE])) {
-      return SafetyEnum.CORRECT
-    }
+  public static getTeamAllocationSafety(teamAllocation: Percent): SafetyEnum {
+    if (teamAllocation.greaterThan(TEAM_ALLOCATION_SAFETY_BOUNDS[SafetyEnum.CORRECT])) return SafetyEnum.DANGEROUS
+    if (teamAllocation.greaterThan(TEAM_ALLOCATION_SAFETY_BOUNDS[SafetyEnum.SAFE])) return SafetyEnum.CORRECT
 
     return SafetyEnum.SAFE
   }

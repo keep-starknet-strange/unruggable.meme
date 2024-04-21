@@ -1,10 +1,14 @@
+import { Fraction } from '@uniswap/sdk-core'
 import { getChecksumAddress, uint256 } from 'starknet'
 
 import { FACTORY_ADDRESSES } from '../constants'
-import { LIQUIDITY_LOCK_FOREVER_TIMESTAMP, LiquidityType, Selector } from '../constants/misc'
+import { DECIMALS, LIQUIDITY_LOCK_FOREVER_TIMESTAMP, LiquidityType, Selector } from '../constants/misc'
 import { EkuboLiquidity, JediswapLiquidity, LaunchedLiquidity, MemecoinLaunchData } from '../types/memecoin'
 import { multiCallContract } from '../utils/contract'
+import { getInitialPrice } from '../utils/ekubo'
+import { decimalsScale } from '../utils/helpers'
 import { FactoryConfig } from './interface'
+import { QuoteToken } from './quoteToken'
 import { Safety } from './safety'
 
 type MemecoinData = {
@@ -15,7 +19,6 @@ type MemecoinData = {
   decimals: number
 }
 
-// eslint-disable-next-line import/no-unused-modules
 export class Memecoin {
   public config: FactoryConfig
   public safety: Safety
@@ -78,6 +81,7 @@ export class Memecoin {
 
     return {
       isLaunched: true,
+      quoteToken: new QuoteToken(this.config, liquidity.quoteToken),
       teamAllocation: uint256.uint256ToBN({ low: teamAllocation[0], high: teamAllocation[1] }),
       blockNumber: Number(launchBlockNumber),
       liquidity,
@@ -188,5 +192,47 @@ export class Memecoin {
         },
       },
     } satisfies Partial<EkuboLiquidity>
+  }
+
+  public async getStartingMarketCap(): Promise<Fraction | undefined> {
+    const launch = await this.getLaunch()
+    if (!launch.isLaunched) return undefined
+
+    const quoteTokenPriceAtLaunch = await launch.quoteToken.getUSDCPrice(launch.blockNumber - 1)
+    if (!quoteTokenPriceAtLaunch) return undefined
+
+    const totalSupply = await this.getTotalSupply()
+    let startingMcap: Fraction | undefined
+
+    switch (launch.liquidity.type) {
+      case LiquidityType.STARKDEFI_ERC20:
+      case LiquidityType.JEDISWAP_ERC20: {
+        if (!launch.quoteToken.token) break
+
+        startingMcap = new Fraction(launch.liquidity.quoteAmount.toString())
+          .multiply(new Fraction(launch.teamAllocation.toString(), totalSupply.toString()).add(1))
+          .divide(decimalsScale(launch.quoteToken.token.decimals))
+          .multiply(quoteTokenPriceAtLaunch)
+
+        break
+      }
+
+      case LiquidityType.EKUBO_NFT: {
+        if (!launch.quoteToken.token) break
+
+        const initialPrice = getInitialPrice(launch.liquidity.startingTick)
+        startingMcap = new Fraction(
+          initialPrice.toFixed(DECIMALS).replace(/\./, '').replace(/^0+/, ''), // from 0.000[...]0001 to "1"
+          decimalsScale(DECIMALS),
+        )
+          .multiply(quoteTokenPriceAtLaunch)
+          .multiply(totalSupply.toString())
+          .divide(decimalsScale(DECIMALS))
+
+        break
+      }
+    }
+
+    return startingMcap
   }
 }
