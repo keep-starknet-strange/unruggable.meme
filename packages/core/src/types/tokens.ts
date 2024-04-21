@@ -1,6 +1,6 @@
 import { constants } from 'starknet'
 
-interface USDCPair {
+export interface USDCPair {
   address: string
   reversed: boolean
 }

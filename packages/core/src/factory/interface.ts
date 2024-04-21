@@ -1,7 +1,14 @@
 import { Fraction } from '@uniswap/sdk-core'
-import { constants, RpcProvider } from 'starknet'
+import { CallDetails, constants, RpcProvider } from 'starknet'
 
-import { BaseMemecoin, Memecoin, MemecoinLaunchData } from '../types/memecoin'
+import {
+  BaseMemecoin,
+  EkuboLaunchData,
+  LaunchedMemecoin,
+  Memecoin,
+  MemecoinDeployData,
+  StandardAMMLaunchData,
+} from '../types/memecoin'
 
 export type FactoryConfig = {
   provider: RpcProvider
@@ -13,7 +20,14 @@ export abstract class FactoryInterface {
 
   public abstract getMemecoin(address: string): Promise<Memecoin | undefined>
   public abstract getBaseMemecoin(address: string): Promise<BaseMemecoin | undefined>
-  public abstract getMemecoinLaunchData(address: string): Promise<MemecoinLaunchData>
+  public abstract getMemecoinLaunchData(address: string): Promise<LaunchedMemecoin>
 
   public abstract getStartingMarketCap(memecoin: Memecoin, quoteTokenPriceAtLaunch?: Fraction): Fraction | undefined
+
+  public abstract getDeployCalldata(data: MemecoinDeployData): { tokenAddress: string; calls: CallDetails[] }
+  public abstract getEkuboLaunchCalldata(memecoin: Memecoin, data: EkuboLaunchData): Promise<{ calls: CallDetails[] }>
+  public abstract getStandardAMMLaunchCalldata(
+    memecoin: Memecoin,
+    data: StandardAMMLaunchData,
+  ): Promise<{ calls: CallDetails[] }>
 }

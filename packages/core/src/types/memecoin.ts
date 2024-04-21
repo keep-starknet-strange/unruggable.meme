@@ -1,3 +1,6 @@
+import { Percent } from '@uniswap/sdk-core'
+
+import { AMM } from '../constants'
 import { LiquidityType } from '../constants/misc'
 import { Token } from './tokens'
 
@@ -52,7 +55,7 @@ export type BaseMemecoin = {
   totalSupply: bigint
 }
 
-export type MemecoinLaunchData =
+export type LaunchedMemecoin =
   | {
       isLaunched: false
     }
@@ -64,4 +67,47 @@ export type MemecoinLaunchData =
       liquidity: LaunchedLiquidity
     }
 
-export type Memecoin = BaseMemecoin & MemecoinLaunchData
+export type Memecoin = BaseMemecoin & LaunchedMemecoin
+
+export type MemecoinDeployData = {
+  name: string
+  symbol: string
+  owner: string
+  initialSupply: bigint | string
+}
+
+type MemecoinBaseLaunchData = {
+  /**
+   * Address of the memecoin contract
+   */
+  address: string
+  amm: AMM
+  teamAllocations: {
+    address: string
+    amount: number | string
+  }[]
+  holdLimit: number
+
+  /**
+   * Anti bot period in seconds
+   */
+  antiBotPeriod: number
+
+  /**
+   * Quote token
+   */
+  quoteToken: Token
+
+  /**
+   * Starting market cap in USDC
+   */
+  startingMarketCap: number | string
+}
+
+export type EkuboLaunchData = MemecoinBaseLaunchData & {
+  fees: Percent
+}
+
+export type StandardAMMLaunchData = MemecoinBaseLaunchData & {
+  liquidityLockPeriod: number
+}
