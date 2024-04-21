@@ -1,5 +1,5 @@
 import { LiquidityType } from '../constants/misc'
-import { QuoteToken } from '../factory/quoteToken'
+import { Token } from './tokens'
 
 interface i129 {
   mag: string
@@ -43,14 +43,25 @@ export type EkuboLiquidity = {
 
 export type LaunchedLiquidity = JediswapLiquidity | EkuboLiquidity
 
+export type BaseMemecoin = {
+  address: string
+  name: string
+  symbol: string
+  owner: string
+  decimals: number
+  totalSupply: bigint
+}
+
 export type MemecoinLaunchData =
   | {
       isLaunched: false
     }
   | {
       isLaunched: true
-      quoteToken: QuoteToken
+      quoteToken: Token | undefined
       teamAllocation: bigint
       blockNumber: number
       liquidity: LaunchedLiquidity
     }
+
+export type Memecoin = BaseMemecoin & MemecoinLaunchData
