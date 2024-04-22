@@ -10,8 +10,6 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
-    "composite": true,
-    "incremental": true,
     "esModuleInterop": true,
     "strict": true,
     "alwaysStrict": true,
@@ -29,14 +27,12 @@
     "allowSyntheticDefaultImports": true,
     "jsx": "preserve",
     "module": "ES2015",
-    "rootDir": ".",
-    "baseUrl": ".",
     "declaration": true
   },
   "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/**/*.json"
+    "./packages/**/*"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+  ]
 }
