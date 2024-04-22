@@ -27,7 +27,7 @@ import { multiCallContract } from '../utils/contract'
 import { getInitialPrice, getStartingTick } from '../utils/ekubo'
 import { decimalsScale } from '../utils/helpers'
 import { getEkuboLiquidityLockPosition, getJediswapLiquidityLockPosition } from '../utils/liquidity'
-import { getUSDCPairPrice } from '../utils/token'
+import { getPairPrice } from '../utils/token'
 import { FactoryConfig, FactoryInterface } from './interface'
 
 export class Factory implements FactoryInterface {
@@ -235,7 +235,7 @@ export class Factory implements FactoryInterface {
   }
 
   public async getEkuboLaunchCalldata(memecoin: Memecoin, data: EkuboLaunchData) {
-    const quoteTokenPrice = await getUSDCPairPrice(this.config.provider, data.quoteToken.usdcPair)
+    const quoteTokenPrice = await getPairPrice(this.config.provider, data.quoteToken.usdcPair)
 
     const teamAllocationFraction = data.teamAllocations.reduce((acc, { amount }) => acc.add(amount), new Fraction(0))
     const teamAllocationPercentage = new Percent(
@@ -304,7 +304,7 @@ export class Factory implements FactoryInterface {
   }
 
   public async getStandardAMMLaunchCalldata(memecoin: Memecoin, data: StandardAMMLaunchData) {
-    const quoteTokenPrice = await getUSDCPairPrice(this.config.provider, data.quoteToken.usdcPair)
+    const quoteTokenPrice = await getPairPrice(this.config.provider, data.quoteToken.usdcPair)
 
     const teamAllocationFraction = data.teamAllocations.reduce((acc, { amount }) => acc.add(amount), new Fraction(0))
     const teamAllocationPercentage = new Percent(

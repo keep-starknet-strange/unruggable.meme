@@ -6,3 +6,8 @@ export type UseQueryProps = Pick<
 > & {
   watch?: boolean
 }
+
+export interface Pair {
+  address: string
+  reversed: boolean
+}

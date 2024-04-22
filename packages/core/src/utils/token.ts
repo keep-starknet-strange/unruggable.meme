@@ -5,16 +5,16 @@ import { Selector } from '../constants'
 import { USDCPair } from '../types/tokens'
 import { decimalsScale } from './helpers'
 
-export async function getUSDCPairPrice(
+export async function getPairPrice(
   provider: ProviderInterface,
-  usdcPair?: USDCPair,
+  pair?: USDCPair,
   blockNumber: BlockNumber = BlockTag.latest,
 ) {
-  if (!usdcPair) return new Fraction(1, 1)
+  if (!pair) return new Fraction(1, 1)
 
   const { result } = await provider.callContract(
     {
-      contractAddress: usdcPair.address,
+      contractAddress: pair.address,
       entrypoint: Selector.GET_RESERVES,
     },
     blockNumber,
@@ -28,5 +28,5 @@ export async function getUSDCPairPrice(
   )
 
   // token0 and token1 are switched on some pairs
-  return (usdcPair.reversed ? pairPrice.invert() : pairPrice).multiply(decimalsScale(12))
+  return (pair.reversed ? pairPrice.invert() : pairPrice).multiply(decimalsScale(12))
 }
