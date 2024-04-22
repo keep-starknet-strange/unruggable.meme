@@ -1,4 +1,5 @@
 export * from './useBaseMemecoin'
+export * from './useFactory'
 export * from './useMemecoin'
 export * from './useMemecoinLaunch'
 export * from './usePairPrice'

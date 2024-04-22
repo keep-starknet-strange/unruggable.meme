@@ -2,8 +2,8 @@ import { getPairPrice } from 'core'
 import { BlockNumber, BlockTag } from 'starknet'
 
 import { Pair } from '../types'
-import { useFactory } from './internal/useFactory'
 import { useQuery } from './internal/useQuery'
+import { useFactory } from './useFactory'
 
 export const usePairPrice = (pair?: Pair, blockNumber: BlockNumber = BlockTag.latest) => {
   const factory = useFactory()

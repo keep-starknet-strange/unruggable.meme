@@ -1,6 +1,6 @@
 import { UseQueryProps } from '../types'
-import { useFactory } from './internal/useFactory'
 import { useQuery } from './internal/useQuery'
+import { useFactory } from './useFactory'
 
 export type UseMemecoinProps = UseQueryProps & {
   address?: string

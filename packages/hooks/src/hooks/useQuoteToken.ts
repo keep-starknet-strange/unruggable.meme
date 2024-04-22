@@ -1,6 +1,6 @@
 import { constants } from 'core'
 
-import { useFactory } from './internal/useFactory'
+import { useFactory } from './useFactory'
 
 export const useQuoteToken = (address: string) => {
   const factory = useFactory()

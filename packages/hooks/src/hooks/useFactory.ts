@@ -1,6 +1,6 @@
 import { useContext } from 'react'
 
-import { FactoryContext } from '../../contexts/Factory'
+import { FactoryContext } from '../contexts/Factory'
 
 export const useFactory = () => {
   const factory = useContext(FactoryContext)
