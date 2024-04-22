@@ -19,11 +19,5 @@
     "@commitlint/cli": "^19.2.2",
     "@commitlint/config-conventional": "^19.2.2",
     "turbo": "^1.13.2"
-  },
-  "engines": {
-    "node": "=18.12.1",
-    "yarn": ">=3.2.3",
-    "npm": "please-use-yarn"
-  },
-  "packageManager": "yarn@3.2.3"
+  }
 }
