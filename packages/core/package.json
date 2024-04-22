@@ -14,14 +14,12 @@
     }
   },
   "scripts": {
+    "dev": "tsup --watch",
+    "build": "tsup",
     "lint": "eslint . --max-warnings=0 --ignore-path ../../.eslintignore",
     "lint:fix": "eslint src --fix",
     "prepare": "npm run build",
-    "build": "tsup && npm run build:esm && npm run build:iife && npm run build:dts",
-    "build:esm": "tsup --clean false --format esm --platform node",
-    "build:iife": "tsup --clean false --format iife --platform browser",
-    "build:dts": "tsup --clean false --dts-only",
-    "prepublishOnly": "yarn build"
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@uniswap/sdk-core": "^4.2.0",

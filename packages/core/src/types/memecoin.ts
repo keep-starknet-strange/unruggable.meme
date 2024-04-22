@@ -4,12 +4,12 @@ import { AMM } from '../constants'
 import { LiquidityType } from '../constants/misc'
 import { Token } from './tokens'
 
-interface i129 {
+type i129 = {
   mag: string
   sign: string
 }
 
-interface EkuboPoolKey {
+type EkuboPoolKey = {
   token0: string
   token1: string
   fee: string
@@ -17,12 +17,12 @@ interface EkuboPoolKey {
   extension: string
 }
 
-interface EkuboBounds {
+type EkuboBounds = {
   lower: i129
   upper: i129
 }
 
-interface BaseLiquidity {
+type BaseLiquidity = {
   type: LiquidityType
   lockManager: string
   unlockTime: number
@@ -44,7 +44,7 @@ export type EkuboLiquidity = {
   bounds: EkuboBounds
 } & Omit<BaseLiquidity, 'type'>
 
-export type LaunchedLiquidity = JediswapLiquidity | EkuboLiquidity
+type LaunchedLiquidity = JediswapLiquidity | EkuboLiquidity
 
 export type BaseMemecoin = {
   address: string

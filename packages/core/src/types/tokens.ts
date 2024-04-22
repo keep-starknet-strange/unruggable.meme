@@ -1,11 +1,11 @@
 import { constants } from 'starknet'
 
-export interface USDCPair {
+export type USDCPair = {
   address: string
   reversed: boolean
 }
 
-export interface Token {
+export type Token = {
   address: string
   symbol: string
   name: string

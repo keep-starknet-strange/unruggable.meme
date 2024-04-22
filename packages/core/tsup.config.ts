@@ -1,10 +1,23 @@
 /* eslint-disable import/no-unused-modules */
-import { defineConfig } from 'tsup'
+import { defineConfig, Options } from 'tsup'
 
-export default defineConfig({
+const commonConfig: Options = {
   entry: ['src/index.ts'],
   sourcemap: true,
   clean: true,
-  format: ['cjs'],
   globalName: 'sdk.core',
-})
+}
+
+export default defineConfig([
+  {
+    ...commonConfig,
+    format: ['cjs', 'esm'],
+    platform: 'node',
+    dts: true,
+  },
+  {
+    ...commonConfig,
+    format: ['iife'],
+    platform: 'browser',
+  },
+])
