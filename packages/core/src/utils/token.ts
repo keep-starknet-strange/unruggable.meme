@@ -1,12 +1,12 @@
 import { Fraction } from '@uniswap/sdk-core'
-import { BlockNumber, BlockTag, RpcProvider, uint256 } from 'starknet'
+import { BlockNumber, BlockTag, ProviderInterface, uint256 } from 'starknet'
 
 import { Selector } from '../constants'
 import { USDCPair } from '../types/tokens'
 import { decimalsScale } from './helpers'
 
 export async function getUSDCPairPrice(
-  provider: RpcProvider,
+  provider: ProviderInterface,
   usdcPair?: USDCPair,
   blockNumber: BlockNumber = BlockTag.latest,
 ) {

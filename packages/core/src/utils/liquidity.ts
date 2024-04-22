@@ -1,10 +1,10 @@
-import { getChecksumAddress, RpcProvider } from 'starknet'
+import { getChecksumAddress, ProviderInterface } from 'starknet'
 
 import { LIQUIDITY_LOCK_FOREVER_TIMESTAMP, Selector } from '../constants'
 import { EkuboLiquidity, JediswapLiquidity } from '../types/memecoin'
 
 export async function getJediswapLiquidityLockPosition(
-  provider: RpcProvider,
+  provider: ProviderInterface,
   liquidity: Pick<JediswapLiquidity, 'lockManager' | 'lockPosition'>,
 ) {
   const { result } = await provider.callContract({
@@ -20,7 +20,7 @@ export async function getJediswapLiquidityLockPosition(
 }
 
 export async function getEkuboLiquidityLockPosition(
-  provider: RpcProvider,
+  provider: ProviderInterface,
   liquidity: Pick<EkuboLiquidity, 'lockManager' | 'ekuboId'>,
 ) {
   const { result } = await provider.callContract({

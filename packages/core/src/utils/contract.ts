@@ -1,15 +1,15 @@
-import { CallData, constants, hash, RpcProvider } from 'starknet'
+import { CallData, constants, hash, ProviderInterface } from 'starknet'
 
 import { MULTICALL_ADDRESSES, Selector } from '../constants'
 
 export async function multiCallContract(
-  provider: RpcProvider,
+  provider: ProviderInterface,
   chainId: constants.StarknetChainId,
   calls: {
     to: string
     selector: string
     calldata?: any[]
-  }[]
+  }[],
 ) {
   const calldata = calls.map((call) => {
     return CallData.compile({

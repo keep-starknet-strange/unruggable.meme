@@ -1,5 +1,5 @@
 import { Fraction } from '@uniswap/sdk-core'
-import { CallDetails, constants, RpcProvider } from 'starknet'
+import { CallDetails, constants, ProviderInterface } from 'starknet'
 
 import {
   BaseMemecoin,
@@ -11,7 +11,7 @@ import {
 } from '../types/memecoin'
 
 export type FactoryConfig = {
-  provider: RpcProvider
+  provider: ProviderInterface
   chainId: constants.StarknetChainId
 }
 
