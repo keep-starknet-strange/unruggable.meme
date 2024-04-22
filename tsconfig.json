@@ -1,13 +1,11 @@
 {
   "compilerOptions": {
-    "target": "ES2015",
-    "lib": ["esnext"],
+    "target": "es6",
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "noEmit": true,
-    "composite": true,
-    "incremental": true,
     "esModuleInterop": true,
     "strict": true,
     "alwaysStrict": true,
@@ -23,6 +21,10 @@
     "isolatedModules": true,
     "downlevelIteration": true,
     "allowSyntheticDefaultImports": true,
-    "module": "ES2015"
-  }
+    "jsx": "preserve",
+    "module": "ES2015",
+    "declaration": true
+  },
+  "include": ["./packages/**/*"],
+  "exclude": ["node_modules"]
 }
