@@ -3,7 +3,7 @@ import { constants, RpcProvider } from 'starknet'
 import { describe, expect, test } from 'vitest'
 
 import * as TestData from '../../test/TestData'
-import { getPairPrice } from '../utils/token'
+import { getPairPrice } from '../actions/token'
 import { Factory } from './default'
 
 const provider = new RpcProvider({
@@ -56,7 +56,7 @@ describe('Default Factory', () => {
       if (!memecoin || !memecoin.isLaunched) return
 
       const quoteTokenPrice = await getPairPrice(
-        factory.config.provider,
+        factory.config,
         memecoin.quoteToken?.usdcPair,
         memecoin.blockNumber - 1,
       )
