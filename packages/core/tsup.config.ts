@@ -23,7 +23,7 @@ export default defineConfig([
     entry: ['src/index.ts'],
     outDir: 'dist',
     sourcemap: true,
-    clean: true,
+    clean: false,
     globalName: 'sdk.core',
   }),
 
@@ -31,15 +31,7 @@ export default defineConfig([
     entry: ['src/constants/index.ts'],
     outDir: 'dist/constants',
     sourcemap: true,
-    clean: true,
+    clean: false,
     globalName: 'sdk.core.constants',
-  }),
-
-  ...getConfig({
-    entry: ['src/actions/index.ts'],
-    outDir: 'dist/actions',
-    sourcemap: true,
-    clean: true,
-    globalName: 'sdk.core.actions',
   }),
 ])

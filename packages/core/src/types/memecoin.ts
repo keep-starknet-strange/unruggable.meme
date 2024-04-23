@@ -69,7 +69,7 @@ export type LaunchedMemecoin =
 
 export type Memecoin = BaseMemecoin & LaunchedMemecoin
 
-export type MemecoinDeployData = {
+export type DeployData = {
   name: string
   symbol: string
   owner: string

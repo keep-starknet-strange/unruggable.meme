@@ -3,10 +3,10 @@ import { CallDetails, constants, ProviderInterface } from 'starknet'
 
 import {
   BaseMemecoin,
+  DeployData,
   EkuboLaunchData,
   LaunchedMemecoin,
   Memecoin,
-  MemecoinDeployData,
   StandardAMMLaunchData,
 } from '../types/memecoin'
 
@@ -26,7 +26,7 @@ export abstract class FactoryInterface {
 
   public abstract getEkuboFees(memecoin: Memecoin): Promise<Fraction | undefined>
 
-  public abstract getDeployCalldata(data: MemecoinDeployData): { tokenAddress: string; calls: CallDetails[] }
+  public abstract getDeployCalldata(data: DeployData): { tokenAddress: string; calls: CallDetails[] }
   public abstract getEkuboLaunchCalldata(memecoin: Memecoin, data: EkuboLaunchData): Promise<{ calls: CallDetails[] }>
   public abstract getStandardAMMLaunchCalldata(
     memecoin: Memecoin,

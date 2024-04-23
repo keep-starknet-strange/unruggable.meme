@@ -17,17 +17,11 @@
       "require": "./dist/constants/index.js",
       "browser": "./dist/constants/index.global.js",
       "types": "./dist/constants/index.d.ts"
-    },
-    "./actions": {
-      "import": "./dist/actions/index.mjs",
-      "require": "./dist/actions/index.js",
-      "browser": "./dist/actions/index.global.js",
-      "types": "./dist/actions/index.d.ts"
     }
   },
   "scripts": {
     "dev": "tsup --watch",
-    "build": "tsup",
+    "build": "tsup --clean true",
     "test": "vitest run",
     "test:watch": "vitest watch",
     "lint": "eslint . --max-warnings=0 --ignore-path ../../.eslintignore",

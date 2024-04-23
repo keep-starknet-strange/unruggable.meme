@@ -1,10 +1,10 @@
 import { Fraction } from '@uniswap/sdk-core'
-import { BlockNumber, BlockTag } from 'starknet'
+import { BlockTag } from 'starknet'
 
 import { usePairPrice } from './usePairPrice'
 import { useQuoteToken } from './useQuoteToken'
 
-export const useQuoteTokenPrice = (address: string, blockNumber: BlockNumber = BlockTag.latest) => {
+export const useQuoteTokenPrice = (address: string, blockNumber = BlockTag.latest) => {
   const quoteToken = useQuoteToken(address)
   const pairPrice = usePairPrice(quoteToken?.usdcPair, blockNumber)
 

@@ -4,9 +4,9 @@ import { BlockNumber, BlockTag, uint256 } from 'starknet'
 import { Selector } from '../constants'
 import { FactoryConfig } from '../factory'
 import { USDCPair } from '../types/tokens'
-import { decimalsScale } from '../utils/helpers'
+import { decimalsScale } from './helpers'
 
-export async function getPairPrice(config: FactoryConfig, pair?: USDCPair, blockNumber: BlockNumber = BlockTag.latest) {
+export async function getPairPrice(config: FactoryConfig, pair?: USDCPair, blockNumber = BlockTag.latest) {
   if (!pair) return new Fraction(1, 1)
 
   const { result } = await config.provider.callContract(
