@@ -1,12 +1,13 @@
 import { Fraction, Percent } from '@uniswap/sdk-core'
 import moment from 'moment'
-import { useCallback, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { IconButton } from 'src/components/Button'
 import { DECIMALS, FOREVER, LiquidityType } from 'src/constants/misc'
 import { Safety, SAFETY_COLORS } from 'src/constants/safety'
 import { QUOTE_TOKENS } from 'src/constants/tokens'
 import useChainId from 'src/hooks/useChainId'
+import { useDropdown } from 'src/hooks/useDropdown'
 import useLinks from 'src/hooks/useLinks'
 import useMemecoin from 'src/hooks/useMemecoin'
 import { useQuoteTokenPrice } from 'src/hooks/usePrice'
@@ -30,13 +31,12 @@ import * as styles from './style.css'
 
 export default function TokenMetrics() {
   // TODO: create a dropdown component
-  const [dropdownOpened, setDropdownOpened] = useState(false)
 
   // memecoin
   const { data: memecoin } = useMemecoin()
 
   // dropdown
-  const toggleDropdown = useCallback(() => setDropdownOpened((state) => !state), [])
+  const { dropdownRef, dropdownOpened, toggleDropdown } = useDropdown()
 
   // dropdown links
   const links = useLinks(memecoin?.address)
@@ -144,7 +144,7 @@ export default function TokenMetrics() {
           <Text.HeadlineSmall color="text2">${memecoin.symbol}</Text.HeadlineSmall>
         </Row>
 
-        <Box position="relative">
+        <Box position="relative" ref={dropdownRef}>
           <IconButton onClick={toggleDropdown} large>
             <Icons.ThreeDots display="block" width="16" />
           </IconButton>
