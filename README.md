@@ -75,6 +75,8 @@ First off, thanks for taking the time to contribute! Contributions are what make
 
 Please read our [contribution guidelines](docs/CONTRIBUTING.md), and thank you for being involved!
 
+Telegram -> https://t.me/UnruggableMeme
+
 ## Contributors ✨
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
