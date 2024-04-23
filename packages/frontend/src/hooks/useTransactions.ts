@@ -20,6 +20,6 @@ export function useExecuteTransaction() {
       prepareTransaction(invokeTransactionDetails)
       toggleTransactionModal()
     },
-    [prepareTransaction, toggleTransactionModal]
+    [prepareTransaction, toggleTransactionModal],
   )
 }

@@ -47,7 +47,7 @@ export default function TokenMetrics() {
   // quote token price
   const quoteTokenPriceAtLaunch = useQuoteTokenPrice(
     quoteToken?.address,
-    memecoin?.isLaunched ? memecoin.launch.blockNumber - 1 : undefined
+    memecoin?.isLaunched ? memecoin.launch.blockNumber - 1 : undefined,
   )
 
   // starknet
@@ -72,7 +72,7 @@ export default function TokenMetrics() {
     if (memecoin.liquidity.unlockTime) {
       const liquidityLock = moment.duration(
         moment(moment.unix(memecoin.liquidity.unlockTime)).diff(moment.now()),
-        'milliseconds'
+        'milliseconds',
       )
       const safety = getLiquidityLockSafety(liquidityLock)
 
@@ -115,7 +115,7 @@ export default function TokenMetrics() {
             ret.quoteToken.safety === Safety.SAFE
               ? new Fraction(
                   initialPrice.toFixed(DECIMALS).replace(/\./, '').replace(/^0+/, ''), // from 0.000[...]0001 to "1"
-                  decimalsScale(DECIMALS)
+                  decimalsScale(DECIMALS),
                 )
                   .multiply(quoteTokenPriceAtLaunch)
                   .multiply(memecoin.totalSupply)

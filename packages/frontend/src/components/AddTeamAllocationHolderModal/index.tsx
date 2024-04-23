@@ -76,7 +76,7 @@ export function AddTeamAllocationHolderModal({ index, totalSupply }: AddTeamAllo
       .reduce(
         (acc, holderIndex) =>
           holderIndex === index ? acc : acc.add(parseFormatedAmount(teamAllocation[holderIndex]?.amount ?? '0')),
-        new Fraction(0)
+        new Fraction(0),
       )
 
     return maxTeamAllocation.subtract(alreadyAllocatedAmount)
@@ -116,11 +116,11 @@ export function AddTeamAllocationHolderModal({ index, totalSupply }: AddTeamAllo
           address: data.holderAddress,
           amount: data.amount,
         },
-        index
+        index,
       )
       close()
     },
-    [close, index, remainingTeamAllocation, setError, setTeamAllocationHolder, teamAllocation]
+    [close, index, remainingTeamAllocation, setError, setTeamAllocationHolder, teamAllocation],
   )
 
   // remove holder
@@ -143,7 +143,7 @@ export function AddTeamAllocationHolderModal({ index, totalSupply }: AddTeamAllo
     (percentage: Percent) => {
       setValue('amount', new Fraction(totalSupply, decimalsScale(DECIMALS)).multiply(percentage).quotient.toString())
     },
-    [setValue, totalSupply]
+    [setValue, totalSupply],
   )
 
   if (!isOpen) return null

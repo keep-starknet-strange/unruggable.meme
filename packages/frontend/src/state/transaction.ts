@@ -21,7 +21,7 @@ interface Actions {
 }
 
 export const createTransactionSlice: StateCreator<StoreState, [['zustand/immer', never]], [], TransactionSlice> = (
-  set
+  set,
 ) => ({
   invokeTransactionDetails: null,
 

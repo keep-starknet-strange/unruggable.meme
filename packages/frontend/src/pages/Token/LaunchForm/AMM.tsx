@@ -17,7 +17,7 @@ export default function AMMForm({ next }: FormPageProps) {
       setAmm(amm)
       next()
     },
-    [next, setAmm]
+    [next, setAmm],
   )
 
   return (

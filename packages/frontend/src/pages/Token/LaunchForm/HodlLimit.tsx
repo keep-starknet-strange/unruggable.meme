@@ -31,11 +31,11 @@ const schema = z.object({
   hodlLimit: percentInput
     .refine(
       (input) => +input <= +MAX_HODL_LIMIT.toFixed(PERCENTAGE_INPUT_PRECISION),
-      `Hodl limit cannot exceed ${+MAX_HODL_LIMIT.toFixed(PERCENTAGE_INPUT_PRECISION)}%`
+      `Hodl limit cannot exceed ${+MAX_HODL_LIMIT.toFixed(PERCENTAGE_INPUT_PRECISION)}%`,
     )
     .refine(
       (input) => +input >= +MIN_HODL_LIMIT.toFixed(PERCENTAGE_INPUT_PRECISION),
-      `Hodl limit cannot fall behind ${+MIN_HODL_LIMIT.toFixed(PERCENTAGE_INPUT_PRECISION)}%`
+      `Hodl limit cannot fall behind ${+MIN_HODL_LIMIT.toFixed(PERCENTAGE_INPUT_PRECISION)}%`,
     ),
 })
 
@@ -56,7 +56,7 @@ export default function HodlLimitForm({ next, previous }: FormPageProps) {
 
   const parsedAntiBotPeriod = useMemo(
     () => parseMinutesDuration(moment.duration(antiBotPeriod, 'minutes')),
-    [antiBotPeriod]
+    [antiBotPeriod],
   )
 
   const submit = useCallback(
@@ -64,7 +64,7 @@ export default function HodlLimitForm({ next, previous }: FormPageProps) {
       setHodlLimit(data.hodlLimit)
       next()
     },
-    [next, setHodlLimit]
+    [next, setHodlLimit],
   )
 
   return (

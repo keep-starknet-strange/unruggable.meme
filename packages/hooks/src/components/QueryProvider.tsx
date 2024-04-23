@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/reac
 
 const defaultQueryClient = new QueryClient()
 
-export type QueryProviderProps = {
+type QueryProviderProps = {
   queryClient?: QueryClient
   children?: React.ReactNode
 }

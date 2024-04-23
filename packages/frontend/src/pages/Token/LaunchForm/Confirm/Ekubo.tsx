@@ -85,7 +85,7 @@ export default function EkuboLaunch({ previous }: LastFormPageProps) {
     if (!i129StartingTick || !fees || !chainId || !hodlLimit || !memecoin?.address || !teamAllocationQuoteAmount) return
 
     const uin256TeamAllocationQuoteAmount = uint256.bnToUint256(
-      BigInt(teamAllocationQuoteAmount.multiply(decimalsScale(DECIMALS)).quotient.toString())
+      BigInt(teamAllocationQuoteAmount.multiply(decimalsScale(DECIMALS)).quotient.toString()),
     )
 
     const transferCalldata = CallData.compile([

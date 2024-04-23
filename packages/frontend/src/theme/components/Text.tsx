@@ -14,7 +14,7 @@ const TextWrapper = ({ loadingWidth, loading, className, children, ...props }: T
       sprinkles({
         width: loadingWidth,
         borderRadius: 'round',
-      })
+      }),
     )
     children = <>&nbsp;</>
   }
@@ -36,7 +36,7 @@ export const Small = ({ className, ...props }: TextProps) => (
         fontWeight: 'normal',
         color: 'text1',
         fontSize: '14',
-      })
+      }),
     )}
     {...props}
   />
@@ -50,7 +50,7 @@ export const Subtitle = ({ className, ...props }: TextProps) => (
         fontWeight: 'normal',
         color: 'text2',
         fontSize: '16',
-      })
+      }),
     )}
     {...props}
   />
@@ -64,7 +64,7 @@ export const Body = ({ className, ...props }: TextProps) => (
         fontWeight: 'normal',
         color: 'text1',
         fontSize: '16',
-      })
+      }),
     )}
     {...props}
   />
@@ -78,7 +78,7 @@ export const Medium = ({ className, ...props }: TextProps) => (
         fontWeight: 'medium',
         color: 'text1',
         fontSize: '16',
-      })
+      }),
     )}
     {...props}
   />
@@ -96,7 +96,7 @@ export const Link = ({ className, ...props }: TextProps) => (
         textDecoration: {
           hover: 'underline',
         },
-      })
+      }),
     )}
     {...props}
   />
@@ -110,7 +110,7 @@ export const HeadlineSmall = ({ className, ...props }: TextProps) => (
         fontWeight: 'medium',
         color: 'text1',
         fontSize: '18',
-      })
+      }),
     )}
     {...props}
   />
@@ -124,7 +124,7 @@ export const HeadlineMedium = ({ className, ...props }: TextProps) => (
         fontWeight: 'semibold',
         color: 'text1',
         fontSize: '24',
-      })
+      }),
     )}
     {...props}
   />
@@ -138,7 +138,7 @@ export const HeadlineLarge = ({ className, ...props }: TextProps) => (
         fontWeight: 'semibold',
         color: 'text1',
         fontSize: '32',
-      })
+      }),
     )}
     {...props}
   />
@@ -152,7 +152,7 @@ export const Error = ({ className, ...props }: TextProps) => (
         fontWeight: 'normal',
         color: 'error',
         fontSize: '14',
-      })
+      }),
     )}
     {...props}
   />

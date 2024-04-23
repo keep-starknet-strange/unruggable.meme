@@ -61,7 +61,7 @@ const FormattableInput = forwardRef<HTMLInputElement, FormattableInputProps>(
         />
       </Box>
     )
-  }
+  },
 )
 
 FormattableInput.displayName = 'FormattableInput'

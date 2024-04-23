@@ -91,7 +91,7 @@ export default function DeployPage() {
         salt,
         TOKEN_CLASS_HASH[chainId],
         constructorCalldata.slice(0, -1),
-        FACTORY_ADDRESSES[chainId]
+        FACTORY_ADDRESSES[chainId],
       )
 
       executeTransaction({
@@ -109,7 +109,7 @@ export default function DeployPage() {
         },
       })
     },
-    [account?.address, chainId, executeTransaction, navigate, pushDeployedTokenContract]
+    [account?.address, chainId, executeTransaction, navigate, pushDeployedTokenContract],
   )
 
   return (

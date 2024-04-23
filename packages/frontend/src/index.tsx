@@ -26,5 +26,5 @@ root.render(
   <StarknetProvider>
     <Updaters />
     <App />
-  </StarknetProvider>
+  </StarknetProvider>,
 )

@@ -5,7 +5,7 @@ import { ProviderInterface } from 'starknet'
 
 import { FactoryContext } from '../contexts/Factory'
 
-export type FactoryProviderProps = {
+type FactoryProviderProps = {
   factory?: Factory
   provider?: ProviderInterface
   children?: React.ReactNode
