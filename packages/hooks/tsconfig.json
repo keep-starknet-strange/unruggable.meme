@@ -2,8 +2,7 @@
   "extends": "../../tsconfig.json",
 
   "compilerOptions": {
-    "baseUrl": "./",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "baseUrl": ".",
     "jsx": "react-jsx"
   }
 }

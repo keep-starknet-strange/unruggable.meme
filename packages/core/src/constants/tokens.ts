@@ -56,7 +56,7 @@ export const Stark: MultichainToken = {
 }
 
 // USDC
-const USDCoin: MultichainToken = {
+export const USDCoin: MultichainToken = {
   [constants.StarknetChainId.SN_GOERLI]: {
     address: USDC_ADDRESSES[constants.StarknetChainId.SN_GOERLI],
     symbol: 'USDC',
