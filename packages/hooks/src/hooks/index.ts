@@ -1,4 +1,5 @@
 export * from './useBaseMemecoin'
+export * from './useEkuboFees'
 export * from './useFactory'
 export * from './useMemecoin'
 export * from './useMemecoinLaunch'

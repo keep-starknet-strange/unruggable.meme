@@ -24,7 +24,7 @@ import {
   StandardAMMLaunchData,
 } from '../types/memecoin'
 import { multiCallContract } from '../utils/contract'
-import { getInitialPrice, getStartingTick } from '../utils/ekubo'
+import { getEkuboFees, getInitialPrice, getStartingTick } from '../utils/ekubo'
 import { decimalsScale } from '../utils/helpers'
 import { getEkuboLiquidityLockPosition, getJediswapLiquidityLockPosition } from '../utils/liquidity'
 import { getPairPrice } from '../utils/token'
@@ -203,6 +203,10 @@ export class Factory implements FactoryInterface {
     }
 
     return undefined
+  }
+
+  public async getEkuboFees(memecoin: Memecoin): Promise<Fraction | undefined> {
+    return getEkuboFees(this.config, memecoin)
   }
 
   public getDeployCalldata(data: MemecoinDeployData) {

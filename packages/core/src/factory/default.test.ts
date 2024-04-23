@@ -1,3 +1,4 @@
+import { Fraction } from '@uniswap/sdk-core'
 import { constants, RpcProvider } from 'starknet'
 import { describe, expect, test } from 'vitest'
 
@@ -62,6 +63,17 @@ describe('Default Factory', () => {
       const startingMarketCap = factory.getStartingMarketCap(memecoin, quoteTokenPrice)
 
       expect(startingMarketCap?.toFixed(0)).toBe('4972')
+    })
+
+    test('Ekubo Fees', async () => {
+      const memecoin = await factory.getMemecoin(TestData.launched.address)
+
+      expect(memecoin).toBeDefined()
+      if (!memecoin) return
+
+      const ekuboFees = await factory.getEkuboFees(memecoin)
+
+      expect(ekuboFees).toBeInstanceOf(Fraction)
     })
   })
 })
