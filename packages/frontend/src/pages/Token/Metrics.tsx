@@ -30,7 +30,6 @@ import {
 import * as styles from './style.css'
 
 export default function TokenMetrics() {
-  // TODO: create a dropdown component
 
   // memecoin
   const { data: memecoin } = useMemecoin()
