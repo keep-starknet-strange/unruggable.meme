@@ -1,4 +1,4 @@
-import { constants } from 'core'
+import { QUOTE_TOKENS } from 'core/constants'
 import { getChecksumAddress } from 'starknet'
 
 import { useFactory } from './useFactory'
@@ -8,5 +8,5 @@ export const useQuoteToken = (address: string) => {
 
   if (!address) return
 
-  return constants.QUOTE_TOKENS[factory.config.chainId][getChecksumAddress(address)]
+  return QUOTE_TOKENS[factory.config.chainId][getChecksumAddress(address)]
 }

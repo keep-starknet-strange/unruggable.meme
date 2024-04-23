@@ -1,6 +1,6 @@
 import { renderHook, waitFor } from '@testing-library/react'
-import { constants } from 'core'
-import { constants as SNconstants } from 'starknet'
+import { Ether } from 'core/constants'
+import { constants } from 'starknet'
 import { describe, expect, test } from 'vitest'
 
 import { wrapper } from '../../test/wrapper'
@@ -15,10 +15,9 @@ describe('usePairPrice', () => {
   })
 
   test('USDC Pair', async () => {
-    const { result } = renderHook(
-      () => usePairPrice(constants.Ether[SNconstants.StarknetChainId.SN_MAIN].usdcPair, 500_000),
-      { wrapper },
-    )
+    const { result } = renderHook(() => usePairPrice(Ether[constants.StarknetChainId.SN_MAIN].usdcPair, 500_000), {
+      wrapper,
+    })
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data?.toFixed(0)).toBe('2309')

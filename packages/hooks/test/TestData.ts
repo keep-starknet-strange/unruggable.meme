@@ -1,5 +1,5 @@
-import { constants } from 'core'
-import { constants as SNconstants } from 'starknet'
+import { Ether } from 'core/constants'
+import { constants } from 'starknet'
 
 export const notLaunched = {
   address: '0x3613d2f6e6d418bdc6022f55f0a94ff3e2bceaf8fa93345fb24a431226c4a53',
@@ -45,7 +45,7 @@ export const launched = {
       quoteToken: '0x049D36570D4e46f48e99674bd3fcc84644DdD6b96F7C741B1562B82f9e004dC7',
       unlockTime: 9999999999,
     },
-    quoteToken: constants.Ether[SNconstants.StarknetChainId.SN_MAIN],
+    quoteToken: Ether[constants.StarknetChainId.SN_MAIN],
     teamAllocation: 4000000000000000000000n,
   },
 }
