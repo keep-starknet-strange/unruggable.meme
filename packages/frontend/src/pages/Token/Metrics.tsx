@@ -2,19 +2,17 @@ import { Fraction, Percent } from '@uniswap/sdk-core'
 import moment from 'moment'
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { IconButton } from 'src/components/Button'
+import Dropdown from 'src/components/Dropdown'
 import { DECIMALS, FOREVER, LiquidityType } from 'src/constants/misc'
 import { Safety, SAFETY_COLORS } from 'src/constants/safety'
 import { QUOTE_TOKENS } from 'src/constants/tokens'
 import useChainId from 'src/hooks/useChainId'
-import { useDropdown } from 'src/hooks/useDropdown'
 import useLinks from 'src/hooks/useLinks'
 import useMemecoin from 'src/hooks/useMemecoin'
 import { useQuoteTokenPrice } from 'src/hooks/usePrice'
 import useQuoteToken from 'src/hooks/useQuote'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
-import * as Icons from 'src/theme/components/Icons'
 import * as Text from 'src/theme/components/Text'
 import { formatPercentage } from 'src/utils/amount'
 import { decimalsScale } from 'src/utils/decimalScale'
@@ -30,12 +28,8 @@ import {
 import * as styles from './style.css'
 
 export default function TokenMetrics() {
-
   // memecoin
   const { data: memecoin } = useMemecoin()
-
-  // dropdown
-  const { dropdownRef, dropdownOpened, toggleDropdown } = useDropdown()
 
   // dropdown links
   const links = useLinks(memecoin?.address)
@@ -143,29 +137,23 @@ export default function TokenMetrics() {
           <Text.HeadlineSmall color="text2">${memecoin.symbol}</Text.HeadlineSmall>
         </Row>
 
-        <Box position="relative" ref={dropdownRef}>
-          <IconButton onClick={toggleDropdown} large>
-            <Icons.ThreeDots display="block" width="16" />
-          </IconButton>
+        <Dropdown>
+          {(Object.keys(links) as Array<keyof typeof links>).map((name) => {
+            const link = links[name]
 
-          <Column className={styles.dropdown({ opened: dropdownOpened })}>
-            {(Object.keys(links) as Array<keyof typeof links>).map((name) => {
-              const link = links[name]
+            if (link) {
+              return (
+                <Link target="_blank" to={link} key={name}>
+                  <Box className={styles.dropdownRow}>
+                    <Text.Body style={{ textTransform: 'capitalize' }}>{name}</Text.Body>
+                  </Box>
+                </Link>
+              )
+            }
 
-              if (link) {
-                return (
-                  <Link target="_blank" to={link} key={name}>
-                    <Box className={styles.dropdownRow}>
-                      <Text.Body style={{ textTransform: 'capitalize' }}>{name}</Text.Body>
-                    </Box>
-                  </Link>
-                )
-              }
-
-              return <></>
-            })}
-          </Column>
-        </Box>
+            return <></>
+          })}
+        </Dropdown>
       </Row>
 
       <Box className={styles.hr} />

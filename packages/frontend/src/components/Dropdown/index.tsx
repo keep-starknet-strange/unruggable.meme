@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Box from 'src/theme/components/Box'
+import { Column } from 'src/theme/components/Flex'
+import * as Icons from 'src/theme/components/Icons'
 
-export function useDropdown() {
+import { IconButton } from '../Button'
+import * as styles from './style.css'
+
+const Dropdown = ({ children }: any) => {
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [dropdownOpened, setDropdownOpened] = useState(false)
   const toggleDropdown = useCallback(() => setDropdownOpened((state) => !state), [])
@@ -21,5 +27,14 @@ export function useDropdown() {
     return
   }, [dropdownRef, dropdownOpened])
 
-  return { dropdownRef, dropdownOpened, toggleDropdown }
+  return (
+    <Box position="relative" ref={dropdownRef}>
+      <IconButton onClick={toggleDropdown} large>
+        <Icons.ThreeDots display="block" width="16" />
+      </IconButton>
+      {dropdownOpened && <Column className={styles.dropdown()}>{children}</Column>}
+    </Box>
+  )
 }
+
+export default Dropdown
