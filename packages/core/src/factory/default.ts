@@ -223,10 +223,7 @@ export class Factory implements FactoryInterface {
       calldata,
     })
 
-    const [fees0Low, fees0High, fees1Low, fees1High] = result
-
-    const fees0 = uint256.uint256ToBN({ low: fees0Low, high: fees0High })
-    const fees1 = uint256.uint256ToBN({ low: fees1Low, high: fees1High })
+    const [, , , , , , , fees0, fees1] = result
 
     return new Fraction(
       (new Fraction(memecoin.address).lessThan(memecoin.quoteToken.address) ? fees1 : fees0).toString(),
@@ -302,9 +299,9 @@ export class Factory implements FactoryInterface {
     )
 
     const launchCalldata = CallData.compile([
-      data.address, // memecoin address
-      data.antiBotPeriod * 60, // anti bot period in seconds
-      data.holdLimit * 100, // hold limit
+      memecoin.address, // memecoin address
+      data.antiBotPeriod, // anti bot period in seconds
+      data.holdLimit, // hold limit
       data.quoteToken.address, // quote token address
       initialHolders, // initial holders
       initialHoldersAmounts, // initial holders amounts
@@ -356,9 +353,9 @@ export class Factory implements FactoryInterface {
     ])
 
     const launchCalldata = CallData.compile([
-      data.address, // memecoin address
-      data.antiBotPeriod * 60, // anti bot period in seconds
-      data.holdLimit * 100, // hold limit
+      memecoin.address, // memecoin address
+      data.antiBotPeriod, // anti bot period in seconds
+      data.holdLimit, // hold limit
       data.quoteToken.address, // quote token
       initialHolders, // initial holders
       initialHoldersAmounts, // intial holders amounts

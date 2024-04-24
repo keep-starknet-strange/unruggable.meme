@@ -79,10 +79,6 @@ export type DeployData = {
 }
 
 type MemecoinBaseLaunchData = {
-  /**
-   * Address of the memecoin contract
-   */
-  address: string
   amm: AMM
   teamAllocations: {
     address: string
@@ -91,7 +87,7 @@ type MemecoinBaseLaunchData = {
   holdLimit: number
 
   /**
-   * Anti bot period in seconds
+   * Anti bot period in *seconds*
    */
   antiBotPeriod: number
 
