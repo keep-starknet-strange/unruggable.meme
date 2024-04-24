@@ -1,6 +1,5 @@
 import { Fraction } from '@uniswap/sdk-core'
-import { LiquidityType, Selector } from 'core/constants'
-import { useEkuboFees, useQuoteToken } from 'hooks'
+import { useEkuboFees, useFactory, useQuoteToken } from 'hooks'
 import { useCallback, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { PrimaryButton } from 'src/components/Button'
@@ -10,7 +9,6 @@ import Box from 'src/theme/components/Box'
 import { Column } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
 import { formatCurrenyAmount } from 'src/utils/amount'
-import { CallData } from 'starknet'
 
 import * as styles from './style.css'
 
@@ -22,6 +20,9 @@ export default function CollectFees() {
   const { address: tokenAddress } = useParams()
   const { data: memecoin, refresh: refreshMemecoin } = useMemecoin(tokenAddress)
 
+  // sdk factory
+  const sdkFactory = useFactory()
+
   // quote token
   const quoteToken = useQuoteToken(memecoin?.isLaunched ? memecoin?.liquidity?.quoteToken : undefined)
 
@@ -30,25 +31,17 @@ export default function CollectFees() {
 
   // collect fees
   const collectFees = useCallback(() => {
-    if (!memecoin?.isLaunched || memecoin.liquidity.type !== LiquidityType.EKUBO_NFT) return
+    if (!memecoin) return
 
-    const collectFeesCalldata = CallData.compile([
-      memecoin.liquidity.ekuboId, // ekubo pool id
-      memecoin.liquidity.owner,
-    ])
+    const calldata = sdkFactory.getCollectEkuboFeesCalldata(memecoin)
+    if (!calldata) return
 
     executeTransaction({
-      calls: [
-        {
-          contractAddress: memecoin.liquidity.lockManager,
-          entrypoint: Selector.WITHDRAW_FEES,
-          calldata: collectFeesCalldata,
-        },
-      ],
+      calls: calldata.calls,
       action: 'Collect fees',
       onSuccess: refreshMemecoin,
     })
-  }, [memecoin, executeTransaction, refreshMemecoin])
+  }, [sdkFactory, memecoin, executeTransaction, refreshMemecoin])
 
   // can collect
   const canCollect = useMemo(() => feesToCollect?.greaterThan(new Fraction(0)) ?? false, [feesToCollect])

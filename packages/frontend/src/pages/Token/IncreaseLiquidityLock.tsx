@@ -4,8 +4,8 @@ import {
   LiquidityType,
   MAX_LIQUIDITY_LOCK_INCREASE,
   MIN_LIQUIDITY_LOCK_INCREASE,
-  Selector,
 } from 'core/constants'
+import { useFactory } from 'hooks'
 import moment from 'moment'
 import { useCallback, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
@@ -18,7 +18,6 @@ import { useExecuteTransaction } from 'src/hooks/useTransactions'
 import { Column } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
 import { parseMonthsDuration } from 'src/utils/moment'
-import { CallData } from 'starknet'
 
 export default function IncreaseLiquidityLock() {
   const [liquidityLockIncrease, setLiquidityLockIncrease] = useState(MAX_LIQUIDITY_LOCK_INCREASE)
@@ -36,6 +35,9 @@ export default function IncreaseLiquidityLock() {
   const { address: tokenAddress } = useParams()
   const { data: memecoin, refresh: refreshMemecoin } = useMemecoin(tokenAddress)
 
+  // sdk factory
+  const sdkFactory = useFactory()
+
   // transaction
   const executeTransaction = useExecuteTransaction()
 
@@ -45,27 +47,21 @@ export default function IncreaseLiquidityLock() {
     // No need for a better way to handle that atm.
     if (!memecoin?.isLaunched || memecoin.liquidity.type === LiquidityType.EKUBO_NFT) return
 
-    // prepare calldata
-    const launchCalldata = CallData.compile([
-      memecoin.liquidity.lockPosition, // liquidity position
+    const calldata = sdkFactory.getExtendLiquidityLockCalldata(
+      memecoin,
       liquidityLockIncrease === MAX_LIQUIDITY_LOCK_INCREASE // liquidity lock until
         ? LIQUIDITY_LOCK_FOREVER_TIMESTAMP
         : moment.duration(liquidityLockIncrease, 'months').asSeconds() + memecoin.liquidity.unlockTime,
-    ])
+    )
+    if (!calldata) return
 
     // send tx
     executeTransaction({
-      calls: [
-        {
-          contractAddress: memecoin.liquidity.lockManager,
-          entrypoint: Selector.EXTEND_LOCK,
-          calldata: launchCalldata,
-        },
-      ],
+      calls: calldata.calls,
       action: 'Increase liquidity lock',
       onSuccess: refreshMemecoin,
     })
-  }, [executeTransaction, liquidityLockIncrease, memecoin, refreshMemecoin])
+  }, [sdkFactory, executeTransaction, liquidityLockIncrease, memecoin, refreshMemecoin])
 
   return (
     <>
