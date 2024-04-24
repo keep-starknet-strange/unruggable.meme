@@ -1,8 +1,8 @@
+import { useNetwork } from '@starknet-react/core'
 import { DefaultError, QueryKey, useQuery as useReactQuery, UseQueryOptions } from '@tanstack/react-query'
+import { useEffect } from 'react'
 
 import { useInvalidateOnBlock } from './useInvalidateOnBlock'
-import { useNetwork } from '@starknet-react/core'
-import { useEffect } from 'react'
 
 export const useQuery = <
   TQueryFnData = unknown,

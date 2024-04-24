@@ -6,7 +6,7 @@ import { FactoryConfig } from '../factory'
 import { USDCPair } from '../types/tokens'
 import { decimalsScale } from './helpers'
 
-export async function getPairPrice(config: FactoryConfig, pair?: USDCPair, blockNumber = BlockTag.latest) {
+export async function getPairPrice(config: FactoryConfig, pair?: USDCPair, blockNumber: BlockNumber = BlockTag.latest) {
   if (!pair) return new Fraction(1, 1)
 
   const { result } = await config.provider.callContract(

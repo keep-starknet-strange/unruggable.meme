@@ -84,7 +84,7 @@ export class Factory implements FactoryInterface {
       symbol: shortString.decodeShortString(symbol),
       owner: getChecksumAddress(owner),
       decimals: DECIMALS,
-      totalSupply: uint256.uint256ToBN({ low: totalSupply[0], high: totalSupply[1] }),
+      totalSupply: uint256.uint256ToBN({ low: totalSupply[0], high: totalSupply[1] }).toString(),
     }
   }
 
@@ -140,7 +140,7 @@ export class Factory implements FactoryInterface {
           lockManager,
           lockPosition: launchParams[5],
           quoteToken: getChecksumAddress(launchParams[2]),
-          quoteAmount: uint256.uint256ToBN({ low: launchParams[3], high: launchParams[4] }),
+          quoteAmount: uint256.uint256ToBN({ low: launchParams[3], high: launchParams[4] }).toString(),
         } satisfies Partial<JediswapLiquidity>
 
         liquidity = {
@@ -169,8 +169,10 @@ export class Factory implements FactoryInterface {
     return {
       isLaunched: true,
       quoteToken: QUOTE_TOKENS[this.config.chainId][liquidity.quoteToken],
-      teamAllocation: uint256.uint256ToBN({ low: teamAllocation[0], high: teamAllocation[1] }),
-      blockNumber: Number(launchBlockNumber),
+      launch: {
+        teamAllocation: uint256.uint256ToBN({ low: teamAllocation[0], high: teamAllocation[1] }).toString(),
+        blockNumber: Number(launchBlockNumber),
+      },
       liquidity,
     }
   }
@@ -183,8 +185,8 @@ export class Factory implements FactoryInterface {
       case LiquidityType.JEDISWAP_ERC20: {
         if (!memecoin.quoteToken) break
 
-        return new Fraction(memecoin.liquidity.quoteAmount.toString())
-          .multiply(new Fraction(memecoin.teamAllocation.toString(), memecoin.totalSupply.toString()).add(1))
+        return new Fraction(memecoin.liquidity.quoteAmount)
+          .multiply(new Fraction(memecoin.launch.teamAllocation, memecoin.totalSupply).add(1))
           .divide(decimalsScale(memecoin.quoteToken.decimals))
           .multiply(quoteTokenPriceAtLaunch)
       }
@@ -198,7 +200,7 @@ export class Factory implements FactoryInterface {
           decimalsScale(DECIMALS),
         )
           .multiply(quoteTokenPriceAtLaunch)
-          .multiply(memecoin.totalSupply.toString())
+          .multiply(memecoin.totalSupply)
           .divide(decimalsScale(DECIMALS))
       }
     }
@@ -267,9 +269,9 @@ export class Factory implements FactoryInterface {
     const teamAllocationFraction = data.teamAllocations.reduce((acc, { amount }) => acc.add(amount), new Fraction(0))
     const teamAllocationPercentage = new Percent(
       teamAllocationFraction.quotient,
-      new Fraction(memecoin.totalSupply.toString(), decimalsScale(DECIMALS)).quotient,
+      new Fraction(memecoin.totalSupply, decimalsScale(DECIMALS)).quotient,
     )
-    const teamAllocationQuoteAmount = new Fraction(data.startingMarketCap.toString())
+    const teamAllocationQuoteAmount = new Fraction(data.startingMarketCap)
       .divide(quoteTokenPrice)
       .multiply(teamAllocationPercentage.multiply(data.fees.add(1)))
     const uin256TeamAllocationQuoteAmount = uint256.bnToUint256(
@@ -279,7 +281,7 @@ export class Factory implements FactoryInterface {
     const initialPrice = +new Fraction(data.startingMarketCap)
       .divide(quoteTokenPrice)
       .multiply(decimalsScale(DECIMALS))
-      .divide(new Fraction(memecoin.totalSupply.toString()))
+      .divide(new Fraction(memecoin.totalSupply))
       .toFixed(DECIMALS)
     const startingTickMag = getStartingTick(initialPrice)
     const i129StartingTick = {
@@ -336,7 +338,7 @@ export class Factory implements FactoryInterface {
     const teamAllocationFraction = data.teamAllocations.reduce((acc, { amount }) => acc.add(amount), new Fraction(0))
     const teamAllocationPercentage = new Percent(
       teamAllocationFraction.quotient,
-      new Fraction(memecoin.totalSupply.toString(), decimalsScale(DECIMALS)).quotient,
+      new Fraction(memecoin.totalSupply, decimalsScale(DECIMALS)).quotient,
     )
 
     const quoteAmount = new Fraction(data.startingMarketCap)

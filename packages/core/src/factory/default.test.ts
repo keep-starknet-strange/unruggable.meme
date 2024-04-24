@@ -58,7 +58,7 @@ describe('Default Factory', () => {
       const quoteTokenPrice = await getPairPrice(
         factory.config,
         memecoin.quoteToken?.usdcPair,
-        memecoin.blockNumber - 1,
+        memecoin.launch.blockNumber - 1,
       )
       const startingMarketCap = factory.getStartingMarketCap(memecoin, quoteTokenPrice)
 

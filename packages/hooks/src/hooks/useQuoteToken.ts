@@ -3,7 +3,7 @@ import { getChecksumAddress } from 'starknet'
 
 import { useFactory } from './useFactory'
 
-export const useQuoteToken = (address: string) => {
+export const useQuoteToken = (address?: string) => {
   const factory = useFactory()
 
   if (!address) return

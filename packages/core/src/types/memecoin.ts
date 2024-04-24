@@ -33,7 +33,7 @@ type BaseLiquidity = {
 export type JediswapLiquidity = {
   type: LiquidityType.JEDISWAP_ERC20 | LiquidityType.STARKDEFI_ERC20
   lockPosition: string
-  quoteAmount: bigint
+  quoteAmount: string
 } & Omit<BaseLiquidity, 'type'>
 
 export type EkuboLiquidity = {
@@ -52,7 +52,7 @@ export type BaseMemecoin = {
   symbol: string
   owner: string
   decimals: number
-  totalSupply: bigint
+  totalSupply: string
 }
 
 export type LaunchedMemecoin =
@@ -62,8 +62,10 @@ export type LaunchedMemecoin =
   | {
       isLaunched: true
       quoteToken: Token | undefined
-      teamAllocation: bigint
-      blockNumber: number
+      launch: {
+        teamAllocation: string
+        blockNumber: number
+      }
       liquidity: LaunchedLiquidity
     }
 
@@ -73,7 +75,7 @@ export type DeployData = {
   name: string
   symbol: string
   owner: string
-  initialSupply: bigint | string
+  initialSupply: string | string
 }
 
 type MemecoinBaseLaunchData = {
