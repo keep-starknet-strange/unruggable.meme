@@ -25,7 +25,7 @@ interface SliderProps {
   max: number
   loading?: boolean
   onSlidingChange: (value: number) => void
-  addon?: React.ReactNode
+  addon?: React.PropsWithChildren['children']
 }
 
 export default function Slider({ value, min = 0, step = 1, max, addon, onSlidingChange }: SliderProps) {

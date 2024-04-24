@@ -1,10 +1,6 @@
 import NavBar from '../NavBar'
 
-interface HomeLayoutProps {
-  children: React.ReactNode
-}
-
-export default function HomeLayout({ children }: HomeLayoutProps) {
+export default function HomeLayout({ children }: React.PropsWithChildren) {
   return (
     <>
       <NavBar />

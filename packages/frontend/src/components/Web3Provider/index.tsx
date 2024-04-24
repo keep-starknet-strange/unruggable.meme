@@ -5,11 +5,7 @@ import { WebWalletConnector } from 'starknetkit/webwallet'
 
 // STARKNET
 
-interface StarknetProviderProps {
-  children: React.ReactNode
-}
-
-export function StarknetProvider({ children }: StarknetProviderProps) {
+export function StarknetProvider({ children }: React.PropsWithChildren) {
   const { connectors: injected } = useInjectedConnectors({
     recommended: [argent(), braavos()],
     includeRecommended: 'always',
