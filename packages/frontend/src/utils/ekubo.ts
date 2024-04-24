@@ -1,4 +1,4 @@
-import { EKUBO_TICK_SIZE, EKUBO_TICK_SIZE_LOG, EKUBO_TICK_SPACING } from 'src/constants/misc'
+import { EKUBO_TICK_SIZE, EKUBO_TICK_SIZE_LOG, EKUBO_TICK_SPACING } from 'core/constants'
 
 export const getInitialPrice = (startingTick: number) => EKUBO_TICK_SIZE ** startingTick
 

@@ -1,14 +1,14 @@
 import { Fraction } from '@uniswap/sdk-core'
-import { AMM } from 'core/constants'
+import {
+  AMM,
+  LIQUIDITY_LOCK_FOREVER_TIMESTAMP,
+  MAX_LIQUIDITY_LOCK_PERIOD,
+  STARKNET_MAX_BLOCK_TIME,
+} from 'core/constants'
 import { useFactory, useQuoteToken, useQuoteTokenPrice } from 'hooks'
 import moment from 'moment'
 import { useCallback, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
-import {
-  LIQUIDITY_LOCK_FOREVER_TIMESTAMP,
-  MAX_LIQUIDITY_LOCK_PERIOD,
-  STARKNET_MAX_BLOCK_TIME,
-} from 'src/constants/misc'
 import {
   useHodlLimitForm,
   useLiquidityForm,

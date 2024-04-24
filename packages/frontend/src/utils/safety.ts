@@ -1,11 +1,11 @@
 import { Fraction, Percent } from '@uniswap/sdk-core'
-import moment from 'moment'
 import {
   LIQUIDITY_LOCK_SAFETY_BOUNDS,
   Safety,
   STARTING_MCAP_SAFETY_BOUNDS,
   TEAM_ALLOCATION_SAFETY_BOUNDS,
-} from 'src/constants/safety'
+} from 'core/constants'
+import moment from 'moment'
 
 export function getTeamAllocationSafety(teamAllocation: Percent) {
   if (teamAllocation.greaterThan(TEAM_ALLOCATION_SAFETY_BOUNDS[Safety.CORRECT])) return Safety.DANGEROUS

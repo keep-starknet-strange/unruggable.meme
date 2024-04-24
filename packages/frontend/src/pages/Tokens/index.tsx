@@ -1,11 +1,11 @@
 import { useContractRead, UseContractReadResult } from '@starknet-react/core'
+import { compiledMulticall, MULTICALL_ADDRESSES, Selector } from 'core/constants'
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { PrimaryButton, SecondaryButton } from 'src/components/Button'
 import { ImportTokenModal } from 'src/components/ImportTokenModal'
 import Section from 'src/components/Section'
-import { compiledMulticall, MULTICALL_ADDRESS } from 'src/constants/contracts'
-import { Selector } from 'src/constants/misc'
+import useChainId from 'src/hooks/useChainId'
 import { useDeploymentStore } from 'src/hooks/useDeployment'
 import { useImportTokenModal } from 'src/hooks/useModal'
 import Box from 'src/theme/components/Box'
@@ -17,6 +17,8 @@ import * as styles from './style.css'
 import TokenContract from './TokenContract'
 
 export default function TokensPage() {
+  const chainId = useChainId()
+
   // modal
   const [, toggleImportTokenModel] = useImportTokenModal()
 
@@ -39,7 +41,7 @@ export default function TokensPage() {
 
   const launchedStatus = useContractRead({
     abi: compiledMulticall,
-    address: MULTICALL_ADDRESS,
+    address: chainId ? MULTICALL_ADDRESSES[chainId] : undefined,
     functionName: Selector.AGGREGATE,
     watch: true,
     args: launchedStatusCallArgs,
@@ -79,8 +81,8 @@ export default function TokensPage() {
               parsedLaunchedStatus[a.address] === parsedLaunchedStatus[b.address]
                 ? 0
                 : parsedLaunchedStatus[a.address]
-                  ? 1
-                  : -1,
+                ? 1
+                : -1,
             )
             .map((tokenContract) => (
               <Link key={tokenContract.address} to={`/token/${tokenContract.address}`}>
