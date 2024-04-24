@@ -1,12 +1,14 @@
+import { starknetChainId, useNetwork } from '@starknet-react/core'
 import { QUOTE_TOKENS } from 'core/constants'
 import { getChecksumAddress } from 'starknet'
 
-import { useFactory } from './useFactory'
-
 export const useQuoteToken = (address?: string) => {
-  const factory = useFactory()
+  const { chain } = useNetwork()
 
   if (!address) return
 
-  return QUOTE_TOKENS[factory.config.chainId][getChecksumAddress(address)]
+  const chainId = chain.id ? starknetChainId(chain.id) : undefined
+  if (!chainId) return
+
+  return QUOTE_TOKENS[chainId][getChecksumAddress(address)]
 }
