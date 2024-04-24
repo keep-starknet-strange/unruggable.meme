@@ -1,9 +1,11 @@
 import { Fraction } from '@uniswap/sdk-core'
+import { useQuoteTokenPrice } from 'hooks'
 import { useMemo } from 'react'
+import { useParams } from 'react-router-dom'
 import { useBalance } from 'src/hooks/useBalances'
 import { useAmm, useLiquidityForm, useTeamAllocationTotalPercentage } from 'src/hooks/useLaunchForm'
 import useMemecoin from 'src/hooks/useMemecoin'
-import { useQuoteTokenPrice, useWeiAmountToParsedFiatValue } from 'src/hooks/usePrice'
+import { useWeiAmountToParsedFiatValue } from 'src/hooks/usePrice'
 import useQuoteToken from 'src/hooks/useQuote'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
@@ -33,7 +35,8 @@ export default function LaunchTemplate({ liquidityPrice, teamAllocationPrice, pr
   const weiAmountToParsedFiatValue = useWeiAmountToParsedFiatValue(quoteTokenPrice)
 
   // memecoin
-  const { data: memecoin } = useMemecoin()
+  const { address: tokenAddress } = useParams()
+  const { data: memecoin } = useMemecoin(tokenAddress)
 
   // team allocation
   const teamAllocationTotalPercentage = useTeamAllocationTotalPercentage(memecoin?.totalSupply)
@@ -110,8 +113,8 @@ export default function LaunchTemplate({ liquidityPrice, teamAllocationPrice, pr
           loading
             ? 'Loading...'
             : hasEnoughQuoteTokenBalance
-              ? `Launch on ${amm}`
-              : `Insufficent ${quoteToken.symbol} balance`
+            ? `Launch on ${amm}`
+            : `Insufficent ${quoteToken.symbol} balance`
         }
         onNext={next}
         disableNext={loading || !hasEnoughQuoteTokenBalance}

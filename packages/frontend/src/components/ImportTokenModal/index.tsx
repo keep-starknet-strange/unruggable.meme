@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2Icon } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { useNavigate } from 'react-router-dom'
 import useChainId from 'src/hooks/useChainId'
@@ -32,8 +32,6 @@ interface ImportTokenModalProps {
 }
 
 export function ImportTokenModal({ save = false }: ImportTokenModalProps) {
-  const [loading, setLoading] = useState(false)
-
   const [, pushDeployedTokenContracts] = useDeploymentStore()
 
   // modal
@@ -67,28 +65,25 @@ export function ImportTokenModal({ save = false }: ImportTokenModalProps) {
 
   const debouncedTokenAddress = useDebounce(tokenAddress)
 
-  // loading
-  const shouldLoad = useCallback((event: React.FormEvent<HTMLInputElement>) => {
-    const value = (event.target as HTMLInputElement).value
-
-    setLoading(isValidL2Address(value))
-  }, [])
-
   // token check
-  const { data: memecoin, ruggable } = useMemecoin(debouncedTokenAddress)
+  const tokenAddressToUse = isValidL2Address(debouncedTokenAddress) ? debouncedTokenAddress : undefined
+  const { data: memecoin, isLoading, ruggable } = useMemecoin(tokenAddressToUse)
 
   useEffect(() => {
     if (memecoin && isOpen && chainId) {
       // save token if needed
       if (save) {
-        pushDeployedTokenContracts(memecoin)
+        pushDeployedTokenContracts({
+          address: memecoin.address,
+          name: memecoin.name,
+          symbol: memecoin.symbol,
+          totalSupply: memecoin.totalSupply.toString(),
+        })
       }
 
       openTokenPage(memecoin.address)
       return
     }
-
-    setLoading(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [memecoin?.address, save, isOpen, chainId])
 
@@ -96,7 +91,6 @@ export function ImportTokenModal({ save = false }: ImportTokenModalProps) {
   useEffect(() => {
     if (ruggable) {
       setError('tokenAddress', { message: 'This token is not unruggable' })
-      setLoading(false)
     }
   }, [setError, ruggable])
 
@@ -108,13 +102,13 @@ export function ImportTokenModal({ save = false }: ImportTokenModalProps) {
         <Column gap="8">
           <Text.Body className={styles.inputLabel}>Token Address</Text.Body>
 
-          <Input placeholder="0x000000000000000000" {...register('tokenAddress', { onChange: shouldLoad })} />
+          <Input placeholder="0x000000000000000000" {...register('tokenAddress')} />
 
           <Box className={styles.errorContainer}>
             {errors.tokenAddress?.message ? <Text.Error>{errors.tokenAddress.message}</Text.Error> : null}
           </Box>
 
-          {loading && <Loader2Icon className={styles.loader} />}
+          {isLoading && <Loader2Icon className={styles.loader} />}
         </Column>
       </Content>
 

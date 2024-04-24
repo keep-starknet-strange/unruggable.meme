@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import { useParams } from 'react-router-dom'
 import { AddTeamAllocationHolderModal } from 'src/components/AddTeamAllocationHolderModal'
 import { MAX_TEAM_ALLOCATION_HOLDERS_COUNT } from 'src/constants/misc'
 import { useTeamAllocation, useTeamAllocationTotalPercentage } from 'src/hooks/useLaunchForm'
@@ -19,7 +20,8 @@ export default function TeamAllocationForm({ previous, next }: FormPageProps) {
   const [selectedHolderIndex, setSelectedHolderIndex] = useState(0)
 
   // memecoin
-  const { data: memecoin } = useMemecoin()
+  const { address: tokenAddress } = useParams()
+  const { data: memecoin } = useMemecoin(tokenAddress)
 
   // team allocation state
   const { teamAllocation } = useTeamAllocation()

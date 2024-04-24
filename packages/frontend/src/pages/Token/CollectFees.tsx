@@ -1,10 +1,10 @@
 import { Fraction } from '@uniswap/sdk-core'
+import { useEkuboFees, useQuoteToken } from 'hooks'
 import { useCallback, useMemo } from 'react'
+import { useParams } from 'react-router-dom'
 import { PrimaryButton } from 'src/components/Button'
 import { LiquidityType, Selector } from 'src/constants/misc'
-import useEkuboFees from 'src/hooks/useEkuboFees'
 import useMemecoin from 'src/hooks/useMemecoin'
-import useQuoteToken from 'src/hooks/useQuote'
 import { useExecuteTransaction } from 'src/hooks/useTransactions'
 import Box from 'src/theme/components/Box'
 import { Column } from 'src/theme/components/Flex'
@@ -19,13 +19,14 @@ export default function CollectFees() {
   const executeTransaction = useExecuteTransaction()
 
   // memecoin
-  const { data: memecoin, refresh: refreshMemecoin } = useMemecoin()
+  const { address: tokenAddress } = useParams()
+  const { data: memecoin, refresh: refreshMemecoin } = useMemecoin(tokenAddress)
 
   // quote token
-  const quoteToken = useQuoteToken(memecoin?.isLaunched ? memecoin.liquidity.quoteToken : undefined)
+  const quoteToken = useQuoteToken(memecoin?.isLaunched ? memecoin?.liquidity?.quoteToken : undefined)
 
   // feesToCollect
-  const feesToCollect = useEkuboFees()
+  const { data: feesToCollect, isLoading } = useEkuboFees({ address: tokenAddress })
 
   // collect fees
   const collectFees = useCallback(() => {
@@ -58,7 +59,7 @@ export default function CollectFees() {
         <Column gap="8" alignItems="flex-start">
           <Text.Small>Fees to collect:</Text.Small>
           <Text.HeadlineMedium color={canCollect ? 'accent' : feesToCollect ? 'text1' : 'text2'} whiteSpace="nowrap">
-            {feesToCollect && quoteToken
+            {!isLoading && feesToCollect && quoteToken
               ? `${formatCurrenyAmount(feesToCollect, { fixed: 4, significant: 2 })} ${quoteToken.symbol}`
               : 'Loading'}
           </Text.HeadlineMedium>

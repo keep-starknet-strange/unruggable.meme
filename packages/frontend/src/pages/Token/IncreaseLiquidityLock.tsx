@@ -1,5 +1,6 @@
 import moment from 'moment'
 import { useCallback, useMemo, useState } from 'react'
+import { useParams } from 'react-router-dom'
 import { PrimaryButton } from 'src/components/Button'
 import Input from 'src/components/Input'
 import Slider from 'src/components/Slider'
@@ -32,7 +33,8 @@ export default function IncreaseLiquidityLock() {
   )
 
   // memecoin
-  const { data: memecoin, refresh: refreshMemecoin } = useMemecoin()
+  const { address: tokenAddress } = useParams()
+  const { data: memecoin, refresh: refreshMemecoin } = useMemecoin(tokenAddress)
 
   // transaction
   const executeTransaction = useExecuteTransaction()
