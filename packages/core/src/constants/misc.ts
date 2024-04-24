@@ -6,7 +6,7 @@ export const MAX_TEAM_ALLOCATION_HOLDERS_COUNT = 10
 export const MAX_TEAM_ALLOCATION_TOTAL_SUPPLY_PERCENTAGE = new Percent(10, 100) // 10%
 export const DECIMALS = 18
 
-export enum Selector {
+export enum Entrypoint {
   CREATE_MEMECOIN = 'create_memecoin',
   IS_MEMECOIN = 'is_memecoin',
   AGGREGATE = 'aggregate',

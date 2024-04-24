@@ -11,7 +11,7 @@ export const notLaunched = {
     name: 'Unruggable',
     owner: '0x028446b7625A071Bd169022eE8C77c1aaD1E13D40994f54B2D84F8cDe6AA458D',
     symbol: 'Meme',
-    totalSupply: 10000000000000000000000n,
+    totalSupply: '10000000000000000000000',
   },
 
   launchData: {
@@ -28,12 +28,11 @@ export const launched = {
     name: 'Pain au lait',
     owner: '0x0000000000000000000000000000000000000000000000000000000000000000',
     symbol: 'PAL',
-    totalSupply: 21000000000000000000000000n,
+    totalSupply: '21000000000000000000000000',
   },
 
   launchData: {
     isLaunched: true,
-    blockNumber: 556061,
     liquidity: {
       type: LiquidityType.EKUBO_NFT,
       ekuboId: '0x60ba3',
@@ -46,7 +45,10 @@ export const launched = {
       quoteToken: '0x049D36570D4e46f48e99674bd3fcc84644DdD6b96F7C741B1562B82f9e004dC7',
       unlockTime: 9999999999,
     },
+    launch: {
+      teamAllocation: '4000000000000000000000',
+      blockNumber: 556061,
+    },
     quoteToken: Ether[constants.StarknetChainId.SN_MAIN],
-    teamAllocation: 4000000000000000000000n,
   },
 }

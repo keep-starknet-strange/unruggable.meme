@@ -8,10 +8,11 @@ import {
   EKUBO_FEES_MULTIPLICATOR,
   EKUBO_POSITIONS_ADDRESSES,
   EKUBO_TICK_SPACING,
+  Entrypoint,
   FACTORY_ADDRESSES,
+  LIQUIDITY_LOCK_FOREVER_TIMESTAMP,
   LiquidityType,
   QUOTE_TOKENS,
-  Selector,
   TOKEN_CLASS_HASH,
 } from '../constants'
 import {
@@ -27,8 +28,7 @@ import {
 import { multiCallContract } from '../utils/contract'
 import { getInitialPrice, getStartingTick } from '../utils/ekubo'
 import { decimalsScale } from '../utils/helpers'
-import { getEkuboLiquidityLockPosition, getJediswapLiquidityLockPosition } from '../utils/liquidity'
-import { getPairPrice } from '../utils/token'
+import { getPairPrice } from '../utils/price'
 import { FactoryConfig, FactoryInterface } from './interface'
 
 export class Factory implements FactoryInterface {
@@ -49,28 +49,32 @@ export class Factory implements FactoryInterface {
     return { ...baseMemecoin, ...launchData }
   }
 
+  //
+  // GET MEMECOIN
+  //
+
   public async getBaseMemecoin(address: string): Promise<BaseMemecoin | undefined> {
     const result = await multiCallContract(this.config.provider, this.config.chainId, [
       {
-        to: FACTORY_ADDRESSES[this.config.chainId],
-        selector: Selector.IS_MEMECOIN,
+        contractAddress: FACTORY_ADDRESSES[this.config.chainId],
+        entrypoint: Entrypoint.IS_MEMECOIN,
         calldata: [address],
       },
       {
-        to: address,
-        selector: Selector.NAME,
+        contractAddress: address,
+        entrypoint: Entrypoint.NAME,
       },
       {
-        to: address,
-        selector: Selector.SYMBOL,
+        contractAddress: address,
+        entrypoint: Entrypoint.SYMBOL,
       },
       {
-        to: address,
-        selector: Selector.OWNER,
+        contractAddress: address,
+        entrypoint: Entrypoint.OWNER,
       },
       {
-        to: address,
-        selector: Selector.TOTAL_SUPPLY,
+        contractAddress: address,
+        entrypoint: Entrypoint.TOTAL_SUPPLY,
       },
     ])
 
@@ -88,28 +92,32 @@ export class Factory implements FactoryInterface {
     }
   }
 
+  //
+  // GET LAUNCH
+  //
+
   public async getMemecoinLaunchData(address: string): Promise<LaunchedMemecoin> {
     const result = await multiCallContract(this.config.provider, this.config.chainId, [
       {
-        to: address,
-        selector: Selector.GET_TEAM_ALLOCATION,
+        contractAddress: address,
+        entrypoint: Entrypoint.GET_TEAM_ALLOCATION,
       },
       {
-        to: address,
-        selector: Selector.LAUNCHED_AT_BLOCK_NUMBER,
+        contractAddress: address,
+        entrypoint: Entrypoint.LAUNCHED_AT_BLOCK_NUMBER,
       },
       {
-        to: address,
-        selector: Selector.IS_LAUNCHED,
+        contractAddress: address,
+        entrypoint: Entrypoint.IS_LAUNCHED,
       },
       {
-        to: FACTORY_ADDRESSES[this.config.chainId],
-        selector: Selector.LOCKED_LIQUIDITY,
+        contractAddress: FACTORY_ADDRESSES[this.config.chainId],
+        entrypoint: Entrypoint.LOCKED_LIQUIDITY,
         calldata: [address],
       },
       {
-        to: address,
-        selector: Selector.LAUNCHED_WITH_LIQUIDITY_PARAMETERS,
+        contractAddress: address,
+        entrypoint: Entrypoint.LAUNCHED_WITH_LIQUIDITY_PARAMETERS,
       },
     ])
 
@@ -145,7 +153,7 @@ export class Factory implements FactoryInterface {
 
         liquidity = {
           ...baseLiquidity,
-          ...(await getJediswapLiquidityLockPosition(this.config.provider, baseLiquidity)),
+          ...(await this.getJediswapLiquidityLockPosition(baseLiquidity)),
         }
         break
       }
@@ -161,7 +169,7 @@ export class Factory implements FactoryInterface {
 
         liquidity = {
           ...baseLiquidity,
-          ...(await getEkuboLiquidityLockPosition(this.config.provider, baseLiquidity)),
+          ...(await this.getEkuboLiquidityLockPosition(baseLiquidity)),
         }
       }
     }
@@ -177,14 +185,68 @@ export class Factory implements FactoryInterface {
     }
   }
 
+  //
+  // GET LIQUIDITY
+  //
+
+  private async getJediswapLiquidityLockPosition(liquidity: Pick<JediswapLiquidity, 'lockManager' | 'lockPosition'>) {
+    const { result } = await this.config.provider.callContract({
+      contractAddress: liquidity.lockManager,
+      entrypoint: Entrypoint.GET_LOCK_DETAILS,
+      calldata: [liquidity.lockPosition],
+    })
+
+    // TODO: deconstruct result array in cleaner way
+
+    return {
+      unlockTime: +result[4],
+      owner: getChecksumAddress(result[3]),
+    } satisfies Partial<JediswapLiquidity>
+  }
+
+  private async getEkuboLiquidityLockPosition(liquidity: Pick<EkuboLiquidity, 'lockManager' | 'ekuboId'>) {
+    const { result } = await this.config.provider.callContract({
+      contractAddress: liquidity.lockManager,
+      entrypoint: Entrypoint.LIQUIDITY_POSITION_DETAILS,
+      calldata: [liquidity.ekuboId],
+    })
+
+    // TODO: deconstruct result array in cleaner way
+
+    return {
+      unlockTime: LIQUIDITY_LOCK_FOREVER_TIMESTAMP,
+      owner: getChecksumAddress(result[0]),
+      poolKey: {
+        token0: getChecksumAddress(result[2]),
+        token1: getChecksumAddress(result[3]),
+        fee: result[4],
+        tickSpacing: result[5],
+        extension: result[6],
+      },
+      bounds: {
+        lower: {
+          mag: result[7],
+          sign: result[8],
+        },
+        upper: {
+          mag: result[9],
+          sign: result[10],
+        },
+      },
+    } satisfies Partial<EkuboLiquidity>
+  }
+
+  //
+  // GET MCAP
+  //
+
   public getStartingMarketCap(memecoin: Memecoin, quoteTokenPriceAtLaunch?: Fraction): Fraction | undefined {
-    if (!memecoin.isLaunched || !quoteTokenPriceAtLaunch) return undefined
+    if (!memecoin.isLaunched || !quoteTokenPriceAtLaunch || !memecoin.quoteToken) return undefined
 
     switch (memecoin.liquidity.type) {
       case LiquidityType.STARKDEFI_ERC20:
       case LiquidityType.JEDISWAP_ERC20: {
-        if (!memecoin.quoteToken) break
-
+        // starting mcap = quote amount in liq * (team allocation % + 100) * quote token price at launch
         return new Fraction(memecoin.liquidity.quoteAmount)
           .multiply(new Fraction(memecoin.launch.teamAllocation, memecoin.totalSupply).add(1))
           .divide(decimalsScale(memecoin.quoteToken.decimals))
@@ -192,9 +254,10 @@ export class Factory implements FactoryInterface {
       }
 
       case LiquidityType.EKUBO_NFT: {
-        if (!memecoin.quoteToken) break
-
+        // get starting price from starting tick
         const initialPrice = getInitialPrice(memecoin.liquidity.startingTick)
+
+        // starting mcap = initial price * quote token price at launch * total supply
         return new Fraction(
           initialPrice.toFixed(DECIMALS).replace(/\./, '').replace(/^0+/, ''), // from 0.000[...]0001 to "1"
           decimalsScale(DECIMALS),
@@ -204,9 +267,11 @@ export class Factory implements FactoryInterface {
           .divide(decimalsScale(DECIMALS))
       }
     }
-
-    return undefined
   }
+
+  //
+  // GET FEES
+  //
 
   public async getEkuboFees(memecoin: Memecoin): Promise<Fraction | undefined> {
     if (!memecoin.isLaunched || memecoin.liquidity.type !== LiquidityType.EKUBO_NFT || !memecoin.quoteToken) return
@@ -217,19 +282,25 @@ export class Factory implements FactoryInterface {
       memecoin.liquidity.bounds,
     ])
 
+    // call ekubo position to get collectable fees details
     const { result } = await this.config.provider.callContract({
       contractAddress: EKUBO_POSITIONS_ADDRESSES[this.config.chainId],
-      entrypoint: Selector.GET_TOKEN_INFOS,
+      entrypoint: Entrypoint.GET_TOKEN_INFOS,
       calldata,
     })
 
     const [, , , , , , , fees0, fees1] = result
 
+    // parse fees amount
     return new Fraction(
       (new Fraction(memecoin.address).lessThan(memecoin.quoteToken.address) ? fees1 : fees0).toString(),
       decimalsScale(memecoin.quoteToken.decimals),
     )
   }
+
+  //
+  // GET DEPLOY CALLDATA
+  //
 
   public getDeployCalldata(data: DeployData) {
     const salt = stark.randomAddress()
@@ -252,7 +323,7 @@ export class Factory implements FactoryInterface {
     const calls = [
       {
         contractAddress: FACTORY_ADDRESSES[this.config.chainId],
-        entrypoint: Selector.CREATE_MEMECOIN,
+        entrypoint: Entrypoint.CREATE_MEMECOIN,
         calldata: constructorCalldata,
       },
     ]
@@ -260,14 +331,22 @@ export class Factory implements FactoryInterface {
     return { tokenAddress, calls }
   }
 
-  public async getEkuboLaunchCalldata(memecoin: Memecoin, data: EkuboLaunchData) {
-    const quoteTokenPrice = await getPairPrice(this.config, data.quoteToken.usdcPair)
+  //
+  // GET LAUNCH CALLDATA
+  //
 
+  public async getEkuboLaunchCalldata(memecoin: Memecoin, data: EkuboLaunchData) {
+    // get quote token current price
+    const quoteTokenPrice = await getPairPrice(this.config.provider, data.quoteToken.usdcPair)
+
+    // get the team allocation amount
     const teamAllocationFraction = data.teamAllocations.reduce((acc, { amount }) => acc.add(amount), new Fraction(0))
     const teamAllocationPercentage = new Percent(
       teamAllocationFraction.quotient,
       new Fraction(memecoin.totalSupply, decimalsScale(DECIMALS)).quotient,
     )
+
+    // get the team allocation value in quote token at launch
     const teamAllocationQuoteAmount = new Fraction(data.startingMarketCap)
       .divide(quoteTokenPrice)
       .multiply(teamAllocationPercentage.multiply(data.fees.add(1)))
@@ -275,29 +354,36 @@ export class Factory implements FactoryInterface {
       BigInt(teamAllocationQuoteAmount.multiply(decimalsScale(DECIMALS)).quotient.toString()),
     )
 
+    // get initial price based on mcap and quote token price
     const initialPrice = +new Fraction(data.startingMarketCap)
       .divide(quoteTokenPrice)
       .multiply(decimalsScale(DECIMALS))
       .divide(new Fraction(memecoin.totalSupply))
       .toFixed(DECIMALS)
+
+    // convert initial price to an Ekubo tick
     const startingTickMag = getStartingTick(initialPrice)
     const i129StartingTick = {
       mag: Math.abs(startingTickMag),
       sign: startingTickMag < 0,
     }
 
+    // get ekubo fees
     const fees = data.fees.multiply(EKUBO_FEES_MULTIPLICATOR).quotient.toString()
 
+    // get quote token transfer calldata to buy the team allocation
     const transferCalldata = CallData.compile([
       FACTORY_ADDRESSES[this.config.chainId], // recipient
       uin256TeamAllocationQuoteAmount, // amount
     ])
 
+    // get initial holders informations
     const initialHolders = data.teamAllocations.map(({ address }) => address)
     const initialHoldersAmounts = data.teamAllocations.map(({ amount }) =>
       uint256.bnToUint256(BigInt(amount) * BigInt(decimalsScale(DECIMALS))),
     )
 
+    // get launch calldata
     const launchCalldata = CallData.compile([
       memecoin.address, // memecoin address
       data.antiBotPeriod, // anti bot period in seconds
@@ -314,12 +400,12 @@ export class Factory implements FactoryInterface {
     const calls = [
       {
         contractAddress: data.quoteToken.address,
-        entrypoint: Selector.TRANSFER,
+        entrypoint: Entrypoint.TRANSFER,
         calldata: transferCalldata,
       },
       {
         contractAddress: FACTORY_ADDRESSES[this.config.chainId],
-        entrypoint: Selector.LAUNCH_ON_EKUBO,
+        entrypoint: Entrypoint.LAUNCH_ON_EKUBO,
         calldata: launchCalldata,
       },
     ]
@@ -330,28 +416,35 @@ export class Factory implements FactoryInterface {
   }
 
   public async getStandardAMMLaunchCalldata(memecoin: Memecoin, data: StandardAMMLaunchData) {
-    const quoteTokenPrice = await getPairPrice(this.config, data.quoteToken.usdcPair)
+    // get quote token current price
+    const quoteTokenPrice = await getPairPrice(this.config.provider, data.quoteToken.usdcPair)
 
+    // get the team allocation percentage
     const teamAllocationFraction = data.teamAllocations.reduce((acc, { amount }) => acc.add(amount), new Fraction(0))
     const teamAllocationPercentage = new Percent(
       teamAllocationFraction.quotient,
       new Fraction(memecoin.totalSupply, decimalsScale(DECIMALS)).quotient,
     )
 
+    // get the amount of quote token needed in the pool
     const quoteAmount = new Fraction(data.startingMarketCap)
       .divide(quoteTokenPrice)
       .multiply(new Fraction(1).subtract(teamAllocationPercentage))
     const uin256QuoteAmount = uint256.bnToUint256(BigInt(quoteAmount.multiply(decimalsScale(18)).quotient.toString()))
 
+    // get initial holders informations
     const initialHolders = data.teamAllocations.map(({ address }) => address)
     const initialHoldersAmounts = data.teamAllocations.map(({ amount }) =>
       uint256.bnToUint256(BigInt(amount) * BigInt(decimalsScale(DECIMALS))),
     )
+
+    // quote token approve calldata
     const approveCalldata = CallData.compile([
       FACTORY_ADDRESSES[this.config.chainId], // spender
       uin256QuoteAmount,
     ])
 
+    // launch calldata
     const launchCalldata = CallData.compile([
       memecoin.address, // memecoin address
       data.antiBotPeriod, // anti bot period in seconds
@@ -366,7 +459,7 @@ export class Factory implements FactoryInterface {
     const calls = [
       {
         contractAddress: data.quoteToken.address,
-        entrypoint: Selector.APPROVE,
+        entrypoint: Entrypoint.APPROVE,
         calldata: approveCalldata,
       },
       {

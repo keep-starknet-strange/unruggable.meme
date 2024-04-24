@@ -1,18 +1,21 @@
 import { Fraction } from '@uniswap/sdk-core'
-import { BlockNumber, BlockTag, uint256 } from 'starknet'
+import { BlockNumber, BlockTag, ProviderInterface, uint256 } from 'starknet'
 
-import { Selector } from '../constants'
-import { FactoryConfig } from '../factory'
+import { Entrypoint } from '../constants'
 import { USDCPair } from '../types/tokens'
 import { decimalsScale } from './helpers'
 
-export async function getPairPrice(config: FactoryConfig, pair?: USDCPair, blockNumber: BlockNumber = BlockTag.latest) {
+export async function getPairPrice(
+  provider: ProviderInterface,
+  pair?: USDCPair,
+  blockNumber: BlockNumber = BlockTag.latest,
+) {
   if (!pair) return new Fraction(1, 1)
 
-  const { result } = await config.provider.callContract(
+  const { result } = await provider.callContract(
     {
       contractAddress: pair.address,
-      entrypoint: Selector.GET_RESERVES,
+      entrypoint: Entrypoint.GET_RESERVES,
     },
     blockNumber,
   )

@@ -1,4 +1,4 @@
-import { Selector } from './misc'
+import { Entrypoint } from './misc'
 
 export enum AMM {
   EKUBO = 'Ekubo',
@@ -10,15 +10,15 @@ export const AmmInfos = {
   [AMM.EKUBO]: {
     description:
       'Most efficient AMM ever, you can launch your token without having to provide liquidity and can collect fees.',
-    launchEntrypoint: Selector.LAUNCH_ON_EKUBO,
+    launchEntrypoint: Entrypoint.LAUNCH_ON_EKUBO,
   },
   [AMM.JEDISWAP]: {
     description:
       "Widely supported AMM, team allocation will be free but you have to provide liquidity and can't collect fees.",
-    launchEntrypoint: Selector.LAUNCH_ON_JEDISWAP,
+    launchEntrypoint: Entrypoint.LAUNCH_ON_JEDISWAP,
   },
   [AMM.STARKDEFI]: {
     description: "Team allocation will be free but you have to provide liquidity and can't collect fees.",
-    launchEntrypoint: Selector.LAUNCH_ON_STARKDEFI,
+    launchEntrypoint: Entrypoint.LAUNCH_ON_STARKDEFI,
   },
 }
