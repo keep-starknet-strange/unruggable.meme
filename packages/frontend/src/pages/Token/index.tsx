@@ -1,3 +1,4 @@
+import { getLiquidityLockSafety } from 'core'
 import { LiquidityType, Safety } from 'core/constants'
 import { Eye } from 'lucide-react'
 import moment from 'moment'
@@ -9,7 +10,6 @@ import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
 import { vars } from 'src/theme/css/sprinkles.css'
-import { getLiquidityLockSafety } from 'src/utils/safety'
 
 import CollectFees from './CollectFees'
 import IncreaseLiquidityLock from './IncreaseLiquidityLock'

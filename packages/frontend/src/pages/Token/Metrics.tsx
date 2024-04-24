@@ -1,4 +1,5 @@
 import { Percent } from '@uniswap/sdk-core'
+import { getLiquidityLockSafety, getQuoteTokenSafety, getStartingMcapSafety, getTeamAllocationSafety } from 'core'
 import { QUOTE_TOKENS, Safety } from 'core/constants'
 import { useFactory, useQuoteToken, useQuoteTokenPrice } from 'hooks'
 import moment from 'moment'
@@ -15,12 +16,6 @@ import { Column, Row } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
 import { formatPercentage } from 'src/utils/amount'
 import { parseMonthsDuration } from 'src/utils/moment'
-import {
-  getLiquidityLockSafety,
-  getQuoteTokenSafety,
-  getStartingMcapSafety,
-  getTeamAllocationSafety,
-} from 'src/utils/safety'
 
 import * as styles from './style.css'
 
