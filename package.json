@@ -5,6 +5,7 @@
   "license": "MIT",
   "scripts": {
     "g:build": "turbo run build --concurrency=100%",
+    "g:dev": "turbo run dev --concurrency=100%",
     "g:check:circular": "turbo run check:circular",
     "g:lint": "turbo run lint",
     "g:lint:fix": "turbo run lint:fix",
