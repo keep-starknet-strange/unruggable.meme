@@ -6,12 +6,11 @@ import * as Text from 'src/theme/components/Text'
 import * as styles from './Content.css'
 
 interface ContentProps {
-  children: React.ReactNode
   title: string
   close: () => void
 }
 
-export default function Content({ children, title, close }: ContentProps) {
+export default function Content({ children, title, close }: React.PropsWithChildren<ContentProps>) {
   return (
     <Box className={styles.content}>
       <Column gap="42">
