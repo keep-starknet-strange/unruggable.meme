@@ -397,7 +397,7 @@ export class Factory implements FactoryInterface {
       .divide(quoteTokenPrice)
       .multiply(teamAllocationPercentage.multiply(data.fees.add(1)))
     const uin256TeamAllocationQuoteAmount = uint256.bnToUint256(
-      BigInt(teamAllocationQuoteAmount.multiply(decimalsScale(DECIMALS)).quotient.toString()),
+      BigInt(teamAllocationQuoteAmount.multiply(decimalsScale(data.quoteToken.decimals)).quotient.toString()),
     )
 
     // get initial price based on mcap and quote token price
