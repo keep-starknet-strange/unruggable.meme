@@ -1,3 +1,4 @@
+import { QUOTE_TOKEN_SYMBOL } from 'src/constants'
 import { constants } from 'starknet'
 
 export type USDCPair = {
@@ -7,7 +8,7 @@ export type USDCPair = {
 
 export type Token = {
   address: string
-  symbol: string
+  symbol: QUOTE_TOKEN_SYMBOL
   name: string
   decimals: number
   camelCased?: boolean

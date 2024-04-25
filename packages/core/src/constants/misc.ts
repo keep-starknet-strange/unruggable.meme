@@ -44,8 +44,6 @@ export enum LiquidityType {
 export const STARKNET_POLLING = 3_000 // 3s
 export const STARKNET_MAX_BLOCK_TIME = 3600 * 2 // 2h
 
-export const PERCENTAGE_INPUT_PRECISION = 2
-
 export const MIN_STARTING_MCAP = 5_000 // $5k
 export const RECOMMENDED_STARTING_MCAP = 10_000 // $12k
 
@@ -66,7 +64,6 @@ export const MIN_LIQUIDITY_LOCK_INCREASE = 1 // 1 months
 export const MAX_LIQUIDITY_LOCK_INCREASE = 25 // 2 years and 1 month
 
 export const LIQUIDITY_LOCK_FOREVER_TIMESTAMP = 9999999999 // 20/11/2286
-export const FOREVER = 'Forever'
 
 export const MIN_EKUBO_FEES = new Percent(0, 1) // 0%
 export const MAX_EKUBO_FEES = new Percent(2, 100) // 2%

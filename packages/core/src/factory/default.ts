@@ -2,7 +2,7 @@ import { Fraction, Percent } from '@uniswap/sdk-core'
 import { CallData, getChecksumAddress, hash, shortString, stark, uint256 } from 'starknet'
 
 import {
-  AmmInfos,
+  AMMS,
   DECIMALS,
   EKUBO_BOUND,
   EKUBO_FEES_MULTIPLICATOR,
@@ -510,7 +510,7 @@ export class Factory implements FactoryInterface {
       },
       {
         contractAddress: FACTORY_ADDRESSES[this.config.chainId],
-        entrypoint: AmmInfos[data.amm].launchEntrypoint,
+        entrypoint: AMMS[data.amm].launchEntrypoint,
         calldata: launchCalldata,
       },
     ]

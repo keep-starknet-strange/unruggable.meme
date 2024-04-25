@@ -1,6 +1,6 @@
 import { Percent } from '@uniswap/sdk-core'
 
-import { AMM } from '../constants'
+import { AMM } from '../constants/amms'
 import { LiquidityType } from '../constants/misc'
 import { Token } from './tokens'
 

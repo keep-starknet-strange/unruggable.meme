@@ -3,11 +3,17 @@ import { constants, getChecksumAddress } from 'starknet'
 import { MultichainToken, Token } from '../types/tokens'
 import { ETH_ADDRESSES, JEDISWAP_ETH_USDC, JEDISWAP_STRK_USDC, STRK_ADDRESSES, USDC_ADDRESSES } from './contracts'
 
+export enum QUOTE_TOKEN_SYMBOL {
+  ETH = 'ETH',
+  STRK = 'STRK',
+  USDC = 'USDC',
+}
+
 // ETH
 export const Ether: MultichainToken = {
   [constants.StarknetChainId.SN_GOERLI]: {
     address: ETH_ADDRESSES[constants.StarknetChainId.SN_GOERLI],
-    symbol: 'ETH',
+    symbol: QUOTE_TOKEN_SYMBOL.ETH,
     name: 'Ether',
     decimals: 18,
     camelCased: true,
@@ -18,7 +24,7 @@ export const Ether: MultichainToken = {
   },
   [constants.StarknetChainId.SN_MAIN]: {
     address: ETH_ADDRESSES[constants.StarknetChainId.SN_MAIN],
-    symbol: 'ETH',
+    symbol: QUOTE_TOKEN_SYMBOL.ETH,
     name: 'Ether',
     decimals: 18,
     camelCased: true,
@@ -33,7 +39,7 @@ export const Ether: MultichainToken = {
 export const Stark: MultichainToken = {
   [constants.StarknetChainId.SN_GOERLI]: {
     address: STRK_ADDRESSES[constants.StarknetChainId.SN_GOERLI],
-    symbol: 'STRK',
+    symbol: QUOTE_TOKEN_SYMBOL.STRK,
     name: 'Stark',
     decimals: 18,
     camelCased: true,
@@ -44,7 +50,7 @@ export const Stark: MultichainToken = {
   },
   [constants.StarknetChainId.SN_MAIN]: {
     address: STRK_ADDRESSES[constants.StarknetChainId.SN_MAIN],
-    symbol: 'STRK',
+    symbol: QUOTE_TOKEN_SYMBOL.STRK,
     name: 'Stark',
     decimals: 18,
     camelCased: true,
@@ -59,14 +65,14 @@ export const Stark: MultichainToken = {
 export const USDCoin: MultichainToken = {
   [constants.StarknetChainId.SN_GOERLI]: {
     address: USDC_ADDRESSES[constants.StarknetChainId.SN_GOERLI],
-    symbol: 'USDC',
+    symbol: QUOTE_TOKEN_SYMBOL.USDC,
     name: 'USD Coin',
     decimals: 6,
     camelCased: true,
   },
   [constants.StarknetChainId.SN_MAIN]: {
     address: USDC_ADDRESSES[constants.StarknetChainId.SN_MAIN],
-    symbol: 'USDC',
+    symbol: QUOTE_TOKEN_SYMBOL.USDC,
     name: 'USD Coin',
     decimals: 6,
     camelCased: true,

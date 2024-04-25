@@ -6,7 +6,7 @@ export enum AMM {
   STARKDEFI = 'StarkDeFi',
 }
 
-export const AmmInfos = {
+export const AMMS = {
   [AMM.EKUBO]: {
     description:
       'Most efficient AMM ever, you can launch your token without having to provide liquidity and can collect fees.',
