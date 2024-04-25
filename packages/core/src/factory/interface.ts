@@ -29,6 +29,13 @@ export abstract class FactoryInterface {
 
   public abstract getEkuboFees(memecoin: Memecoin): Promise<Fraction | undefined>
 
+  public abstract getCollectEkuboFeesCalldata(memecoin: Memecoin): { calls: CallDetails[] } | undefined
+
+  public abstract getExtendLiquidityLockCalldata(
+    memecoin: Memecoin,
+    seconds: number,
+  ): { calls: CallDetails[] } | undefined
+
   public abstract getDeployCalldata(data: DeployData): { tokenAddress: string; calls: CallDetails[] }
 
   public abstract getEkuboLaunchCalldata(memecoin: Memecoin, data: EkuboLaunchData): Promise<{ calls: CallDetails[] }>
