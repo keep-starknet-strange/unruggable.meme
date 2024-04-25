@@ -7,7 +7,7 @@ type QueryProviderProps = {
   children?: React.ReactNode
 }
 
-export const QueryProvider = ({ queryClient, children }: QueryProviderProps) => {
+export function QueryProvider({ queryClient, children }: QueryProviderProps) {
   const existingQueryClient = useQueryClient()
 
   // There is already a QueryClientProvider higher up in the tree

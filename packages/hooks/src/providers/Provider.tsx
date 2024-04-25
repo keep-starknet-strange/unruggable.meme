@@ -5,7 +5,7 @@ import { ProviderInterface } from 'starknet'
 import { FactoryProvider } from './FactoryProvider'
 import { QueryProvider } from './QueryProvider'
 
-export type ProviderProps = {
+export interface ProviderProps {
   /**
    * Factory client to use in the hooks.
    * If not provided, the hooks will use the default factory client.
@@ -27,7 +27,7 @@ export type ProviderProps = {
   children?: React.ReactNode
 }
 
-export const Provider = ({ factory, queryClient, children }: ProviderProps) => {
+export function Provider({ factory, queryClient, children }: ProviderProps) {
   return (
     <FactoryProvider factory={factory}>
       <QueryProvider queryClient={queryClient}>{children}</QueryProvider>

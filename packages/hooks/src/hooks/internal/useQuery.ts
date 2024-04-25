@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 
 import { useInvalidateOnBlock } from './useInvalidateOnBlock'
 
-export const useQuery = <
+export function useQuery<
   TQueryFnData = unknown,
   TError = DefaultError,
   TData = TQueryFnData,
@@ -17,7 +17,7 @@ export const useQuery = <
   ...props
 }: UseQueryOptions<TQueryFnData, TError, TData, TQueryKey> & {
   watch?: boolean
-}) => {
+}) {
   const query = useReactQuery({
     queryKey,
     enabled,

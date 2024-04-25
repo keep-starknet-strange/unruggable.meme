@@ -2,7 +2,7 @@ import { useContext } from 'react'
 
 import { FactoryContext } from '../contexts/Factory'
 
-export const useFactory = () => {
+export function useFactory() {
   const factory = useContext(FactoryContext)
 
   if (factory === null) {

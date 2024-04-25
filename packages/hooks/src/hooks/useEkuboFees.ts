@@ -1,13 +1,19 @@
+import { UseQueryResult } from '@tanstack/react-query'
+import { Fraction } from '@uniswap/sdk-core'
+
 import { UseQueryProps } from '../types'
 import { useQuery } from './internal/useQuery'
 import { useFactory } from './useFactory'
 import { useMemecoin } from './useMemecoin'
 
-export type UseEkuboFeesProps = UseQueryProps & {
+export interface UseEkuboFeesProps extends UseQueryProps {
   address?: string
 }
 
-export const useEkuboFees = ({ address, ...props }: UseEkuboFeesProps) => {
+export function useEkuboFees({
+  address,
+  ...props
+}: UseEkuboFeesProps): UseQueryResult<Fraction | undefined, Error | null> {
   const factory = useFactory()
   const memecoin = useMemecoin({ address })
 

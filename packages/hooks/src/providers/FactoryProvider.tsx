@@ -1,17 +1,16 @@
 import { starknetChainId, useNetwork, useProvider } from '@starknet-react/core'
 import { Factory } from 'core'
 import { useMemo } from 'react'
-import { ProviderInterface, constants } from 'starknet'
+import { constants, ProviderInterface } from 'starknet'
 
 import { FactoryContext } from '../contexts/Factory'
 
-type FactoryProviderProps = {
+interface FactoryProviderProps {
   factory?: Factory
   provider?: ProviderInterface
-  children?: React.ReactNode
 }
 
-export const FactoryProvider = ({ factory, provider, children }: FactoryProviderProps) => {
+export const FactoryProvider = ({ factory, provider, children }: React.PropsWithChildren<FactoryProviderProps>) => {
   const { provider: defaultProvider } = useProvider()
   const { chain } = useNetwork()
 

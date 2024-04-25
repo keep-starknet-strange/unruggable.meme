@@ -2,7 +2,7 @@ import { starknetChainId, useNetwork } from '@starknet-react/core'
 import { QUOTE_TOKENS } from 'core/constants'
 import { getChecksumAddress } from 'starknet'
 
-export const useQuoteToken = (address?: string) => {
+export function useQuoteToken(address?: string) {
   const { chain } = useNetwork()
 
   if (!address) return

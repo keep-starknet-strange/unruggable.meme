@@ -4,7 +4,7 @@ import { BlockNumber, BlockTag } from 'starknet'
 import { usePairPrice } from './usePairPrice'
 import { useQuoteToken } from './useQuoteToken'
 
-export const useQuoteTokenPrice = (address?: string, blockNumber: BlockNumber = BlockTag.latest) => {
+export function useQuoteTokenPrice(address?: string, blockNumber: BlockNumber = BlockTag.latest) {
   const quoteToken = useQuoteToken(address)
   const pairPrice = usePairPrice(quoteToken?.usdcPair, blockNumber)
 
