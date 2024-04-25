@@ -30,11 +30,11 @@ export default function TokensPage() {
           to: tokenContract.address,
           selector: hash.getSelector(Selector.IS_LAUNCHED),
           calldata: [],
-        })
+        }),
       ),
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [deployedTokenContracts.length]
+    [deployedTokenContracts.length],
   )
 
   const launchedStatus = useContractRead({
@@ -55,7 +55,7 @@ export default function TokensPage() {
         return acc
       }, {}),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [launchedStatusCallArgs.length, launchedStatus?.data?.[0].toString()]
+    [launchedStatusCallArgs.length, launchedStatus?.data?.[0].toString()],
   )
 
   return (
@@ -79,8 +79,8 @@ export default function TokensPage() {
               parsedLaunchedStatus[a.address] === parsedLaunchedStatus[b.address]
                 ? 0
                 : parsedLaunchedStatus[a.address]
-                ? 1
-                : -1
+                  ? 1
+                  : -1,
             )
             .map((tokenContract) => (
               <Link key={tokenContract.address} to={`/token/${tokenContract.address}`}>

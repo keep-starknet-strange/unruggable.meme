@@ -20,11 +20,11 @@ const schema = z.object({
   ekuboFees: percentInput
     .refine(
       (input) => +input <= +MAX_EKUBO_FEES.toFixed(PERCENTAGE_INPUT_PRECISION),
-      `Hodl limit cannot exceed ${+MAX_EKUBO_FEES.toFixed(PERCENTAGE_INPUT_PRECISION)}%`
+      `Hodl limit cannot exceed ${+MAX_EKUBO_FEES.toFixed(PERCENTAGE_INPUT_PRECISION)}%`,
     )
     .refine(
       (input) => +input >= +MIN_EKUBO_FEES.toFixed(PERCENTAGE_INPUT_PRECISION),
-      `Hodl limit cannot fall behind ${+MIN_EKUBO_FEES.toFixed(PERCENTAGE_INPUT_PRECISION)}%`
+      `Hodl limit cannot fall behind ${+MIN_EKUBO_FEES.toFixed(PERCENTAGE_INPUT_PRECISION)}%`,
     ),
 })
 
@@ -53,7 +53,7 @@ export default function EkuboLiquidityForm({ previous, next }: FormPageProps) {
       setEkuboFees(data.ekuboFees)
       next()
     },
-    [liquidityTemplateForm, setEkuboFees, next]
+    [liquidityTemplateForm, setEkuboFees, next],
   )
 
   return (

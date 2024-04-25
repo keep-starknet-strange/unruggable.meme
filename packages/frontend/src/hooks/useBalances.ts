@@ -32,7 +32,7 @@ export default function useBalances(tokens: UseBalancesToken[]): UseBalancesResu
           to: token.address,
           selector: selector.getSelector(token.camelCased ? Selector.BALANCE_OF_CAMEL : Selector.BALANCE_OF),
           calldata: [accountAddress ?? ''],
-        })
+        }),
       ),
     ],
   }) as UseContractReadResult & { data?: [bigint, [bigint, bigint][]] }
@@ -44,7 +44,7 @@ export default function useBalances(tokens: UseBalancesToken[]): UseBalancesResu
       const token = tokens[index]
       acc[token.address] = new Fraction(
         uint256.uint256ToBN({ low: balance[0], high: balance[1] }).toString(),
-        decimalsScale(token.decimals)
+        decimalsScale(token.decimals),
       )
 
       return acc

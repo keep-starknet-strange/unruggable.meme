@@ -5,9 +5,12 @@
   "license": "MIT",
   "scripts": {
     "g:build": "turbo run build --concurrency=100%",
+    "g:start": "turbo run start --concurrency=100%",
     "g:check:circular": "turbo run check:circular",
     "g:lint": "turbo run lint",
     "g:lint:fix": "turbo run lint:fix",
+    "g:test": "turbo run test",
+    "g:test:watch": "turbo run test:watch",
     "g:prepare": "turbo run prepare",
     "g:rm:local-packages": "rm -rf ./node_modules/core ./node_modules/hooks",
     "g:rm:nodemodules": "rm -rf node_modules"
@@ -19,5 +22,10 @@
     "@commitlint/cli": "^19.2.2",
     "@commitlint/config-conventional": "^19.2.2",
     "turbo": "^1.13.2"
+  },
+  "devDependencies": {
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
+    "prettier": "^3.2.5"
   }
 }

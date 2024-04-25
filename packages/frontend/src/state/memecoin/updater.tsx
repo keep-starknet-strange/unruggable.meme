@@ -19,7 +19,7 @@ export default function MemecoinUpdater(): null {
       setMemecoin: state.setMemecoin,
       startRefresh: state.startRefresh,
       refreshMemecoin: state.refreshMemecoin,
-    })
+    }),
   )
 
   // starknet
@@ -245,7 +245,7 @@ function useGetMemecoinLiquidityLockPosition() {
           }
         })
     },
-    [provider]
+    [provider],
   )
 
   const getMemecoinEkuboLiquidityLockPosition = useCallback(
@@ -281,7 +281,7 @@ function useGetMemecoinLiquidityLockPosition() {
           }
         })
     },
-    [provider]
+    [provider],
   )
 
   return { getMemecoinJediswapLiquidityLockPosition, getMemecoinEkuboLiquidityLockPosition }

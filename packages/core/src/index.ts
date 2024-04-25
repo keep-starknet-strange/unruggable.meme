@@ -1,5 +1,4 @@
-// MAIN
-export * from './factory'
-
-// UTILS
 export * as constants from './constants'
+export * from './factory'
+export * from './types'
+export * from './utils'

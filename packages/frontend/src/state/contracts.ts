@@ -26,7 +26,7 @@ const initialState: State = {
 
 // Create a deployment slice with Zustand and persist middleware
 export const createContractsSlice: StateCreator<StoreState, [['zustand/immer', never]], [], ContractsSlice> = (
-  set
+  set,
 ) => ({
   ...initialState,
 

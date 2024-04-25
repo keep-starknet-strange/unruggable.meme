@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
-    "target": "es6",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "target": "ESNext",
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
@@ -29,10 +25,6 @@
     "module": "ES2015",
     "declaration": true
   },
-  "include": [
-    "./packages/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-  ]
+  "include": ["./packages/**/*"],
+  "exclude": ["node_modules"]
 }

@@ -32,7 +32,7 @@ export function useLiquidityTemplateForm<T extends z.infer<typeof liquiditySchem
     (data: T) => {
       setStartingMcap(data.startingMcap)
     },
-    [setStartingMcap]
+    [setStartingMcap],
   )
 
   return { submit, defaultValues: { startingMcap: startingMcap ?? undefined } }
@@ -76,7 +76,7 @@ export default function LiquidityTemplate({ register, errors }: LiquidityTemplat
                 type="button"
                 onClick={() => setQuoteTokenAddress(getChecksumAddress(token.address))}
                 className={clsx(
-                  styles.quoteTokenCard({ selected: getChecksumAddress(token.address) === quoteTokenAddress })
+                  styles.quoteTokenCard({ selected: getChecksumAddress(token.address) === quoteTokenAddress }),
                 )}
                 title={token.symbol}
                 subtitle={token.name}

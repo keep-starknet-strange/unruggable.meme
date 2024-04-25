@@ -33,7 +33,7 @@ export default function TeamAllocationForm({ previous, next }: FormPageProps) {
       setSelectedHolderIndex(index)
       addTeamAllocationHolderModal()
     },
-    [addTeamAllocationHolderModal]
+    [addTeamAllocationHolderModal],
   )
 
   // total team allocation

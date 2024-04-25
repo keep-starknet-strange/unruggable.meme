@@ -28,7 +28,7 @@ export default function IncreaseLiquidityLock() {
       liquidityLockIncrease === MAX_LIQUIDITY_LOCK_INCREASE
         ? FOREVER
         : parseMonthsDuration(moment.duration(liquidityLockIncrease, 'months')),
-    [liquidityLockIncrease]
+    [liquidityLockIncrease],
   )
 
   // memecoin
