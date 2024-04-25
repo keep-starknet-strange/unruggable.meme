@@ -7,8 +7,8 @@
       "outputs": ["dist/**"],
       "outputMode": "new-only"
     },
-    "dev": {
-      "dependsOn": ["^build"]
+    "start": {
+      "cache": false
     },
     "test": {
       "cache": false

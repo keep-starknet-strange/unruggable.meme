@@ -14,7 +14,7 @@
     }
   },
   "scripts": {
-    "dev": "tsup --watch",
+    "start": "tsup --watch",
     "build": "tsup",
     "test": "vitest run",
     "test:watch": "vitest watch",
