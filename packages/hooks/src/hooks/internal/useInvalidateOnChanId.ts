@@ -1,11 +1,11 @@
-import { useBlockNumber } from '@starknet-react/core'
+import { useNetwork } from '@starknet-react/core'
 import { QueryKey, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
 
 /**
- * Invalidates the given query keys on every new block.
+ * Invalidates the given query keys on chain id change.
  */
-export function useInvalidateOnBlock({
+export function useInvalidateOnChanId({
   enabled = true,
   queryKey,
   queryKeys,
@@ -16,16 +16,12 @@ export function useInvalidateOnBlock({
 }) {
   const queryClient = useQueryClient()
 
-  const prevBlockNumber = useRef<number | undefined>()
+  const { chain } = useNetwork()
 
-  const { data: blockNumber } = useBlockNumber({
-    enabled,
-  })
+  const prevChanId = useRef<bigint>(chain.id)
 
   useEffect(() => {
-    if (blockNumber !== prevBlockNumber.current) {
-      prevBlockNumber.current = blockNumber
-
+    if (enabled && prevChanId.current !== chain.id) {
       if (queryKey) {
         queryClient.invalidateQueries({ queryKey }, { cancelRefetch: false })
       }
@@ -36,5 +32,5 @@ export function useInvalidateOnBlock({
         })
       }
     }
-  }, [blockNumber, prevBlockNumber, queryClient, queryKey])
+  }, [enabled, prevChanId, chain.id])
 }
