@@ -1,5 +1,5 @@
 import { useContractRead, UseContractReadResult } from '@starknet-react/core'
-import { compiledMulticall, MULTICALL_ADDRESSES, Selector } from 'core/constants'
+import { compiledMulticall, MULTICALL_ADDRESSES, Entrypoint } from 'core/constants'
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { PrimaryButton, SecondaryButton } from 'src/components/Button'
@@ -30,7 +30,7 @@ export default function TokensPage() {
       deployedTokenContracts.map(
         (tokenContract): CallStruct => ({
           to: tokenContract.address,
-          selector: hash.getSelector(Selector.IS_LAUNCHED),
+          selector: hash.getSelector(Entrypoint.IS_LAUNCHED),
           calldata: [],
         }),
       ),
@@ -42,7 +42,7 @@ export default function TokensPage() {
   const launchedStatus = useContractRead({
     abi: compiledMulticall,
     address: chainId ? MULTICALL_ADDRESSES[chainId] : undefined,
-    functionName: Selector.AGGREGATE,
+    functionName: Entrypoint.AGGREGATE,
     watch: true,
     args: launchedStatusCallArgs,
   }) as UseContractReadResult & { data?: [bigint, [bigint][]] }

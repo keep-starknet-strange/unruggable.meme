@@ -1,7 +1,7 @@
 import { useAccount, useContractRead, UseContractReadResult } from '@starknet-react/core'
 import { Fraction } from '@uniswap/sdk-core'
 import { Token } from 'core'
-import { compiledMulticall, MULTICALL_ADDRESSES, Selector } from 'core/constants'
+import { compiledMulticall, MULTICALL_ADDRESSES, Entrypoint } from 'core/constants'
 import { useMemo } from 'react'
 import { decimalsScale } from 'src/utils/decimals'
 import { CallStruct, selector, uint256 } from 'starknet'
@@ -32,7 +32,7 @@ export default function useBalances(tokens: UseBalancesToken[]): UseBalancesResu
       tokens.map(
         (token): CallStruct => ({
           to: token.address,
-          selector: selector.getSelector(token.camelCased ? Selector.BALANCE_OF_CAMEL : Selector.BALANCE_OF),
+          selector: selector.getSelector(token.camelCased ? Entrypoint.BALANCE_OF_CAMEL : Entrypoint.BALANCE_OF),
           calldata: [accountAddress ?? ''],
         }),
       ),
