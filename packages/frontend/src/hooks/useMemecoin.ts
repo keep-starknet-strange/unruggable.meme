@@ -8,6 +8,7 @@ export default function useMemecoin(tokenAddress?: string) {
   // memecoin, refreshMemecoin, setTokenAddress, ruggable, resetMemecoin
   const memecoin = useSDKMemecoin({
     address: tokenAddress,
+    watch: true,
   })
 
   // starknet
