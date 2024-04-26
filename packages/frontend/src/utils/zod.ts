@@ -20,5 +20,5 @@ export const percentInput = z
       new RegExp(`\\d+(\\.\\d{0,${PERCENTAGE_INPUT_PRECISION}})?`).test(input),
     {
       message: 'Invalid percentage',
-    }
+    },
   )

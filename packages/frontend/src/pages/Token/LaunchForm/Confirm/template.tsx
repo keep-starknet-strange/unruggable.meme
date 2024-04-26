@@ -43,15 +43,15 @@ export default function LaunchTemplate({ liquidityPrice, teamAllocationPrice, pr
     () =>
       [liquidityPrice, teamAllocationPrice].reduce<Fraction>(
         (acc, price) => acc.add(price ?? new Fraction(0)),
-        new Fraction(0)
+        new Fraction(0),
       ),
-    [liquidityPrice, teamAllocationPrice]
+    [liquidityPrice, teamAllocationPrice],
   )
 
   // has enough quote token balance
   const hasEnoughQuoteTokenBalance = useMemo(
     () => !quoteTokenBalance?.lessThan(totalPrice),
-    [quoteTokenBalance, totalPrice]
+    [quoteTokenBalance, totalPrice],
   )
 
   if (!teamAllocationTotalPercentage || !quoteToken) return null
@@ -110,8 +110,8 @@ export default function LaunchTemplate({ liquidityPrice, teamAllocationPrice, pr
           loading
             ? 'Loading...'
             : hasEnoughQuoteTokenBalance
-            ? `Launch on ${amm}`
-            : `Insufficent ${quoteToken.symbol} balance`
+              ? `Launch on ${amm}`
+              : `Insufficent ${quoteToken.symbol} balance`
         }
         onNext={next}
         disableNext={loading || !hasEnoughQuoteTokenBalance}

@@ -47,7 +47,7 @@ export function ImportTokenModal({ save = false }: ImportTokenModalProps) {
       navigate(`/token/${tokenAddress}`)
       close()
     },
-    [navigate, close]
+    [navigate, close],
   )
 
   // starknet

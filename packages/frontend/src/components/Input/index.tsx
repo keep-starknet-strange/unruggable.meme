@@ -5,7 +5,7 @@ import Box, { BoxProps } from 'src/theme/components/Box'
 import * as styles from './style.css'
 
 interface InputProps extends BoxProps {
-  addon?: React.ReactNode
+  addon?: React.PropsWithChildren['children']
 }
 
 const Input = forwardRef<HTMLElement, InputProps>(function ({ addon, className, ...props }, ref) {
@@ -23,7 +23,7 @@ export default Input
 // Formattable Input
 
 export interface FormattableInputProps extends BoxProps {
-  addon?: React.ReactNode
+  addon?: React.PropsWithChildren['children']
   formatInput: (value: string) => string | undefined
 }
 
@@ -61,7 +61,7 @@ const FormattableInput = forwardRef<HTMLInputElement, FormattableInputProps>(
         />
       </Box>
     )
-  }
+  },
 )
 
 FormattableInput.displayName = 'FormattableInput'

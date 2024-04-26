@@ -69,7 +69,7 @@ export default function TokenPage() {
     if (memecoin.isLaunched && memecoin.isOwner) {
       const liquidityLock = moment.duration(
         moment(moment.unix(memecoin.liquidity.unlockTime)).diff(moment.now()),
-        'milliseconds'
+        'milliseconds',
       )
       const liquidityLockSafety = getLiquidityLockSafety(liquidityLock)
 

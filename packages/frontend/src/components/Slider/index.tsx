@@ -25,7 +25,7 @@ interface SliderProps {
   max: number
   loading?: boolean
   onSlidingChange: (value: number) => void
-  addon?: React.ReactNode
+  addon?: React.PropsWithChildren['children']
 }
 
 export default function Slider({ value, min = 0, step = 1, max, addon, onSlidingChange }: SliderProps) {
@@ -35,7 +35,7 @@ export default function Slider({ value, min = 0, step = 1, max, addon, onSliding
         vars.color.bg2
       } ${((value - min) / (max - min)) * 100}%, ${vars.color.bg2} 100%)`,
     }),
-    [value, min, max]
+    [value, min, max],
   )
 
   const handleSlidingUpdate = useCallback(
@@ -45,7 +45,7 @@ export default function Slider({ value, min = 0, step = 1, max, addon, onSliding
       if (newValue === '' || /^([0-9]+)$/.test(newValue))
         onSlidingChange(newValue.length > 0 ? Math.min(+newValue, max) : 0)
     },
-    [max, onSlidingChange]
+    [max, onSlidingChange],
   )
 
   return (

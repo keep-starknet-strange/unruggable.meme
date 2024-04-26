@@ -24,7 +24,7 @@ export default function HolderSlot({ holder, open, totalSupply }: HolderSlotProp
       holder
         ? new Percent(parseFormatedAmount(holder?.amount), new Fraction(totalSupply, decimalsScale(DECIMALS)).quotient)
         : undefined,
-    [holder, totalSupply]
+    [holder, totalSupply],
   )
 
   return (

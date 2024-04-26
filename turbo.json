@@ -3,19 +3,18 @@
   "pipeline": {
     "build": {
       "dependsOn": ["^build"],
-      "inputs": [
-        "packages/*/src/**/*.ts",
-        "packages/*/src/**/*.tsx",
-        "package.json",
-        "tsconfig.json"
-      ],
-      "outputs": [
-        "dist/**"
-      ],
+      "inputs": ["packages/*/src/**/*.ts", "packages/*/src/**/*.tsx", "package.json", "tsconfig.json"],
+      "outputs": ["dist/**"],
       "outputMode": "new-only"
     },
-    "dev": {
-      "dependsOn": ["^build"]
+    "start": {
+      "cache": false
+    },
+    "test": {
+      "cache": false
+    },
+    "test:watch": {
+      "cache": false
     },
     "lint": {
       "dependsOn": ["^build"]

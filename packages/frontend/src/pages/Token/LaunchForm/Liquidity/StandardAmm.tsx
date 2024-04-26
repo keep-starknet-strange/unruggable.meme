@@ -39,7 +39,7 @@ export default function StandardAmmLiquidityForm({ next, previous }: FormPagePro
       liquidityLockPeriod === MAX_LIQUIDITY_LOCK_PERIOD
         ? FOREVER
         : parseMonthsDuration(moment.duration(liquidityLockPeriod, 'months')),
-    [liquidityLockPeriod]
+    [liquidityLockPeriod],
   )
 
   // submit
@@ -48,7 +48,7 @@ export default function StandardAmmLiquidityForm({ next, previous }: FormPagePro
       liquidityTemplateForm.submit(data)
       next()
     },
-    [next, liquidityTemplateForm]
+    [next, liquidityTemplateForm],
   )
 
   return (

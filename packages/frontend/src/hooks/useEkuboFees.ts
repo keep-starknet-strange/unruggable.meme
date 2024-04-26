@@ -40,7 +40,7 @@ export default function useEkuboFees() {
 
     return new Fraction(
       (new Fraction(memecoin.address).lessThan(memecoin.liquidity.quoteToken) ? data.fees1 : data.fees0).toString(),
-      decimalsScale(quoteToken.decimals)
+      decimalsScale(quoteToken.decimals),
     )
   }, [data?.fees0, data?.fees1, memecoin, chainId, quoteToken?.decimals])
 }

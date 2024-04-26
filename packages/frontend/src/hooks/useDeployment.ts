@@ -25,7 +25,7 @@ export function useDeploymentStore() {
 
       pushDeployedTokenContract(newTokenContract, chainId)
     },
-    [chainId, deployedTokenContracts, pushDeployedTokenContract]
+    [chainId, deployedTokenContracts, pushDeployedTokenContract],
   )
 
   return [chainId ? deployedTokenContracts[chainId] ?? [] : [], safelyPushDeployedTokenContracts] as const

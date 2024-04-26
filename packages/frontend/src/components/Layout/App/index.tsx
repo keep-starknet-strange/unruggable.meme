@@ -8,11 +8,7 @@ import { constants } from 'starknet'
 
 import * as styles from './style.css'
 
-interface AppLayoutProps {
-  children: React.ReactNode
-}
-
-export default function AppLayout({ children }: AppLayoutProps) {
+export default function AppLayout({ children }: React.PropsWithChildren) {
   const { chain } = useNetwork()
   const chaindId = useChainId()
 

@@ -24,12 +24,12 @@ function usePairPrice(usdcPair?: USDCPair, blockIdentifier: BlockNumber = BlockT
 
     const pairPrice = new Fraction(
       uint256.uint256ToBN(pairReserves.data.reserve1).toString(),
-      uint256.uint256ToBN(pairReserves.data.reserve0).toString()
+      uint256.uint256ToBN(pairReserves.data.reserve0).toString(),
     )
 
     // token0 and token1 are switched on some pairs
     return (usdcPair?.reversed ? new Fraction(pairPrice.denominator, pairPrice.numerator) : pairPrice).multiply(
-      decimalsScale(12)
+      decimalsScale(12),
     )
   }, [pairReserves.data, usdcPair?.reversed])
 }
@@ -72,6 +72,6 @@ export function useWeiAmountToParsedFiatValue(price?: Fraction): (amount?: Fract
             maximumFractionDigits: 2,
           })}`
         : null,
-    [price]
+    [price],
   )
 }

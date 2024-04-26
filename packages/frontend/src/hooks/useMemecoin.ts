@@ -45,7 +45,7 @@ export default function useMemecoin(tokenAddress?: string) {
         refreshMemecoin()
       }
     },
-    [refreshMemecoin, setTokenAddress]
+    [refreshMemecoin, setTokenAddress],
   )
 
   // reset
