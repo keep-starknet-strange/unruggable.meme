@@ -144,3 +144,6 @@ contracts/.snfoundry_cache/
 
 # Build
 build
+
+# Misc
+.DS_Store
