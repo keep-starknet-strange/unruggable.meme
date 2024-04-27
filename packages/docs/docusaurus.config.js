@@ -138,7 +138,7 @@ module.exports = {
           includeCurrentVersion: true,
         },
         theme: {
-          customCss: [require.resolve('./src/css/custom.css'), require.resolve('./src/css/colors.css')],
+          customCss: ['./src/css/custom.css', './src/css/colors.css'],
         },
       },
     ],

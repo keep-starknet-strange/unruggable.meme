@@ -1,5 +1,4 @@
 import OriginalDocPaginator from '@theme-original/DocPaginator'
-import React from 'react'
 import styled from 'styled-components'
 
 import SentimentTracking from '../components/SentimentTracking'

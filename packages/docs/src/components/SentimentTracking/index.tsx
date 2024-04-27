@@ -1,5 +1,5 @@
 import { TraceEvent } from '@uniswap/analytics'
-import React, { useCallback, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Frown, Meh, Smile } from 'react-feather'
 import styled, { css } from 'styled-components'
 
