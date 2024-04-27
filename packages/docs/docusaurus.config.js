@@ -1,126 +1,147 @@
-// @ts-check
-// `@type` JSDoc annotations allow editor autocompletion and type checking
-// (when paired with `@ts-check`).
-// There are various equivalent ways to declare your Docusaurus config.
-// See: https://docusaurus.io/docs/api/docusaurus-config
+require('dotenv').config()
 
-import {themes as prismThemes} from 'prism-react-renderer';
-
-/** @type {import('@docusaurus/types').Config} */
-const config = {
-  title: 'Unruggable Meme',
-  tagline: 'Tired of getting rugpulled? Introducing Unruggable Meme, a memecoin standard and deployment tool designed to ensure a maximum safety for memecoin traders.',
-  favicon: '/favicon/android-chrome-512x512.png',
-
-  // Set the production url of your site here
-  url: 'https://www.unruggable.meme/',
-  // Set the /<baseUrl>/ pathname under which your site is served
-  // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/',
-
-  // GitHub pages deployment config.
-  // If you aren't using GitHub pages, you don't need these.
-  organizationName: 'Unruggable Meme', // Usually your GitHub org/user name.
-  projectName: 'Unruggable Meme', // Usually your repo name.
-
-  onBrokenLinks: 'throw',
-  onBrokenMarkdownLinks: 'warn',
-
-  // Even if you don't use internationalization, you can use this field to set
-  // useful metadata like html lang. For example, if your site is Chinese, you
-  // may want to replace "en" with "zh-Hans".
-  i18n: {
-    defaultLocale: 'en',
-    locales: ['en'],
+module.exports = {
+  customFields: {
+    // Analytics proxy URL
+    analyticsProxyUrl: process.env.REACT_APP_AMPLITUDE_PROXY_URL,
+    // From node
+    nodeEnv: process.env.NODE_ENV,
   },
+  title: 'Unruggable memecoin',
+  tagline: 'Documentation and Guides',
+  url: 'https://docs.unruggable.meme',
+  baseUrl: '/',
+  onBrokenLinks: 'warn',
+  onBrokenMarkdownLinks: 'ignore',
+  favicon: 'img/favicon.ico',
+  organizationName: 'Keep Starknet Strange', // Usually your GitHub org/user name.
+  projectName: 'Unruggable-docs', // Usually your repo name.
+  themeConfig: {
+    prism: {
+      additionalLanguages: ['rust'],
+    },
+    navbar: {
+      title: 'Unruggable Docs',
+      logo: {
+        alt: 'Unruggable Wings',
+        src: 'img/logo.svg',
+      },
+      items: [
+        {
+          to: '/tutorial/overview',
+          label: 'Tutorial',
+          position: 'left',
+          className: 'active',
+        },
+        {
+          to: '/concepts/overview',
+          label: 'Concepts',
+          position: 'left',
+          className: 'active',
+        },
+        {
+          to: '/contracts/overview',
+          label: 'Contracts',
+          position: 'left',
+          className: 'active',
+        },
+        {
+          to: '/sdk/core/overview',
+          label: 'SDKs',
+          position: 'left',
+          className: 'active',
+        },
+        {
+          href: 'https://github.com/keep-starknet-strange/unruggable.meme',
+          label: 'GitHub',
+          position: 'right',
+          className: 'persistent',
+        },
+        {
+          href: 'https://app.onlydust.com/p/unruggable-meme',
+          label: 'OnlyDust',
+          position: 'right',
+          className: 'persistent',
+        },
+      ],
+    },
+    footer: {
+      // style: "dark",
+      links: [
+        {
+          title: 'Github',
+          items: [
+            {
+              label: 'frontend',
+              href: 'https://github.com/keep-starknet-strange/unruggable.meme/tree/main/packages/frontend',
+            },
+            {
+              label: 'contracts',
+              href: 'https://github.com/keep-starknet-strange/unruggable.meme/tree/main/packages/contracts',
+            },
+            {
+              label: 'backend',
+              href: 'https://github.com/keep-starknet-strange/unruggable.meme/tree/main/packages/backend',
+            },
+            {
+              label: 'packages',
+              href: 'https://github.com/keep-starknet-strange/unruggable.meme/tree/main/packages',
+            },
+          ],
+        },
+        {
+          title: 'Ecosystem',
+          items: [
+            {
+              label: 'App',
+              href: 'https://unruggable.meme/',
+            },
+          ],
+        },
+        {
+          title: 'Community',
+          items: [
+            {
+              label: 'Telegram',
+              href: 'https://t.me/UnruggableMeme',
+            },
+            {
+              label: 'Twitter',
+              href: 'https://twitter.com/UnrugMemec0in',
+            },
+          ],
+        },
+      ],
+      // copyright: `unlicensed`,
+    },
+    colorMode: {
+      // "light" | "dark"
+      defaultMode: 'dark',
 
+      // Hides the switch in the navbar
+      // Useful if you want to support a single color mode
+      disableSwitch: false,
+
+      // Should we use the prefers-color-scheme media-query,
+      // using user system preferences, instead of the hardcoded defaultMode
+      respectPrefersColorScheme: true,
+    },
+  },
   presets: [
     [
-      'classic',
-      /** @type {import('@docusaurus/preset-classic').Options} */
-      ({
+      '@docusaurus/preset-classic',
+      {
         docs: {
           routeBasePath: '/',
-          sidebarPath: './sidebars.js',
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
-          editUrl:
-            'https://github.com/keep-starknet-strange/unruggable.meme',
+          sidebarPath: require.resolve('./sidebars.js'),
+          editUrl: 'https://github.com/keep-starknet-strange/unruggable.meme/tree/main/packages/docs',
+          includeCurrentVersion: true,
         },
-        blog: false,
         theme: {
-          customCss: './src/css/custom.css',
+          customCss: [require.resolve('./src/css/custom.css'), require.resolve('./src/css/colors.css')],
         },
-      }),
+      },
     ],
   ],
-
-  themeConfig:
-    /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
-    ({
-      // Replace with your project's social card
-      image: 'https://github.com/keep-starknet-strange/unruggable.meme/blob/main/assets/logo/logo.png?raw=true',
-      navbar: {
-        title: 'Unruggable Meme', //Name of site at top left corner
-        logo: {
-          alt: 'Unruggable Meme Logo',
-          src: 'https://github.com/keep-starknet-strange/unruggable.meme/blob/main/assets/logo/logo.png?raw=true',
-        },
-        items: [
-          {
-            type: 'docSidebar',
-            sidebarId: 'tutorialSidebar',
-            position: 'left',
-            label: 'Documentation',
-          },
-          {
-            href: 'https://github.com/keep-starknet-strange/unruggable.meme',
-            label: 'GitHub',
-            position: 'right',
-          },
-        ],
-      },
-      footer: {
-        style: 'dark',
-        links: [
-          {
-            title: 'Community',
-            items: [
-              {
-                label: 'Github',
-                href: 'https://github.com/keep-starknet-strange/unruggable.meme',
-              },
-              {
-                label: 'Telegram',
-                href: 'https://t.me/UnruggableMeme',
-              },
-              {
-                label: 'Twitter',
-                href: 'https://twitter.com/UnrugMemec0in',
-              },
-            ],
-          },
-          {
-            title: 'More',
-            items: [
-              // {
-              //   label: 'Blog',
-              //   to: '/blog',
-              // },
-              {
-                label: 'GitHub',
-                href: 'https://github.com/keep-starknet-strange/unruggable.meme',
-              },
-            ],
-          },
-        ],
-        copyright: `Copyright © ${new Date().getFullYear()} Unruggable Meme. Built with Docusaurus.`,
-      },
-      prism: {
-        theme: prismThemes.github,
-        darkTheme: prismThemes.dracula,
-      },
-    }),
-};
-
-export default config;
+  plugins: [['@saucelabs/theme-github-codeblock', {}]],
+}
