@@ -1,6 +1,5 @@
 import OriginalNavBarItem from '@theme-original/NavbarItem'
 import { TraceEvent } from '@uniswap/analytics'
-import React from 'react'
 
 import { BrowserEvent, SharedEventName } from '../utils/analyticsEvents'
 
