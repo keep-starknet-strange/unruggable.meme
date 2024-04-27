@@ -7,7 +7,7 @@ module.exports = {
     // From node
     nodeEnv: process.env.NODE_ENV,
   },
-  title: 'Unruggable memecoin',
+  title: 'Unruggable meme',
   tagline: 'Documentation and Guides',
   url: 'https://docs.unruggable.meme',
   baseUrl: '/',
@@ -17,6 +17,7 @@ module.exports = {
   organizationName: 'Keep Starknet Strange', // Usually your GitHub org/user name.
   projectName: 'Unruggable-docs', // Usually your repo name.
   themeConfig: {
+    image: 'img/twitter_card_bg.jpg',
     prism: {
       additionalLanguages: ['rust'],
     },
