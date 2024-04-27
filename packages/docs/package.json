@@ -1,0 +1,53 @@
+{
+  "name": "@unruggable/docs",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "docusaurus": "docusaurus",
+    "start": "docusaurus start",
+    "build": "docusaurus build",
+    "swizzle": "docusaurus swizzle",
+    "deploy": "docusaurus deploy",
+    "serve": "docusaurus serve",
+    "clear": "docusaurus clear",
+    "lint": "yarn eslint src"
+  },
+  "dependencies": {
+    "@docusaurus/core": "3.2.1",
+    "@docusaurus/plugin-client-redirects": "3.2.1",
+    "@docusaurus/plugin-content-docs": "3.2.1",
+    "@docusaurus/preset-classic": "3.2.1",
+    "@docusaurus/remark-plugin-npm2yarn": "3.2.1",
+    "@mdx-js/react": "^3.0.0",
+    "@uniswap/analytics": "^1.7.1",
+    "clsx": "^2.0.0",
+    "prism-react-renderer": "^2.3.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.0.0",
+    "react-feather": "^2.0.10",
+    "styled-components": "^6.1.8",
+    "web-vitals": "^3.5.2"
+  },
+  "devDependencies": {
+    "@docusaurus/module-type-aliases": "3.2.1",
+    "@docusaurus/types": "3.2.1",
+    "@saucelabs/theme-github-codeblock": "^0.2.3",
+    "@tsconfig/docusaurus": "^2.0.3"
+  },
+  "browserslist": {
+    "production": [
+      ">0.5%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "engines": {
+    "node": "16",
+    "yarn": ">=1.22"
+  }
+}
