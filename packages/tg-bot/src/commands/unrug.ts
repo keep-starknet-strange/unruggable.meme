@@ -1,10 +1,9 @@
 import { Percent } from '@uniswap/sdk-core'
+import { getPairPrice } from 'core'
 
 import { bot } from '../services/bot'
-import { isValidStarknetAddress } from '../utils/helpers'
-import { parseLiquidityParams } from '../utils/liquidity'
-import { getTokenData, parseTokenData } from '../utils/memecoinData'
-import { formatPercentage } from '../utils/price'
+import { factory } from '../services/factory'
+import { formatPercentage, isValidStarknetAddress } from '../utils/helpers'
 
 // Matches "/unrug [token_address]"
 bot.onText(/\/unrug (.+)/, (msg, match) => {
@@ -34,8 +33,7 @@ async function computeResponse(chatId: number, tokenAddress: string): Promise<st
     bot.sendMessage(chatId, 'Loading...')
 
     try {
-      const rawMemecoin = await getTokenData(tokenAddress)
-      const memecoin = await parseTokenData(tokenAddress, rawMemecoin)
+      const memecoin = await factory.getMemecoin(tokenAddress)
 
       if (!memecoin) {
         return 'This token is Ruggable ❌'
@@ -53,11 +51,21 @@ async function computeResponse(chatId: number, tokenAddress: string): Promise<st
 
         response += `Team alloc: ${parsedTeamAllocation}\n`
 
-        // Liquidity
-        const { parsedStartingMcap, isQuoteTokenSafe } = await parseLiquidityParams(memecoin)
-        if (!isQuoteTokenSafe) {
+        // quote token
+        if (!memecoin.quoteToken) {
           return 'This token is Ruggable ❌ (unknown quote token)'
         }
+
+        // usdc pair price at launch
+        const pairPriceAtLaunch = await getPairPrice(
+          factory.config.provider,
+          memecoin.quoteToken.usdcPair,
+          memecoin.launch.blockNumber,
+        )
+
+        // starting mcap
+        const startingMcap = factory.getStartingMarketCap(memecoin, pairPriceAtLaunch)
+        const parsedStartingMcap = startingMcap ? `$${startingMcap.toFixed(0, { groupSeparator: ',' })}` : 'UNKNOWN'
 
         response += `Starting mcap: ${parsedStartingMcap}\n`
       }

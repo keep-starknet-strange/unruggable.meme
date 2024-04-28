@@ -16,6 +16,7 @@
   "devDependencies": {
     "@types/node-telegram-bot-api": "^0.64.3",
     "@uniswap/eslint-config": "^1.2.0",
+    "core": "*",
     "dotenv": "^16.4.5",
     "eslint": "^8.0.0",
     "pkgroll": "^2.0.2",
