@@ -1,0 +1,20 @@
+{
+  "name": "tg-bot",
+  "version": "0.1.0",
+  "license": "MIT",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "build": "pkgroll",
+    "lint": "eslint . --max-warnings=0 --ignore-path ../../.eslintignore",
+    "lint:fix": "eslint src --fix"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@uniswap/eslint-config": "^1.2.0",
+    "eslint": "^8.0.0",
+    "pkgroll": "^2.0.2",
+    "prettier": "^3.1.0",
+    "tsx": "^4.7.3",
+    "typescript": "^5.4.5"
+  }
+}
