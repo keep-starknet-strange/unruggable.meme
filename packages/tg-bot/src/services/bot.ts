@@ -10,3 +10,8 @@ if (!telegramBotToken) {
 }
 
 export const bot = new TelegramBot(telegramBotToken, { polling: true })
+
+export const botInfo = {
+  id: -1,
+  username: '',
+}
