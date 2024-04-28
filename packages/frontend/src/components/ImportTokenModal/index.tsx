@@ -77,7 +77,7 @@ export function ImportTokenModal({ save = false }: ImportTokenModalProps) {
           address: memecoin.address,
           name: memecoin.name,
           symbol: memecoin.symbol,
-          totalSupply: memecoin.totalSupply.toString(),
+          totalSupply: memecoin.totalSupply,
         })
       }
 
