@@ -6,10 +6,8 @@ import { factory } from '../services/factory'
 import { formatPercentage, isValidStarknetAddress } from '../utils/helpers'
 
 // Matches "/unrug [token_address]"
-bot.onText(/\/unrug/, (msg) => {
+bot.onText(/^\/unrug/, (msg) => {
   // 'msg' is the received Message from Telegram
-  // 'match' is the result of executing the regexp above on the text content
-  // of the message
 
   const chatId = msg.chat.id
   const tokenAddress = msg.text?.split(' ')[1] // the captured "token_address"
