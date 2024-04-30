@@ -72,79 +72,51 @@ export type LaunchedMemecoin =
 export type Memecoin = BaseMemecoin & LaunchedMemecoin
 
 export type DeployData = {
-  /**
-   * The name of the memecoin.
-   */
+  /** The name of the memecoin. */
   name: string
 
-  /**
-   * The symbol of the memecoin.
-   */
+  /** The symbol of the memecoin. */
   symbol: string
 
-  /**
-   * Owner address of the memecoin.
-   */
+  /** Owner address of the memecoin. */
   owner: string
 
-  /**
-   * The initial supply of the memecoin. Must **not be** multiplied by 10^decimals.
-   */
+  /** The initial supply of the memecoin. Must **not be** multiplied by 10^decimals. */
   initialSupply: string | string
 }
 
 type MemecoinBaseLaunchData = {
-  /**
-   * The AMM to launch the memecoin on.
-   */
+  /** The AMM to launch the memecoin on. */
   amm: AMM
 
-  /**
-   * The team allocations.
-   */
+  /** The team allocations. */
   teamAllocations: {
-    /**
-     * The address of the allocation.
-     */
+    /** The address of the allocation. */
     address: string
 
-    /**
-     * The allocation of the team member. Must **not be** multiplied by 10^decimals.
-     */
+    /** The allocation of the team member. Must **not be** multiplied by 10^decimals. */
     amount: number | string
   }[]
 
-  /**
-   * The hold limit multiplied by 100. For example, 1% is 100, 10% is 1000, etc.
-   */
+  /** The hold limit multiplied by 100. For example, 1% is 100, 10% is 1000, etc. */
   holdLimit: number
 
-  /**
-   * The anti-bot feature period in seconds. For example, 1 hour is 3600 etc.
-   */
+  /** The anti-bot feature period in seconds. For example, 1 hour is 3600 etc. */
   antiBotPeriod: number
 
-  /**
-   * The quote token to use. Must be a `Token` object and must be supported. See `QUOTE_TOKENS` constant.
-   */
+  /** The quote token to use. Must be a `Token` object and must be supported. See `QUOTE_TOKENS` constant. */
   quoteToken: Token
 
-  /**
-   * The starting market cap in USDC.
-   */
+  /** The starting market cap in USDC. */
   startingMarketCap: number | string
 }
 
 export type EkuboLaunchData = MemecoinBaseLaunchData & {
-  /**
-   * The ekubo fees.
-   */
+  /** The ekubo fees. */
   fees: Percent
 }
 
 export type StandardAMMLaunchData = MemecoinBaseLaunchData & {
-  /**
-   * The liquidity lock period in seconds.
-   */
+  /** The liquidity lock period in seconds. */
   liquidityLockPeriod: number
 }

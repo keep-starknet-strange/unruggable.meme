@@ -20,19 +20,19 @@ export abstract class FactoryInterface {
   public abstract config: FactoryConfig
 
   /**
-   * Get a memecoin by address. Returns the results of both `getBaseMemecoin` and `getMemecoinLaunchData`.
+   * Get a memecoin. Returns the results of both `getBaseMemecoin` and `getMemecoinLaunchData`.
    * @param address Memecoin address
    */
   public abstract getMemecoin(address: string): Promise<Memecoin | undefined>
 
   /**
-   * Get a memecoin's base details by address. This includes the memecoin's name, symbol, owner, decimals, and total supply.
+   * Get a memecoin's base details. This includes the memecoin's name, symbol, owner, decimals, and total supply.
    * @param address Memecoin address
    */
   public abstract getBaseMemecoin(address: string): Promise<BaseMemecoin | undefined>
 
   /**
-   * Get a memecoin's launch details by address. This includes the memecoin's quote token, team allocations, and liquidity.
+   * Get a memecoin's launch details. This includes the memecoin's quote token, team allocations, and liquidity.
    * @param address Memecoin address
    */
   public abstract getMemecoinLaunchData(address: string): Promise<LaunchedMemecoin>
