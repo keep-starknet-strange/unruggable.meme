@@ -303,7 +303,7 @@ export const createLaunchForm = (chatId: number) => {
           const baseLaunchData = {
             amm: data.amm,
             antiBotPeriod: data.antiBotPeriod * 60,
-            holdLimit: data.holdLimit * 100,
+            holdLimit: parsePercentage(data.holdLimit),
             startingMarketCap: data.startingMarketCap,
             teamAllocations: data.teamAllocations,
             quoteToken,

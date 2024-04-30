@@ -1,5 +1,7 @@
 import { Percent } from '@uniswap/sdk-core'
 
+import { PERCENTAGE_INPUT_PRECISION } from './constants'
+
 /**
  * Checks if a given string is a valid StarkNet address.
  *
