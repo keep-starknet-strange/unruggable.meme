@@ -25,8 +25,6 @@ export abstract class FactoryInterface {
 
   public abstract getMemecoinLaunchData(address: string): Promise<LaunchedMemecoin>
 
-  public abstract getStartingMarketCap(memecoin: Memecoin, quoteTokenPriceAtLaunch?: Fraction): Fraction | undefined
-
   public abstract getEkuboFees(memecoin: Memecoin): Promise<Fraction | undefined>
 
   public abstract getCollectEkuboFeesCalldata(memecoin: Memecoin): { calls: CallDetails[] } | undefined

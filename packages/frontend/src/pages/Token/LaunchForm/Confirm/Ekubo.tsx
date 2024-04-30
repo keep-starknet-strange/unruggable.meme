@@ -34,7 +34,7 @@ export default function EkuboLaunch({ previous }: LastFormPageProps) {
 
   // quote token
   const quoteToken = useQuoteToken(quoteTokenAddress)
-  const quoteTokenPrice = useQuoteTokenPrice(quoteTokenAddress)
+  const { data: quoteTokenPrice } = useQuoteTokenPrice({ address: quoteTokenAddress })
 
   // team allocation
   const teamAllocationTotalPercentage = useTeamAllocationTotalPercentage(memecoin?.totalSupply)
@@ -68,7 +68,7 @@ export default function EkuboLaunch({ previous }: LastFormPageProps) {
       amm: AMM.EKUBO,
       antiBotPeriod: antiBotPeriod * 60,
       fees: parseFormatedPercentage(ekuboFees),
-      holdLimit: +hodlLimit * 100,
+      holdLimit: parseFormatedPercentage(hodlLimit),
       quoteToken,
       startingMarketCap: parseFormatedAmount(startingMcap),
       teamAllocations,

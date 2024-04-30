@@ -19,7 +19,7 @@ import {
 } from 'src/hooks/useLaunchForm'
 import useMemecoin from 'src/hooks/useMemecoin'
 import { useExecuteTransaction } from 'src/hooks/useTransactions'
-import { parseFormatedAmount } from 'src/utils/amount'
+import { parseFormatedAmount, parseFormatedPercentage } from 'src/utils/amount'
 
 import { LastFormPageProps } from '../common'
 import LaunchTemplate from './template'
@@ -45,7 +45,7 @@ export default function StarndardAmmLaunch({ previous, amm }: StarndardAmmLaunch
 
   // quote token
   const quoteToken = useQuoteToken(quoteTokenAddress)
-  const quoteTokenPrice = useQuoteTokenPrice(quoteTokenAddress)
+  const { data: quoteTokenPrice } = useQuoteTokenPrice({ address: quoteTokenAddress })
 
   // team allocation
   const teamAllocationTotalPercentage = useTeamAllocationTotalPercentage(memecoin?.totalSupply)
@@ -78,7 +78,7 @@ export default function StarndardAmmLaunch({ previous, amm }: StarndardAmmLaunch
     const { calls } = await sdkFactory.getStandardAMMLaunchCalldata(memecoin, {
       amm,
       antiBotPeriod: antiBotPeriod * 60,
-      holdLimit: +hodlLimit * 100,
+      holdLimit: parseFormatedPercentage(hodlLimit),
       quoteToken,
       startingMarketCap: parseFormatedAmount(startingMcap),
       teamAllocations,

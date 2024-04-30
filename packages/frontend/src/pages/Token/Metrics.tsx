@@ -1,7 +1,13 @@
 import { Percent } from '@uniswap/sdk-core'
-import { getLiquidityLockSafety, getQuoteTokenSafety, getStartingMcapSafety, getTeamAllocationSafety } from 'core'
+import {
+  getLiquidityLockSafety,
+  getQuoteTokenSafety,
+  getStartingMarketCap,
+  getStartingMcapSafety,
+  getTeamAllocationSafety,
+} from 'core'
 import { QUOTE_TOKENS, Safety } from 'core/constants'
-import { useFactory, useQuoteToken, useQuoteTokenPrice } from 'hooks'
+import { useQuoteToken, useQuoteTokenPrice } from 'hooks'
 import moment from 'moment'
 import { useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
@@ -31,13 +37,10 @@ export default function TokenMetrics() {
   const quoteToken = useQuoteToken(memecoin?.isLaunched ? memecoin?.liquidity?.quoteToken : undefined)
 
   // quote token price
-  const quoteTokenPriceAtLaunch = useQuoteTokenPrice(
-    quoteToken?.address,
-    memecoin?.isLaunched ? memecoin.launch.blockNumber - 1 : undefined,
-  )
-
-  // sdk factory
-  const sdkFactory = useFactory()
+  const { data: quoteTokenPriceAtLaunch } = useQuoteTokenPrice({
+    address: quoteToken?.address,
+    blockNumber: memecoin?.isLaunched ? memecoin.launch.blockNumber - 1 : undefined,
+  })
 
   // starknet
   const chainId = useChainId()
@@ -83,7 +86,7 @@ export default function TokenMetrics() {
 
     // starting mcap
     if (quoteTokenPriceAtLaunch) {
-      const startingMcap = sdkFactory.getStartingMarketCap(memecoin, quoteTokenPriceAtLaunch)
+      const startingMcap = getStartingMarketCap(memecoin, quoteTokenPriceAtLaunch)
 
       ret.startingMcap = {
         parsedValue: startingMcap ? `$${startingMcap.toFixed(0, { groupSeparator: ',' })}` : 'UNKNOWN',
@@ -92,7 +95,7 @@ export default function TokenMetrics() {
     }
 
     return ret
-  }, [quoteToken?.decimals, memecoin, chainId, quoteTokenPriceAtLaunch, sdkFactory])
+  }, [quoteToken?.decimals, memecoin, chainId, quoteTokenPriceAtLaunch])
 
   if (!memecoin) return null
 

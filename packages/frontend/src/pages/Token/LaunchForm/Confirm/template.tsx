@@ -30,7 +30,7 @@ export default function LaunchTemplate({ liquidityPrice, teamAllocationPrice, pr
   const { data: quoteTokenBalance, loading } = useBalance(quoteToken ?? undefined)
 
   // quote token price
-  const quoteTokenPrice = useQuoteTokenPrice(quoteTokenAddress)
+  const { data: quoteTokenPrice } = useQuoteTokenPrice({ address: quoteTokenAddress })
   const weiAmountToParsedFiatValue = useWeiAmountToParsedFiatValue(quoteTokenPrice)
 
   // memecoin
