@@ -1,5 +1,5 @@
 import { Percent } from '@uniswap/sdk-core'
-import { getPairPrice } from 'core'
+import { getPairPrice, getStartingMarketCap } from 'core'
 
 import { bot } from '../services/bot'
 import { factory } from '../services/factory'
@@ -64,7 +64,7 @@ async function computeResponse(chatId: number, tokenAddress: string): Promise<st
         )
 
         // starting mcap
-        const startingMcap = factory.getStartingMarketCap(memecoin, pairPriceAtLaunch)
+        const startingMcap = getStartingMarketCap(memecoin, pairPriceAtLaunch)
         const parsedStartingMcap = startingMcap ? `$${startingMcap.toFixed(0, { groupSeparator: ',' })}` : 'UNKNOWN'
 
         response += `Starting mcap: ${parsedStartingMcap}\n`

@@ -84,7 +84,7 @@ type MemecoinBaseLaunchData = {
     address: string
     amount: number | string
   }[]
-  holdLimit: number
+  holdLimit: Percent
 
   /**
    * Anti bot period in *seconds*
