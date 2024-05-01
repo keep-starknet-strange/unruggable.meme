@@ -1,6 +1,7 @@
 import { useBlockNumber } from '@starknet-react/core'
 import { QueryKey, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
+import { STARKNET_BLOCK_POLLING } from 'src/constants/misc'
 
 /**
  * Invalidates the given query keys on every new block.
@@ -20,6 +21,7 @@ export function useInvalidateOnBlock({
 
   const { data: blockNumber } = useBlockNumber({
     enabled,
+    refetchInterval: STARKNET_BLOCK_POLLING,
   })
 
   useEffect(() => {

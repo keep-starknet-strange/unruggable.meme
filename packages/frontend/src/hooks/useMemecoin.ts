@@ -1,9 +1,16 @@
 import { useAccount } from '@starknet-react/core'
 import { useMemecoin as useSDKMemecoin } from 'hooks'
 import { useMemo } from 'react'
+import { isValidL2Address } from 'src/utils/address'
 import { getChecksumAddress } from 'starknet'
 
 export default function useMemecoin(tokenAddress?: string) {
+  // token address check
+  tokenAddress = useMemo(
+    () => (tokenAddress && isValidL2Address(tokenAddress) ? tokenAddress : undefined),
+    [tokenAddress],
+  )
+
   // store
   // memecoin, refreshMemecoin, setTokenAddress, ruggable, resetMemecoin
   const memecoin = useSDKMemecoin({

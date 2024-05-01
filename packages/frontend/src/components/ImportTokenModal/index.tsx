@@ -11,7 +11,6 @@ import { useCloseModal, useImportTokenModal } from 'src/hooks/useModal'
 import Box from 'src/theme/components/Box'
 import { Column } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
-import { isValidL2Address } from 'src/utils/address'
 import { address } from 'src/utils/zod'
 import { z } from 'zod'
 
@@ -66,8 +65,7 @@ export function ImportTokenModal({ save = false }: ImportTokenModalProps) {
   const debouncedTokenAddress = useDebounce(tokenAddress)
 
   // token check
-  const tokenAddressToUse = isValidL2Address(debouncedTokenAddress) ? debouncedTokenAddress : undefined
-  const { data: memecoin, isLoading, ruggable } = useMemecoin(tokenAddressToUse)
+  const { data: memecoin, isLoading, ruggable } = useMemecoin(debouncedTokenAddress)
 
   useEffect(() => {
     if (memecoin && isOpen && chainId) {

@@ -1,7 +1,7 @@
 import { useAccount, useContractRead, UseContractReadResult } from '@starknet-react/core'
 import { Fraction } from '@uniswap/sdk-core'
 import { Token } from 'core'
-import { compiledMulticall, MULTICALL_ADDRESSES, Entrypoint } from 'core/constants'
+import { compiledMulticall, Entrypoint, MULTICALL_ADDRESSES } from 'core/constants'
 import { useMemo } from 'react'
 import { decimalsScale } from 'src/utils/decimals'
 import { CallStruct, selector, uint256 } from 'starknet'
