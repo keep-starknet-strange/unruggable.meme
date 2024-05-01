@@ -1,5 +1,4 @@
 import { useContractWrite, useWaitForTransaction } from '@starknet-react/core'
-import { STARKNET_POLLING } from 'core/constants'
 import { useEffect, useMemo, useState } from 'react'
 import { useCloseModal, useTransactionModal } from 'src/hooks/useModal'
 import { useTransaction } from 'src/hooks/useTransactions'
