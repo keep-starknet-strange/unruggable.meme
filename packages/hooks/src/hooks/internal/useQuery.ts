@@ -20,6 +20,11 @@ export function useQuery<
   const query = useReactQuery({
     queryKey,
     enabled,
+
+    // Stale time doesn't actually matter since we have our own invalidation logic
+    // But better to provide than to have it default to 0
+    staleTime: 60 * 1000,
+
     ...props,
   })
 

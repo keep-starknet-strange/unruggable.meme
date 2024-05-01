@@ -43,5 +43,5 @@ export function useInvalidateOnBlock({
         })
       }
     }
-  }, [blockNumber, prevBlockNumber, queryClient, queryKey])
+  }, [blockNumber, prevBlockNumber, queryClient, queryKey, queryKeys])
 }

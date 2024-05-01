@@ -39,5 +39,5 @@ export function useInvalidateOnChanId({
         })
       }
     }
-  }, [enabled, prevChanId, chain.id])
+  }, [enabled, prevChanId, chain.id, queryKey, queryKeys])
 }
