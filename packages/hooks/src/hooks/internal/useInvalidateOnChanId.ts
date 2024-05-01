@@ -18,10 +18,19 @@ export function useInvalidateOnChanId({
 
   const { chain } = useNetwork()
 
-  const prevChanId = useRef<bigint>(chain.id)
+  const prevChanId = useRef<bigint | undefined>()
 
   useEffect(() => {
+    if (prevChanId.current === undefined) {
+      prevChanId.current = chain.id
+      return
+    }
+
     if (enabled && prevChanId.current !== chain.id) {
+      prevChanId.current = chain.id
+
+      console.log('INVALIDATED ON CHAIN ID', prevChanId.current, chain.id)
+
       if (queryKey) {
         queryClient.invalidateQueries({ queryKey }, { cancelRefetch: false })
       }

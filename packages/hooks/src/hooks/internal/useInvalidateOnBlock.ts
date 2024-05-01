@@ -23,8 +23,15 @@ export function useInvalidateOnBlock({
   })
 
   useEffect(() => {
+    if (prevBlockNumber.current === undefined) {
+      prevBlockNumber.current = blockNumber
+      return
+    }
+
     if (blockNumber !== prevBlockNumber.current) {
       prevBlockNumber.current = blockNumber
+
+      console.log('INVALIDATED ON BLOCK', prevBlockNumber.current, blockNumber)
 
       if (queryKey) {
         queryClient.invalidateQueries({ queryKey }, { cancelRefetch: false })
