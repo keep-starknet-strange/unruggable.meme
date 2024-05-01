@@ -29,8 +29,6 @@ export function useInvalidateOnChanId({
     if (enabled && prevChanId.current !== chain.id) {
       prevChanId.current = chain.id
 
-      console.log('INVALIDATED ON CHAIN ID', prevChanId.current, chain.id)
-
       if (queryKey) {
         queryClient.invalidateQueries({ queryKey }, { cancelRefetch: false })
       }
