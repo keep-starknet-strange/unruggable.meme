@@ -9,6 +9,7 @@
     "lint:fix": "eslint src --fix"
   },
   "dependencies": {
+    "@avnu/avnu-sdk": "^2.0.0",
     "@hookform/resolvers": "^3.3.2",
     "@starknet-react/chains": "^0.1.0",
     "@starknet-react/core": "^2.2.4",
@@ -19,6 +20,7 @@
     "@vanilla-extract/sprinkles": "^1.6.0",
     "clsx": "^2.0.0",
     "eslint": "^8.0.0",
+    "ethers": "^6.12.0",
     "lucide-react": "^0.294.0",
     "moment": "^2.30.1",
     "ms.macro": "^2.0.0",
