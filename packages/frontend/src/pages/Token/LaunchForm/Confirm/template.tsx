@@ -112,8 +112,8 @@ export default function LaunchTemplate({ liquidityPrice, teamAllocationPrice, pr
           loading
             ? 'Loading...'
             : hasEnoughQuoteTokenBalance
-            ? `Launch on ${amm}`
-            : `Insufficent ${quoteToken.symbol} balance`
+              ? `Launch on ${amm}`
+              : `Insufficent ${quoteToken.symbol} balance`
         }
         onNext={next}
         disableNext={loading || !hasEnoughQuoteTokenBalance}
