@@ -63,10 +63,10 @@ export default function StarndardAmmLaunch({ previous, amm }: StarndardAmmLaunch
   const launch = useCallback(async () => {
     if (!memecoin || !startingMcap || !quoteToken || !hodlLimit) return
 
-    // Sort by index and map to address and parsed amount
-    const teamAllocations = Object.entries(teamAllocation)
-      .sort(([a], [b]) => +a - +b)
-      .map(([, holder]) => ({
+    // parse team allocations amount
+    const teamAllocations = Object.values(teamAllocation)
+      .filter(Boolean)
+      .map((holder) => ({
         address: holder.address,
         amount: parseFormatedAmount(holder.amount),
       }))
