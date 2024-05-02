@@ -1,0 +1,8 @@
+{
+  "label": "Launch",
+  "position": 3,
+  "link": {
+    "type": "generated-index",
+    "description": "a few minutes to learn how to launch memecoin on the starknet AMMs."
+  }
+}
