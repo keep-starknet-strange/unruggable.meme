@@ -39,11 +39,7 @@ export function StarknetProvider({ children }: React.PropsWithChildren) {
 }
 
 // SDK HOOKS
-interface HooksSDKProviderProps {
-  children: React.ReactNode
-}
-
-export function HooksSDKProvider({ children }: HooksSDKProviderProps) {
+export function HooksSDKProvider({ children }: React.PropsWithChildren) {
   const { chain } = useNetwork()
 
   const provider = useMemo(() => nethermindRpcProviders(chain) ?? undefined, [chain])
