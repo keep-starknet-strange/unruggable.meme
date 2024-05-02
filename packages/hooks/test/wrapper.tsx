@@ -11,7 +11,7 @@ const provider = new RpcProvider({
 
 const factory = new Factory({ provider, chainId: constants.StarknetChainId.SN_MAIN })
 
-export const wrapper = ({ children }: { children: React.ReactNode }) => (
+export const wrapper = ({ children }: React.PropsWithChildren) => (
   <StarknetConfig provider={publicProvider()} chains={[mainnet]}>
     <Provider factory={factory}>{children}</Provider>
   </StarknetConfig>

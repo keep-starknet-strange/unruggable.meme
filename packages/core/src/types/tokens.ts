@@ -1,5 +1,6 @@
-import { QUOTE_TOKEN_SYMBOL } from 'src/constants'
 import { constants } from 'starknet'
+
+import { QUOTE_TOKEN_SYMBOL } from '../constants'
 
 export type USDCPair = {
   address: string

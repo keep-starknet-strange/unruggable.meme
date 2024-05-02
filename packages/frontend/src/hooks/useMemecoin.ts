@@ -1,61 +1,44 @@
 import { useAccount } from '@starknet-react/core'
-import { useCallback, useEffect, useMemo } from 'react'
-import { useBoundStore } from 'src/state'
+import { useMemecoin as useSDKMemecoin } from 'hooks'
+import { useMemo } from 'react'
+import { isValidL2Address } from 'src/utils/address'
 import { getChecksumAddress } from 'starknet'
 
 export default function useMemecoin(tokenAddress?: string) {
-  // store
-  const { memecoin, refreshMemecoin, setTokenAddress, ruggable, resetMemecoin } = useBoundStore((state) => ({
-    memecoin: state.memecoin,
-    refreshMemecoin: state.refreshMemecoin,
-    setTokenAddress: state.setTokenAddress,
-    ruggable: state.ruggable,
-    resetMemecoin: state.resetMemecoin,
-  }))
+  // token address check
+  tokenAddress = useMemo(
+    () => (tokenAddress && isValidL2Address(tokenAddress) ? tokenAddress : undefined),
+    [tokenAddress],
+  )
 
-  // set token address
-  useEffect(() => {
-    if (tokenAddress) {
-      setTokenAddress(tokenAddress)
-    }
-  }, [tokenAddress, setTokenAddress])
+  // store
+  // memecoin, refreshMemecoin, setTokenAddress, ruggable, resetMemecoin
+  const memecoin = useSDKMemecoin({
+    address: tokenAddress,
+    watch: true,
+  })
 
   // starknet
   const { address } = useAccount()
 
   // isOwner
   const isOwner = useMemo(() => {
-    if (!address || !memecoin) return false
+    if (!address || !memecoin.data) return false
 
     const checksummedAddress = getChecksumAddress(address)
 
-    if (memecoin.isLaunched) {
-      return getChecksumAddress(memecoin.liquidity.owner) === checksummedAddress
+    if (memecoin.data.isLaunched) {
+      return getChecksumAddress(memecoin.data.liquidity.owner) === checksummedAddress
     } else {
-      return getChecksumAddress(memecoin.owner) === checksummedAddress
+      return getChecksumAddress(memecoin.data.owner) === checksummedAddress
     }
   }, [address, memecoin])
 
-  // refresh
-  const refresh = useCallback(
-    (tokenAddress?: string) => {
-      if (tokenAddress) {
-        setTokenAddress(tokenAddress)
-      } else {
-        refreshMemecoin()
-      }
-    },
-    [refreshMemecoin, setTokenAddress],
-  )
+  return {
+    ...memecoin,
 
-  // reset
-  useEffect(() => {
-    if (tokenAddress) {
-      return resetMemecoin
-    }
-
-    return
-  }, [tokenAddress, resetMemecoin])
-
-  return { data: memecoin ? { ...memecoin, isOwner } : null, ruggable, refresh }
+    data: memecoin.data ? { ...memecoin.data, isOwner } : null,
+    ruggable: memecoin.isFetched && !memecoin.data,
+    refresh: memecoin.refetch,
+  }
 }

@@ -1,10 +1,11 @@
 import { Fraction } from '@uniswap/sdk-core'
+import { useQuoteToken, useQuoteTokenPrice } from 'hooks'
 import { useMemo } from 'react'
+import { useParams } from 'react-router-dom'
 import { useBalance } from 'src/hooks/useBalances'
 import { useAmm, useLiquidityForm, useTeamAllocationTotalPercentage } from 'src/hooks/useLaunchForm'
 import useMemecoin from 'src/hooks/useMemecoin'
-import { useQuoteTokenPrice, useWeiAmountToParsedFiatValue } from 'src/hooks/usePrice'
-import useQuoteToken from 'src/hooks/useQuote'
+import { useWeiAmountToParsedFiatValue } from 'src/hooks/usePrice'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
@@ -33,7 +34,8 @@ export default function LaunchTemplate({ liquidityPrice, teamAllocationPrice, pr
   const weiAmountToParsedFiatValue = useWeiAmountToParsedFiatValue(quoteTokenPrice)
 
   // memecoin
-  const { data: memecoin } = useMemecoin()
+  const { address: tokenAddress } = useParams()
+  const { data: memecoin } = useMemecoin(tokenAddress)
 
   // team allocation
   const teamAllocationTotalPercentage = useTeamAllocationTotalPercentage(memecoin?.totalSupply)
