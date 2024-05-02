@@ -5,7 +5,7 @@ import { RefObject, useEffect, useRef } from 'react'
 export function useOnClickOutside<T extends HTMLElement>(
   node: RefObject<T | undefined>,
   handler: undefined | (() => void),
-  ignoredNodes: Array<RefObject<T | undefined>> = []
+  ignoredNodes: Array<RefObject<T | undefined>> = [],
 ) {
   const handlerRef = useRef<undefined | (() => void)>(handler)
 
@@ -18,7 +18,7 @@ export function useOnClickOutside<T extends HTMLElement>(
       const nodeClicked = node.current?.contains(e.target as Node)
       const ignoredNodeClicked = ignoredNodes.reduce(
         (reducer, val) => reducer || !!val.current?.contains(e.target as Node),
-        false
+        false,
       )
 
       if ((nodeClicked || ignoredNodeClicked) ?? false) {

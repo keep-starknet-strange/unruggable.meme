@@ -5,16 +5,7 @@ import React from 'react'
 import { createRoot } from 'react-dom/client'
 
 import App from './App'
-import { StarknetProvider } from './components/Web3Provider'
-import MemecoinUpdater from './state/memecoin/updater'
-
-function Updaters() {
-  return (
-    <>
-      <MemecoinUpdater />
-    </>
-  )
-}
+import { HooksSDKProvider, StarknetProvider } from './components/Web3Provider'
 
 window.Buffer = window.Buffer || require('buffer').Buffer
 
@@ -24,7 +15,8 @@ if (!container) throw 'Undefined #root container'
 const root = createRoot(container)
 root.render(
   <StarknetProvider>
-    <Updaters />
-    <App />
+    <HooksSDKProvider>
+      <App />
+    </HooksSDKProvider>
   </StarknetProvider>,
 )

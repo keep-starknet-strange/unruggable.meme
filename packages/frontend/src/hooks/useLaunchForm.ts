@@ -1,6 +1,6 @@
 import { Fraction, Percent } from '@uniswap/sdk-core'
+import { DECIMALS } from 'core/constants'
 import { useMemo } from 'react'
-import { DECIMALS } from 'src/constants/misc'
 import { useBoundStore } from 'src/state'
 import { parseFormatedAmount } from 'src/utils/amount'
 import { decimalsScale } from 'src/utils/decimalScale'

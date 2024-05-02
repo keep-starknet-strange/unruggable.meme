@@ -1,7 +1,7 @@
 import { Fraction, Percent } from '@uniswap/sdk-core'
+import { DECIMALS } from 'core/constants'
 import { PlusIcon } from 'lucide-react'
 import { useMemo } from 'react'
-import { DECIMALS } from 'src/constants/misc'
 import { Holder } from 'src/state/launch'
 import { Column } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'

@@ -23,11 +23,9 @@ export interface ProviderProps {
 
   /** React-query client to use. */
   queryClient?: QueryClient
-
-  children?: React.ReactNode
 }
 
-export function Provider({ factory, queryClient, children }: ProviderProps) {
+export function Provider({ factory, queryClient, children }: React.PropsWithChildren<ProviderProps>) {
   return (
     <FactoryProvider factory={factory}>
       <QueryProvider queryClient={queryClient}>{children}</QueryProvider>

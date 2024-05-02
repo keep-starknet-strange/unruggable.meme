@@ -1,7 +1,10 @@
-import { AMM } from 'src/constants/AMMs'
-import { MAX_LIQUIDITY_LOCK_PERIOD, MAX_TRANSFER_RESTRICTION_DELAY } from 'src/constants/misc'
-import { DEFAULT_QUOTE_TOKEN_ADDRESS } from 'src/constants/tokens'
-import { getChecksumAddress } from 'starknet'
+import {
+  AMM,
+  DEFAULT_QUOTE_TOKEN_ADDRESSES,
+  MAX_LIQUIDITY_LOCK_PERIOD,
+  MAX_TRANSFER_RESTRICTION_DELAY,
+} from 'core/constants'
+import { constants, getChecksumAddress } from 'starknet'
 import { StateCreator } from 'zustand'
 
 import { StoreState } from './index'
@@ -46,7 +49,7 @@ const initialState = {
   startingMcap: null,
   teamAllocation: {},
   amm: AMM.EKUBO, // we don't really care about this value
-  quoteTokenAddress: getChecksumAddress(DEFAULT_QUOTE_TOKEN_ADDRESS),
+  quoteTokenAddress: getChecksumAddress(DEFAULT_QUOTE_TOKEN_ADDRESSES[constants.StarknetChainId.SN_MAIN]),
   ekuboFees: null,
 }
 

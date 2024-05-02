@@ -1,17 +1,15 @@
+import { getLiquidityLockSafety } from 'core'
+import { LiquidityType, Safety } from 'core/constants'
 import { Eye } from 'lucide-react'
 import moment from 'moment'
 import { useCallback, useMemo, useState } from 'react'
-import { useMatch } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import Section from 'src/components/Section'
-import { LiquidityType } from 'src/constants/misc'
-import { Safety } from 'src/constants/safety'
 import useMemecoin from 'src/hooks/useMemecoin'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
 import { vars } from 'src/theme/css/sprinkles.css'
-import { getLiquidityLockSafety } from 'src/utils/safety'
-import { getChecksumAddress } from 'starknet'
 
 import CollectFees from './CollectFees'
 import IncreaseLiquidityLock from './IncreaseLiquidityLock'
@@ -27,14 +25,7 @@ export default function TokenPage() {
   const [launchFormPageIndex, setLaunchFormPageIndex] = useState(0)
 
   // URL
-  const match = useMatch('/token/:address')
-  const tokenAddress = useMemo(() => {
-    if (match?.params.address) {
-      return getChecksumAddress(match?.params.address)
-    } else {
-      return null
-    }
-  }, [match?.params.address])
+  const { address: tokenAddress } = useParams()
 
   // form pages
   const next = useCallback(() => setLaunchFormPageIndex((page) => page + 1), [])

@@ -1,8 +1,7 @@
-import { useNetwork } from '@starknet-react/core'
 import { DefaultError, QueryKey, useQuery as useReactQuery, UseQueryOptions } from '@tanstack/react-query'
-import { useEffect } from 'react'
 
 import { useInvalidateOnBlock } from './useInvalidateOnBlock'
+import { useInvalidateOnChanId } from './useInvalidateOnChanId'
 
 export function useQuery<
   TQueryFnData = unknown,
@@ -21,6 +20,11 @@ export function useQuery<
   const query = useReactQuery({
     queryKey,
     enabled,
+
+    // Stale time doesn't actually matter since we have our own invalidation logic
+    // But better to provide than to have it default to 0
+    staleTime: 60 * 1000,
+
     ...props,
   })
 
@@ -29,13 +33,11 @@ export function useQuery<
     queryKey,
   })
 
-  // refetch on chainId update
-  const { chain } = useNetwork()
-  useEffect(() => {
-    if (chain.id && enabled) {
-      query.refetch()
-    }
-  }, [chain.id])
+  // Data should be refetched no matter if the watch is enabled or not
+  useInvalidateOnChanId({
+    enabled,
+    queryKey,
+  })
 
   return query
 }

@@ -12,7 +12,7 @@ if (typeof NETHERMIND_KEY === 'undefined') {
 const DEFAULT_NETWORK_NAME = process.env.REACT_APP_DEFAULT_NETWORK_NAME as string
 if (typeof DEFAULT_NETWORK_NAME === 'undefined') {
   throw new Error(`REACT_APP_DEFAULT_NETWORK_NAME must be a defined environment variable`)
-} else if (SUPPORTED_STARKNET_NETWORKS.reduce((_, { network }) => network === DEFAULT_NETWORK_NAME, false)) {
+} else if (SUPPORTED_STARKNET_NETWORKS.every(({ network }) => network !== DEFAULT_NETWORK_NAME)) {
   throw new Error(`REACT_APP_DEFAULT_NETWORK_NAME is invalid`)
 }
 

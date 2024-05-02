@@ -4,13 +4,19 @@ import { Fraction } from '@uniswap/sdk-core'
 import { getPairPrice } from 'core'
 import { BlockNumber, BlockTag } from 'starknet'
 
-import { Pair } from '../types'
+import { Pair, UseQueryProps } from '../types'
 import { useQuery } from './internal/useQuery'
 
-export function usePairPrice(
-  pair?: Pair,
-  blockNumber: BlockNumber = BlockTag.latest,
-): UseQueryResult<Fraction | undefined, Error | null> {
+export type UsePairPriceProps = UseQueryProps & {
+  pair?: Pair
+  blockNumber?: BlockNumber
+}
+
+export function usePairPrice({
+  pair,
+  blockNumber = BlockTag.latest,
+  ...props
+}: UsePairPriceProps): UseQueryResult<Fraction | undefined, Error | null> {
   const { provider } = useProvider()
 
   return useQuery({
@@ -18,9 +24,9 @@ export function usePairPrice(
     queryFn: async () => {
       if (!pair) return
 
-      // tsup somehow complains about the type of the blockNumber
-      return getPairPrice(provider, pair, blockNumber as BlockTag)
+      return await getPairPrice(provider, pair, blockNumber)
     },
-    enabled: !!pair,
+    enabled: Boolean(pair),
+    ...props,
   })
 }
