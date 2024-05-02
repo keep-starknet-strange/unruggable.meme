@@ -1,7 +1,7 @@
+import { AMM, AMMS } from 'core/constants'
 import { useCallback } from 'react'
 import { CardButton } from 'src/components/Button'
-import { AMM } from 'src/constants/AMMs'
-import { AmmInfos } from 'src/constants/AMMs'
+import { AMM_ICONS } from 'src/constants/icons'
 import { useAmm } from 'src/hooks/useLaunchForm'
 import { Column } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
@@ -33,8 +33,8 @@ export default function AMMForm({ next }: FormPageProps) {
               key={amm}
               onClick={() => selectAmm(amm)}
               title={amm}
-              subtitle={AmmInfos[amm].description}
-              icon={() => AmmInfos[amm].icon}
+              subtitle={AMMS[amm].description}
+              icon={() => AMM_ICONS[amm]}
             />
           ))}
         </Column>

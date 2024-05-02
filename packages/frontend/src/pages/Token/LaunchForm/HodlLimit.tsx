@@ -1,19 +1,19 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import {
+  MAX_HODL_LIMIT,
+  MAX_TRANSFER_RESTRICTION_DELAY,
+  MIN_HODL_LIMIT,
+  MIN_TRANSFER_RESTRICTION_DELAY,
+  RECOMMENDED_HODL_LIMIT,
+  TRANSFER_RESTRICTION_DELAY_STEP,
+} from 'core/constants'
 import moment from 'moment'
 import { useCallback, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import Input from 'src/components/Input'
 import PercentInput from 'src/components/Input/PercentInput'
 import Slider from 'src/components/Slider'
-import {
-  MAX_HODL_LIMIT,
-  MAX_TRANSFER_RESTRICTION_DELAY,
-  MIN_HODL_LIMIT,
-  MIN_TRANSFER_RESTRICTION_DELAY,
-  PERCENTAGE_INPUT_PRECISION,
-  RECOMMENDED_HODL_LIMIT,
-  TRANSFER_RESTRICTION_DELAY_STEP,
-} from 'src/constants/misc'
+import { PERCENTAGE_INPUT_PRECISION } from 'src/constants/misc'
 import { useHodlLimitForm } from 'src/hooks/useLaunchForm'
 import Box from 'src/theme/components/Box'
 import { Column } from 'src/theme/components/Flex'

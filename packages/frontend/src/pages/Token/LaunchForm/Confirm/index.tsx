@@ -1,5 +1,5 @@
+import { AMM } from 'core/constants'
 import { useMemo } from 'react'
-import { AMM } from 'src/constants/AMMs'
 import { useAmm } from 'src/hooks/useLaunchForm'
 import { Column } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
