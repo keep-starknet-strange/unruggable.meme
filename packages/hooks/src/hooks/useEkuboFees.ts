@@ -24,7 +24,7 @@ export function useEkuboFees({
   return useQuery({
     queryKey: ['ekuboFees', memecoin.data?.address],
     queryFn: async () => (memecoin.data ? factory.getEkuboFees(memecoin.data) : undefined),
-    enabled: Boolean(address),
+    enabled: Boolean(address && memecoin.data),
     ...props,
   })
 }

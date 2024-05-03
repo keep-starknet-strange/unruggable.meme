@@ -1,35 +1,34 @@
-import { Fraction, Percent } from '@uniswap/sdk-core'
+import { Percent } from '@uniswap/sdk-core'
+import {
+  getLiquidityLockSafety,
+  getQuoteTokenSafety,
+  getStartingMarketCap,
+  getStartingMcapSafety,
+  getTeamAllocationSafety,
+} from 'core'
+import { QUOTE_TOKENS, Safety } from 'core/constants'
+import { useQuoteToken, useQuoteTokenPrice } from 'hooks'
 import moment from 'moment'
 import { useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import Dropdown from 'src/components/Dropdown'
-import { DECIMALS, FOREVER, LiquidityType } from 'src/constants/misc'
-import { Safety, SAFETY_COLORS } from 'src/constants/safety'
-import { QUOTE_TOKENS } from 'src/constants/tokens'
+import { FOREVER } from 'src/constants/misc'
+import { SAFETY_COLORS } from 'src/constants/safety'
 import useChainId from 'src/hooks/useChainId'
 import useLinks from 'src/hooks/useLinks'
 import useMemecoin from 'src/hooks/useMemecoin'
-import { useQuoteTokenPrice } from 'src/hooks/usePrice'
-import useQuoteToken from 'src/hooks/useQuote'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
 import { formatPercentage } from 'src/utils/amount'
-import { decimalsScale } from 'src/utils/decimalScale'
-import { getInitialPrice } from 'src/utils/ekubo'
 import { parseMonthsDuration } from 'src/utils/moment'
-import {
-  getLiquidityLockSafety,
-  getQuoteTokenSafety,
-  getStartingMcapSafety,
-  getTeamAllocationSafety,
-} from 'src/utils/safety'
 
 import * as styles from './style.css'
 
 export default function TokenMetrics() {
   // memecoin
-  const { data: memecoin } = useMemecoin()
+  const { address: tokenAddress } = useParams()
+  const { data: memecoin } = useMemecoin(tokenAddress)
 
   // dropdown links
   const links = useLinks(memecoin?.address)
@@ -38,10 +37,10 @@ export default function TokenMetrics() {
   const quoteToken = useQuoteToken(memecoin?.isLaunched ? memecoin?.liquidity?.quoteToken : undefined)
 
   // quote token price
-  const quoteTokenPriceAtLaunch = useQuoteTokenPrice(
-    quoteToken?.address,
-    memecoin?.isLaunched ? memecoin.launch.blockNumber - 1 : undefined,
-  )
+  const { data: quoteTokenPriceAtLaunch } = useQuoteTokenPrice({
+    address: quoteToken?.address,
+    blockNumber: memecoin?.isLaunched ? memecoin.launch.blockNumber - 1 : undefined,
+  })
 
   // starknet
   const chainId = useChainId()
@@ -54,7 +53,7 @@ export default function TokenMetrics() {
     const ret: Record<string, { parsedValue: string; safety: Safety }> = {}
 
     // team allocation
-    const teamAllocation = new Percent(memecoin.launch.teamAllocation, memecoin.totalSupply)
+    const teamAllocation = new Percent(memecoin.launch.teamAllocation.toString(), memecoin.totalSupply.toString())
 
     ret.teamAllocation = {
       parsedValue: formatPercentage(teamAllocation),
@@ -87,35 +86,7 @@ export default function TokenMetrics() {
 
     // starting mcap
     if (quoteTokenPriceAtLaunch) {
-      let startingMcap: Fraction | undefined
-      switch (memecoin.liquidity.type) {
-        case LiquidityType.STARKDEFI_ERC20:
-        case LiquidityType.JEDISWAP_ERC20: {
-          startingMcap =
-            ret.quoteToken.safety === Safety.SAFE
-              ? new Fraction(memecoin.liquidity.quoteAmount)
-                  .multiply(new Fraction(memecoin.launch.teamAllocation, memecoin.totalSupply).add(1))
-                  .divide(decimalsScale(quoteToken.decimals))
-                  .multiply(quoteTokenPriceAtLaunch)
-              : undefined
-
-          break
-        }
-
-        case LiquidityType.EKUBO_NFT: {
-          const initialPrice = getInitialPrice(memecoin.liquidity.startingTick)
-          startingMcap =
-            ret.quoteToken.safety === Safety.SAFE
-              ? new Fraction(
-                  initialPrice.toFixed(DECIMALS).replace(/\./, '').replace(/^0+/, ''), // from 0.000[...]0001 to "1"
-                  decimalsScale(DECIMALS),
-                )
-                  .multiply(quoteTokenPriceAtLaunch)
-                  .multiply(memecoin.totalSupply)
-                  .divide(decimalsScale(DECIMALS))
-              : undefined
-        }
-      }
+      const startingMcap = getStartingMarketCap(memecoin, quoteTokenPriceAtLaunch)
 
       ret.startingMcap = {
         parsedValue: startingMcap ? `$${startingMcap.toFixed(0, { groupSeparator: ',' })}` : 'UNKNOWN',

@@ -41,9 +41,6 @@ export enum LiquidityType {
   EKUBO_NFT = 'EKUBO_NFT',
 }
 
-export const STARKNET_POLLING = 3_000 // 3s
-export const STARKNET_MAX_BLOCK_TIME = 3600 * 2 // 2h
-
 export const MIN_STARTING_MCAP = 5_000 // $5k
 export const RECOMMENDED_STARTING_MCAP = 10_000 // $12k
 

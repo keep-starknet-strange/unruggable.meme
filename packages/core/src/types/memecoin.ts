@@ -98,8 +98,8 @@ type MemecoinBaseLaunchData = {
     amount: number | string
   }[]
 
-  /** The hold limit multiplied by 100. For example, 1% is 100, 10% is 1000, etc. */
-  holdLimit: number
+  /** The hold limit as Percent object. */
+  holdLimit: Percent
 
   /** The anti-bot feature period in seconds. For example, 1 hour is 3600 etc. */
   antiBotPeriod: number

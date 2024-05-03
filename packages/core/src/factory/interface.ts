@@ -38,13 +38,6 @@ export abstract class FactoryInterface {
   public abstract getMemecoinLaunchData(address: string): Promise<LaunchedMemecoin>
 
   /**
-   * Get the starting market cap of a memecoin at launch.
-   * @param memecoin Result of `getMemecoin`
-   * @param quoteTokenPriceAtLaunch Quote token price at launch as a Fraction
-   */
-  public abstract getStartingMarketCap(memecoin: Memecoin, quoteTokenPriceAtLaunch?: Fraction): Fraction | undefined
-
-  /**
    * Get the collectable ekubo fees of a memecoin.
    * @param memecoin Result of `getMemecoin`
    */

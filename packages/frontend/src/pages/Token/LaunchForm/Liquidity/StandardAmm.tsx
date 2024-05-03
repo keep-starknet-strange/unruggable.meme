@@ -1,15 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { LIQUIDITY_LOCK_PERIOD_STEP, MAX_LIQUIDITY_LOCK_PERIOD, MIN_LIQUIDITY_LOCK_PERIOD } from 'core/constants'
 import moment from 'moment'
 import { useCallback, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import Input from 'src/components/Input'
 import Slider from 'src/components/Slider'
-import {
-  FOREVER,
-  LIQUIDITY_LOCK_PERIOD_STEP,
-  MAX_LIQUIDITY_LOCK_PERIOD,
-  MIN_LIQUIDITY_LOCK_PERIOD,
-} from 'src/constants/misc'
+import { FOREVER } from 'src/constants/misc'
 import { useStandardAmmLiquidityForm } from 'src/hooks/useLaunchForm'
 import { Column } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'

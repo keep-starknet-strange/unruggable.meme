@@ -3,7 +3,6 @@ import { constants, RpcProvider } from 'starknet'
 import { describe, expect, test } from 'vitest'
 
 import * as TestData from '../../test/TestData'
-import { getPairPrice } from '../utils/price'
 import { Factory } from './default'
 
 const provider = new RpcProvider({
@@ -46,23 +45,6 @@ describe('Default Factory', () => {
       const launchData = await factory.getMemecoinLaunchData(TestData.launched.address)
 
       expect(launchData).toMatchObject(TestData.launched.launchData)
-    })
-
-    test('Starting Market Cap', async () => {
-      const memecoin = await factory.getMemecoin(TestData.launched.address)
-
-      expect(memecoin).toBeDefined()
-      expect(memecoin?.isLaunched).toBe(true)
-      if (!memecoin || !memecoin.isLaunched) return
-
-      const quoteTokenPrice = await getPairPrice(
-        factory.config.provider,
-        memecoin.quoteToken?.usdcPair,
-        memecoin.launch.blockNumber - 1,
-      )
-      const startingMarketCap = factory.getStartingMarketCap(memecoin, quoteTokenPrice)
-
-      expect(startingMarketCap?.toFixed(0)).toBe('4972')
     })
 
     test('Ekubo Fees', async () => {

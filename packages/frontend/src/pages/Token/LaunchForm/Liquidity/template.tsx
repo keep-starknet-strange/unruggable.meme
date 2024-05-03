@@ -1,10 +1,10 @@
 import clsx from 'clsx'
+import { MIN_STARTING_MCAP, QUOTE_TOKENS, RECOMMENDED_STARTING_MCAP } from 'core/constants'
 import { useCallback } from 'react'
 import { FieldErrors, UseFormRegister } from 'react-hook-form'
 import { CardButton } from 'src/components/Button'
 import NumericalInput from 'src/components/Input/NumericalInput'
-import { MIN_STARTING_MCAP, RECOMMENDED_STARTING_MCAP } from 'src/constants/misc'
-import { QUOTE_TOKENS } from 'src/constants/tokens'
+import { QUOTE_TOKEN_ICONS } from 'src/constants/icons'
 import useChainId from 'src/hooks/useChainId'
 import { useLiquidityForm } from 'src/hooks/useLaunchForm'
 import Box from 'src/theme/components/Box'
@@ -80,7 +80,7 @@ export default function LiquidityTemplate({ register, errors }: LiquidityTemplat
                 )}
                 title={token.symbol}
                 subtitle={token.name}
-                icon={() => token.icon}
+                icon={() => QUOTE_TOKEN_ICONS[token.symbol]}
               />
             ))}
         </Row>
