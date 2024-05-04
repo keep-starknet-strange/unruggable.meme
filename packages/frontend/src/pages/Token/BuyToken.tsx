@@ -27,12 +27,20 @@ export default function TokenBuyer() {
 
   // function to handle change of input in Amount
   function handleAmount(event: BaseSyntheticEvent) {
-    console.log(amount)
     if (event.target.value == '') {
       setAmount(0)
       return
     }
     setAmount(parseFloat(event.target.value))
+  }
+
+  // function to handle change of input in Amount
+  function handleSlippage(event: BaseSyntheticEvent) {
+    if (event.target.value == '') {
+      setAmount(0)
+      return
+    }
+    setSlippage(parseFloat(event.target.value))
   }
 
   return (
@@ -61,10 +69,10 @@ export default function TokenBuyer() {
           <SecondaryButton onClick={() => setSlippage(1)} marginRight="18">
             1%
           </SecondaryButton>
-          <PercentInput value={slippage} width="full" maxWidth="180" minWidth="42" />
+          <PercentInput value={slippage} onChange={handleSlippage} width="full" maxWidth="180" minWidth="42" />
         </Row>
       </Row>
-      <PrimaryButton onClick={() => console.log('clicked buy')}>Buy</PrimaryButton>
+      <PrimaryButton onClick={() => console.log('TODO: implement the buying functionality here')}>Buy</PrimaryButton>
     </Column>
   )
 }
