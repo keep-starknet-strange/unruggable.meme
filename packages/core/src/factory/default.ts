@@ -464,7 +464,7 @@ export class Factory implements FactoryInterface {
       +data.holdLimit.toFixed(1) * 100, // hold limit
       data.quoteToken.address, // quote token
       initialHolders, // initial holders
-      initialHoldersAmounts, // intial holders amounts
+      initialHoldersAmounts, // initial holders amounts
       uin256QuoteAmount, // quote amount
       data.liquidityLockPeriod,
     ])
