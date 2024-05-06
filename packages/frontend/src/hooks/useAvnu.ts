@@ -1,6 +1,9 @@
+/* eslint-disable import/no-unused-modules */
 import { fetchBuildExecuteTransaction, fetchQuotes, Quote, QuoteRequest } from '@avnu/avnu-sdk'
 import { useAccount, useBlockNumber } from '@starknet-react/core'
+import { Percent } from '@uniswap/sdk-core'
 import { useCallback, useEffect, useState } from 'react'
+import { SLIPPAGE_PRECISION, STARKNET_POLLING } from 'src/constants/misc'
 import { getAvnuOptions } from 'src/utils/avnu'
 import { Call } from 'starknet'
 
@@ -13,7 +16,7 @@ export function useGetAvnuQuotes(
 
   const [quote, setQuote] = useState<Quote | null>(null)
 
-  const { data: blockNumber } = useBlockNumber({ refetchInterval: 3000 })
+  const { data: blockNumber } = useBlockNumber({ refetchInterval: STARKNET_POLLING })
 
   useEffect(() => {
     if (!blockNumber) return
@@ -34,6 +37,7 @@ export function useGetAvnuQuotes(
       })
       .catch((error) => {
         if (!abortController.signal.aborted) {
+          // TODO: handle error
           console.log(error)
         }
       })
@@ -44,7 +48,7 @@ export function useGetAvnuQuotes(
   return quote
 }
 
-export function useAvnuSwapBuilder(slippage: number): (quote: Quote) => Promise<Call[] | undefined> {
+export function useAvnuSwapBuilder(slippage: Percent): (quote: Quote) => Promise<Call[] | undefined> {
   const account = useAccount()
 
   return useCallback(
@@ -56,7 +60,7 @@ export function useAvnuSwapBuilder(slippage: number): (quote: Quote) => Promise<
       const { calls } = await fetchBuildExecuteTransaction(
         quote.quoteId,
         account.address,
-        slippage / 10_000,
+        +slippage.toFixed(SLIPPAGE_PRECISION),
         true,
         AVNU_OPTIONS,
       )
