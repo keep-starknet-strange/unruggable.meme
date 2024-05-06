@@ -1,4 +1,4 @@
 module.exports = {
   root: true,
-  extends: ['../../.eslintrc.js', '@uniswap/eslint-config/react'],
+  extends: ['@uniswap/eslint-config/react', '../../.eslintrc.js'],
 }
