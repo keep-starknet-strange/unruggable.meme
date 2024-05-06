@@ -1,21 +1,21 @@
 import { Percent } from '@uniswap/sdk-core'
-import { getPairPrice } from 'core'
+import { getPairPrice, getStartingMarketCap } from 'core'
 
 import { bot } from '../services/bot'
 import { factory } from '../services/factory'
 import { formatPercentage, isValidStarknetAddress } from '../utils/helpers'
 
 // Matches "/unrug [token_address]"
-bot.onText(/\/unrug (.+)/, (msg, match) => {
-  // TODO: add usage
-  if (!match?.[1]) return
-
+bot.onText(/^\/unrug/, (msg) => {
   // 'msg' is the received Message from Telegram
-  // 'match' is the result of executing the regexp above on the text content
-  // of the message
 
   const chatId = msg.chat.id
-  const tokenAddress = match[1] // the captured "token_address"
+  const tokenAddress = msg.text?.split(' ')[1] // the captured "token_address"
+
+  if (!tokenAddress) {
+    bot.sendMessage(msg.chat.id, 'Usage: /unrug [token_address]')
+    return
+  }
 
   computeResponse(chatId, tokenAddress).then((response) => {
     // handle response
@@ -64,7 +64,7 @@ async function computeResponse(chatId: number, tokenAddress: string): Promise<st
         )
 
         // starting mcap
-        const startingMcap = factory.getStartingMarketCap(memecoin, pairPriceAtLaunch)
+        const startingMcap = getStartingMarketCap(memecoin, pairPriceAtLaunch)
         const parsedStartingMcap = startingMcap ? `$${startingMcap.toFixed(0, { groupSeparator: ',' })}` : 'UNKNOWN'
 
         response += `Starting mcap: ${parsedStartingMcap}\n`

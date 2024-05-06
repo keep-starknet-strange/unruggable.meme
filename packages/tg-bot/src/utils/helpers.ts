@@ -1,5 +1,7 @@
 import { Percent } from '@uniswap/sdk-core'
 
+import { PERCENTAGE_INPUT_PRECISION } from './constants'
+
 /**
  * Checks if a given string is a valid StarkNet address.
  *
@@ -21,3 +23,6 @@ export const formatPercentage = (percentage: Percent) => {
 
   return `${exact ? '' : '~'}${formatedPercentage}%`
 }
+
+export const parsePercentage = (percentage: string | number) =>
+  new Percent(+percentage * 10 ** PERCENTAGE_INPUT_PRECISION, 100 * 10 ** PERCENTAGE_INPUT_PRECISION)
