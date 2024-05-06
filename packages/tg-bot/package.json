@@ -1,0 +1,33 @@
+{
+  "name": "tg-bot",
+  "version": "0.1.0",
+  "license": "MIT",
+  "scripts": {
+    "start": "tsx src/index.ts",
+    "build": "pkgroll",
+    "lint": "eslint . --max-warnings=0 --ignore-path ../../.eslintignore",
+    "lint:fix": "eslint src --fix"
+  },
+  "dependencies": {
+    "@uniswap/sdk-core": "^4.2.0",
+    "@walletconnect/sign-client": "^2.12.2",
+    "node-telegram-bot-api": "^0.65.1",
+    "qrcode": "^1.5.3",
+    "starknet": "^5.24.3",
+    "ts-dedent": "^2.2.0",
+    "zod": "^3.23.4"
+  },
+  "devDependencies": {
+    "@types/node-telegram-bot-api": "^0.64.3",
+    "@types/qrcode": "^1.5.5",
+    "@uniswap/eslint-config": "^1.2.0",
+    "@walletconnect/types": "^2.12.2",
+    "core": "*",
+    "dotenv": "^16.4.5",
+    "eslint": "^8.0.0",
+    "pkgroll": "^2.0.2",
+    "prettier": "^3.1.0",
+    "tsx": "^4.7.3",
+    "typescript": "^5.4.5"
+  }
+}

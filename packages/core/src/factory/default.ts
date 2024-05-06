@@ -26,7 +26,7 @@ import {
   StandardAMMLaunchData,
 } from '../types/memecoin'
 import { multiCallContract } from '../utils/contract'
-import { getInitialPrice, getStartingTick } from '../utils/ekubo'
+import { getStartingTick } from '../utils/ekubo'
 import { decimalsScale } from '../utils/helpers'
 import { getPairPrice } from '../utils/price'
 import { FactoryConfig, FactoryInterface } from './interface'
@@ -237,39 +237,6 @@ export class Factory implements FactoryInterface {
   }
 
   //
-  // GET MCAP
-  //
-
-  public getStartingMarketCap(memecoin: Memecoin, quoteTokenPriceAtLaunch?: Fraction): Fraction | undefined {
-    if (!memecoin.isLaunched || !quoteTokenPriceAtLaunch || !memecoin.quoteToken) return undefined
-
-    switch (memecoin.liquidity.type) {
-      case LiquidityType.STARKDEFI_ERC20:
-      case LiquidityType.JEDISWAP_ERC20: {
-        // starting mcap = quote amount in liq * (team allocation % + 100) * quote token price at launch
-        return new Fraction(memecoin.liquidity.quoteAmount)
-          .multiply(new Fraction(memecoin.launch.teamAllocation, memecoin.totalSupply).add(1))
-          .divide(decimalsScale(memecoin.quoteToken.decimals))
-          .multiply(quoteTokenPriceAtLaunch)
-      }
-
-      case LiquidityType.EKUBO_NFT: {
-        // get starting price from starting tick
-        const initialPrice = getInitialPrice(memecoin.liquidity.startingTick)
-
-        // starting mcap = initial price * quote token price at launch * total supply
-        return new Fraction(
-          initialPrice.toFixed(DECIMALS).replace(/\./, '').replace(/^0+/, ''), // from 0.000[...]0001 to "1"
-          decimalsScale(DECIMALS),
-        )
-          .multiply(quoteTokenPriceAtLaunch)
-          .multiply(memecoin.totalSupply)
-          .divide(decimalsScale(DECIMALS))
-      }
-    }
-  }
-
-  //
   // GET FEES
   //
 
@@ -433,7 +400,7 @@ export class Factory implements FactoryInterface {
     const launchCalldata = CallData.compile([
       memecoin.address, // memecoin address
       data.antiBotPeriod, // anti bot period in seconds
-      data.holdLimit, // hold limit
+      +data.holdLimit.toFixed(1) * 100, // hold limit
       data.quoteToken.address, // quote token address
       initialHolders, // initial holders
       initialHoldersAmounts, // initial holders amounts
@@ -494,10 +461,10 @@ export class Factory implements FactoryInterface {
     const launchCalldata = CallData.compile([
       memecoin.address, // memecoin address
       data.antiBotPeriod, // anti bot period in seconds
-      data.holdLimit, // hold limit
+      +data.holdLimit.toFixed(1) * 100, // hold limit
       data.quoteToken.address, // quote token
       initialHolders, // initial holders
-      initialHoldersAmounts, // intial holders amounts
+      initialHoldersAmounts, // initial holders amounts
       uin256QuoteAmount, // quote amount
       data.liquidityLockPeriod,
     ])

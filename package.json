@@ -12,7 +12,6 @@
     "g:test": "turbo run test",
     "g:test:watch": "turbo run test:watch",
     "g:prepare": "turbo run prepare",
-    "g:rm:local-packages": "rm -rf ./node_modules/core ./node_modules/hooks",
     "g:rm:nodemodules": "rm -rf node_modules"
   },
   "workspaces": [

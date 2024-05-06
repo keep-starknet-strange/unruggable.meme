@@ -1,17 +1,14 @@
-import { useContractRead, UseContractReadResult } from '@starknet-react/core'
+import { useMemecoins } from 'hooks'
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { PrimaryButton, SecondaryButton } from 'src/components/Button'
 import { ImportTokenModal } from 'src/components/ImportTokenModal'
 import Section from 'src/components/Section'
-import { compiledMulticall, MULTICALL_ADDRESS } from 'src/constants/contracts'
-import { Selector } from 'src/constants/misc'
 import { useDeploymentStore } from 'src/hooks/useDeployment'
 import { useImportTokenModal } from 'src/hooks/useModal'
 import Box from 'src/theme/components/Box'
 import { Column, Row } from 'src/theme/components/Flex'
 import * as Text from 'src/theme/components/Text'
-import { CallStruct, hash } from 'starknet'
 
 import * as styles from './style.css'
 import TokenContract from './TokenContract'
@@ -23,40 +20,19 @@ export default function TokensPage() {
   // deployed tokens
   const [deployedTokenContracts] = useDeploymentStore()
 
-  const launchedStatusCallArgs = useMemo(
-    () => [
-      deployedTokenContracts.map(
-        (tokenContract): CallStruct => ({
-          to: tokenContract.address,
-          selector: hash.getSelector(Selector.IS_LAUNCHED),
-          calldata: [],
-        }),
-      ),
-    ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [deployedTokenContracts.length],
-  )
+  const deployedMemecoins = useMemecoins({
+    addresses: deployedTokenContracts.map((tokenContract) => tokenContract.address),
+  })
 
-  const launchedStatus = useContractRead({
-    abi: compiledMulticall,
-    address: MULTICALL_ADDRESS,
-    functionName: Selector.AGGREGATE,
-    watch: true,
-    args: launchedStatusCallArgs,
-  }) as UseContractReadResult & { data?: [bigint, [bigint][]] }
+  const launchedStatuses = useMemo(() => {
+    return deployedMemecoins.reduce<Record<string, boolean>>((acc, status) => {
+      if (!status.isLoading && status.data) {
+        acc[status.data.address] = status.data.isLaunched
+      }
 
-  const parsedLaunchedStatus = useMemo(
-    () =>
-      deployedTokenContracts.reduce<Record<string, boolean>>((acc, tokenContract, index) => {
-        const status = launchedStatus.data?.[1][index]
-        if (status === undefined) return acc
-
-        acc[tokenContract.address] = !!+status
-        return acc
-      }, {}),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [launchedStatusCallArgs.length, launchedStatus?.data?.[0].toString()],
-  )
+      return acc
+    }, {})
+  }, [deployedMemecoins])
 
   return (
     <>
@@ -76,15 +52,11 @@ export default function TokensPage() {
 
           {[...deployedTokenContracts]
             .sort((a, b) =>
-              parsedLaunchedStatus[a.address] === parsedLaunchedStatus[b.address]
-                ? 0
-                : parsedLaunchedStatus[a.address]
-                  ? 1
-                  : -1,
+              launchedStatuses[a.address] === launchedStatuses[b.address] ? 0 : launchedStatuses[a.address] ? 1 : -1,
             )
             .map((tokenContract) => (
               <Link key={tokenContract.address} to={`/token/${tokenContract.address}`}>
-                <TokenContract tokenContract={tokenContract} launched={parsedLaunchedStatus[tokenContract.address]} />
+                <TokenContract tokenContract={tokenContract} launched={launchedStatuses[tokenContract.address]} />
               </Link>
             ))}
 

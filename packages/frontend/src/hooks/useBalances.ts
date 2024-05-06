@@ -1,11 +1,12 @@
 import { useAccount, useContractRead, UseContractReadResult } from '@starknet-react/core'
 import { Fraction } from '@uniswap/sdk-core'
+import { Token } from 'core'
+import { compiledMulticall, Entrypoint, MULTICALL_ADDRESSES } from 'core/constants'
 import { useMemo } from 'react'
-import { compiledMulticall, MULTICALL_ADDRESS } from 'src/constants/contracts'
-import { Selector } from 'src/constants/misc'
-import { Token } from 'src/constants/tokens'
 import { decimalsScale } from 'src/utils/decimals'
 import { CallStruct, selector, uint256 } from 'starknet'
+
+import useChainId from './useChainId'
 
 type Balance = Fraction
 type Balances = Record<string, Balance>
@@ -20,17 +21,18 @@ type UseBalancesToken = Pick<Token, 'address' | 'camelCased' | 'decimals'>
 // eslint-disable-next-line import/no-unused-modules
 export default function useBalances(tokens: UseBalancesToken[]): UseBalancesResult {
   const { address: accountAddress } = useAccount()
+  const chainId = useChainId()
 
   const res = useContractRead({
     abi: compiledMulticall, // call is not send if abi is undefined
-    address: accountAddress ? MULTICALL_ADDRESS : undefined,
+    address: accountAddress && chainId ? MULTICALL_ADDRESSES[chainId] : undefined,
     functionName: 'aggregate',
     watch: true,
     args: [
       tokens.map(
         (token): CallStruct => ({
           to: token.address,
-          selector: selector.getSelector(token.camelCased ? Selector.BALANCE_OF_CAMEL : Selector.BALANCE_OF),
+          selector: selector.getSelector(token.camelCased ? Entrypoint.BALANCE_OF_CAMEL : Entrypoint.BALANCE_OF),
           calldata: [accountAddress ?? ''],
         }),
       ),

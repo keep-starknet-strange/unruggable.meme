@@ -1,0 +1,1 @@
+export const STARKNET_BLOCK_POLLING = 5000 // 5s

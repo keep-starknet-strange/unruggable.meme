@@ -1,15 +1,10 @@
 import { Fraction } from '@uniswap/sdk-core'
+import { AMM, LIQUIDITY_LOCK_FOREVER_TIMESTAMP, MAX_LIQUIDITY_LOCK_PERIOD } from 'core/constants'
+import { useFactory, useQuoteToken, useQuoteTokenPrice } from 'hooks'
 import moment from 'moment'
 import { useCallback, useMemo } from 'react'
-import { AMM, AmmInfos } from 'src/constants/AMMs'
-import { FACTORY_ADDRESSES } from 'src/constants/contracts'
-import {
-  LIQUIDITY_LOCK_FOREVER_TIMESTAMP,
-  MAX_LIQUIDITY_LOCK_PERIOD,
-  Selector,
-  STARKNET_MAX_BLOCK_TIME,
-} from 'src/constants/misc'
-import useChainId from 'src/hooks/useChainId'
+import { useParams } from 'react-router-dom'
+import { STARKNET_MAX_BLOCK_TIME } from 'src/constants/misc'
 import {
   useHodlLimitForm,
   useLiquidityForm,
@@ -19,12 +14,8 @@ import {
   useTeamAllocationTotalPercentage,
 } from 'src/hooks/useLaunchForm'
 import useMemecoin from 'src/hooks/useMemecoin'
-import { useQuoteTokenPrice } from 'src/hooks/usePrice'
-import useQuoteToken from 'src/hooks/useQuote'
 import { useExecuteTransaction } from 'src/hooks/useTransactions'
-import { parseFormatedAmount } from 'src/utils/amount'
-import { decimalsScale } from 'src/utils/decimalScale'
-import { CallData, uint256 } from 'starknet'
+import { parseFormatedAmount, parseFormatedPercentage } from 'src/utils/amount'
 
 import { LastFormPageProps } from '../common'
 import LaunchTemplate from './template'
@@ -42,11 +33,15 @@ export default function StarndardAmmLaunch({ previous, amm }: StarndardAmmLaunch
   const resetLaunchForm = useResetLaunchForm()
 
   // memecoin
-  const { data: memecoin, refresh: refreshMemecoin } = useMemecoin()
+  const { address: tokenAddress } = useParams()
+  const { data: memecoin, refresh: refreshMemecoin } = useMemecoin(tokenAddress)
 
-  // quote token price
-  const quoteToken = useQuoteToken()
-  const quoteTokenPrice = useQuoteTokenPrice(quoteTokenAddress)
+  // sdk factory
+  const sdkFactory = useFactory()
+
+  // quote token
+  const quoteToken = useQuoteToken(quoteTokenAddress)
+  const { data: quoteTokenPrice } = useQuoteTokenPrice({ address: quoteTokenAddress })
 
   // team allocation
   const teamAllocationTotalPercentage = useTeamAllocationTotalPercentage(memecoin?.totalSupply)
@@ -61,60 +56,36 @@ export default function StarndardAmmLaunch({ previous, amm }: StarndardAmmLaunch
       .multiply(new Fraction(1).subtract(teamAllocationTotalPercentage))
   }, [teamAllocationTotalPercentage, startingMcap, quoteTokenPrice])
 
-  // starknet
-  const chainId = useChainId()
-
   // transaction
   const executeTransaction = useExecuteTransaction()
 
   // launch
-  const launch = useCallback(() => {
-    if (!quoteToken?.decimals || !quoteAmount || !chainId || !hodlLimit || !memecoin?.address) return
+  const launch = useCallback(async () => {
+    if (!memecoin || !startingMcap || !quoteToken || !hodlLimit) return
 
-    const uin256QuoteAmount = uint256.bnToUint256(
-      BigInt(quoteAmount.multiply(decimalsScale(quoteToken.decimals)).quotient.toString()),
-    )
-
-    const approveCalldata = CallData.compile([
-      FACTORY_ADDRESSES[chainId], // spender
-      uin256QuoteAmount,
-    ])
-
-    // team allocation
-    const initalHolders = Object.values(teamAllocation)
+    // parse team allocations amount
+    const teamAllocations = Object.values(teamAllocation)
       .filter(Boolean)
-      .map((holder) => holder.address)
-    const initalHoldersAmounts = Object.values(teamAllocation)
-      .filter(Boolean)
-      .map((holder) => uint256.bnToUint256(BigInt(parseFormatedAmount(holder.amount)) * BigInt(decimalsScale(18))))
+      .map((holder) => ({
+        address: holder.address,
+        amount: parseFormatedAmount(holder.amount),
+      }))
 
-    // prepare calldata
-    const launchCalldata = CallData.compile([
-      memecoin.address, // memecoin address
-      antiBotPeriod * 60, // anti bot period in seconds
-      +hodlLimit * 100, // hodl limit
-      quoteTokenAddress, // quote token
-      initalHolders, // initial holders
-      initalHoldersAmounts, // intial holders amounts
-      uin256QuoteAmount, // quote amount
-      liquidityLockPeriod === MAX_LIQUIDITY_LOCK_PERIOD // liquidity lock until
-        ? LIQUIDITY_LOCK_FOREVER_TIMESTAMP
-        : moment().add(moment.duration(liquidityLockPeriod, 'months')).unix() + STARKNET_MAX_BLOCK_TIME,
-    ])
+    const { calls } = await sdkFactory.getStandardAMMLaunchCalldata(memecoin, {
+      amm,
+      antiBotPeriod: antiBotPeriod * 60,
+      holdLimit: parseFormatedPercentage(hodlLimit),
+      quoteToken,
+      startingMarketCap: parseFormatedAmount(startingMcap),
+      teamAllocations,
+      liquidityLockPeriod:
+        liquidityLockPeriod === MAX_LIQUIDITY_LOCK_PERIOD // liquidity lock until
+          ? LIQUIDITY_LOCK_FOREVER_TIMESTAMP
+          : moment().add(moment.duration(liquidityLockPeriod, 'months')).unix() + STARKNET_MAX_BLOCK_TIME,
+    })
 
     executeTransaction({
-      calls: [
-        {
-          contractAddress: quoteTokenAddress,
-          entrypoint: Selector.APPROVE,
-          calldata: approveCalldata,
-        },
-        {
-          contractAddress: FACTORY_ADDRESSES[chainId],
-          entrypoint: AmmInfos[amm].launchEntrypoint,
-          calldata: launchCalldata,
-        },
-      ],
+      calls,
       action: `Launch on ${amm}`,
       onSuccess: () => {
         resetLaunchForm()
@@ -122,19 +93,18 @@ export default function StarndardAmmLaunch({ previous, amm }: StarndardAmmLaunch
       },
     })
   }, [
-    quoteToken?.decimals,
     amm,
-    quoteAmount,
-    chainId,
+    memecoin,
+    startingMcap,
+    quoteToken,
     hodlLimit,
-    memecoin?.address,
     teamAllocation,
     antiBotPeriod,
     liquidityLockPeriod,
+    sdkFactory,
     executeTransaction,
-    refreshMemecoin,
     resetLaunchForm,
-    quoteTokenAddress,
+    refreshMemecoin,
   ])
 
   return <LaunchTemplate liquidityPrice={quoteAmount} previous={previous} next={launch} />
