@@ -9,21 +9,19 @@ const path = require('path')
 
 const isProduction = process.env.NODE_ENV === 'production'
 
-const shouldLintOrTypeCheck = !isProduction
-
 module.exports = {
   eslint: {
-    enable: shouldLintOrTypeCheck,
+    enable: true,
     pluginOptions(eslintConfig) {
       return Object.assign(eslintConfig, {
         cache: true,
         cacheLocation: 'node_modules/.cache/eslint/',
-        ignorePath: '.gitignore',
+        ignorePath: '../../.gitignore',
       })
     },
   },
   typescript: {
-    enableTypeChecking: shouldLintOrTypeCheck,
+    enableTypeChecking: true,
   },
   webpack: {
     plugins: [
@@ -69,7 +67,7 @@ module.exports = {
                 chunks: 'all',
               },
             }
-          : {}
+          : {},
       )
 
       return webpackConfig

@@ -4,3 +4,5 @@ export const FOREVER = 'Forever'
 
 export const STARKNET_POLLING = 3_000 // 3s
 export const STARKNET_MAX_BLOCK_TIME = 3600 * 2 // 2h
+
+export const SLIPPAGE_PRECISION = 2
