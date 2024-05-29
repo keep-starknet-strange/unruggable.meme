@@ -1,4 +1,4 @@
-import { Block, hash } from "./deps.ts";
+import { Block, hash, uint256 } from "./deps.ts";
 import { FACTORY_ADDRESS, STARTING_BLOCK } from "./unruggableMemecoin.ts";
 
 export const config = {
@@ -50,7 +50,7 @@ export default function DecodeUnruggableMemecoinLaunch({ header, events }: Block
     const transferId = `${transactionHash}_${event.index ?? 0}`;
     const sender = event.keys[1];
     const recipient = event.keys[2];
-    const amount = BigInt(event.data[0]);
+    const amount = uint256.uint256ToBN({ low : event.data[0], high : event.data[1] });
     const memecoin_address = event.fromAddress;
     
     return {
