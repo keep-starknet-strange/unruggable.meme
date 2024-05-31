@@ -1,5 +1,5 @@
 import { Block, hash } from "./deps.ts";
-import { hexToAscii } from "./utils.ts";
+import { decodeShortString } from "https://esm.sh/gh/starknet-io/starknet.js@66a5c0341e/src/utils/shortString.ts";
 import { FACTORY_ADDRESS, STARTING_BLOCK } from "./unruggableMemecoin.ts";
 
 const filter = {
@@ -24,7 +24,7 @@ export const config = {
   sinkType: "postgres",
   sinkOptions: {
     connectionString: "",
-    tableName: "unrugmeme_launch",
+    tableName: "unrugmeme_transfers",
   },
 };
 
@@ -39,7 +39,7 @@ export default function DecodeUnruggableMemecoinLaunch({ header, events }: Block
     const [memecoin_address, quote_token, exchange_name] =
       event.data;
     
-    const exchange_name_decoded = hexToAscii(exchange_name);
+    const exchange_name_decoded = decodeShortString(exchange_name);
 
     return {
       network: "starknet-mainnet",
@@ -50,7 +50,7 @@ export default function DecodeUnruggableMemecoinLaunch({ header, events }: Block
       event_id: eventId,
       memecoin_address: memecoin_address,
       quote_token: quote_token,
-      exchange_name: exchange_name_decoded,
+      exchange_name: exchange_name_decoded.replace(/\u0000/g, ''),
       created_at: new Date().toISOString(),
     };
   });
