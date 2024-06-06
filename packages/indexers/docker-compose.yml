@@ -1,4 +1,4 @@
-version: "3.8"
+version: '3.8'
 
 services:
   postgres:
@@ -8,7 +8,7 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: password
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
@@ -18,7 +18,7 @@ services:
     environment:
       - AUTH_TOKEN=${AUTH_TOKEN}
     image: quay.io/apibara/sink-postgres:latest
-    command: "run ./indexer/unruggableMemecoin-launch.indexer.ts --connection-string postgresql://admin:password@postgres:5432/indexer -A ${AUTH_TOKEN}"
+    command: 'run ./indexer/unruggableMemecoin-launch.indexer.ts --connection-string postgresql://admin:password@postgres:5432/indexer -A ${AUTH_TOKEN}'
     volumes:
       - ./src:/indexer
     depends_on:
@@ -31,7 +31,7 @@ services:
     environment:
       - AUTH_TOKEN=${AUTH_TOKEN}
     image: quay.io/apibara/sink-postgres:latest
-    command: "run ./indexer/unruggableMemecoin-transfers.indexer.ts --connection-string postgresql://admin:password@postgres:5432/indexer -A ${AUTH_TOKEN}"
+    command: 'run ./indexer/unruggableMemecoin-transfers.indexer.ts --connection-string postgresql://admin:password@postgres:5432/indexer -A ${AUTH_TOKEN}'
     volumes:
       - ./src:/indexer
     depends_on:
