@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  namespace: default
+  name: apibara-api-key
+stringData:
+  production: dna_XXX # replace with your production key
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  namespace: default
+  name: database-connection-string
+stringData:
+  production: your_postgres_connection_string # replace with postgres connection string
+
+# To apply :
+# kubectl apply -f envs.yaml
