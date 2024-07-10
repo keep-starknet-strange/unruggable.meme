@@ -1,5 +1,5 @@
 import { Block, hash, shortString } from './deps.ts'
-import { FACTORY_ADDRESS, STARTING_BLOCK } from './unruggableMemecoin.ts'
+import { FACTORY_ADDRESS, STARTING_BLOCK } from './constants.ts'
 
 const filter = {
   header: {
@@ -31,16 +31,18 @@ export default function DecodeUnruggableMemecoinLaunch({ header, events }: Block
   const { blockNumber, blockHash, timestamp } = header!
 
   return (events ?? []).map(({ event, transaction }) => {
+    if (!event.data) return
+
     const transactionHash = transaction.meta.hash
 
     const [memecoin_address, quote_token, exchange_name] = event.data
 
-    const exchange_name_decoded = shortString.shortString(exchange_name)
+    const exchange_name_decoded = shortString.decodeShortString(exchange_name.replace(/0x0+/, '0x'))
 
     return {
       network: 'starknet-mainnet',
       block_hash: blockHash,
-      block_number: +blockNumber,
+      block_number: Number(blockNumber),
       block_timestamp: timestamp,
       transaction_hash: transactionHash,
       memecoin_address: memecoin_address,

@@ -1,5 +1,5 @@
 import { Block, hash, uint256 } from './deps.ts'
-import { FACTORY_ADDRESS, STARTING_BLOCK } from './unruggableMemecoin.ts'
+import { FACTORY_ADDRESS, STARTING_BLOCK } from './constants.ts'
 
 export const config = {
   filter: {
@@ -23,9 +23,9 @@ export const config = {
   },
 }
 
-export function factory({ header, events }) {
+export function factory({ header, events }: Block) {
   const launchEvents = (events ?? []).map(({ event }) => {
-    const memecoin_address = event.data[0]
+    const memecoin_address = event.data?.[0]
     return {
       fromAddress: memecoin_address,
       keys: [hash.getSelectorFromName('Transfer')],
@@ -45,6 +45,8 @@ export default function DecodeUnruggableMemecoinLaunch({ header, events }: Block
   const { blockNumber, blockHash, timestamp } = header!
 
   return (events ?? []).map(({ event, transaction }) => {
+    if (!event.data || !event.keys) return
+
     const transactionHash = transaction.meta.hash
     const transferId = `${transactionHash}_${event.index ?? 0}`
     const fromAddress = event.keys[1]
@@ -55,7 +57,7 @@ export default function DecodeUnruggableMemecoinLaunch({ header, events }: Block
     return {
       network: 'starknet-mainnet',
       block_hash: blockHash,
-      block_number: +blockNumber,
+      block_number: Number(blockNumber),
       block_timestamp: timestamp,
       transaction_hash: transactionHash,
       transfer_id: transferId,
