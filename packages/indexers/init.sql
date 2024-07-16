@@ -13,6 +13,21 @@ create table unrugmeme_transfers(
     _cursor bigint
 );
 
+create table unrugmeme_deploy(
+    network text,
+    block_hash text,
+    block_number bigint,
+    block_timestamp timestamp,
+    transaction_hash text,
+    memecoin_address text unique primary key,
+    owner_address text,
+    name text,
+    symbol text,
+    initial_supply text,
+    created_at timestamp default current_timestamp,
+    _cursor bigint
+);
+
 create table unrugmeme_launch(
     network text,
     block_hash text,
