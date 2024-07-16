@@ -23,6 +23,16 @@ const commonSchema = {
   transactionHash: text('transaction_hash'),
 }
 
+export const deploy = pgTable('unrugmeme_deploy', {
+  ...commonSchema,
+
+  token: text('memecoin_address').primaryKey(),
+  owner: text('owner_address'),
+  name: text('name'),
+  symbol: text('symbol'),
+  initialSupply: text('initial_supply'),
+})
+
 export const launch = pgTable('unrugmeme_launch', {
   ...commonSchema,
 

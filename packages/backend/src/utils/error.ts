@@ -1,4 +1,4 @@
-const ErrorCodesArray = ['BAD_REQUEST'] as const
+const ErrorCodesArray = ['BAD_REQUEST', 'TOKEN_NOT_FOUND'] as const
 
 export type ErrorCode = (typeof ErrorCodesArray)[number]
 
