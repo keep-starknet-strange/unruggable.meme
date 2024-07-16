@@ -41,7 +41,7 @@ export const launch = pgTable('unrugmeme_launch', {
   exchangeName: text('exchange_name'),
 })
 
-export const transfers = pgTable('unrugmeme_transfers', {
+export const transfer = pgTable('unrugmeme_transfers', {
   ...commonSchema,
 
   transferId: text('transfer_id').primaryKey(),
