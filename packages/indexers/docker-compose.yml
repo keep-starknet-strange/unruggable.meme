@@ -14,6 +14,19 @@ services:
     networks:
       - backend
 
+  unruggableMemecoin-deploy-indexer:
+    environment:
+      - AUTH_TOKEN=${AUTH_TOKEN}
+    image: quay.io/apibara/sink-postgres:latest
+    command: 'run ./indexer/unruggableMemecoin-deploy.indexer.ts --connection-string postgresql://admin:password@postgres:5432/indexer -A ${AUTH_TOKEN}'
+    volumes:
+      - ./src:/indexer
+    depends_on:
+      - postgres
+    networks:
+      - backend
+    restart: on-failure
+
   unruggableMemecoin-launch-indexer:
     environment:
       - AUTH_TOKEN=${AUTH_TOKEN}
