@@ -10,6 +10,7 @@ globalStyle('*', {
 globalStyle('html, body', {
   margin: 0,
   padding: 0,
+  overflow: 'hidden',
 })
 
 globalStyle('html', {
@@ -23,12 +24,14 @@ globalStyle('html', {
 })
 
 globalStyle('html, body, #root', {
-  minHeight: '100%',
+  height: '100%',
 })
 
 globalStyle('#root', {
   position: 'relative',
   width: '100%',
+  minHeight: '100%',
+  overflow: 'auto',
 })
 
 globalStyle('html', {
