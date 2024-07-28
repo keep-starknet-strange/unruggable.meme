@@ -119,3 +119,21 @@ export default function TokenPage() {
     </Section>
   )
 }
+
+
+import Communities from './Communities'
+
+-
+- {/**Add token community import umder this components*/}
+-
+-77          {liquidityLockSafety !== Safety.SAFE && (
+-78            <Column className={styles.container}>
+              <IncreaseLiquidityLock />
+            </Column>
+          )}
+
+          <Column>
+            {/**Add token community details */}
+            <Communities />
+            {onlyVisibleToYou}
+          </Column>

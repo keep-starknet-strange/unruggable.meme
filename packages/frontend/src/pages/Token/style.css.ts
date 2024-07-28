@@ -58,3 +58,8 @@ export const dropdownRow = style([
     },
   }),
 ])
+
+export const inputLabel = sprinkles({
+  marginLeft: '8',
+  fontWeight: 'medium',
+})
