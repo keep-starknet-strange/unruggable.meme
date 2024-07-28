@@ -20,6 +20,7 @@ import LiquidityForm from './LaunchForm/Liquidity'
 import TeamAllocationForm from './LaunchForm/TeamAllocation'
 import TokenMetrics from './Metrics'
 import * as styles from './style.css'
+import Communities from './Communities'
 
 export default function TokenPage() {
   const [launchFormPageIndex, setLaunchFormPageIndex] = useState(0)
@@ -79,6 +80,12 @@ export default function TokenPage() {
               {onlyVisibleToYou}
             </Column>
           )}
+
+          <Column>
+          {/**Add token community details */}
+          <Communities />
+          {onlyVisibleToYou}
+          </Column>
         </>
       )
     } else if (memecoin.isOwner) {
@@ -119,21 +126,3 @@ export default function TokenPage() {
     </Section>
   )
 }
-
-
-import Communities from './Communities'
-
--
-- {/**Add token community import umder this components*/}
--
--77          {liquidityLockSafety !== Safety.SAFE && (
--78            <Column className={styles.container}>
-              <IncreaseLiquidityLock />
-            </Column>
-          )}
-
-          <Column>
-            {/**Add token community details */}
-            <Communities />
-            {onlyVisibleToYou}
-          </Column>

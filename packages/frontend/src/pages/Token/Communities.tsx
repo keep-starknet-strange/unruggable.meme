@@ -1,5 +1,3 @@
-/* eslint-disable prettier/prettier */
-/* eslint-disable import/no-unused-modules */
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useCallback } from 'react'
 import { useForm } from 'react-hook-form'
