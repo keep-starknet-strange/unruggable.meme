@@ -12,7 +12,7 @@ jobs:
       - uses: software-mansion/setup-scarb@v1
       - name: Check cairo format
         run: scarb fmt --check
-        working-directory: contracts
+        working-directory: packages/contracts
       - name: Build cairo programs
         run: scarb build
-        working-directory: contracts
+        working-directory: packages/contracts

@@ -14,4 +14,4 @@ jobs:
           starknet-foundry-version: 0.14.0
       - name: Run cairo tests
         run: snforge test unit_tests
-        working-directory: contracts
+        working-directory: packages/contracts
