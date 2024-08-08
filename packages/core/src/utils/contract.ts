@@ -1,4 +1,4 @@
-import { Call, CallData, constants, hash, ProviderInterface, selector } from 'starknet'
+import { Call, CallData, constants, hash, ProviderInterface } from 'starknet'
 
 import { Entrypoint, MULTICALL_ADDRESSES } from '../constants'
 
