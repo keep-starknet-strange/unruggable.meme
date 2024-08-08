@@ -12,6 +12,7 @@ import * as Text from 'src/theme/components/Text'
 import { vars } from 'src/theme/css/sprinkles.css'
 
 import CollectFees from './CollectFees'
+import Communities from './Communities'
 import IncreaseLiquidityLock from './IncreaseLiquidityLock'
 import AMMForm from './LaunchForm/AMM'
 import ConfirmForm from './LaunchForm/Confirm'
@@ -20,7 +21,6 @@ import LiquidityForm from './LaunchForm/Liquidity'
 import TeamAllocationForm from './LaunchForm/TeamAllocation'
 import TokenMetrics from './Metrics'
 import * as styles from './style.css'
-import Communities from './Communities'
 
 export default function TokenPage() {
   const [launchFormPageIndex, setLaunchFormPageIndex] = useState(0)
@@ -82,9 +82,9 @@ export default function TokenPage() {
           )}
 
           <Column>
-          {/**Add token community details */}
-          <Communities />
-          {onlyVisibleToYou}
+            {/**Add token community details */}
+            <Communities />
+            {onlyVisibleToYou}
           </Column>
         </>
       )
