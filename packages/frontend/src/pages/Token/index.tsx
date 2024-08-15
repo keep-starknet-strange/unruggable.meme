@@ -81,7 +81,7 @@ export default function TokenPage() {
             </Column>
           )}
 
-          <Column>
+          <Column className={styles.container}>
             {/**Add token community details */}
             <Communities />
             {onlyVisibleToYou}

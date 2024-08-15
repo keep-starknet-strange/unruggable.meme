@@ -34,9 +34,7 @@ export default function Communities() {
 
   return (
     <Column gap="32">
-      <Text.Custom color="text2" fontWeight="normal" fontSize="24">
-        Website and Communities
-      </Text.Custom>
+      <Text.HeadlineLarge>Website and Communities</Text.HeadlineLarge>
       <Column as="form" onSubmit={handleSubmit(setCommunities)} gap="24">
         <Column gap="8">
           <Text.Body className={styles.inputLabel}>Website</Text.Body>
