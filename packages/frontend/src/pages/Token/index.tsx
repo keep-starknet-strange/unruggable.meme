@@ -12,6 +12,7 @@ import * as Text from 'src/theme/components/Text'
 import { vars } from 'src/theme/css/sprinkles.css'
 
 import CollectFees from './CollectFees'
+import Communities from './Communities'
 import IncreaseLiquidityLock from './IncreaseLiquidityLock'
 import AMMForm from './LaunchForm/AMM'
 import ConfirmForm from './LaunchForm/Confirm'
@@ -79,6 +80,12 @@ export default function TokenPage() {
               {onlyVisibleToYou}
             </Column>
           )}
+
+          <Column className={styles.container}>
+            {/**Add token community details */}
+            <Communities />
+            {onlyVisibleToYou}
+          </Column>
         </>
       )
     } else if (memecoin.isOwner) {
