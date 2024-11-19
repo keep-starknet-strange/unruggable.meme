@@ -1,22 +1,42 @@
-import { createMemecoin, Config } from '../src'
-import { RpcProvider, Account } from "starknet";
+import { createMemecoin, Config, launchOnEkubo } from '../src'
+import { RpcProvider, Account } from 'starknet'
+;(async () => {
+  const starknetProvider = new RpcProvider({ nodeUrl: 'https://starknet-mainnet.public.blastapi.io' })
 
-const starknetProvider = new RpcProvider({ nodeUrl: "https://starknet-mainnet.public.blastapi.io" });
-
-const config: Config = {
-    starknetProvider
-}
-
-const starknetAccount = new Account(
+  const config: Config = {
     starknetProvider,
-    "0x0416Ba0f3d21Eda5A87d05d0aCC827075792132697E9eD973F4390808790a11A",
-    "0x05c15e38bc5ff56529a9e9bcca4a62daa601285a419884c29493ac145b8a3fad"
-  );
+  }
 
-createMemecoin(config, {
-    initialSupply: "1000000",
-    name: "test",
-    owner: "TST123",
+  const starknetAccount = new Account(
+    starknetProvider,
+    process.env.ACCOUNT_ADDRESS || '',
+    process.env.ACCOUNT_PRIVATE_KEY || '',
+  )
+
+  const result = await createMemecoin(config, {
+    initialSupply: '1',
+    name: 'R4MI',
+    owner: '0x0416ba0f3d21eda5a87d05d0acc827075792132697e9ed973f4390808790a11a',
     starknetAccount,
-    symbol: "TEST123"
-})
+    symbol: 'R4MI',
+  })
+
+  if (result) {
+    const { tokenAddress, transactionHash } = result
+    console.log(`Creating memecoin... Transaction hash: ${transactionHash} - Token Address: ${tokenAddress}`)
+    await starknetProvider.waitForTransaction(transactionHash)
+
+    const launchResult = await launchOnEkubo(config, {
+      memecoinAddress: tokenAddress,
+      starknetAccount,
+      antiBotPeriodInSecs: 0,
+      fees: '0.3',
+      holdLimit: '1',
+      startingMarketCap: '100000',
+    })
+
+    if (launchResult) {
+      console.log(`Launching on Ekubo... Transaction hash: ${launchResult.transactionHash}`)
+    }
+  }
+})()

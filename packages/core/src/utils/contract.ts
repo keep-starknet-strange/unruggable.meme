@@ -20,7 +20,7 @@ export async function multiCallContract(
     entrypoint: Entrypoint.AGGREGATE,
     calldata: [calldata.length, ...calldata.flat()],
   })
-  const raw = rawResult.result.slice(2)
+  const raw = rawResult.slice(2)
 
   const result: string[][] = []
   let idx = 0

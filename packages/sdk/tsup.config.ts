@@ -26,12 +26,4 @@ export default defineConfig([
     clean: false,
     globalName: 'sdk.core',
   }),
-
-  ...getConfig({
-    entry: ['src/constants/index.ts'],
-    outDir: 'dist/constants',
-    sourcemap: true,
-    clean: false,
-    globalName: 'sdk.core.constants',
-  }),
 ])
