@@ -1,7 +1,7 @@
-import { AccountInterface, ProviderInterface } from 'starknet'
+import { AccountInterface, ProviderInterface, constants } from 'starknet'
 
 export interface Config {
-  /*   starknetNetwork: Network */
+  starknetChainId: constants.StarknetChainId
   starknetProvider: ProviderInterface
 }
 
@@ -13,11 +13,18 @@ export interface CreateMemecoinParameters {
   initialSupply: string
 }
 
-export interface LaunchOnEkuboParameters {
+export interface LaunchParameters {
   starknetAccount: AccountInterface
   memecoinAddress: string
   startingMarketCap: string
   holdLimit: string
   fees: string
   antiBotPeriodInSecs: number
+  liquidityLockPeriod?: number
+  currencyAddress: string
+}
+
+export interface CollectEkuboFeesParameters {
+  starknetAccount: AccountInterface
+  memecoinAddress: string
 }

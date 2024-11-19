@@ -1,10 +1,14 @@
 import { createMemecoin, Config, launchOnEkubo } from '../src'
-import { RpcProvider, Account } from 'starknet'
+import { RpcProvider, Account, constants } from 'starknet'
+import { ETH_ADDRESSES } from 'core/constants'
 ;(async () => {
   const starknetProvider = new RpcProvider({ nodeUrl: 'https://starknet-mainnet.public.blastapi.io' })
 
+  const starknetChainId = constants.StarknetChainId.SN_MAIN
+
   const config: Config = {
     starknetProvider,
+    starknetChainId,
   }
 
   const starknetAccount = new Account(
@@ -15,10 +19,10 @@ import { RpcProvider, Account } from 'starknet'
 
   const result = await createMemecoin(config, {
     initialSupply: '1',
-    name: 'R4MI',
+    name: 'R5MI',
     owner: '0x0416ba0f3d21eda5a87d05d0acc827075792132697e9ed973f4390808790a11a',
     starknetAccount,
-    symbol: 'R4MI',
+    symbol: 'R5MI',
   })
 
   if (result) {
@@ -33,6 +37,7 @@ import { RpcProvider, Account } from 'starknet'
       fees: '0.3',
       holdLimit: '1',
       startingMarketCap: '100000',
+      currencyAddress: ETH_ADDRESSES[starknetChainId],
     })
 
     if (launchResult) {

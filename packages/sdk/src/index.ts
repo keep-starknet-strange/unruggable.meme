@@ -1,2 +1,2 @@
-export * from './create'
+export * from './factory'
 export * from './types'
