@@ -1,0 +1,48 @@
+{
+  "name": "sdk",
+  "version": "0.1.0",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "module": "dist/index.mjs",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "browser": "./dist/index.global.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./constants": {
+      "import": "./dist/constants/index.mjs",
+      "require": "./dist/constants/index.js",
+      "browser": "./dist/constants/index.global.js",
+      "types": "./dist/constants/index.d.ts"
+    }
+  },
+  "scripts": {
+    "start": "tsup --watch",
+    "build": "tsup --clean true",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "lint": "eslint . --max-warnings=0 --ignore-path ../../.eslintignore",
+    "lint:fix": "eslint src --fix",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "core": "*",
+    "@uniswap/sdk-core": "^4.2.0",
+    "moment": "^2.30.1"
+  },
+  "peerDependencies": {
+    "starknet": ">=5.0.0"
+  },
+  "devDependencies": {
+    "@uniswap/eslint-config": "^1.2.0",
+    "prettier": "^3.1.0",
+    "starknet": "5.24.3",
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.5",
+    "vitest": "^1.5.0"
+  }
+}
