@@ -78,7 +78,7 @@ export async function launchOnEkubo(config: Config, parameters: LaunchParameters
     holdLimit: convertPercentageStringToPercent(parameters.holdLimit),
     quoteToken,
     startingMarketCap: normalizeAmountString(parameters.startingMarketCap),
-    teamAllocations: [],
+    teamAllocations: parameters.teamAllocations,
   })
 
   try {
@@ -101,7 +101,7 @@ export async function launchOnStandardAMM(config: Config, parameters: LaunchPara
     holdLimit: convertPercentageStringToPercent(parameters.holdLimit),
     quoteToken,
     startingMarketCap: normalizeAmountString(parameters.startingMarketCap),
-    teamAllocations: [],
+    teamAllocations: parameters.teamAllocations,
     liquidityLockPeriod:
       parameters.liquidityLockPeriod === coreConstants.MAX_LIQUIDITY_LOCK_PERIOD // liquidity lock until
         ? coreConstants.LIQUIDITY_LOCK_FOREVER_TIMESTAMP

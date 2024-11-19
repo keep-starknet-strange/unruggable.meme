@@ -38,6 +38,7 @@ import { ETH_ADDRESSES } from 'core/constants'
       holdLimit: '1',
       startingMarketCap: '100000',
       currencyAddress: ETH_ADDRESSES[starknetChainId],
+      teamAllocations: [],
     })
 
     if (launchResult) {

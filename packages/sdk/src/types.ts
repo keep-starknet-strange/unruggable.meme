@@ -22,6 +22,10 @@ export interface LaunchParameters {
   antiBotPeriodInSecs: number
   liquidityLockPeriod?: number
   currencyAddress: string
+  teamAllocations: {
+    address: string
+    amount: number | string
+  }[]
 }
 
 export interface CollectEkuboFeesParameters {
