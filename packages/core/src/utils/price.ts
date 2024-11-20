@@ -8,11 +8,11 @@ import { decimalsScale } from './helpers'
 export async function getPairPrice(
   provider: ProviderInterface,
   pair?: USDCPair,
-  blockNumber: BlockNumber = BlockTag.latest,
+  blockNumber: BlockNumber = BlockTag.LATEST,
 ) {
   if (!pair) return new Fraction(1, 1)
 
-  const { result } = await provider.callContract(
+  const result = await provider.callContract(
     {
       contractAddress: pair.address,
       entrypoint: Entrypoint.GET_RESERVES,
