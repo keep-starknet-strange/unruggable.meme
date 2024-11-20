@@ -12,7 +12,7 @@
   "dependencies": {
     "colors": "^1.4.0",
     "dotenv": "16.4.5",
-    "starknet": "^6.11.0"
+    "starknet": "^6.18.0"
   },
   "devDependencies": {
     "prettier": "3.3.3"

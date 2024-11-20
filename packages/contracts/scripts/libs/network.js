@@ -7,19 +7,12 @@ const NETWORKS = {
     feeder_gateway_url: 'https://alpha-mainnet.starknet.io/feeder_gateway',
     gateway_url: 'https://alpha-mainnet.starknet.io/gateway',
   },
-  goerli: {
-    name: 'goerli',
-    explorer_url: 'https://goerli.voyager.online',
-    rpc_url: `https://starknet-goerli.infura.io/v3/${process.env.INFURA_API_KEY}`,
-    feeder_gateway_url: 'https://alpha4.starknet.io/feeder_gateway',
-    gateway_url: 'https://alpha4.starknet.io/gateway',
-  },
   sepolia: {
     name: 'sepolia',
     explorer_url: 'https://sepolia.voyager.online',
-    rpc_url: `https://starknet-sepolia.infura.io/v3/${process.env.INFURA_API_KEY}`,
-    feeder_gateway_url: 'https://alpha-sepolia.starknet.io/feeder_gateway',
-    gateway_url: 'https://alpha-sepolia.starknet.io/gateway',
+    rpc_url: `https://starknet-sepolia.public.blastapi.io/`,
+    feeder_gateway_url: 'https://starknet-sepolia.public.blastapi.io/feeder_gateway',
+    gateway_url: 'https://starknet-sepolia.public.blastapi.io/gateway',
   },
 }
 

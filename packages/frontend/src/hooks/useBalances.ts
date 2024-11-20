@@ -1,4 +1,4 @@
-import { useAccount, useContractRead, UseContractReadResult } from '@starknet-react/core'
+import { Address, useAccount, useContract } from '@starknet-react/core'
 import { Fraction } from '@uniswap/sdk-core'
 import { Token } from 'core'
 import { compiledMulticall, Entrypoint, MULTICALL_ADDRESSES } from 'core/constants'
@@ -23,21 +23,10 @@ export default function useBalances(tokens: UseBalancesToken[]): UseBalancesResu
   const { address: accountAddress } = useAccount()
   const chainId = useChainId()
 
-  const res = useContractRead({
+  const contract = useContract({
     abi: compiledMulticall, // call is not send if abi is undefined
-    address: accountAddress && chainId ? MULTICALL_ADDRESSES[chainId] : undefined,
-    functionName: 'aggregate',
-    watch: true,
-    args: [
-      tokens.map(
-        (token): CallStruct => ({
-          to: token.address,
-          selector: selector.getSelector(token.camelCased ? Entrypoint.BALANCE_OF_CAMEL : Entrypoint.BALANCE_OF),
-          calldata: [accountAddress ?? ''],
-        }),
-      ),
-    ],
-  }) as UseContractReadResult & { data?: [bigint, [bigint, bigint][]] }
+    address: accountAddress && chainId ? (MULTICALL_ADDRESSES[chainId] as Address) : undefined,
+  })
 
   const data = useMemo(() => {
     if (!res.data) return undefined

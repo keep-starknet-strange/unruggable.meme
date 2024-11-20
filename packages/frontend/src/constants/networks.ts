@@ -1,4 +1,4 @@
-import { Chain, sepolia, mainnet } from '@starknet-react/chains'
+import { Chain, mainnet, sepolia } from '@starknet-react/chains'
 import { ChainProviderFactory } from '@starknet-react/core'
 import { RpcProvider } from 'starknet'
 
