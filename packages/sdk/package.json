@@ -5,6 +5,11 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "module": "dist/index.mjs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/keep-starknet-strange/unruggable.meme.git"
+  },
+  "homepage": "https://www.unruggable.meme/",
   "publishConfig": {
     "access": "public"
   },
