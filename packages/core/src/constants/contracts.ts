@@ -5,17 +5,17 @@ import JediswapPair from '../abis/JediswapPair.json'
 import Multicall from '../abis/Multicall.json'
 
 export const TOKEN_CLASS_HASH = {
-  [constants.StarknetChainId.SN_SEPOLIA]: '0x05ba9aea47a8dd7073ab82b9e91721bdb3a2c1b259cffd68669da1454faa80ac',
+  [constants.StarknetChainId.SN_SEPOLIA]: '0x063ee878d3559583ceae80372c6088140e1180d9893aa65fbefc81f45ddaaa17',
   [constants.StarknetChainId.SN_MAIN]: '0x063ee878d3559583ceae80372c6088140e1180d9893aa65fbefc81f45ddaaa17',
 }
 
 export const FACTORY_ADDRESSES = {
-  [constants.StarknetChainId.SN_SEPOLIA]: '0x076c3112e95994507c44c72b8dfb7f8d568a370d2f7c2d918ed9f55327671385',
+  [constants.StarknetChainId.SN_SEPOLIA]: '0x06b5096ba5a3c30e231e7b74ca565594d167a0a22d71cce0ebf9ae2b06584097',
   [constants.StarknetChainId.SN_MAIN]: '0x01a46467a9246f45c8c340f1f155266a26a71c07bd55d36e8d1c7d0d438a2dbc',
 }
 
 export const EKUBO_POSITIONS_ADDRESSES = {
-  [constants.StarknetChainId.SN_SEPOLIA]: '0x073fa8432bf59f8ed535f29acfd89a7020758bda7be509e00dfed8a9fde12ddc',
+  [constants.StarknetChainId.SN_SEPOLIA]: '0x06a2aee84bb0ed5dded4384ddd0e40e9c1372b818668375ab8e3ec08807417e5',
   [constants.StarknetChainId.SN_MAIN]: '0x02e0af29598b407c8716b17f6d2795eca1b471413fa03fb145a5e33722184067',
 }
 
