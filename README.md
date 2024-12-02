@@ -59,11 +59,11 @@ The contracts are located in the `contracts/` directory. It's a `scarb` project,
 
 It uses `Starknet Foundry` for tests.
 
-See the [contracts README](contracts/README.md) for more information.
+See the [contracts README](packages/contracts/README.md) for more information.
 
 ### Frontend
 
-See the [frontend README](frontend/README.md) for more information.
+See the [frontend README](packages/frontend/README.md) for more information.
 
 ## 📖 License
 
