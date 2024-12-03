@@ -26,7 +26,7 @@ export const validateAndSend = <T, TSchema extends ZodSchema>(
   return false
 }
 
-export const addressValidation = z
+const addressValidation = z
   .string({
     invalid_type_error: 'Please provide a valid *Address*.',
     required_error: 'Please provide a valid *Address*.',

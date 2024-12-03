@@ -34,7 +34,7 @@
     "moment": "^2.30.1"
   },
   "peerDependencies": {
-    "starknet": ">=5.0.0"
+    "starknet": ">=6.8.0"
   },
   "devDependencies": {
     "@uniswap/eslint-config": "^1.2.0",

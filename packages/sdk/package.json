@@ -40,7 +40,7 @@
     "starknet": "6.11.0"
   },
   "peerDependencies": {
-    "starknet": ">=5.0.0"
+    "starknet": ">=6.8.0"
   },
   "devDependencies": {
     "@uniswap/eslint-config": "^1.2.0",

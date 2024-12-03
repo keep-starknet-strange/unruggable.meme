@@ -1,4 +1,4 @@
-import { useContractWrite, useWaitForTransaction } from '@starknet-react/core'
+import { useSendTransaction, useTransactionReceipt } from '@starknet-react/core'
 import { useEffect, useMemo, useState } from 'react'
 import { STARKNET_POLLING } from 'src/constants/misc'
 import { useCloseModal, useTransactionModal } from 'src/hooks/useModal'
@@ -15,8 +15,8 @@ import Overlay from '../Modal/Overlay'
 import Spinner from '../Spinner'
 import * as styles from './style.css'
 
-type UseWaitForTransactionResponse = Omit<ReturnType<typeof useWaitForTransaction>, 'data'> & {
-  data?: { finality_status?: TransactionStatus }
+type UseWaitForTransactionResponse = Omit<ReturnType<typeof useTransactionReceipt>, 'data'> & {
+  data?: { value?: { finality_status?: TransactionStatus } }
 }
 
 export function TransactionModal() {
@@ -31,13 +31,13 @@ export function TransactionModal() {
   const close = useCloseModal()
 
   // starknet
-  const { writeAsync } = useContractWrite({})
+  const { sendAsync } = useSendTransaction({})
 
   // calls
   const [invokeTransactionDetails, resetTransaction] = useTransaction()
 
   // transaction status
-  const { data, refetch } = useWaitForTransaction({
+  const { data, refetch } = useTransactionReceipt({
     retry: true,
     retryDelay: STARKNET_POLLING,
     refetchInterval: STARKNET_POLLING,
@@ -45,7 +45,7 @@ export function TransactionModal() {
   }) as UseWaitForTransactionResponse
 
   const statusComponent = useMemo(() => {
-    switch (data?.finality_status) {
+    switch (data?.value?.finality_status) {
       // Success
       case TransactionStatus.ACCEPTED_ON_L1:
       case TransactionStatus.ACCEPTED_ON_L2:
@@ -69,11 +69,11 @@ export function TransactionModal() {
     }
 
     return
-  }, [data?.finality_status])
+  }, [data?.value?.finality_status])
 
   // refetch
   useEffect(() => {
-    if (!isOpen || (data?.finality_status && data.finality_status !== TransactionStatus.RECEIVED)) return
+    if (!isOpen || (data?.value?.finality_status && data.value.finality_status !== TransactionStatus.RECEIVED)) return
 
     const intervalId = setInterval(() => {
       setTransactionHash((state) => {
@@ -86,13 +86,13 @@ export function TransactionModal() {
     }, STARKNET_POLLING)
 
     return () => clearInterval(intervalId)
-  }, [data?.finality_status, isOpen, refetch])
+  }, [data?.value?.finality_status, isOpen, refetch])
 
   // onSuccess callback
   useEffect(() => {
     if (accepted || !currentInvokeTransactionDetails?.onSuccess) return
 
-    switch (data?.finality_status) {
+    switch (data?.value?.finality_status) {
       // Success
       case TransactionStatus.ACCEPTED_ON_L1:
       case TransactionStatus.ACCEPTED_ON_L2:
@@ -100,7 +100,7 @@ export function TransactionModal() {
         currentInvokeTransactionDetails.onSuccess()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accepted, data?.finality_status, currentInvokeTransactionDetails?.onSuccess])
+  }, [accepted, data?.value?.finality_status, currentInvokeTransactionDetails?.onSuccess])
 
   // error component
   const errorComponent = useMemo(() => {
@@ -123,7 +123,7 @@ export function TransactionModal() {
   useEffect(() => {
     if (!currentInvokeTransactionDetails) return
 
-    writeAsync({ calls: currentInvokeTransactionDetails.calls })
+    sendAsync(currentInvokeTransactionDetails.calls)
       .then((res) => {
         setTransactionHash(res.transaction_hash)
       })
@@ -134,7 +134,7 @@ export function TransactionModal() {
       })
 
     resetTransaction()
-  }, [resetTransaction, currentInvokeTransactionDetails, writeAsync])
+  }, [resetTransaction, currentInvokeTransactionDetails, sendAsync])
 
   // updating current invoke transaction details
   useEffect(() => {

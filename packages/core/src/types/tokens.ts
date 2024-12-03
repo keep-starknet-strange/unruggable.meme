@@ -17,3 +17,5 @@ export type Token = {
 }
 
 export type MultichainToken = { [chainId in constants.StarknetChainId]: Token }
+
+export type MultichainAddress = { [chainId in constants.StarknetChainId]: `0x${string}` }

@@ -1,7 +1,8 @@
 import { useBlockNumber } from '@starknet-react/core'
 import { QueryKey, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef } from 'react'
-import { STARKNET_BLOCK_POLLING } from 'src/constants/misc'
+
+import { STARKNET_BLOCK_POLLING } from '../../constants/misc'
 
 /**
  * Invalidates the given query keys on every new block.
