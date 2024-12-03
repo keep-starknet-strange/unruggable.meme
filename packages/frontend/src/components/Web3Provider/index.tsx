@@ -1,4 +1,12 @@
-import { argent, braavos, StarknetConfig, starkscan, useInjectedConnectors, useNetwork } from '@starknet-react/core'
+import {
+  argent,
+  braavos,
+  Connector,
+  StarknetConfig,
+  starkscan,
+  useInjectedConnectors,
+  useNetwork,
+} from '@starknet-react/core'
 import { QueryClient } from '@tanstack/react-query'
 import { Provider as HooksProvider } from 'hooks'
 import { useMemo } from 'react'
@@ -22,7 +30,7 @@ export function StarknetProvider({ children }: React.PropsWithChildren) {
     ...injected,
     new WebWalletConnector({ url: 'https://web.argent.xyz' }),
     new ArgentMobileConnector(),
-  ]
+  ] as Connector[]
 
   return (
     <StarknetConfig

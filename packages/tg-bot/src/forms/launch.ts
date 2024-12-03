@@ -1,17 +1,11 @@
 import { EkuboLaunchData, StandardAMMLaunchData } from 'core'
-import {
-  AMM,
-  AMMS,
-  DECIMALS,
-  LIQUIDITY_LOCK_FOREVER_TIMESTAMP,
-  QUOTE_TOKENS,
-  STARKNET_MAX_BLOCK_TIME,
-} from 'core/constants'
+import { AMM, AMMS, DECIMALS, LIQUIDITY_LOCK_FOREVER_TIMESTAMP, QUOTE_TOKENS } from 'core/constants'
 import { dedent } from 'ts-dedent'
 
 import { bot } from '../services/bot'
 import { factory } from '../services/factory'
 import { useWallet } from '../services/wallet'
+import { STARKNET_MAX_BLOCK_TIME } from '../utils/constants'
 import { createForm, defineField, Forms } from '../utils/form'
 import { decimalsScale, parsePercentage } from '../utils/helpers'
 import { LaunchValidation } from '../utils/validation'

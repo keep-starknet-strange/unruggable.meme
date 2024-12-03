@@ -11,9 +11,10 @@
   "dependencies": {
     "@avnu/avnu-sdk": "^2.0.0",
     "@hookform/resolvers": "^3.3.2",
-    "@starknet-react/chains": "^0.1.0",
-    "@starknet-react/core": "^2.2.4",
-    "@tanstack/react-query": "^5.0.1",
+    "@starknet-io/types-js": "^0.7.10",
+    "@starknet-react/chains": "^3.1.0",
+    "@starknet-react/core": "^3.6.2",
+    "@tanstack/react-query": "^5.25.0",
     "@types/react-dom": "^18.2.1",
     "@uniswap/sdk-core": "^4.0.9",
     "@vanilla-extract/css": "^1.11.0",

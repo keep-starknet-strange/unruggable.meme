@@ -1,4 +1,4 @@
-import { useAccount, useContractRead, UseContractReadResult } from '@starknet-react/core'
+import { useAccount, useReadContract, UseReadContractResult } from '@starknet-react/core'
 import { Fraction } from '@uniswap/sdk-core'
 import { Token } from 'core'
 import { compiledMulticall, Entrypoint, MULTICALL_ADDRESSES } from 'core/constants'
@@ -11,7 +11,7 @@ import useChainId from './useChainId'
 type Balance = Fraction
 type Balances = Record<string, Balance>
 
-interface UseBalancesResult extends Pick<UseContractReadResult, 'error' | 'refetch'> {
+interface UseBalancesResult extends Pick<UseReadContractResult<any, any>, 'error' | 'refetch'> {
   data?: Balances
   loading: boolean
 }
@@ -23,7 +23,7 @@ export default function useBalances(tokens: UseBalancesToken[]): UseBalancesResu
   const { address: accountAddress } = useAccount()
   const chainId = useChainId()
 
-  const res = useContractRead({
+  const res = useReadContract({
     abi: compiledMulticall, // call is not send if abi is undefined
     address: accountAddress && chainId ? MULTICALL_ADDRESSES[chainId] : undefined,
     functionName: 'aggregate',
@@ -37,12 +37,14 @@ export default function useBalances(tokens: UseBalancesToken[]): UseBalancesResu
         }),
       ),
     ],
-  }) as UseContractReadResult & { data?: [bigint, [bigint, bigint][]] }
+  })
+
+  const resData: [bigint, [bigint, bigint][]] | undefined = res.data
 
   const data = useMemo(() => {
-    if (!res.data) return undefined
+    if (!resData) return undefined
 
-    return res.data[1].reduce<Record<string, Fraction>>((acc, balance, index) => {
+    return resData[1].reduce<Record<string, Fraction>>((acc, balance, index) => {
       const token = tokens[index]
       acc[token.address] = new Fraction(
         uint256.uint256ToBN({ low: balance[0], high: balance[1] }).toString(),
@@ -52,7 +54,7 @@ export default function useBalances(tokens: UseBalancesToken[]): UseBalancesResu
       return acc
     }, {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [res.data?.[0].toString()])
+  }, [resData?.[0].toString()])
 
   return { data, loading: res.fetchStatus === 'fetching', error: res.error, refetch: res.refetch }
 }
