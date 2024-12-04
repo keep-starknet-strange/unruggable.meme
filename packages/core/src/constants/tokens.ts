@@ -11,14 +11,14 @@ export enum QUOTE_TOKEN_SYMBOL {
 
 // ETH
 export const Ether: MultichainToken = {
-  [constants.StarknetChainId.SN_GOERLI]: {
-    address: ETH_ADDRESSES[constants.StarknetChainId.SN_GOERLI],
+  [constants.StarknetChainId.SN_SEPOLIA]: {
+    address: ETH_ADDRESSES[constants.StarknetChainId.SN_SEPOLIA],
     symbol: QUOTE_TOKEN_SYMBOL.ETH,
     name: 'Ether',
     decimals: 18,
     camelCased: true,
     usdcPair: {
-      address: JEDISWAP_ETH_USDC[constants.StarknetChainId.SN_GOERLI],
+      address: JEDISWAP_ETH_USDC[constants.StarknetChainId.SN_SEPOLIA],
       reversed: true,
     },
   },
@@ -37,14 +37,14 @@ export const Ether: MultichainToken = {
 
 // STRK
 export const Stark: MultichainToken = {
-  [constants.StarknetChainId.SN_GOERLI]: {
-    address: STRK_ADDRESSES[constants.StarknetChainId.SN_GOERLI],
+  [constants.StarknetChainId.SN_SEPOLIA]: {
+    address: STRK_ADDRESSES[constants.StarknetChainId.SN_SEPOLIA],
     symbol: QUOTE_TOKEN_SYMBOL.STRK,
     name: 'Stark',
     decimals: 18,
     camelCased: true,
     usdcPair: {
-      address: JEDISWAP_STRK_USDC[constants.StarknetChainId.SN_GOERLI],
+      address: JEDISWAP_STRK_USDC[constants.StarknetChainId.SN_SEPOLIA],
       reversed: true,
     },
   },
@@ -63,8 +63,8 @@ export const Stark: MultichainToken = {
 
 // USDC
 export const USDCoin: MultichainToken = {
-  [constants.StarknetChainId.SN_GOERLI]: {
-    address: USDC_ADDRESSES[constants.StarknetChainId.SN_GOERLI],
+  [constants.StarknetChainId.SN_SEPOLIA]: {
+    address: USDC_ADDRESSES[constants.StarknetChainId.SN_SEPOLIA],
     symbol: QUOTE_TOKEN_SYMBOL.USDC,
     name: 'USD Coin',
     decimals: 6,
@@ -82,15 +82,15 @@ export const USDCoin: MultichainToken = {
 // Quote tokens
 
 export const QUOTE_TOKENS: { [chainId in constants.StarknetChainId]: Record<string, Token> } = {
-  [constants.StarknetChainId.SN_GOERLI]: {
-    [getChecksumAddress(ETH_ADDRESSES[constants.StarknetChainId.SN_GOERLI])]:
-      Ether[constants.StarknetChainId.SN_GOERLI],
+  [constants.StarknetChainId.SN_SEPOLIA]: {
+    [getChecksumAddress(ETH_ADDRESSES[constants.StarknetChainId.SN_SEPOLIA])]:
+      Ether[constants.StarknetChainId.SN_SEPOLIA],
 
-    [getChecksumAddress(STRK_ADDRESSES[constants.StarknetChainId.SN_GOERLI])]:
-      Stark[constants.StarknetChainId.SN_GOERLI],
+    [getChecksumAddress(STRK_ADDRESSES[constants.StarknetChainId.SN_SEPOLIA])]:
+      Stark[constants.StarknetChainId.SN_SEPOLIA],
 
-    [getChecksumAddress(USDC_ADDRESSES[constants.StarknetChainId.SN_GOERLI])]:
-      USDCoin[constants.StarknetChainId.SN_GOERLI],
+    [getChecksumAddress(USDC_ADDRESSES[constants.StarknetChainId.SN_SEPOLIA])]:
+      USDCoin[constants.StarknetChainId.SN_SEPOLIA],
   },
 
   [constants.StarknetChainId.SN_MAIN]: {
@@ -101,6 +101,6 @@ export const QUOTE_TOKENS: { [chainId in constants.StarknetChainId]: Record<stri
 }
 
 export const DEFAULT_QUOTE_TOKEN_ADDRESSES = {
-  [constants.StarknetChainId.SN_GOERLI]: getChecksumAddress(ETH_ADDRESSES[constants.StarknetChainId.SN_GOERLI]),
+  [constants.StarknetChainId.SN_SEPOLIA]: getChecksumAddress(ETH_ADDRESSES[constants.StarknetChainId.SN_SEPOLIA]),
   [constants.StarknetChainId.SN_MAIN]: getChecksumAddress(ETH_ADDRESSES[constants.StarknetChainId.SN_MAIN]),
 }

@@ -11,7 +11,7 @@ interface OptionProps {
 }
 
 function Option({ connection, activate }: OptionProps) {
-  const icon = connection.icon.dark
+  const icon = typeof connection.icon === 'string' ? connection.icon : connection.icon.dark
   const isSvg = icon?.startsWith('<svg')
 
   return (
@@ -19,7 +19,7 @@ function Option({ connection, activate }: OptionProps) {
       {isSvg ? (
         <Box width="32" height="32" dangerouslySetInnerHTML={{ __html: icon ?? '' }} /> /* display svg */
       ) : (
-        <Box as="img" width="32" height="32" src={connection.icon.dark} />
+        <Box as="img" width="32" height="32" src={icon} />
       )}
       <Text.Body>{connection.name}</Text.Body>
     </Row>

@@ -190,7 +190,7 @@ export class Factory implements FactoryInterface {
   //
 
   private async getJediswapLiquidityLockPosition(liquidity: Pick<JediswapLiquidity, 'lockManager' | 'lockPosition'>) {
-    const { result } = await this.config.provider.callContract({
+    const result = await this.config.provider.callContract({
       contractAddress: liquidity.lockManager,
       entrypoint: Entrypoint.GET_LOCK_DETAILS,
       calldata: [liquidity.lockPosition],
@@ -205,7 +205,7 @@ export class Factory implements FactoryInterface {
   }
 
   private async getEkuboLiquidityLockPosition(liquidity: Pick<EkuboLiquidity, 'lockManager' | 'ekuboId'>) {
-    const { result } = await this.config.provider.callContract({
+    const result = await this.config.provider.callContract({
       contractAddress: liquidity.lockManager,
       entrypoint: Entrypoint.LIQUIDITY_POSITION_DETAILS,
       calldata: [liquidity.ekuboId],
@@ -250,7 +250,7 @@ export class Factory implements FactoryInterface {
     ])
 
     // call ekubo position to get collectable fees details
-    const { result } = await this.config.provider.callContract({
+    const result = await this.config.provider.callContract({
       contractAddress: EKUBO_POSITIONS_ADDRESSES[this.config.chainId],
       entrypoint: Entrypoint.GET_TOKEN_INFOS,
       calldata,

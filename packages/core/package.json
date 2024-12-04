@@ -34,12 +34,12 @@
     "moment": "^2.30.1"
   },
   "peerDependencies": {
-    "starknet": ">=5.0.0"
+    "starknet": ">=6.8.0"
   },
   "devDependencies": {
     "@uniswap/eslint-config": "^1.2.0",
     "prettier": "^3.1.0",
-    "starknet": "5.24.3",
+    "starknet": "^6.18.0",
     "tsup": "^8.0.2",
     "typescript": "^5.4.5",
     "vitest": "^1.5.0"

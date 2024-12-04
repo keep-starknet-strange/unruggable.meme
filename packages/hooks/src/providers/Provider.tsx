@@ -25,9 +25,9 @@ export interface ProviderProps {
   queryClient?: QueryClient
 }
 
-export function Provider({ factory, queryClient, children }: React.PropsWithChildren<ProviderProps>) {
+export function Provider({ factory, provider, queryClient, children }: React.PropsWithChildren<ProviderProps>) {
   return (
-    <FactoryProvider factory={factory}>
+    <FactoryProvider factory={factory} provider={provider}>
       <QueryProvider queryClient={queryClient}>{children}</QueryProvider>
     </FactoryProvider>
   )
