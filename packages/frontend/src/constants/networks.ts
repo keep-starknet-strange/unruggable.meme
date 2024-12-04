@@ -1,8 +1,8 @@
-import { Chain, goerli, mainnet } from '@starknet-react/chains'
+import { Chain, mainnet, sepolia } from '@starknet-react/chains'
 import { ChainProviderFactory } from '@starknet-react/core'
 import { RpcProvider } from 'starknet'
 
-export const SUPPORTED_STARKNET_NETWORKS = [mainnet, goerli]
+export const SUPPORTED_STARKNET_NETWORKS = [mainnet, sepolia]
 
 const NETHERMIND_KEY = process.env.REACT_APP_NETHERMIND_KEY as string
 if (typeof NETHERMIND_KEY === 'undefined') {
@@ -18,9 +18,9 @@ if (typeof DEFAULT_NETWORK_NAME === 'undefined') {
 
 export const nethermindRpcProviders: ChainProviderFactory = (chain: Chain) => {
   switch (chain.id) {
-    case goerli.id:
+    case sepolia.id:
       return new RpcProvider({
-        nodeUrl: `https://rpc.nethermind.io/goerli-juno/?apikey=${NETHERMIND_KEY}`,
+        nodeUrl: `https://rpc.nethermind.io/sepolia-juno/?apikey=${NETHERMIND_KEY}`,
       })
 
     case mainnet.id:

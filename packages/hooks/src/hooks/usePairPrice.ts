@@ -14,7 +14,7 @@ export type UsePairPriceProps = UseQueryProps & {
 
 export function usePairPrice({
   pair,
-  blockNumber = BlockTag.latest,
+  blockNumber = BlockTag.LATEST,
   ...props
 }: UsePairPriceProps): UseQueryResult<Fraction | undefined, Error | null> {
   const { provider } = useProvider()

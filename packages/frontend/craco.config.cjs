@@ -12,6 +12,7 @@ const isProduction = process.env.NODE_ENV === 'production'
 module.exports = {
   eslint: {
     enable: true,
+    mode: 'file',
     pluginOptions(eslintConfig) {
       return Object.assign(eslintConfig, {
         cache: true,

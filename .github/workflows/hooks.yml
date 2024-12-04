@@ -1,0 +1,44 @@
+name: Hooks
+
+on:
+  push:
+    paths: [packages/hooks/**]
+  pull_request:
+    paths: [packages/hooks/**]
+
+permissions: read-all
+
+jobs:
+  check:
+    defaults:
+      run:
+        working-directory: packages/hooks
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: yarn install
+        working-directory: ./
+
+      # Core package is required for hooks to test and build
+      - name: Build Core
+        run: yarn build
+        working-directory: ./packages/core
+
+      - name: Lint
+        run: yarn lint
+
+      - name: Test
+        run: yarn test
+
+      - name: Build Hooks
+        run: yarn build
