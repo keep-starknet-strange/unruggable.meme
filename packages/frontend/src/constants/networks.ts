@@ -4,7 +4,6 @@ import { RpcProvider } from 'starknet'
 
 export const SUPPORTED_STARKNET_NETWORKS = [mainnet, goerli]
 
-
 const DEFAULT_NETWORK_NAME = process.env.REACT_APP_DEFAULT_NETWORK_NAME as string
 if (typeof DEFAULT_NETWORK_NAME === 'undefined') {
   throw new Error(`REACT_APP_DEFAULT_NETWORK_NAME must be a defined environment variable`)
