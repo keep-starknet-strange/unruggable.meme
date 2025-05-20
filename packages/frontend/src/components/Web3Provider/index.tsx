@@ -2,7 +2,7 @@ import { argent, braavos, StarknetConfig, starkscan, useInjectedConnectors, useN
 import { QueryClient } from '@tanstack/react-query'
 import { Provider as HooksProvider } from 'hooks'
 import { useMemo } from 'react'
-import { nethermindRpcProviders, SUPPORTED_STARKNET_NETWORKS } from 'src/constants/networks'
+import { blastRpcProviders, SUPPORTED_STARKNET_NETWORKS } from 'src/constants/networks'
 import { ArgentMobileConnector } from 'starknetkit/argentMobile'
 import { WebWalletConnector } from 'starknetkit/webwallet'
 
@@ -29,7 +29,7 @@ export function StarknetProvider({ children }: React.PropsWithChildren) {
       queryClient={queryClient}
       connectors={connectors}
       chains={SUPPORTED_STARKNET_NETWORKS}
-      provider={nethermindRpcProviders}
+      provider={blastRpcProviders}
       explorer={starkscan}
       autoConnect
     >
@@ -42,7 +42,7 @@ export function StarknetProvider({ children }: React.PropsWithChildren) {
 export function HooksSDKProvider({ children }: React.PropsWithChildren) {
   const { chain } = useNetwork()
 
-  const provider = useMemo(() => nethermindRpcProviders(chain) ?? undefined, [chain])
+  const provider = useMemo(() => blastRpcProviders(chain) ?? undefined, [chain])
 
   return (
     <HooksProvider provider={provider} queryClient={queryClient}>
