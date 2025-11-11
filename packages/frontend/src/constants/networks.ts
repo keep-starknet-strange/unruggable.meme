@@ -20,7 +20,7 @@ export const blastRpcProviders: ChainProviderFactory = (chain: Chain) => {
 
     case mainnet.id:
       return new RpcProvider({
-        nodeUrl: `https://starknet-mainnet.public.blastapi.io`,
+        nodeUrl: `https://starknet.drpc.org`,
       })
 
     default:
