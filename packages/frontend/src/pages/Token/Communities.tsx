@@ -22,7 +22,6 @@ export default function Communities() {
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors },
   } = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
