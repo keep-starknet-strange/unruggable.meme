@@ -24,7 +24,7 @@
 <div align="center">
 <br />
 
-<a href="https://github.com/keep-starknet-strange/unruggable.meme/actions/workflows/contracts_test.yml"><img alt="GitHub Workflow Status (with event)" src="https://img.shields.io/github/actions/workflow/status/keep-starknet-strange/unruggable.meme/contracts_test.yml?style=for-the-badge" height=30></a>
+<a href="https://github.com/keep-starknet-strange/unruggable.meme/actions/workflows/contracts_build.yml"><img alt="GitHub Workflow Status (with event)" src="https://img.shields.io/github/actions/workflow/status/keep-starknet-strange/unruggable.meme/contracts_test.yml?style=for-the-badge" height=30></a>
 <a href="https://securityscorecards.dev/viewer/?uri=github.com/keep-starknet-strange/unruggable.meme"><img alt="OpenSSF Scorecard Report" src="https://img.shields.io/ossf-scorecard/github.com/keep-starknet-strange/unruggable.meme?label=openssf%20scorecard&style=for-the-badge" height=30></a>
 <a href="https://github.com/keep-starknet-strange/unruggable.meme/blob/main/LICENSE"><img src="https://img.shields.io/github/license/keep-starknet-strange/unruggable.meme.svg?style=for-the-badge" alt="Project license" height="30"></a>
 <a href="https://twitter.com/UnrugMemec0in"><img src="https://img.shields.io/twitter/follow/UnrugMemec0in?style=for-the-badge&logo=twitter" alt="Follow Unruggable Meme on Twitter" height="30"></a>
